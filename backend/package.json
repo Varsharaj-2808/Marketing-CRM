@@ -1,0 +1,16 @@
+{
+  "name": "marketing-crm-backend",
+  "version": "1.0.0",
+  "description": "Marketing CRM Backend API (Supabase)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {}
+}
