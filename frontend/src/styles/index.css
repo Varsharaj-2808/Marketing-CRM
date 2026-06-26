@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply font-body-md text-on-surface bg-background;
+    background: radial-gradient(circle at 0% 0%, #f7f9fb 0%, #e2dfff 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(32px) saturate(1.2);
+    -webkit-backdrop-filter: blur(32px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow:
+      0 8px 40px rgba(15, 23, 42, 0.08),
+      0 2px 8px rgba(15, 23, 42, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
+    pointer-events: none;
+  }
+
+  .input-focus-effect:focus-within {
+    border-color: #3525cd;
+    box-shadow: 0 0 0 3px rgba(53, 37, 205, 0.1);
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, #4f46e5 0%, #712ae2 100%);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient:hover {
+    filter: saturate(1.2);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+  }
+
+  .btn-gradient:active {
+    transform: scale(0.98);
+  }
+
+  .btn-gradient:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
