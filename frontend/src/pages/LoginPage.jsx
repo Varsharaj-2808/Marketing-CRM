@@ -204,13 +204,16 @@ export default function LoginPage() {
               </div>
             )}
           </div>
-
           <div className="mt-6 pt-6 border-t border-outline-variant/30 text-center" style={{ animation: 'fade-in-up 0.6s 0.35s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
             <p className="font-body-md text-label-sm text-on-surface-variant/50 mb-3">
               Protected by Enterprise-grade AES-256 Encryption
             </p>
             <Link to="/forgot-password" className="font-label-sm text-label-sm text-primary hover:text-primary/80 transition-colors">
               Forgot Password?
+            </Link>
+            <span className="mx-2 text-on-surface-variant/30">·</span>
+            <Link to="/register" className="font-label-sm text-label-sm text-primary hover:text-primary/80 transition-colors">
+              Create Account
             </Link>
           </div>
         </div>
