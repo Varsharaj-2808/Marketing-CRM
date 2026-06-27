@@ -62,7 +62,7 @@ Given a successful login, then a row is written to Audit Log with user ID, times
 - **Summary:** [EPIC-1] User Authentication & Access Management
 ### Child Issues
 
-- **C1-6:** [TASK-1.1.1-01] Design login UI (email/username, password, Remember Me)- **C1-7:** [TASK-1.1.1-02] Build POST /auth/login API- **C1-8:** [TASK-1.1.1-03] Implement bcrypt password hashing- **C1-9:** [TASK-1.1.1-04] Implement JWT access + refresh token issuance- **C1-10:** [TASK-1.1.1-05] Implement Remember Me (extended refresh token expiry)- **C1-11:** [TASK-1.1.1-06] Implement account lockout after 5 failed attempts (15 min cool-down)- **C1-12:** [TASK-1.1.1-07]logout/referesh token- **C1-13:** [TASK-1.1.1-08] Log every login attempt (success/failure) to Audit Log- **C1-127:** Identify Missing Acceptance Criteria and Create Exhastive test Cases
+- **C1-6:** [TASK-1.1.1-01] Design login UI (email/username, password, Remember Me)- **C1-7:** [TASK-1.1.1-02] Build POST /auth/login API- **C1-8:** [TASK-1.1.1-03] Implement bcrypt password hashing- **C1-9:** [TASK-1.1.1-04] Implement JWT access + refresh token issuance- **C1-10:** [TASK-1.1.1-05] Implement Remember Me (extended refresh token expiry)- **C1-11:** [TASK-1.1.1-06] Implement account lockout after 5 failed attempts (15 min cool-down)- **C1-12:** [TASK-1.1.1-07]logout/referesh token- **C1-13:** [TASK-1.1.1-08] Log every login attempt (success/failure) to Audit Log- **C1-127:** [TASK-1.1.1-09] Identify Missing Acceptance Criteria and Create Exhastive test Cases- **C1-128:** [Task-1.1.1-010] Create a reset password page - **C1-129:** [TASK-1.1.1-011] Create API For Forget Password Reset Password Change Password
 
 
 

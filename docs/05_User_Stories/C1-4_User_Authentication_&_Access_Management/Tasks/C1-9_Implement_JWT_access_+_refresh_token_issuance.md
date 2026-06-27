@@ -1,8 +1,8 @@
 ---
 jira-key: C1-9
 issue-type: Subtask
-status: To Do
-updated: 2026-06-26 06:18:37
+status: In Review
+updated: 2026-06-26 12:24:20
 ---
 
 # C1-9: [TASK-1.1.1-04] Implement JWT access + refresh token issuance
@@ -13,12 +13,12 @@ updated: 2026-06-26 06:18:37
 
 | Field | Value |
 |-------|-------|
-| Status | To Do |
+| Status | In Review |
 | Priority | High |
 | Assignee | Abirami K |
 | Reporter | Sulabh Varshney |
 | Created | 2026-06-26 05:13:16 |
-| Updated | 2026-06-26 06:18:37 |
+| Updated | 2026-06-26 12:24:20 |
 
 
 ## Description
@@ -38,5 +38,14 @@ No description provided.
 - **Summary:** [STORY-1.1.1] As any user, I want to log in securely so that I can access only the data permitted by my role....
 
 
+### Comments
 
-_Last updated: 2026-06-26 06:18:37_
+
+**Abirami K** - 2026-06-26 12:24:20
+
+[object Object]
+
+---
+
+
+_Last updated: 2026-06-26 12:24:20_

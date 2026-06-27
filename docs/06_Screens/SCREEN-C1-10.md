@@ -28,11 +28,7 @@ No description provided.
 
 ## Links
 
-### Epic
-
-- **Key:** C1-4
-- **Summary:** [EPIC-1] User Authentication & Access Management
-### Parent Story
+### Parent Issue
 
 - **Key:** C1-5
 - **Summary:** [STORY-1.1.1] As any user, I want to log in securely so that I can access only the data permitted by my role....

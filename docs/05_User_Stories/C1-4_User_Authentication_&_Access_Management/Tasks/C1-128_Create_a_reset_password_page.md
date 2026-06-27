@@ -1,11 +1,11 @@
 ---
-jira-key: C1-127
+jira-key: C1-128
 issue-type: Subtask
 status: In Review
-updated: 2026-06-26 12:16:40
+updated: 2026-06-27 06:14:58
 ---
 
-# C1-127: [TASK-1.1.1-09] Identify Missing Acceptance Criteria and Create Exhastive test Cases
+# C1-128: [Task-1.1.1-010] Create a reset password page 
 
 **Issue Type:** Subtask
 
@@ -15,10 +15,10 @@ updated: 2026-06-26 12:16:40
 |-------|-------|
 | Status | In Review |
 | Priority | Medium |
-| Assignee | varsharaj |
-| Reporter | Sulabh Varshney |
-| Created | 2026-06-26 06:21:25 |
-| Updated | 2026-06-26 12:16:40 |
+| Assignee | vishnu c |
+| Reporter | varsharaj |
+| Created | 2026-06-27 05:42:01 |
+| Updated | 2026-06-27 06:14:58 |
 
 
 ## Description
@@ -40,17 +40,17 @@ No description provided.
 
 ### Attachments
 
-- **image-20260626-121412.png** (222.3 KB) - uploaded by varsharaj on 2026-06-26 12:16:39
+- **27.06.2026_11.37.38_REC.png** (314.7 KB) - uploaded by vishnu c on 2026-06-27 06:14:04- **27.06.2026_11.41.00_REC.png** (265.1 KB) - uploaded by vishnu c on 2026-06-27 06:14:13
 
 
 ### Comments
 
 
-**varsharaj** - 2026-06-26 12:16:40
+**vishnu c** - 2026-06-27 06:14:51
 
 [object Object]
 
 ---
 
 
-_Last updated: 2026-06-26 12:16:40_
+_Last updated: 2026-06-27 06:14:58_

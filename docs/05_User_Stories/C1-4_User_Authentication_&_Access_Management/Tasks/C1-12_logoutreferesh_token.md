@@ -1,8 +1,8 @@
 ---
 jira-key: C1-12
 issue-type: Subtask
-status: To Do
-updated: 2026-06-26 10:44:32
+status: In Review
+updated: 2026-06-27 05:43:33
 ---
 
 # C1-12: [TASK-1.1.1-07]logout/referesh token
@@ -13,12 +13,12 @@ updated: 2026-06-26 10:44:32
 
 | Field | Value |
 |-------|-------|
-| Status | To Do |
+| Status | In Review |
 | Priority | High |
 | Assignee | Abirami K |
 | Reporter | Sulabh Varshney |
 | Created | 2026-06-26 05:13:19 |
-| Updated | 2026-06-26 10:44:32 |
+| Updated | 2026-06-27 05:43:33 |
 
 
 ## Description
@@ -38,5 +38,14 @@ No description provided.
 - **Summary:** [STORY-1.1.1] As any user, I want to log in securely so that I can access only the data permitted by my role....
 
 
+### Comments
 
-_Last updated: 2026-06-26 10:44:32_
+
+**Abirami K** - 2026-06-26 12:25:02
+
+[object Object]
+
+---
+
+
+_Last updated: 2026-06-27 05:43:33_
