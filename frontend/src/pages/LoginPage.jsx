@@ -11,7 +11,7 @@ import AlertBanner from '../components/common/AlertBanner';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLockedOut, getLockoutRemainingMs, lockoutUntil, isAuthenticated } = useAuth();
+  const { user, login, isLockedOut, getLockoutRemainingMs, lockoutUntil, isAuthenticated } = useAuth();
   const { formatted, isActive: lockoutActive } = useLockoutTimer(lockoutUntil);
 
   const [email, setEmail] = useState('');
@@ -32,9 +32,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate(user?.role === 'Admin' ? '/admin/dashboard' : '/app/dashboard', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,7 +61,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result.success) {
-      navigate('/dashboard', { replace: true });
+      navigate(result.user?.role === 'Admin' ? '/admin/dashboard' : '/app/dashboard', { replace: true });
     } else if (result.status === 429) {
       setError(result.message || 'Account temporarily locked. Please try again after 15 minutes.');
     } else if (result.status === 403) {

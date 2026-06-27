@@ -40,3 +40,10 @@ export async function refreshToken(refreshTokenValue) {
     body: JSON.stringify({ refreshToken: refreshTokenValue }),
   });
 }
+
+export async function resetPassword(token, newPassword) {
+  return request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
