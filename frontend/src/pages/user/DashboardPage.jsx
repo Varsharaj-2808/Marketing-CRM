@@ -1,51 +1,171 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import StatsCard from '../../components/user/StatsCard';
 import TaskList from '../../components/user/TaskList';
 import LeadDistribution from '../../components/user/LeadDistribution';
 import CampaignCard from '../../components/user/CampaignCard';
+import Skeleton from '../../components/common/Skeleton';
+
+function UserDashboardSkeleton() {
+  return (
+    <div className="mt-1">
+      <section className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-8 glass-card p-6 min-h-[260px]">
+          <Skeleton width="130px" height="16px" rounded className="mb-3" />
+          <Skeleton width="300px" height="28px" rounded className="mb-1" />
+          <Skeleton width="100%" height="16px" rounded className="mb-1" />
+          <Skeleton width="60%" height="16px" rounded className="mb-6" />
+          <div className="flex gap-3">
+            <Skeleton width="140px" height="40px" rounded />
+            <Skeleton width="120px" height="40px" rounded />
+          </div>
+        </div>
+        <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="glass-card rounded-[1.5rem] p-4">
+              <div className="flex justify-between items-start mb-3">
+                <Skeleton circle width="36px" height="36px" />
+                <Skeleton width="50px" height="18px" rounded />
+              </div>
+              <Skeleton width="80px" height="12px" rounded className="mb-1" />
+              <Skeleton width="100px" height="22px" rounded />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 md:col-span-7 glass-card rounded-[1.5rem] overflow-hidden flex flex-col">
+          <div className="p-4 border-b border-outline-variant/10 flex justify-between">
+            <Skeleton width="100px" height="20px" rounded />
+            <Skeleton width="40px" height="14px" rounded />
+          </div>
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center p-3 rounded-2xl">
+                <Skeleton circle width="36px" height="36px" className="mr-3" />
+                <div className="flex-grow">
+                  <Skeleton width="60%" height="14px" rounded className="mb-1" />
+                  <Skeleton width="35%" height="10px" rounded />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="col-span-12 md:col-span-5 glass-card rounded-[1.5rem] p-4">
+          <Skeleton width="110px" height="20px" rounded className="mb-3" />
+          <div className="flex items-center justify-center py-8">
+            <Skeleton circle width="144px" height="144px" />
+          </div>
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Skeleton circle width="10px" height="10px" className="mr-2" />
+                  <Skeleton width="80px" height="14px" rounded />
+                </div>
+                <Skeleton width="30px" height="14px" rounded />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-6">
+        <div className="flex justify-between items-center mb-5">
+          <Skeleton width="130px" height="20px" rounded />
+          <Skeleton width="110px" height="36px" rounded />
+        </div>
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 md:col-span-4 lg:col-span-3 glass-card rounded-[1.5rem] overflow-hidden">
+            <Skeleton className="h-24 w-full" />
+            <div className="p-3">
+              <Skeleton width="60%" height="14px" rounded className="mb-1" />
+              <div className="flex items-center gap-2 mb-3">
+                <Skeleton width="50px" height="16px" rounded />
+                <Skeleton width="60px" height="10px" rounded />
+              </div>
+              <Skeleton width="100%" height="6px" rounded />
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-8 lg:col-span-6 glass-card p-5 flex flex-col md:flex-row gap-4">
+            <div className="flex-grow">
+              <div className="flex justify-between items-start mb-3">
+                <Skeleton width="50%" height="14px" rounded />
+                <Skeleton width="16px" height="16px" />
+              </div>
+              <div className="flex gap-4">
+                <div>
+                  <Skeleton width="30px" height="8px" rounded className="mb-1" />
+                  <Skeleton width="40px" height="20px" rounded />
+                </div>
+                <div className="w-px bg-outline-variant/20" />
+                <div>
+                  <Skeleton width="50px" height="8px" rounded className="mb-1" />
+                  <Skeleton width="50px" height="20px" rounded />
+                </div>
+              </div>
+            </div>
+            <Skeleton className="w-full md:w-36 h-24 md:h-full rounded-2xl" />
+          </div>
+          <div className="col-span-12 md:col-span-12 lg:col-span-3 glass-card p-5 flex flex-col items-center justify-center">
+            <Skeleton circle width="48px" height="48px" className="mb-3" />
+            <Skeleton width="100px" height="14px" rounded className="mb-1" />
+            <Skeleton width="140px" height="12px" rounded className="mb-3" />
+            <Skeleton width="60px" height="12px" rounded />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', { replace: true });
+      return;
     }
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, navigate]);
 
   if (!isAuthenticated || !user) return null;
+  if (loading) return <UserDashboardSkeleton />;
 
   return (
-    <>
-      <section className="grid grid-cols-12 gap-12 mb-12">
-        <div className="col-span-12 lg:col-span-8 relative overflow-hidden glass-card p-12 flex flex-col justify-center min-h-[340px]">
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary/10 rounded-full blur-[80px]"></div>
-          <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-secondary/10 rounded-full blur-[60px]"></div>
+    <div className="mt-1">
+      <section className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-8 relative overflow-hidden glass-card p-6 flex flex-col justify-center min-h-[260px]">
+          <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-[60px]"></div>
+          <div className="absolute -left-8 -bottom-8 w-48 h-48 bg-secondary/10 rounded-full blur-[40px]"></div>
           <div className="relative z-10">
-            <span className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary rounded-full text-label-sm font-label-sm mb-4">
-              <span className="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse"></span>
+            <span className="inline-flex items-center px-2 py-0.5 bg-primary/10 text-primary rounded-full text-label-sm font-label-sm mb-3">
+              <span className="w-1.5 h-1.5 bg-primary rounded-full mr-1.5 animate-pulse"></span>
               Live Marketing Status
             </span>
-            <h1 className="font-display-lg text-display-lg text-on-surface mb-2">Welcome back, {user.name}.</h1>
+            <h1 className="font-display-lg text-display-lg text-on-surface mb-1">Welcome back, {user.name}.</h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
               Your Q3 marketing campaigns are performing <span className="text-secondary font-bold">12% above benchmark</span>. You have 4 pending security reviews for the upcoming lead magnets.
             </p>
-            <div className="mt-8 flex gap-x-4">
-              <button className="bg-primary px-6 py-3 text-white rounded-xl font-label-md text-label-md shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            <div className="mt-5 flex gap-x-3">
+              <button className="bg-primary px-4 py-2.5 text-white rounded-xl font-label-md text-label-md shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
                 View Campaigns
               </button>
-              <button className="bg-white/80 backdrop-blur-md px-6 py-3 text-on-surface rounded-xl font-label-md text-label-md hover:bg-white transition-all border border-outline-variant/20">
+              <button className="bg-white/80 backdrop-blur-md px-4 py-2.5 text-on-surface rounded-xl font-label-md text-label-md hover:bg-white transition-all border border-outline-variant/20">
                 Generate Report
               </button>
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-12">
+        <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
           <StatsCard
             icon="trending_up"
             label="Total Conversion"
@@ -64,17 +184,17 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-12 gap-12 mb-12">
+      <section className="grid grid-cols-12 gap-6 mb-6">
         <TaskList />
         <LeadDistribution />
       </section>
 
-      <section className="mb-12">
-        <div className="flex justify-between items-center mb-8">
+      <section className="mb-6">
+        <div className="flex justify-between items-center mb-5">
           <h4 className="font-headline-md text-headline-md text-on-surface">Active Campaigns</h4>
-          <button className="bg-white/50 px-4 py-2 rounded-xl text-label-md font-label-md border border-outline-variant/20 hover:bg-white transition-all">Filter by Platform</button>
+          <button className="bg-white/50 px-3 py-1.5 rounded-xl text-label-md font-label-md border border-outline-variant/20 hover:bg-white transition-all">Filter by Platform</button>
         </div>
-        <div className="grid grid-cols-12 gap-12">
+        <div className="grid grid-cols-12 gap-6">
           <CampaignCard title="LinkedIn Outreach" status="Active" daysLeft="8 days left" progress={65}>
             <img
               className="w-full h-full object-cover"
@@ -83,27 +203,27 @@ export default function DashboardPage() {
             />
           </CampaignCard>
 
-          <div className="col-span-12 md:col-span-8 lg:col-span-6 glass-card p-8 flex flex-col md:flex-row gap-6 hover:shadow-lg transition-all group">
+          <div className="col-span-12 md:col-span-8 lg:col-span-6 glass-card p-5 flex flex-col md:flex-row gap-4 hover:shadow-lg transition-all group">
             <div className="flex-grow">
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-3">
                 <h5 className="text-on-surface font-label-md text-label-md">Global Rebrand Awareness</h5>
                 <span className="text-primary material-symbols-outlined">auto_awesome</span>
               </div>
-              <p className="text-on-surface-variant text-label-sm mb-6">Cross-channel synchronization is at 94% efficiency. Retargeting pixels are firing correctly across all 12 domains.</p>
+              <p className="text-on-surface-variant text-label-sm mb-4">Cross-channel synchronization is at 94% efficiency. Retargeting pixels are firing correctly across all 12 domains.</p>
               <div className="flex gap-4">
                 <div>
-                  <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest mb-1">CTR</p>
+                  <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest mb-0.5">CTR</p>
                   <p className="text-headline-md font-headline-md text-primary">3.2%</p>
                 </div>
                 <div className="w-px bg-outline-variant/20"></div>
                 <div>
-                  <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest mb-1">Budget Spent</p>
+                  <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest mb-0.5">Budget Spent</p>
                   <p className="text-headline-md font-headline-md text-on-surface">$14.2k</p>
                 </div>
               </div>
             </div>
-            <div className="w-full md:w-48 h-32 md:h-full bg-surface-container-low rounded-2xl overflow-hidden relative border border-outline-variant/10">
-              <div className="absolute inset-0 flex items-end p-3 bg-gradient-to-t from-primary/20 to-transparent">
+            <div className="w-full md:w-36 h-24 md:h-full bg-surface-container-low rounded-2xl overflow-hidden relative border border-outline-variant/10">
+              <div className="absolute inset-0 flex items-end p-2 bg-gradient-to-t from-primary/20 to-transparent">
                 <div className="flex gap-1 items-end w-full">
                   <div className="bg-primary/40 w-1/5 h-1/2 rounded-t-sm"></div>
                   <div className="bg-primary/60 w-1/5 h-3/4 rounded-t-sm"></div>
@@ -115,24 +235,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-12 lg:col-span-3 glass-card p-8 flex flex-col justify-center items-center text-center bg-gradient-to-br from-white/80 to-primary/5">
-            <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-primary text-[32px]">add</span>
+          <div className="col-span-12 md:col-span-12 lg:col-span-3 glass-card p-5 flex flex-col justify-center items-center text-center bg-gradient-to-br from-white/80 to-primary/5">
+            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
+              <span className="material-symbols-outlined text-primary text-2xl">add</span>
             </div>
-            <h5 className="text-on-surface font-label-md text-label-md mb-1">New Campaign</h5>
+            <h5 className="text-on-surface font-label-md text-label-md mb-0.5">New Campaign</h5>
             <p className="text-on-surface-variant text-label-sm">Build a new automated workflow</p>
-            <button className="mt-4 text-primary font-bold text-label-sm border-b border-primary/20 hover:border-primary transition-all">Get Started</button>
+            <button className="mt-3 text-primary font-bold text-label-sm border-b border-primary/20 hover:border-primary transition-all">Get Started</button>
           </div>
         </div>
       </section>
 
-      <footer className="mt-12 py-8 px-10 border-t border-outline-variant/10 text-center">
+      <footer className="mt-6 py-4 px-6 border-t border-outline-variant/10 text-center">
         <p className="text-label-sm text-on-surface-variant opacity-50">&copy; 2024 ApexCRM Enterprise &bull; Core Security Powered Dashboard</p>
       </footer>
 
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
+      <button className="fixed bottom-6 right-6 w-10 h-10 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
         <span className="material-symbols-outlined">chat_bubble</span>
       </button>
-    </>
+    </div>
   );
 }

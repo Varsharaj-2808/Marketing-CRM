@@ -73,14 +73,14 @@ module.exports = {
         'label-md': ['Plus Jakarta Sans', ...fontFamily.sans],
       },
       fontSize: {
-        'body-md': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
-        'headline-md': ['24px', { lineHeight: '1.3', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '1.5', fontWeight: '400' }],
+        'headline-md': ['18px', { lineHeight: '1.3', fontWeight: '600' }],
         'headline-lg-mobile': ['24px', { lineHeight: '1.2', fontWeight: '700' }],
-        'display-lg': ['48px', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '800' }],
-        'body-lg': ['18px', { lineHeight: '1.6', fontWeight: '400' }],
-        'label-sm': ['12px', { lineHeight: '1.4', fontWeight: '500' }],
-        'headline-lg': ['32px', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '700' }],
-        'label-md': ['14px', { lineHeight: '1.4', letterSpacing: '0.01em', fontWeight: '600' }],
+        'display-lg': ['32px', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '800' }],
+        'body-lg': ['15px', { lineHeight: '1.6', fontWeight: '400' }],
+        'label-sm': ['11px', { lineHeight: '1.4', fontWeight: '500' }],
+        'headline-lg': ['24px', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'label-md': ['12px', { lineHeight: '1.4', letterSpacing: '0.01em', fontWeight: '600' }],
       },
       keyframes: {
         shake: {

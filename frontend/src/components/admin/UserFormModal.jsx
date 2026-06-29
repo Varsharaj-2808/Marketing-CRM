@@ -70,14 +70,14 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-        <div className="px-6 py-5 border-b border-outline-variant/10 flex items-center justify-between">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] flex flex-col" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+        <div className="px-6 py-5 border-b border-outline-variant/10 flex items-center justify-between shrink-0">
           <h3 className="font-headline-md text-headline-md text-on-surface">{user ? 'Edit User' : 'Create New User'}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-surface-container-high rounded-xl transition-colors">
+          <button onClick={onClose} className="p-1.5 hover:bg-surface-container-high rounded-xl transition-colors">
             <span className="material-symbols-outlined text-on-surface-variant">close</span>
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {user && (
             <div className="space-y-1">
               <label className="font-label-md text-label-md text-on-surface block">Employee ID</label>
@@ -149,17 +149,17 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
               {errors.status && <p className="text-label-sm text-error mt-1">{errors.status}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-3 pt-4 border-t border-outline-variant/10">
+          <div className="flex items-center gap-3 pt-5 border-t border-outline-variant/10">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors"
+              className="flex-1 py-3.5 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+              className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
             >
               Save
             </button>

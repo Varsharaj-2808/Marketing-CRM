@@ -1,14 +1,54 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import UserTable from '../../components/admin/UserTable';
 import UserFormModal from '../../components/admin/UserFormModal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
+import Skeleton from '../../components/common/Skeleton';
+import SkeletonTable from '../../components/common/SkeletonTable';
+import Pagination from '../../components/common/Pagination';
+
+const USER_PAGE_SIZE = 5;
+const AUDIT_PAGE_SIZE = 5;
 
 const INITIAL_USERS = [
   { employee_id: 'EMP-00001', employee_name: 'Admin User', mobile: '9876543210', email: 'admin@company.com', role: 'Admin', status: 'Active' },
   { employee_id: 'EMP-00002', employee_name: 'Executive User', mobile: '9876543211', email: 'executive@company.com', role: 'Marketing Executive', status: 'Active' },
 ];
+
+function UserManagementSkeleton() {
+  return (
+    <div className="mt-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-1 mb-1">
+            <Skeleton width="40px" height="10px" rounded />
+            <Skeleton width="12px" height="12px" />
+            <Skeleton width="100px" height="10px" rounded />
+          </div>
+          <Skeleton width="220px" height="26px" rounded className="mb-1" />
+          <Skeleton width="320px" height="14px" rounded />
+        </div>
+        <Skeleton width="110px" height="36px" rounded />
+      </div>
+
+      <div className="glass-card overflow-hidden mb-6">
+        <div className="p-5 border-b border-outline-variant/10">
+          <Skeleton width="80px" height="20px" rounded />
+        </div>
+        <SkeletonTable rows={4} cols={7} />
+      </div>
+
+      <div className="glass-card p-5">
+        <div className="flex justify-between items-center mb-3">
+          <Skeleton width="80px" height="20px" rounded />
+          <Skeleton width="80px" height="14px" rounded />
+        </div>
+        <SkeletonTable rows={3} cols={5} />
+      </div>
+    </div>
+  );
+}
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
@@ -25,6 +65,9 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, user: null, action: '' });
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userPage, setUserPage] = useState(1);
+  const [auditPage, setAuditPage] = useState(1);
   const [auditLog, setAuditLog] = useState(() => {
     try {
       const stored = localStorage.getItem('crm_audit_log');
@@ -36,22 +79,6 @@ export default function UserManagementPage() {
       return [];
     }
   });
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  useEffect(() => {
-    localStorage.setItem('crm_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('crm_audit_log', JSON.stringify(auditLog));
-  }, [auditLog]);
-
-  if (!isAuthenticated || !user) return null;
 
   const addAuditEntry = useCallback((action, target, details) => {
     const entry = {
@@ -145,67 +172,99 @@ export default function UserManagementPage() {
   const existingEmails = users.map((u) => u.email.toLowerCase());
   const existingMobiles = users.map((u) => u.mobile);
 
+  const paginatedUsers = users.slice((userPage - 1) * USER_PAGE_SIZE, userPage * USER_PAGE_SIZE);
+  const paginatedAudit = auditLog.slice((auditPage - 1) * AUDIT_PAGE_SIZE, auditPage * AUDIT_PAGE_SIZE);
+  const userTotalPages = Math.ceil(users.length / USER_PAGE_SIZE);
+  const auditTotalPages = Math.ceil(auditLog.length / AUDIT_PAGE_SIZE);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    localStorage.setItem('crm_users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('crm_audit_log', JSON.stringify(auditLog));
+  }, [auditLog]);
+
+  if (!isAuthenticated || !user) return null;
+  if (loading) return <UserManagementSkeleton />;
+
   return (
-    <>
-      <div className="flex items-end justify-between mb-12">
+    <div className="mt-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
         <div>
-          <nav className="flex items-center gap-2 text-label-sm text-on-surface-variant/60 mb-2">
+          <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">
             <span>Admin</span>
-            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-primary font-bold">User Management</span>
           </nav>
           <h1 className="font-headline-lg text-on-surface">User Management</h1>
-          <p className="font-body-md text-on-surface-variant mt-2">Create, edit, and manage user accounts and permissions.</p>
+          <p className="font-body-md text-on-surface-variant mt-1">Create, edit, and manage user accounts and permissions.</p>
         </div>
         <button
           onClick={() => { setEditingUser(null); setShowForm(true); }}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center gap-2"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center gap-1.5"
         >
-          <span className="material-symbols-outlined text-[20px]">add</span>
+          <span className="material-symbols-outlined text-[18px]">add</span>
           Add User
         </button>
       </div>
 
       {notification && (
-        <div className={`mb-4 px-4 py-3 rounded-xl flex items-center gap-3 ${
+        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-sm ${
           notification.type === 'error' ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-700'
         }`} style={{ animation: 'slide-up 0.3s ease' }}>
-          <span className="material-symbols-outlined">{notification.type === 'error' ? 'error' : 'check_circle'}</span>
+          <span className="material-symbols-outlined text-[18px]">{notification.type === 'error' ? 'error' : 'check_circle'}</span>
           <span className="font-label-md">{notification.message}</span>
         </div>
       )}
 
-      <div className="glass-card overflow-hidden mb-12">
-        <div className="p-8 border-b border-outline-variant/10">
+      <div className="glass-card overflow-hidden mb-6">
+        <div className="p-5 border-b border-outline-variant/10">
           <h4 className="font-headline-md text-headline-md text-on-surface">All Users</h4>
         </div>
-        <UserTable users={users} onEdit={handleEdit} onDeactivate={handleDeactivate} onActivate={handleActivate} />
+        <UserTable users={paginatedUsers} onEdit={handleEdit} onDeactivate={handleDeactivate} onActivate={handleActivate} />
+        <Pagination
+          currentPage={userPage}
+          totalPages={userTotalPages}
+          onPageChange={setUserPage}
+          totalItems={users.length}
+          pageSize={USER_PAGE_SIZE}
+        />
       </div>
 
-      <div className="glass-card p-8">
-        <div className="flex justify-between items-center mb-4">
+      <div className="glass-card p-5">
+        <div className="flex justify-between items-center mb-3">
           <h4 className="font-headline-md text-headline-md text-on-surface">Audit Log</h4>
           <button className="text-primary font-label-md flex items-center gap-1 hover:underline">
             View Full Log
-            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-label-md text-on-surface-variant/50 uppercase tracking-widest border-b border-outline-variant/10">
-                <th className="pb-4 font-normal px-2">Action</th>
-                <th className="pb-4 font-normal px-2">Target</th>
-                <th className="pb-4 font-normal px-2">Performed By</th>
-                <th className="pb-4 font-normal px-2">Timestamp</th>
-                <th className="pb-4 font-normal px-2">Details</th>
+              <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
+                <th className="py-2.5 px-3 font-semibold">Action</th>
+                <th className="py-2.5 px-3 font-semibold">Target</th>
+                <th className="py-2.5 px-3 font-semibold">Performed By</th>
+                <th className="py-2.5 px-3 font-semibold">Timestamp</th>
+                <th className="py-2.5 px-3 font-semibold">Details</th>
               </tr>
             </thead>
             <tbody className="text-body-md text-on-surface">
-              {auditLog.slice(0, 10).map((entry, i) => (
-                <tr key={i} className="border-b border-outline-variant/10 hover:bg-primary/5 transition-colors">
-                  <td className="py-3 px-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-bold ${
+              {paginatedAudit.map((entry, i) => (
+                <tr key={i} className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors group relative">
+                  <td className="py-3 px-3">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-semibold ${
                       entry.action.includes('CREATED') ? 'bg-emerald-500/10 text-emerald-600' :
                       entry.action.includes('UPDATED') ? 'bg-primary/10 text-primary' :
                       entry.action.includes('DEACTIVATED') ? 'bg-error-container text-on-error-container' :
@@ -213,15 +272,22 @@ export default function UserManagementPage() {
                       'bg-surface-container-high text-on-surface-variant'
                     }`}>{entry.action}</span>
                   </td>
-                  <td className="py-3 px-2 font-bold">{entry.target}</td>
-                  <td className="py-3 px-2 opacity-70">{entry.by}</td>
-                  <td className="py-3 px-2 opacity-70">{new Date(entry.timestamp).toLocaleString()}</td>
-                  <td className="py-3 px-2 opacity-70 max-w-[200px] truncate">{entry.details}</td>
+                  <td className="py-3 px-3 font-semibold text-on-surface">{entry.target}</td>
+                  <td className="py-3 px-3 text-on-surface-variant">{entry.by}</td>
+                  <td className="py-3 px-3 text-on-surface-variant">{new Date(entry.timestamp).toLocaleString()}</td>
+                  <td className="py-3 px-3 text-on-surface-variant max-w-[160px] truncate">{entry.details}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={auditPage}
+          totalPages={auditTotalPages}
+          onPageChange={setAuditPage}
+          totalItems={auditLog.length}
+          pageSize={AUDIT_PAGE_SIZE}
+        />
       </div>
 
       <UserFormModal
@@ -240,6 +306,6 @@ export default function UserManagementPage() {
         onConfirm={confirmAction}
         onCancel={() => setConfirmDialog({ isOpen: false, user: null, action: '' })}
       />
-    </>
+    </div>
   );
 }
