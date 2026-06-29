@@ -157,7 +157,11 @@ export const userService = {
 
   async createUser(data) {
     const res = await apiRequest('/admin/users', { method: 'POST', body: JSON.stringify(data) });
-    if (res?.success) return { ...res, data: normalizeUser(res.data) };
+    if (res?.success) {
+      const norm = normalizeUser(res.data);
+      USERS.push(norm);
+      return { ...res, data: norm };
+    }
     const emailTaken = INITIAL_USERS.find(u => u.email === data.email);
     if (emailTaken) return { success: false, status: 409, message: 'Email already registered.' };
     const mobileTaken = INITIAL_USERS.find(u => u.mobile === data.mobile && u.status !== 'Inactive');
@@ -171,7 +175,12 @@ export const userService = {
 
   async updateUser(id, data) {
     const res = await apiRequest(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-    if (res?.success) return { ...res, data: normalizeUser(res.data) };
+    if (res?.success) {
+      const norm = normalizeUser(res.data);
+      const idx = USERS.findIndex(u => u.employee_id === id);
+      if (idx !== -1) USERS[idx] = { ...USERS[idx], ...norm };
+      return { ...res, data: norm };
+    }
     const user = USERS.find(u => u.employee_id === id);
     if (!user) return { success: false, status: 404, message: 'User not found.' };
     Object.assign(user, data);
@@ -182,7 +191,12 @@ export const userService = {
   async updateUserStatus(id, newStatus) {
     const action = newStatus === 'Inactive' ? 'deactivate' : 'activate';
     const res = await apiRequest(`/admin/users/${id}/${action}`, { method: 'PATCH' });
-    if (res?.success) return { ...res, data: normalizeUser(res.data) };
+    if (res?.success) {
+      const norm = normalizeUser(res.data);
+      const user = USERS.find(u => u.employee_id === id);
+      if (user) Object.assign(user, norm);
+      return { ...res, data: norm };
+    }
     const user = USERS.find(u => u.employee_id === id);
     if (!user) return { success: false, status: 404, message: 'User not found.' };
     user.status = newStatus;
