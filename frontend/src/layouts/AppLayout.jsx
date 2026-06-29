@@ -103,7 +103,7 @@ export default function AppLayout() {
           </button>
         </div>
       </aside>
-      <main className="lg:pl-56 pt-16">
+      <main className="lg:pl-56 pt-16 h-screen overflow-y-auto">
         <div className="p-4 sm:p-6 max-w-[1400px] mx-auto">
           <Outlet />
         </div>

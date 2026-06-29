@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { validateEmail } from '../validations/loginSchema';
-import { api } from '../services/api';
-import InputField from '../components/common/InputField';
-import Button from '../components/common/Button';
-import AlertBanner from '../components/common/AlertBanner';
+import { validateEmail } from '../../validations/loginSchema';
+import { api } from '../../services/api';
+import InputField from '../../components/common/InputField';
+import Button from '../../components/common/Button';
+import AlertBanner from '../../components/common/AlertBanner';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

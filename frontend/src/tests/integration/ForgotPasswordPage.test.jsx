@@ -1,6 +1,8 @@
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import ForgotPasswordPage from './ForgotPasswordPage';
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
+import ForgotPasswordPage from '../../pages/auth/ForgotPasswordPage';
+import { api } from '../../services/api';
 
 function renderForgotPassword() {
   return render(
@@ -15,6 +17,11 @@ describe('ForgotPasswordPage', () => {
   beforeEach(() => {
     sessionStorage.clear();
     localStorage.clear();
+    vi.spyOn(api, 'forgotPassword').mockResolvedValue({
+      success: true,
+      status: 200,
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    });
   });
 
   it('renders forgot password form with email input and submit button', () => {

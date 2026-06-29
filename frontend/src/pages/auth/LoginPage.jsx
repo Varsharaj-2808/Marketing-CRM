@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { useLockoutTimer } from '../hooks/useLockoutTimer';
-import { validateLoginForm } from '../validations/loginSchema';
-import { DEMO_ACCOUNTS } from '../constants/demoAccounts';
-import InputField from '../components/common/InputField';
-import PasswordField from '../components/common/PasswordField';
-import Button from '../components/common/Button';
-import AlertBanner from '../components/common/AlertBanner';
+import { useAuth } from '../../hooks/useAuth';
+import { useLockoutTimer } from '../../hooks/useLockoutTimer';
+import { validateLoginForm } from '../../validations/loginSchema';
+import { DEMO_ACCOUNTS } from '../../constants/demoAccounts';
+import InputField from '../../components/common/InputField';
+import PasswordField from '../../components/common/PasswordField';
+import Button from '../../components/common/Button';
+import AlertBanner from '../../components/common/AlertBanner';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -210,10 +210,6 @@ export default function LoginPage() {
             </p>
             <Link to="/forgot-password" className="font-label-sm text-label-sm text-primary hover:text-primary/80 transition-colors">
               Forgot Password?
-            </Link>
-            <span className="mx-2 text-on-surface-variant/30">·</span>
-            <Link to="/register" className="font-label-sm text-label-sm text-primary hover:text-primary/80 transition-colors">
-              Create Account
             </Link>
           </div>
         </div>

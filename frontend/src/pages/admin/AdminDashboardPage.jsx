@@ -90,7 +90,7 @@ const CHART_BARS = [45, 60, 40, 80, 55, 70, 90, 65, 50, 30, 75, 55];
 
 function AdminDashboardSkeleton() {
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <section className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="flex-1">
           <Skeleton width="240px" height="26px" rounded className="mb-2" />
@@ -187,7 +187,7 @@ export default function AdminDashboardPage() {
   if (loading) return <AdminDashboardSkeleton />;
 
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <section className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="font-display-lg text-display-lg text-primary mb-2">Welcome back, {user.name}</h1>

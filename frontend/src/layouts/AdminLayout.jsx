@@ -99,7 +99,7 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
-      <main className="lg:ml-56 pt-16 p-4 sm:p-6 min-h-screen">
+      <main className="lg:ml-56 p-4 sm:p-6 pt-16 sm:pt-16 h-screen overflow-y-auto">
         <div className="max-w-[1400px] mx-auto">
           <Outlet />
         </div>

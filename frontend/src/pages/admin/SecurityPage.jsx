@@ -13,7 +13,7 @@ const EVENTS = [
 
 function SecuritySkeleton() {
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-1 mb-1">
@@ -101,21 +101,16 @@ export default function SecurityPage() {
   const [threshold, setThreshold] = useState(5);
   const [duration, setDuration] = useState(15);
   const [showToast, setShowToast] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [eventsPage, setEventsPage] = useState(1);
   const EVENTS_PAGE_SIZE = 5;
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', { replace: true });
-      return;
     }
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
   }, [isAuthenticated, navigate]);
 
   if (!isAuthenticated || !user) return null;
-  if (loading) return <SecuritySkeleton />;
 
   const handleSave = () => {
     setShowToast(true);
@@ -123,7 +118,7 @@ export default function SecurityPage() {
   };
 
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
         <div>
           <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">

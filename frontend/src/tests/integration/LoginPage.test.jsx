@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '../context/AuthContext';
-import LoginPage from './LoginPage';
+import { AuthProvider } from '../../context/AuthContext';
+import LoginPage from '../../pages/auth/LoginPage';
 
 const LOCKOUT_TIMEOUT = 15000;
 

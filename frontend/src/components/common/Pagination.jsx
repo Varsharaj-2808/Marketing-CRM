@@ -1,4 +1,4 @@
-export default function Pagination({ currentPage, totalPages, onPageChange, totalItems, pageSize }) {
+export default function Pagination({ currentPage, totalPages, onPageChange, totalItems, pageSize, totalFiltered }) {
   if (totalPages <= 1) return null;
 
   const startItem = (currentPage - 1) * pageSize + 1;
@@ -35,7 +35,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, tota
   return (
     <div className="flex items-center justify-between px-3 py-3 border-t border-outline-variant/10">
       <span className="text-label-sm text-on-surface-variant">
-        Showing {startItem}–{endItem} of {totalItems}
+        Showing {startItem}–{endItem} of {totalItems}{totalFiltered != null && totalFiltered !== totalItems ? ` (filtered from ${totalFiltered})` : ''}
       </span>
       <div className="flex items-center gap-1">
         <button

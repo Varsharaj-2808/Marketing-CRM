@@ -25,4 +25,17 @@ export const DEMO_ACCOUNTS = [
       status: 'active',
     },
   },
+  {
+    id: 'deactivated',
+    role: 'Marketing Executive',
+    email: 'deactivated@company.com',
+    password: 'Deact@123',
+    user: {
+      id: 'EMP-00003',
+      name: 'Deactivated User',
+      email: 'deactivated@company.com',
+      role: 'Marketing Executive',
+      status: 'inactive',
+    },
+  },
 ];

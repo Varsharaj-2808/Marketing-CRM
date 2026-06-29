@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import StatsCard from '../../components/user/StatsCard';
@@ -9,7 +9,7 @@ import Skeleton from '../../components/common/Skeleton';
 
 function UserDashboardSkeleton() {
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <section className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-8 glass-card p-6 min-h-[260px]">
           <Skeleton width="130px" height="16px" rounded className="mb-3" />
@@ -124,22 +124,17 @@ function UserDashboardSkeleton() {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', { replace: true });
-      return;
     }
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
   }, [isAuthenticated, navigate]);
 
   if (!isAuthenticated || !user) return null;
-  if (loading) return <UserDashboardSkeleton />;
 
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <section className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-8 relative overflow-hidden glass-card p-6 flex flex-col justify-center min-h-[260px]">
           <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-[60px]"></div>

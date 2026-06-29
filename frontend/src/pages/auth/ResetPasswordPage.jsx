@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { resetPassword } from '../services/authService';
-import Button from '../components/common/Button';
-import PasswordField from '../components/common/PasswordField';
-import AlertBanner from '../components/common/AlertBanner';
+import { resetPassword } from '../../services/authService';
+import Button from '../../components/common/Button';
+import PasswordField from '../../components/common/PasswordField';
+import AlertBanner from '../../components/common/AlertBanner';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();

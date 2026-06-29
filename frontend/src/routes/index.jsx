@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import LoginPage from '../pages/LoginPage';
-import ForgotPasswordPage from '../pages/ForgotPasswordPage';
-import Dashboard from '../pages/Dashboard';
+import LoginPage from '../pages/auth/LoginPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import AdminLayout from '../layouts/AdminLayout';
 import AppLayout from '../layouts/AppLayout';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
@@ -21,10 +20,6 @@ const router = createBrowserRouter([
   {
     path: '/forgot-password',
     element: <ForgotPasswordPage />,
-  },
-  {
-    path: '/dashboard',
-    element: <Dashboard />,
   },
   {
     path: '/admin',

@@ -91,6 +91,9 @@ export function AuthProvider({ children }) {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
         resetFailedAttempts();
       } else {
+        if (result.isDeactivated) {
+          return result;
+        }
         recordFailedAttempt();
         if (isLockedOut()) {
           return { success: false, status: 429, message: 'Account temporarily locked. Please try again after 15 minutes.' };
@@ -101,17 +104,6 @@ export function AuthProvider({ children }) {
     },
     [isLockedOut, recordFailedAttempt, resetFailedAttempts]
   );
-
-  const registerAction = useCallback(async (name, email, password) => {
-    const result = await api.register(name, email, password);
-    if (result.success) {
-      setUser(result.user);
-      setToken(result.token);
-      setTokenStorage(STORAGE_KEYS.ACCESS_TOKEN, result.token, false);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
-    }
-    return result;
-  }, []);
 
   const logoutAction = useCallback(() => {
     setUser(null);
@@ -143,7 +135,6 @@ export function AuthProvider({ children }) {
         getLockoutRemainingMs,
         login: loginAction,
         logout: logoutAction,
-        register: registerAction,
         isAuthenticated: !!token && !!user,
       }}
     >

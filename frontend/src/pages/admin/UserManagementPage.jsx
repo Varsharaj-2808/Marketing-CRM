@@ -1,6 +1,7 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { userService } from '../../services/userService';
 import UserTable from '../../components/admin/UserTable';
 import UserFormModal from '../../components/admin/UserFormModal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -11,14 +12,9 @@ import Pagination from '../../components/common/Pagination';
 const USER_PAGE_SIZE = 5;
 const AUDIT_PAGE_SIZE = 5;
 
-const INITIAL_USERS = [
-  { employee_id: 'EMP-00001', employee_name: 'Admin User', mobile: '9876543210', email: 'admin@company.com', role: 'Admin', status: 'Active' },
-  { employee_id: 'EMP-00002', employee_name: 'Executive User', mobile: '9876543211', email: 'executive@company.com', role: 'Marketing Executive', status: 'Active' },
-];
-
 function UserManagementSkeleton() {
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-1 mb-1">
@@ -53,93 +49,95 @@ function UserManagementSkeleton() {
 export default function UserManagementPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const [users, setUsers] = useState(() => {
-    try {
-      const stored = localStorage.getItem('crm_users');
-      return stored ? JSON.parse(stored) : INITIAL_USERS;
-    } catch {
-      return INITIAL_USERS;
-    }
-  });
+  const initialData = useRef(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [userPage, setUserPage] = useState(1);
+  const [userTotal, setUserTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, user: null, action: '' });
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, targetUser: null, action: '' });
   const [notification, setNotification] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [userPage, setUserPage] = useState(1);
+  const [auditLog, setAuditLog] = useState([]);
   const [auditPage, setAuditPage] = useState(1);
-  const [auditLog, setAuditLog] = useState(() => {
-    try {
-      const stored = localStorage.getItem('crm_audit_log');
-      return stored ? JSON.parse(stored) : [
-        { action: 'USER_CREATED', target: 'EMP-00001', by: 'System', timestamp: new Date().toISOString(), details: 'Admin User created' },
-        { action: 'USER_CREATED', target: 'EMP-00002', by: 'System', timestamp: new Date().toISOString(), details: 'Executive User created' },
-      ];
-    } catch {
-      return [];
-    }
-  });
-
-  const addAuditEntry = useCallback((action, target, details) => {
-    const entry = {
-      action,
-      target,
-      by: user?.id || 'Unknown',
-      timestamp: new Date().toISOString(),
-      details,
-    };
-    setAuditLog((prev) => [entry, ...prev]);
-  }, [user]);
+  const [auditTotal, setAuditTotal] = useState(0);
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const generateEmployeeId = () => {
-    const maxId = users.reduce((max, u) => {
-      const num = parseInt(u.employee_id.replace('EMP-', ''), 10);
-      return num > max ? num : max;
-    }, 0);
-    return `EMP-${String(maxId + 1).padStart(5, '0')}`;
-  };
+  const fetchUsers = useCallback(async () => {
+    const res = await userService.getUsers({
+      page: userPage,
+      pageSize: USER_PAGE_SIZE,
+      search: searchQuery,
+      role: roleFilter,
+      status: statusFilter,
+    });
+    if (res.success) {
+      setUsers(res.data);
+      setUserTotal(res.pagination.total);
+    }
+  }, [userPage, searchQuery, roleFilter, statusFilter]);
 
-  const handleSaveUser = (formData) => {
+  const fetchAuditLog = useCallback(async () => {
+    const res = await userService.getAuditLog({ page: auditPage, pageSize: AUDIT_PAGE_SIZE });
+    if (res.success) {
+      setAuditLog(res.data);
+      setAuditTotal(res.pagination.total);
+    }
+  }, [auditPage]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (!initialData.current) {
+      initialData.current = true;
+      const sync = userService.getUsersSync({ page: userPage, pageSize: USER_PAGE_SIZE, search: searchQuery, role: roleFilter, status: statusFilter });
+      setUsers(sync.data);
+      setUserTotal(sync.pagination.total);
+      const syncAudit = userService.getAuditLogSync({ page: auditPage, pageSize: AUDIT_PAGE_SIZE });
+      setAuditLog(syncAudit.data);
+      setAuditTotal(syncAudit.pagination.total);
+      setLoading(false);
+    }
+    const load = async () => {
+      await Promise.all([fetchUsers(), fetchAuditLog()]);
+      setLoading(false);
+    };
+    load();
+  }, [isAuthenticated, navigate, fetchUsers, fetchAuditLog, userPage, searchQuery, roleFilter, statusFilter, auditPage]);
+
+  useEffect(() => { setUserPage(1); }, [searchQuery, roleFilter, statusFilter]);
+
+  const handleSaveUser = async (formData) => {
     if (editingUser) {
-      const existsEmail = users.some(
-        (u) => u.email.toLowerCase() === formData.email.toLowerCase() && u.employee_id !== editingUser.employee_id
-      );
-      if (existsEmail) {
-        showNotification('Email already registered', 'error');
-        return;
+      const res = await userService.updateUser(editingUser.employee_id, formData);
+      if (res.success) {
+        await fetchUsers();
+        await fetchAuditLog();
+        showNotification(res.message);
+        setShowForm(false);
+        setEditingUser(null);
+      } else {
+        showNotification(res.message, 'error');
       }
-      const existsMobile = users.some(
-        (u) => u.mobile === formData.mobile && u.employee_id !== editingUser.employee_id
-      );
-      if (existsMobile) {
-        showNotification('Mobile Number already registered', 'error');
-        return;
-      }
-      setUsers((prev) =>
-        prev.map((u) => (u.employee_id === editingUser.employee_id ? { ...u, ...formData } : u))
-      );
-      addAuditEntry('USER_UPDATED', editingUser.employee_id, `${JSON.stringify({ old: editingUser, new: formData })}`);
-      showNotification('User updated successfully');
-      setShowForm(false);
-      setEditingUser(null);
     } else {
-      const newUser = {
-        employee_id: generateEmployeeId(),
-        employee_name: formData.employee_name,
-        mobile: formData.mobile,
-        email: formData.email,
-        role: formData.role,
-        status: formData.status,
-      };
-      setUsers((prev) => [...prev, newUser]);
-      addAuditEntry('USER_CREATED', newUser.employee_id, `${newUser.employee_name} created with role ${newUser.role}`);
-      showNotification(`User created successfully - ${newUser.employee_id}`);
-      setShowForm(false);
+      const res = await userService.createUser(formData);
+      if (res.success) {
+        await fetchUsers();
+        await fetchAuditLog();
+        showNotification(res.message);
+        setShowForm(false);
+      } else {
+        showNotification(res.message, 'error');
+      }
     }
   };
 
@@ -149,56 +147,38 @@ export default function UserManagementPage() {
   };
 
   const handleDeactivate = (userData) => {
-    setConfirmDialog({ isOpen: true, user: userData, action: 'deactivate' });
+    setConfirmDialog({ isOpen: true, targetUser: userData, action: 'deactivate' });
   };
 
   const handleActivate = (userData) => {
-    setConfirmDialog({ isOpen: true, user: userData, action: 'activate' });
+    setConfirmDialog({ isOpen: true, targetUser: userData, action: 'activate' });
   };
 
-  const confirmAction = () => {
-    const { user: targetUser, action } = confirmDialog;
+  const confirmAction = async () => {
+    const { targetUser, action } = confirmDialog;
     const newStatus = action === 'deactivate' ? 'Inactive' : 'Active';
-    setUsers((prev) => prev.map((u) => (u.employee_id === targetUser.employee_id ? { ...u, status: newStatus } : u)));
-    addAuditEntry(
-      action === 'deactivate' ? 'USER_DEACTIVATED' : 'USER_ACTIVATED',
-      targetUser.employee_id,
-      `${targetUser.employee_name} ${action}d`
-    );
-    showNotification(`User ${action}d successfully`);
-    setConfirmDialog({ isOpen: false, user: null, action: '' });
+    const res = await userService.updateUserStatus(targetUser.employee_id, newStatus);
+    if (res.success) {
+      await fetchUsers();
+      await fetchAuditLog();
+      showNotification(res.message);
+    } else {
+      showNotification(res.message, 'error');
+    }
+    setConfirmDialog({ isOpen: false, targetUser: null, action: '' });
   };
 
-  const existingEmails = users.map((u) => u.email.toLowerCase());
-  const existingMobiles = users.map((u) => u.mobile);
+  const existingEmails = [];
+  const existingMobiles = [];
 
-  const paginatedUsers = users.slice((userPage - 1) * USER_PAGE_SIZE, userPage * USER_PAGE_SIZE);
-  const paginatedAudit = auditLog.slice((auditPage - 1) * AUDIT_PAGE_SIZE, auditPage * AUDIT_PAGE_SIZE);
-  const userTotalPages = Math.ceil(users.length / USER_PAGE_SIZE);
-  const auditTotalPages = Math.ceil(auditLog.length / AUDIT_PAGE_SIZE);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
-      return;
-    }
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, navigate]);
-
-  useEffect(() => {
-    localStorage.setItem('crm_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('crm_audit_log', JSON.stringify(auditLog));
-  }, [auditLog]);
+  const userTotalPages = Math.ceil(userTotal / USER_PAGE_SIZE);
+  const auditTotalPages = Math.ceil(auditTotal / AUDIT_PAGE_SIZE);
 
   if (!isAuthenticated || !user) return null;
   if (loading) return <UserManagementSkeleton />;
 
   return (
-    <div className="mt-1">
+    <div className="mt-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
         <div>
           <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">
@@ -229,14 +209,46 @@ export default function UserManagementPage() {
 
       <div className="glass-card overflow-hidden mb-6">
         <div className="p-5 border-b border-outline-variant/10">
-          <h4 className="font-headline-md text-headline-md text-on-surface">All Users</h4>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h4 className="font-headline-md text-headline-md text-on-surface">All Users</h4>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+              <div className="relative w-full sm:w-56">
+                <span className="material-symbols-outlined text-on-surface-variant/50 text-[18px] absolute left-3 top-1/2 -translate-y-1/2">search</span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search name, email, ID..."
+                  className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl pl-9 pr-4 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                />
+              </div>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+              >
+                <option value="All">Any</option>
+                <option value="Admin">Admin</option>
+                <option value="Marketing Executive">Marketing Executive</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+              >
+                <option value="All">Any</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <UserTable users={paginatedUsers} onEdit={handleEdit} onDeactivate={handleDeactivate} onActivate={handleActivate} />
+        <UserTable users={users} onEdit={handleEdit} onDeactivate={handleDeactivate} onActivate={handleActivate} />
         <Pagination
           currentPage={userPage}
           totalPages={userTotalPages}
           onPageChange={setUserPage}
-          totalItems={users.length}
+          totalItems={userTotal}
+          totalFiltered={userTotal}
           pageSize={USER_PAGE_SIZE}
         />
       </div>
@@ -244,7 +256,10 @@ export default function UserManagementPage() {
       <div className="glass-card p-5">
         <div className="flex justify-between items-center mb-3">
           <h4 className="font-headline-md text-headline-md text-on-surface">Audit Log</h4>
-          <button className="text-primary font-label-md flex items-center gap-1 hover:underline">
+          <button
+            onClick={() => navigate('/admin/audit-logs')}
+            className="text-primary font-label-md flex items-center gap-1 hover:underline"
+          >
             View Full Log
             <span className="material-symbols-outlined text-[16px]">open_in_new</span>
           </button>
@@ -261,8 +276,8 @@ export default function UserManagementPage() {
               </tr>
             </thead>
             <tbody className="text-body-md text-on-surface">
-              {paginatedAudit.map((entry, i) => (
-                <tr key={i} className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors group relative">
+              {auditLog.map((entry) => (
+                <tr key={entry.id} className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors group relative">
                   <td className="py-3 px-3">
                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-semibold ${
                       entry.action.includes('CREATED') ? 'bg-emerald-500/10 text-emerald-600' :
@@ -272,9 +287,9 @@ export default function UserManagementPage() {
                       'bg-surface-container-high text-on-surface-variant'
                     }`}>{entry.action}</span>
                   </td>
-                  <td className="py-3 px-3 font-semibold text-on-surface">{entry.target}</td>
-                  <td className="py-3 px-3 text-on-surface-variant">{entry.by}</td>
-                  <td className="py-3 px-3 text-on-surface-variant">{new Date(entry.timestamp).toLocaleString()}</td>
+                  <td className="py-3 px-3 font-semibold text-on-surface">{entry.resourceId || entry.user_id?.slice(0, 8)}</td>
+                  <td className="py-3 px-3 text-on-surface-variant">{entry.email}</td>
+                  <td className="py-3 px-3 text-on-surface-variant">{new Date(entry.createdAt).toLocaleString()}</td>
                   <td className="py-3 px-3 text-on-surface-variant max-w-[160px] truncate">{entry.details}</td>
                 </tr>
               ))}
@@ -285,7 +300,7 @@ export default function UserManagementPage() {
           currentPage={auditPage}
           totalPages={auditTotalPages}
           onPageChange={setAuditPage}
-          totalItems={auditLog.length}
+          totalItems={auditTotal}
           pageSize={AUDIT_PAGE_SIZE}
         />
       </div>
@@ -302,9 +317,9 @@ export default function UserManagementPage() {
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.action === 'deactivate' ? 'Deactivate User' : 'Activate User'}
-        message={`Are you sure you want to ${confirmDialog.action} ${confirmDialog.user?.employee_name}?`}
+        message={`Are you sure you want to ${confirmDialog.action} ${confirmDialog.targetUser?.employee_name}?`}
         onConfirm={confirmAction}
-        onCancel={() => setConfirmDialog({ isOpen: false, user: null, action: '' })}
+        onCancel={() => setConfirmDialog({ isOpen: false, targetUser: null, action: '' })}
       />
     </div>
   );

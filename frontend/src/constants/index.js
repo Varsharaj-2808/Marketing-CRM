@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'https://ffa1247a-f31a-4de0-88e5-ad84b3034b37.mock.pstmn.io';
+  import.meta.env.VITE_API_BASE_URL || 'https://54c19606-357c-410a-a421-e16b93fcf051.mock.pstmn.io';
 
 export const LOCKOUT_THRESHOLD = 5;
 export const LOCKOUT_DURATION_MS = 15 * 60 * 1000;

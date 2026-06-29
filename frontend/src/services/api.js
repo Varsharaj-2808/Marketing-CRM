@@ -1,18 +1,9 @@
 import { API_BASE_URL } from '../constants';
 import { DEMO_ACCOUNTS } from '../constants/demoAccounts';
-
-const REGISTERED_USERS_KEY = 'crm_registered_users';
+import { userService } from './userService';
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function getRegisteredUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(REGISTERED_USERS_KEY)) || [];
-  } catch {
-    return [];
-  }
 }
 
 export const api = {
@@ -21,9 +12,23 @@ export const api = {
       return { success: false, status: 401, message: 'Invalid email or password' };
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const deactivatedRes = await userService.getDeactivatedUsers();
+    if (deactivatedRes.success) {
+      const deactivatedEmails = deactivatedRes.data.map((u) => u.email.toLowerCase());
+      if (deactivatedEmails.includes(normalizedEmail)) {
+        return {
+          success: false,
+          status: 403,
+          message: 'Account is inactive. Contact your administrator.',
+          isDeactivated: true,
+        };
+      }
+    }
 
     const demoAccount = DEMO_ACCOUNTS.find(
-      (a) => a.email.toLowerCase() === email.trim().toLowerCase()
+      (a) => a.email.toLowerCase() === normalizedEmail
     );
     if (demoAccount && password === demoAccount.password) {
       return {
@@ -69,25 +74,6 @@ export const api = {
       console.error('Login API network error:', e);
       return { success: false, status: 500, message: 'Network error. Please try again.' };
     }
-  },
-
-  async register(name, email, password) {
-    await delay(500);
-    const users = getRegisteredUsers();
-    if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
-      return { success: false, status: 409, message: 'Email already registered' };
-    }
-    const newUser = {
-      id: `EMP-${String(users.length + 3).padStart(5, '0')}`,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role: 'Marketing Executive',
-      status: 'active',
-    };
-    const token = `mock-jwt-token-${Date.now()}`;
-    users.push({ ...newUser, password });
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
-    return { success: true, status: 201, token, user: newUser, redirect: '/dashboard' };
   },
 
   async forgotPassword(email) {
