@@ -48,4 +48,13 @@ const sendPasswordResetEmail = async (to, resetUrl) => {
   await sendEmail({ to, subject, text, html });
 };
 
-module.exports = { sendEmail, sendPasswordResetEmail };
+const sendWelcomeEmail = async (to, name, employeeId, tempPassword) => {
+  const loginUrl = process.env.APP_URL || 'http://localhost:3000';
+  const subject = 'Welcome to CRM - Your Account Details';
+  const text = `Hello ${name},\n\nYour CRM account has been created.\n\nEmployee ID: ${employeeId}\nTemporary Password: ${tempPassword}\nLogin URL: ${loginUrl}\n\nPlease log in and change your password immediately.\n\nThis is a system-generated password. Do not share it with anyone.`;
+  const html = `<p>Hello ${name},</p><p>Your CRM account has been created.</p><p><strong>Employee ID:</strong> ${employeeId}</p><p><strong>Temporary Password:</strong> ${tempPassword}</p><p><strong>Login URL:</strong> <a href="${loginUrl}">${loginUrl}</a></p><p>Please log in and change your password immediately.</p><p><em>This is a system-generated password. Do not share it with anyone.</em></p>`;
+
+  await sendEmail({ to, subject, text, html });
+};
+
+module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail };

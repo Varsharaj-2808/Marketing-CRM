@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const { rateLimiter } = require('../middleware/rateLimiter');
 const authController = require('../controllers/authController');
 
-router.post('/login', authController.login);
+router.post('/login', rateLimiter({ windowMs: 60 * 1000, maxRequests: 20, message: 'Too many login attempts. Please try again later.' }), authController.login);
 router.post('/logout', protect, authController.logout);
 router.get('/profile', protect, authController.getProfile);
 router.post('/refresh', authController.refreshToken);

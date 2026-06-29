@@ -20,9 +20,14 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'User not found' });
     }
 
-    if (user.accountStatus !== 'active') {
+    const accountStatus = user.accountStatus || user.status;
+    if (accountStatus !== 'active') {
       return res.status(403).json({ success: false, message: 'Account is inactive. Contact administrator.' });
     }
+
+    // Normalize legacy role values
+    if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
+    else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
 
     req.user = user;
     next();
@@ -40,7 +45,7 @@ const authorize = (...roles) => {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+      return res.status(403).json({ success: false, message: 'Admin access required.' });
     }
     next();
   };
