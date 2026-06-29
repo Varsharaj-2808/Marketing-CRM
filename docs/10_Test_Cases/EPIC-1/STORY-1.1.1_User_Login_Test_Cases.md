@@ -357,7 +357,7 @@
 |---|---|
 | FEAT-1.1: User Login — Positive Scenarios | 6 |
 | FEAT-1.1: User Login — Negative Scenarios | 13 |
-| FEAT-1.1: User Login — Security & Edge Cases | 9 |
+| FEAT-1.1: User Login — Security & Edge Cases | 11 |
 | FEAT-1.1: User Login — Session & Token Management | 10 |
 | FEAT-1.1: User Login — Audit Log Verification | 8 |
 | FEAT-1.1: User Login — Remember Me Feature | 5 |

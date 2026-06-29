@@ -502,6 +502,49 @@
   * *Expected Output:* All payloads safely handled via parameterized queries/prepared statements. No unauthorized data access. No schema modification. PostgreSQL logs show no injection attempts.
   * *Traceability:* General Security
 
+  ### 2.9 STORY-1.2.1 — Audit Log API (Query & View)
+* **TEST-EP1-USER-067 (Positive)**:
+  * *Description:* Admin can list audit logs with pagination
+  * *Input:* Admin requests GET `/api/admin/audit-log`
+  * *Expected Output:* HTTP 200 OK. Returns array of audit log entries sorted by
+`createdAt` DESC. Response includes `pagination` object with `page`, `limit`, `totalRecords`,
+`totalPages`.
+  * *Traceability:* STORY-1.2.1 BR-3
+
+* **TEST-EP1-USER-068 (Positive)**:
+  * *Description:* Admin can filter audit logs by action type
+  * *Input:* Admin requests GET `/api/admin/audit-log?action=USER_CREATED`
+  * *Expected Output:* HTTP 200 OK. Only audit logs with `action = "USER_CREATED"`
+returned. Filters for: `user_id`, `action`, `entity`, `from`, `to` date range.
+  * *Traceability:* STORY-1.2.1 BR-3
+
+* **TEST-EP1-USER-069 (Negative)**:
+  * *Description:* Marketing Executive cannot access audit logs
+  * *Input:* Marketing Executive requests GET `/api/admin/audit-log`
+  * *Expected Output:* HTTP 403 Forbidden. Error message: "Admin access required."
+  * *Traceability:* STORY-1.2.1 AC-5
+
+* **TEST-EP1-USER-070 (Negative)**:
+  * *Description:* Unauthenticated user cannot access audit logs
+  * *Input:* No JWT token. GET `/api/admin/audit-log`
+  * *Expected Output:* HTTP 401 Unauthorized. Error message: "No token provided."
+  * *Traceability:* STORY-1.2.1 (Security)
+
+* **TEST-EP1-USER-071 (Positive)**:
+  * *Description:* Admin can view specific audit log entry by ID
+  * *Input:* Admin requests GET `/api/admin/audit-log/{id}`
+  * *Expected Output:* HTTP 200 OK. Returns full audit log entry with all fields: `id`,
+`user_id`, `email`, `action`, `resource`, `resourceId`, `details`, `ipAddress`, `userAgent`,
+`result`, `createdAt`.
+  * *Traceability:* STORY-1.2.1 BR-3
+
+* **TEST-EP1-USER-072 (Negative)**:
+  * *Description:* View non-existent audit log entry returns 404
+  * *Input:* Admin requests GET `/api/admin/audit-log/non-existent-id`
+  * *Expected Output:* HTTP 404 Not Found. Error message: "Audit log not found."
+  * *Traceability:* STORY-1.2.1 (Error handling)
+---
+
 ---
  ## Summary
 
@@ -514,7 +557,7 @@
 | FEAT-1.2: User Management — Audit Log for User Management | 6 |
 | FEAT-1.2: User Management — Business Rules Validation | 8 |
 | Cross-Cutting Security Test Cases | 10 |
-| **Grand Total** | **137** |
+| **Grand Total** | **** |
 
 ---
  
