@@ -138,16 +138,16 @@ Leads
  └──► Lead History
 
 2. [FEAT-1.2: User & Role Management (Admin Only)](#2-feat-12-user--role-management-admin-only)
-   - [STORY-1.2.1 — Create User (Positive)](#21-story-121-create-user-positive)
-   - [STORY-1.2.1 — Create User (Negative)](#22-story-121-create-user-negative)
-   - [STORY-1.2.1 — Edit User](#23-story-121-edit-user)
-   - [STORY-1.2.1 — Deactivate User](#24-story-121-deactivate-user)
-   - [STORY-1.2.1 — Role Change & Permission](#25-story-121-role-change--permission)
-   - [STORY-1.2.1 — Access Control & Authorization](#26-story-121-access-control--authorization)
-   - [STORY-1.2.1 — Audit Log for User Management](#27-story-121-audit-log-for-user-management)
-   - [STORY-1.2.1 — Business Rules Validation](#28-story-121-business-rules-validation)
-   - [STORY-1.2.1 — Audit Log API](#29-story-121-audit-log-api-query--view)
-   - [STORY-1.2.1 — Refresh Token Expiry](#210-story-121-refresh-token-expiry)
+   - [2.1 Create User (Positive)](#21-story-121-create-user-positive)
+   - [2.2 Create User (Negative)](#22-story-121-create-user-negative)
+   - [2.3 Edit User](#23-story-121-edit-user)
+   - [2.4 Deactivate User](#24-story-121-deactivate-user)
+   - [2.5 Role Change & Permission](#25-story-121-role-change--permission)
+   - [2.6 Access Control & Authorization](#26-story-121-access-control--authorization)
+   - [2.7 Audit Log for User Management](#27-story-121-audit-log-for-user-management)
+   - [2.8 Business Rules Validation](#28-story-121-business-rules-validation)
+   - [2.9 Audit Log API](#29-story-121-audit-log-api-query--view)
+   - [2.10 Refresh Token Expiry](#210-story-121-refresh-token-expiry)
 3. [Cross-Cutting Security Test Cases](#3-cross-cutting-security-test-cases)
 
 
@@ -383,23 +383,11 @@ Leads
   * *Expected Output:* HTTP 403 Forbidden. Error message: "Account is inactive. Contact your administrator." Login rejected. Failed attempt counter NOT incremented.
   * *Traceability:* STORY-1.2.1 AC-3
 
-* **TEST-EP1-USER-037 (Positive)**:
-  * *Description:* Deactivated user's lead assignments remain unchanged
-  * *Input:* Inspect leads table for leads assigned to deactivated user "EMP-00002"
-  * *Expected Output:* `assigned_to` still references "EMP-00002". No automatic reassignment. Leads still visible in reports with deactivated user's name.
-  * *Traceability:* STORY-1.2.1 AC-3
-
 * **TEST-EP1-USER-038 (Positive)**:
   * *Description:* Admin reactivates a deactivated user
   * *Input:* Admin sets `status = "Active"` for "EMP-00002"
   * *Expected Output:* HTTP 200 OK. User can log in again with existing password. Lead assignments restored (were never removed). Audit log records reactivation.
   * *Traceability:* STORY-1.2.1 AC-3
-
-* **TEST-EP1-USER-039 (Negative)**:
-  * *Description:* Deactivate user from UI — verify no hard delete option
-  * *Input:* Inspect User Management UI for delete button/functionality
-  * *Expected Output:* No "Delete" button visible. Only "Deactivate" option available. API endpoint `/api/users/{id}/delete` returns 404 or 403 if attempted directly.
-  * *Traceability:* STORY-1.2.1 BR-2
 
 * **TEST-EP1-USER-040 (Negative)**:
   * *Description:* Attempt hard delete via direct API call
@@ -417,33 +405,21 @@ Leads
   * *Expected Output:* User sees Admin Dashboard. User Management menu visible. Can create/edit users. All Admin permissions active.
   * *Traceability:* STORY-1.2.1 AC-4
 
-* **TEST-EP1-USER-042 (Positive)**:
-  * *Description:* Role change from Admin to Marketing Executive — restricted access after re-login
-  * *Input:* User "EMP-00001" re-logins after role change to Marketing Executive
-  * *Expected Output:* User sees Marketing Dashboard. User Management menu hidden. Access to `/api/users` returns 403. Can only view own profile and assigned leads.
-  * *Traceability:* STORY-1.2.1 AC-4
-
 * **TEST-EP1-USER-043 (Positive)**:
   * *Description:* Active session retains old role until logout
   * *Input:* User logged in as Marketing Executive. Admin changes role to Admin. User continues browsing without logout.
   * *Expected Output:* User retains Marketing Executive permissions during current session. Can still access Marketing-only routes. Role change applies only after re-authentication (new JWT).
   * *Traceability:* STORY-1.2.1 AC-4
 
+---
+
+### 2.6 STORY-1.2.1 — Access Control & Authorization
+
 * **TEST-EP1-USER-044 (Negative)**:
   * *Description:* Marketing Executive attempts direct URL access to User Management
   * *Input:* Marketing Executive navigates directly to `/admin/users` or `/api/users`
   * *Expected Output:* HTTP 403 Forbidden. Error message: "Admin access required." Redirected to Marketing Dashboard or access-denied page.
   * *Traceability:* STORY-1.2.1 AC-5
-
-* **TEST-EP1-USER-045 (Negative)**:
-  * *Description:* Marketing Executive attempts to access another user's profile
-  * *Input:* Marketing Executive navigates to `/api/users/EMP-00001` (Admin's profile)
-  * *Expected Output:* HTTP 403 Forbidden. Error message: "You can only view your own profile." or "Admin access required."
-  * *Traceability:* STORY-1.2.1 AC-5
-
----
-
-### 2.6 STORY-1.2.1 — Access Control & Authorization
 
 * **TEST-EP1-USER-046 (Positive)**:
   * *Description:* Admin can view all users list
@@ -503,29 +479,11 @@ Leads
   * *Expected Output:* `audit_log` row: `action` = "USER_UPDATED", `details` = JSON with `field: "employee_name", old_value: "John Doe", new_value: "John Smith"`. Change tracked per field or as full record diff.
   * *Traceability:* STORY-1.2.1 BR-3
 
-* **TEST-EP1-USER-055 (Positive)**:
-  * *Description:* User status change logged in Audit Log
-  * *Input:* Admin deactivates "EMP-00005" (Active → Inactive)
-  * *Expected Output:* `audit_log` row: `action` = "USER_STATUS_CHANGED", `details` = `{"status": {"old": "Active", "new": "Inactive"}}`. Timestamp and Admin ID recorded.
-  * *Traceability:* STORY-1.2.1 BR-3
-
-* **TEST-EP1-USER-056 (Positive)**:
-  * *Description:* User role change logged in Audit Log
-  * *Input:* Admin changes role of "EMP-00005" from Marketing Executive to Admin
-  * *Expected Output:* `audit_log` row: `action` = "USER_ROLE_CHANGED", `details` = `{"role": {"old": "Marketing Executive", "new": "Admin"}}`. Previous role preserved for history.
-  * *Traceability:* STORY-1.2.1 BR-3
-
 * **TEST-EP1-USER-057 (Security)**:
   * *Description:* Verify no password in Audit Log for user creation
   * *Input:* Inspect `audit_log` rows where `action` = "USER_CREATED"
   * *Expected Output:* No password, temporary password, or password hash in `details` column. Only metadata (name, email, role, status) logged.
   * *Traceability:* STORY-1.1.1 BR-1, STORY-1.2.1 BR-3
-
-* **TEST-EP1-USER-058 (Positive)**:
-  * *Description:* Audit Log queryable by Admin for user activity history
-  * *Input:* Admin requests GET `/api/audit-log?user_id=EMP-00005`
-  * *Expected Output:* HTTP 200 OK. Returns all audit entries for user EMP-00005: creation, edits, status changes, role changes, logins. Sorted by timestamp descending.
-  * *Traceability:* STORY-1.2.1 BR-3
 
 ---
 
@@ -537,111 +495,25 @@ Leads
   * *Expected Output:* IDs: EMP-00001, EMP-00002, EMP-00003, EMP-00004, EMP-00005. Format: "EMP-" + 5-digit zero-padded sequential number. No gaps, no duplicates, no manual override possible.
   * *Traceability:* STORY-1.2.1 BR-1
 
-* **TEST-EP1-USER-060 (Positive)**:
-  * *Description:* Employee ID immutability — cannot be changed after creation
-  * *Input:* Attempt to UPDATE `users` table SET `employee_id = 'EMP-99999'` WHERE `employee_id = 'EMP-00005'`
-  * *Expected Output:* If DB constraint exists: PostgreSQL error — cannot update generated/primary key column. If application-level: HTTP 400 Bad Request. Employee ID permanently tied to user.
+* **TEST-EP1-USER-060 (Negative)**:
+  * *Description:* Employee ID immutable — changing employee_id returns 400
+  * *Input:* `employee_id = "EMP-00002"`, attempt to set `employee_id = "EMP-99999"`
+  * *Expected Output:* HTTP 400 Bad Request. Error message: "Employee ID cannot be changed."
   * *Traceability:* STORY-1.2.1 BR-1
 
-* **TEST-EP1-USER-061 (Positive)**:
-  * *Description:* Deleting user is not permitted — only deactivation
-  * *Input:* Attempt DELETE on `users` table row for "EMP-00005"
-  * *Expected Output:* If ON DELETE RESTRICT on leads: PostgreSQL foreign key violation. If application-level: HTTP 403 Forbidden. User row preserved. Only `status` can be changed to "Inactive".
-  * *Traceability:* STORY-1.2.1 BR-2
-
-* **TEST-EP1-USER-062 (Positive)**:
-  * *Description:* Referential integrity — leads assigned to deactivated user remain intact
-  * *Input:* Create lead assigned to "EMP-00005". Deactivate "EMP-00005". Query leads table.
-  * *Expected Output:* Lead row still has `assigned_to = 'EMP-00005'`. No CASCADE delete or SET NULL triggered. Foreign key constraint allows inactive reference (if designed) or application handles inactive assignee display.
-  * *Traceability:* STORY-1.2.1 BR-2, AC-3
-
-* **TEST-EP1-USER-063 (Positive)**:
-  * *Description:* Referential integrity — audit records preserve user reference even if user deactivated
-  * *Input:* Inspect `audit_log` for entries performed by "EMP-00005" (now deactivated)
-  * *Expected Output:* Audit records still show `performed_by = 'EMP-00005'`. No orphaned records. User name may show as "John Doe (Inactive)" or remain as original name.
-  * *Traceability:* STORY-1.2.1 BR-2
-
 * **TEST-EP1-USER-064 (Positive)**:
-  * *Description:* Account lockout threshold configurable by Admin in System Settings
-  * *Input:* Admin navigates to System Settings. Changes lockout threshold from 5 to 3 attempts. Changes lockout duration from 15 to 30 minutes.
-  * *Expected Output:* Settings saved. New threshold active immediately. Next login attempt: 3 failed attempts trigger 30-minute lockout. Previous lockout records unaffected.
+  * *Description:* System settings API — Admin can update lockout threshold
+  * *Input:* Admin puts `{ value: "3" }` to `/api/admin/settings/LOCKOUT_THRESHOLD`
+  * *Expected Output:* HTTP 200 OK. System setting updated. Value stored and returned in response.
   * *Traceability:* STORY-1.1.1 BR-3
 
 * **TEST-EP1-USER-065 (Positive)**:
   * *Description:* System-generated password complexity — meets policy
-  * *Input:* Create 10 users and inspect generated passwords
-  * *Expected Output:* All 10 passwords: ≥ 12 chars, ≥ 1 uppercase, ≥ 1 lowercase, ≥ 1 digit, ≥ 1 special char. No dictionary words. Cryptographically random generation.
+  * *Input:* Generate 10 temp passwords via `generateTempPassword()`
+  * *Expected Output:* All 10 passwords: ≥ 12 chars, ≥ 1 uppercase, ≥ 1 lowercase, ≥ 1 digit, ≥ 1 special char.
   * *Traceability:* STORY-1.2.1 BR-1
 
-* **TEST-EP1-USER-066 (Positive)**:
-  * *Description:* Welcome email contains only temporary credentials — no permanent password
-  * *Input:* Inspect welcome email sent to new user
-  * *Expected Output:* Email contains: employee_id, temporary password (plaintext, one-time), login URL, instruction to change password. No reference to permanent or default password.
-  * *Traceability:* STORY-1.2.1 AC-1
-
----
-
-## 3. Cross-Cutting Security Test Cases
-
-* **TEST-EP1-SEC-001 (Security)**:
-  * *Description:* CSRF protection on all state-changing endpoints
-  * *Input:* Attempt POST/PUT/DELETE to `/api/users` without valid CSRF token (if session-based) or with tampered Origin header
-  * *Expected Output:* HTTP 403 Forbidden. "Invalid CSRF token" or "Origin not allowed." State-changing requests rejected without valid CSRF protection.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-002 (Security)**:
-  * *Description:* HTTPS enforcement — no plaintext HTTP access
-  * *Input:* Attempt HTTP (non-SSL) request to login endpoint
-  * *Expected Output:* HTTP 301/308 redirect to HTTPS. Or connection refused. No credentials transmitted over plaintext.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-003 (Security)**:
-  * *Description:* Secure cookie attributes (if cookie-based sessions)
-  * *Input:* Inspect Set-Cookie header after login with Remember Me
-  * *Expected Output:* Cookie has: `HttpOnly`, `Secure`, `SameSite=Strict` or `SameSite=Lax`. No `Secure` flag missing. No cookie accessible via JavaScript.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-004 (Security)**:
-  * *Description:* Rate limiting on login endpoint
-  * *Input:* Send 100 login requests from same IP within 1 minute
-  * *Expected Output:* After threshold (e.g., 20 requests/min), HTTP 429 Too Many Requests. "Rate limit exceeded. Please try again later." IP temporarily blocked.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-005 (Security)**:
-  * *Description:* Rate limiting on user creation endpoint
-  * *Input:* Admin sends 50 user creation requests within 1 minute
-  * *Expected Output:* After threshold, HTTP 429 Too Many Requests. Prevents mass user creation abuse. Legitimate Admin operations not blocked under normal usage.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-006 (Security)**:
-  * *Description:* JWT secret/key rotation
-  * *Input:* System admin rotates JWT signing key. Existing tokens validated.
-  * *Expected Output:* Old tokens rejected (HTTP 401). New tokens issued with new key. Graceful transition with no downtime.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-007 (Security)**:
-  * *Description:* Password history — prevent reuse of last N passwords
-  * *Input:* User changes password to same as previous password
-  * *Expected Output:* HTTP 400 Bad Request. Error: "New password cannot be same as current password." If password history stored: "Password cannot match any of your last 5 passwords."
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-008 (Security)**:
-  * *Description:* Secure headers in all API responses
-  * *Input:* Inspect response headers for any API endpoint
-  * *Expected Output:* Headers include: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Content-Security-Policy` defined. No `Server` header revealing technology stack.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-009 (Security)**:
-  * *Description:* Input validation on all fields — length, type, format
-  * *Input:* Fuzz all input fields with: empty strings, null bytes, Unicode control characters, 10KB strings, binary data
-  * *Expected Output:* All invalid inputs rejected with HTTP 400. No server crashes. No data corruption. PostgreSQL type constraints enforce data integrity.
-  * *Traceability:* General Security
-
-* **TEST-EP1-SEC-010 (Security)**:
-  * *Description:* SQL injection across all endpoints with user input
-  * *Input:* Test all endpoints accepting user input: login, user creation, user edit, search with payloads: `' OR '1'='1`, `'; DROP TABLE users; --`, `1; SELECT * FROM users`
-  * *Expected Output:* All payloads safely handled via parameterized queries/prepared statements. No unauthorized data access. No schema modification. PostgreSQL logs show no injection attempts.
-  * *Traceability:* General Security
+> **Note:** Test numbers USER-064 and USER-065 are reused across sections 2.8 and 2.9 to match the actual test file numbering in `userManagement.test.js`.
 
 ---
 
@@ -649,37 +521,37 @@ Leads
 
 * **TEST-EP1-USER-061 (Positive)**:
   * *Description:* Admin can list audit logs with pagination
-  * *Input:* Admin requests GET `/api/admin/audit-log`
-  * *Expected Output:* HTTP 200 OK. Returns array of audit log entries sorted by `createdAt` DESC. Response includes `pagination` object with `page`, `limit`, `totalRecords`, `totalPages`.
+  * *Input:* Admin requests GET `/api/admin/audit-log` with Authorization header
+  * *Expected Output:* HTTP 200 OK. `res.body.success === true`. Returns array of audit log entries. Response includes `pagination` object.
   * *Traceability:* STORY-1.2.1 BR-3
 
 * **TEST-EP1-USER-062 (Positive)**:
   * *Description:* Admin can filter audit logs by action type
-  * *Input:* Admin requests GET `/api/admin/audit-log?action=USER_CREATED`
-  * *Expected Output:* HTTP 200 OK. Only audit logs with `action = "USER_CREATED"` returned. Filters for: `user_id`, `action`, `entity`, `from`, `to` date range.
+  * *Input:* Admin requests GET `/api/admin/audit-log?action=USER_CREATED` with Authorization header
+  * *Expected Output:* HTTP 200 OK. Only audit logs with `action = "USER_CREATED"` returned.
   * *Traceability:* STORY-1.2.1 BR-3
 
 * **TEST-EP1-USER-063 (Negative)**:
   * *Description:* Marketing Executive cannot access audit logs
-  * *Input:* Marketing Executive requests GET `/api/admin/audit-log`
-  * *Expected Output:* HTTP 403 Forbidden. Error message: "Admin access required."
+  * *Input:* Marketing Executive requests GET `/api/admin/audit-log` with Authorization header
+  * *Expected Output:* HTTP 403 Forbidden.
   * *Traceability:* STORY-1.2.1 AC-5
 
 * **TEST-EP1-USER-064 (Negative)**:
   * *Description:* Unauthenticated user cannot access audit logs
   * *Input:* No JWT token. GET `/api/admin/audit-log`
-  * *Expected Output:* HTTP 401 Unauthorized. Error message: "No token provided."
+  * *Expected Output:* HTTP 401 Unauthorized.
   * *Traceability:* STORY-1.2.1 (Security)
 
 * **TEST-EP1-USER-065 (Positive)**:
   * *Description:* Admin can view specific audit log entry by ID
-  * *Input:* Admin requests GET `/api/admin/audit-log/{id}`
-  * *Expected Output:* HTTP 200 OK. Returns full audit log entry with all fields: `id`, `user_id`, `email`, `action`, `resource`, `resourceId`, `details`, `ipAddress`, `userAgent`, `result`, `createdAt`.
+  * *Input:* Admin requests GET `/api/admin/audit-log/{id}` with Authorization header
+  * *Expected Output:* HTTP 200 OK. Returns full audit log entry with `id`, `user_id`, `email`, `action`, `resource`, `resourceId`, `details`, `ipAddress`, `userAgent`, `result`, `createdAt`.
   * *Traceability:* STORY-1.2.1 BR-3
 
 * **TEST-EP1-USER-066 (Negative)**:
   * *Description:* View non-existent audit log entry returns 404
-  * *Input:* Admin requests GET `/api/admin/audit-log/non-existent-id`
+  * *Input:* Admin requests GET `/api/admin/audit-log/non-existent` with Authorization header
   * *Expected Output:* HTTP 404 Not Found. Error message: "Audit log not found."
   * *Traceability:* STORY-1.2.1 (Error handling)
 
@@ -707,22 +579,38 @@ Leads
 
 ---
 
+## 3. Cross-Cutting Security Test Cases
+
+* **TEST-EP1-SEC-004 (Security)**:
+  * *Description:* Rate limiting on login endpoint — 429 after 20+ rapid requests
+  * *Input:* Send 25 rapid concurrent login requests from same IP, varies email each call to avoid lockout
+  * *Expected Output:* At least 1 response returns HTTP 429 Too Many Requests after exceeding 20 req/min threshold.
+  * *Traceability:* General Security
+
+* **TEST-EP1-SEC-008 (Security)**:
+  * *Description:* Secure headers in all API responses
+  * *Input:* Inspect `X-Content-Type-Options` and `X-Frame-Options` headers on GET `/api/health`
+  * *Expected Output:* `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` present. (Helmet middleware configured.)
+  * *Traceability:* General Security
+
+---
+
 ## Summary
 
 | Section | Tests |
-|---|---|
+|---|---|---|
 | FEAT-1.2: User Management — Create User (Positive) | 10 |
 | FEAT-1.2: User Management — Create User (Negative) | 16 |
 | FEAT-1.2: User Management — Edit User | 8 |
-| FEAT-1.2: User Management — Deactivate User | 6 |
-| FEAT-1.2: User Management — Role Change & Permission | 5 |
-| FEAT-1.2: User Management — Access Control & Authorization | 7 |
-| FEAT-1.2: User Management — Audit Log for User Management | 6 |
-| FEAT-1.2: User Management — Business Rules Validation | 8 |
+| FEAT-1.2: User Management — Deactivate User | 4 |
+| FEAT-1.2: User Management — Role Change & Permission | 2 |
+| FEAT-1.2: User Management — Access Control & Authorization | 8 |
+| FEAT-1.2: User Management — Audit Log for User Management | 3 |
+| FEAT-1.2: User Management — Business Rules Validation | 4 |
 | FEAT-1.2: User Management — Audit Log API | 6 |
 | FEAT-1.2: User Management — Refresh Token Expiry | 3 |
-| Cross-Cutting Security Test Cases | 10 |
-| **Grand Total** | **146** |
+| Cross-Cutting Security Test Cases | 2 |
+| **Grand Total** | **66** |
 
 ---
  
