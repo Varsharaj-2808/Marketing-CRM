@@ -3,11 +3,20 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
+const SystemSetting = require('../models/SystemSetting');
 const { sendPasswordResetEmail } = require('../utils/emailService');
 
-const LOCKOUT_THRESHOLD = parseInt(process.env.LOCKOUT_THRESHOLD || '5');
-const LOCKOUT_WINDOW_MS = parseInt(process.env.LOCKOUT_WINDOW_MINUTES || '15') * 60 * 1000;
-const RESET_TOKEN_EXPIRY_MS = parseInt(process.env.RESET_TOKEN_EXPIRY_MINUTES || '30') * 60 * 1000;
+const getLockoutConfig = async () => {
+  try {
+    return await SystemSetting.getLockoutConfig();
+  } catch {
+    return {
+      lockoutThreshold: parseInt(process.env.LOCKOUT_THRESHOLD || '5'),
+      lockoutWindowMinutes: parseInt(process.env.LOCKOUT_WINDOW_MINUTES || '15'),
+      resetTokenExpiryMinutes: parseInt(process.env.RESET_TOKEN_EXPIRY_MINUTES || '30'),
+    };
+  }
+};
 
 const logAudit = async (data) => {
   try {
@@ -45,9 +54,15 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password, remember_me } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
+    const config = await getLockoutConfig();
+    const lockoutThreshold = config.lockoutThreshold;
+    const lockoutWindowMs = config.lockoutWindowMinutes * 60 * 1000;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Email and password required' });
+    }
+    if (typeof email !== 'string' || email.length > 255) {
+      return res.status(400).json({ success: false, message: 'Invalid email format' });
     }
 
     const user = await User.findByEmail(email.toLowerCase());
@@ -56,12 +71,13 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (user.accountStatus === 'inactive') {
+    const accountStatus = user.accountStatus || user.status;
+    if (accountStatus === 'inactive') {
       await logAudit({ userId: user.id, action: 'LOGIN_REJECTED_INACTIVE', details: 'Account is inactive', ipAddress, userAgent, result: 'Failed' });
       return res.status(403).json({ success: false, message: 'Account is inactive. Contact administrator.' });
     }
 
-    if (user.accountStatus === 'locked' && user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
+    if (accountStatus === 'locked' && user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
       const retryAfter = Math.ceil((new Date(user.lockoutUntil) - new Date()) / 1000);
       await logAudit({ userId: user.id, action: 'LOGIN_REJECTED_LOCKED', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'Failed' });
       return res.status(423).json({
@@ -76,13 +92,13 @@ exports.login = async (req, res, next) => {
     if (!isMatch) {
       user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
 
-      if (user.failedLoginAttempts >= LOCKOUT_THRESHOLD) {
-        const lockoutUntil = new Date(Date.now() + LOCKOUT_WINDOW_MS);
-        await User.lockAccount(user.id, lockoutUntil);
+      if (user.failedLoginAttempts >= lockoutThreshold) {
+        const lockoutUntil = new Date(Date.now() + lockoutWindowMs);
+        await User.lockAccount(user.id, lockoutUntil, user.failedLoginAttempts);
         await logAudit({ userId: user.id, action: 'ACCOUNT_LOCKED', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'Failed' });
         return res.status(423).json({
           success: false,
-          message: `Account locked. Too many failed attempts. Try again in ${process.env.LOCKOUT_WINDOW_MINUTES || 15} minutes.`,
+          message: `Account locked. Too many failed attempts. Try again in ${config.lockoutWindowMinutes} minutes.`,
           locked_until: lockoutUntil,
         });
       }
@@ -93,14 +109,19 @@ exports.login = async (req, res, next) => {
     }
 
     await User.unlockAccount(user.id);
+    const isFirstLogin = !user.lastLoginAt;
     await User.setLastLogin(user.id);
+
+    // Normalize legacy role values before generating JWT
+    if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
+    else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user, remember_me);
     const hashedRefresh = await bcrypt.hash(refreshToken, 12);
     await User.storeRefreshToken(user.id, hashedRefresh);
 
-    const redirect = user.role === 'super_admin' || user.role === 'admin' ? '/admin/dashboard' : '/marketing/leads';
+    const redirect = user.role === 'Admin' ? '/admin/dashboard' : '/marketing/leads';
 
     await logAudit({
       userId: user.id, email: user.email, action: 'LOGIN_SUCCESS', resource: 'Auth',
@@ -114,11 +135,14 @@ exports.login = async (req, res, next) => {
       token_expires_in: remember_me ? '30d' : '7d',
       user: User.toResponseUser(user),
       redirect,
+      isFirstLogin,
     });
   } catch (error) {
     next(error);
   }
 };
+
+const SESSION_INACTIVITY_LIMIT_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 exports.refreshToken = async (req, res, next) => {
   try {
@@ -128,6 +152,12 @@ exports.refreshToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    const elapsed = Date.now() - decoded.iat * 1000;
+    if (elapsed > SESSION_INACTIVITY_LIMIT_MS) {
+      return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
+    }
+
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -189,12 +219,15 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
+    const config = await getLockoutConfig();
+    const resetTokenExpiryMs = config.resetTokenExpiryMinutes * 60 * 1000;
+
     const user = await User.findByEmail(email.toLowerCase());
 
     if (user) {
       const resetToken = crypto.randomBytes(32).toString('hex');
       const hashedToken = await bcrypt.hash(resetToken, 12);
-      const expiry = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+      const expiry = new Date(Date.now() + resetTokenExpiryMs);
 
       await User.storeResetToken(user.id, hashedToken, expiry);
 

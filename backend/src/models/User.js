@@ -1,10 +1,22 @@
 const { query } = require('../config/db');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+
+const ALLOWED_ROLES = ['Admin', 'Marketing Executive'];
+const VALID_STATUSES = ['active', 'inactive'];
 
 const User = {
   async findById(id) {
     const result = await query('SELECT * FROM users WHERE id = $1', [id]);
+    return result.rows[0] || null;
+  },
+
+  async findByIdOrEmployeeId(identifier) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(identifier)) {
+      const result = await query('SELECT * FROM users WHERE id = $1', [identifier]);
+      if (result.rows[0]) return result.rows[0];
+    }
+    const result = await query('SELECT * FROM users WHERE "employee_id" = $1', [identifier]);
     return result.rows[0] || null;
   },
 
@@ -13,9 +25,50 @@ const User = {
     return result.rows[0] || null;
   },
 
+  async findByEmployeeId(employeeId) {
+    const result = await query('SELECT * FROM users WHERE "employee_id" = $1', [employeeId]);
+    return result.rows[0] || null;
+  },
+
   async findByResetToken() {
     const result = await query('SELECT * FROM users WHERE "resetToken" IS NOT NULL');
     return result.rows;
+  },
+
+  async findAll() {
+    const result = await query(
+      'SELECT id, "employee_id", name, email, mobile, role, "accountStatus" as status, "failedLoginAttempts", "lockoutUntil", "lastLoginAt", "createdAt", "updatedAt" FROM users ORDER BY "createdAt" DESC'
+    );
+    return result.rows;
+  },
+
+  async getNextEmployeeId() {
+    const result = await query(
+      `SELECT COALESCE(
+        MAX(CAST(SUBSTRING("employee_id" FROM 5) AS INTEGER)), 0
+      ) + 1 AS next_seq FROM users`
+    );
+    const nextSeq = result.rows[0].next_seq;
+    return `EMP-${String(nextSeq).padStart(5, '0')}`;
+  },
+
+  async create(data) {
+    const { name, email, mobile, role, password, status } = data;
+    const employeeId = await this.getNextEmployeeId();
+    const passwordHash = await bcrypt.hash(password, 12);
+    const userStatus = status || 'active';
+
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+
+    const result = await query(
+      `INSERT INTO users ("employee_id", name, email, mobile, role, "accountStatus", password, "firstName", "lastName")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status, "createdAt", "updatedAt"`,
+      [employeeId, name, email.toLowerCase(), mobile, role, userStatus, passwordHash, firstName, lastName]
+    );
+    return result.rows[0];
   },
 
   async update(id, fields) {
@@ -45,6 +98,28 @@ const User = {
     return result.rows[0] || null;
   },
 
+  async isEmailTaken(email, excludeId) {
+    let sql = 'SELECT id FROM users WHERE email = $1';
+    const params = [email.toLowerCase()];
+    if (excludeId) {
+      sql += ' AND id != $2';
+      params.push(excludeId);
+    }
+    const result = await query(sql, params);
+    return result.rows.length > 0;
+  },
+
+  async isMobileTaken(mobile, excludeId) {
+    let sql = 'SELECT id FROM users WHERE mobile = $1';
+    const params = [mobile];
+    if (excludeId) {
+      sql += ' AND id != $2';
+      params.push(excludeId);
+    }
+    const result = await query(sql, params);
+    return result.rows.length > 0;
+  },
+
   async comparePassword(plainPassword, hashedPassword) {
     return bcrypt.compare(plainPassword, hashedPassword);
   },
@@ -53,10 +128,10 @@ const User = {
     await query('UPDATE users SET "failedLoginAttempts" = "failedLoginAttempts" + 1 WHERE id = $1', [id]);
   },
 
-  async lockAccount(id, lockoutUntil) {
+  async lockAccount(id, lockoutUntil, failedAttempts) {
     await query(
-      'UPDATE users SET "accountStatus" = $1, "lockoutUntil" = $2 WHERE id = $3',
-      ['locked', lockoutUntil, id]
+      'UPDATE users SET "accountStatus" = $1, "lockoutUntil" = $2, "failedLoginAttempts" = $3 WHERE id = $4',
+      ['locked', lockoutUntil, failedAttempts || 0, id]
     );
   },
 
@@ -94,6 +169,22 @@ const User = {
     await query('UPDATE users SET "refreshToken" = NULL, "resetToken" = NULL, "resetTokenExpiry" = NULL WHERE id = $1', [id]);
   },
 
+  async updateAccountStatus(id, status) {
+    const result = await query(
+      'UPDATE users SET "accountStatus" = $1 WHERE id = $2 RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status',
+      [status, id]
+    );
+    return result.rows[0] || null;
+  },
+
+  async updateRole(id, role) {
+    const result = await query(
+      'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status',
+      [role, id]
+    );
+    return result.rows[0] || null;
+  },
+
   toSafeUser(user) {
     if (!user) return null;
     const { password, refreshToken, resetToken, resetTokenExpiry, ...safe } = user;
@@ -104,11 +195,17 @@ const User = {
     if (!user) return null;
     return {
       id: user.id,
-      name: [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email,
+      employee_id: user.employee_id,
+      name: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email,
       email: user.email,
+      mobile: user.mobile,
       role: user.role,
+      status: user.accountStatus || user.status,
     };
   },
 };
+
+User.ALLOWED_ROLES = ALLOWED_ROLES;
+User.VALID_STATUSES = VALID_STATUSES;
 
 module.exports = User;

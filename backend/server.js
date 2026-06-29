@@ -1,14 +1,19 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const { testConnection } = require('./src/config/db');
 const errorHandler = require('./src/middleware/errorHandler');
+const { testConnection: testAlgolia } = require('./src/utils/algoliaService');
+const SystemSetting = require('./src/models/SystemSetting');
 
 const authRoutes = require('./src/routes/auth');
+const adminRoutes = require('./src/routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -18,16 +23,25 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
-testConnection().then((connected) => {
-  if (connected) {
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  } else {
+testConnection().then((dbConnected) => {
+  if (!dbConnected) {
     console.error('Failed to connect to database. Server not started.');
     process.exit(1);
   }
+
+  testAlgolia();
+
+  SystemSetting.getLockoutConfig().then(() => {
+    console.log('System settings initialized.');
+  }).catch(err => {
+    console.warn('System settings not available yet:', err.message);
+  });
+
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 });

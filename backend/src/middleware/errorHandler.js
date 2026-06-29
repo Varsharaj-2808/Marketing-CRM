@@ -12,6 +12,17 @@ const errorHandler = (err, req, res, next) => {
     return res.status(409).json({ success: false, message: `${field} already exists` });
   }
 
+  if (err.code === '23505') {
+    const detail = err.detail || '';
+    if (detail.includes('email')) {
+      return res.status(409).json({ success: false, message: 'Email already registered.' });
+    }
+    if (detail.includes('mobile')) {
+      return res.status(409).json({ success: false, message: 'Mobile number already registered.' });
+    }
+    return res.status(409).json({ success: false, message: 'Duplicate value. This record already exists.' });
+  }
+
   if (err.name === 'CastError') {
     return res.status(400).json({ success: false, message: 'Invalid ID format' });
   }
