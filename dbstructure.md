@@ -26,12 +26,12 @@ email	Email	Email Address
 website	URL	Website
 city	Text	City
 lead_source	Enum	Lead Source
-category	FK ΓåÆ Business Categories	Business Category
-sub_category	FK ΓåÆ Business Sub Categories	Sub Category
+category	FK Î“Ã¥Ã† Business Categories	Business Category
+sub_category	FK Î“Ã¥Ã† Business Sub Categories	Sub Category
 service_interested	Multi Select	Interested Services
 priority	Enum	Hot / Warm / Cold
 estimated_value	Currency	Estimated Value
-assigned_to	FK ΓåÆ Users	Assigned User
+assigned_to	FK Î“Ã¥Ã† Users	Assigned User
 stage	Enum	Lead Stage
 lost_reason	Enum	Lost Reason
 lost_reason_note	Text	Lost Reason Notes
@@ -50,14 +50,14 @@ created_at	Timestamp
 Column	Type
 id	UUID (PK)
 sub_category_name	Text
-category	FK ΓåÆ Business Categories
+category	FK Î“Ã¥Ã† Business Categories
 status	Active / Inactive
 created_at	Timestamp
 5. Lead Activities
 Column	Type
 id	UUID (PK)
 activity_summary	Text
-lead	FK ΓåÆ Leads
+lead	FK Î“Ã¥Ã† Leads
 follow_up_date	Date
 activity_channel	Enum
 discussion_notes	Long Text
@@ -65,21 +65,21 @@ outcome	Enum
 next_follow_up_date	Datetime
 proposal_amount	Currency
 stage_at_log	Enum
-created_by	FK ΓåÆ Users
+created_by	FK Î“Ã¥Ã† Users
 created_at	Timestamp
 addendum_notes	Long Text
-addendum_by	FK ΓåÆ Users
+addendum_by	FK Î“Ã¥Ã† Users
 addendum_at	Datetime
 6. Lead History
 Column	Type
 id	UUID (PK)
 seq	Auto Number
 change_summary	Text
-lead	FK ΓåÆ Leads
+lead	FK Î“Ã¥Ã† Leads
 field_name	Text
 old_value	Text
 new_value	Text
-changed_by	FK ΓåÆ Users
+changed_by	FK Î“Ã¥Ã† Users
 changed_at	Timestamp
 reason	Long Text
 7. Audit Logs
@@ -87,7 +87,7 @@ Column	Type
 id	UUID (PK)
 seq	Auto Number
 action_type	Text
-actor	FK ΓåÆ Users
+actor	FK Î“Ã¥Ã† Users
 entity_affected	Text
 entity_id	Text
 result	Success / Failure
@@ -96,64 +96,115 @@ details	Long Text
 created_at	Timestamp
 Relationships
 Users
-Users (1) ΓåÆ (M) Leads
-Leads.assigned_to ΓåÆ Users.id
-Users (1) ΓåÆ (M) Lead Activities
-LeadActivities.created_by ΓåÆ Users.id
-LeadActivities.addendum_by ΓåÆ Users.id
-Users (1) ΓåÆ (M) Lead History
-LeadHistory.changed_by ΓåÆ Users.id
-Users (1) ΓåÆ (M) Audit Logs
-AuditLogs.actor ΓåÆ Users.id
+Users (1) Î“Ã¥Ã† (M) Leads
+Leads.assigned_to Î“Ã¥Ã† Users.id
+Users (1) Î“Ã¥Ã† (M) Lead Activities
+LeadActivities.created_by Î“Ã¥Ã† Users.id
+LeadActivities.addendum_by Î“Ã¥Ã† Users.id
+Users (1) Î“Ã¥Ã† (M) Lead History
+LeadHistory.changed_by Î“Ã¥Ã† Users.id
+Users (1) Î“Ã¥Ã† (M) Audit Logs
+AuditLogs.actor Î“Ã¥Ã† Users.id
 Business Categories
-Business Categories (1) ΓåÆ (M) Business Sub Categories
-BusinessSubCategories.category ΓåÆ BusinessCategories.id
-Business Categories (1) ΓåÆ (M) Leads
-Leads.category ΓåÆ BusinessCategories.id
+Business Categories (1) Î“Ã¥Ã† (M) Business Sub Categories
+BusinessSubCategories.category Î“Ã¥Ã† BusinessCategories.id
+Business Categories (1) Î“Ã¥Ã† (M) Leads
+Leads.category Î“Ã¥Ã† BusinessCategories.id
 Business Sub Categories
-Business Sub Categories (1) ΓåÆ (M) Leads
-Leads.sub_category ΓåÆ BusinessSubCategories.id
+Business Sub Categories (1) Î“Ã¥Ã† (M) Leads
+Leads.sub_category Î“Ã¥Ã† BusinessSubCategories.id
 Leads
-Leads (1) ΓåÆ (M) Lead Activities
-LeadActivities.lead ΓåÆ Leads.id
-Leads (1) ΓåÆ (M) Lead History
-LeadHistory.lead ΓåÆ Leads.id
+Leads (1) Î“Ã¥Ã† (M) Lead Activities
+LeadActivities.lead Î“Ã¥Ã† Leads.id
+Leads (1) Î“Ã¥Ã† (M) Lead History
+LeadHistory.lead Î“Ã¥Ã† Leads.id
 Overall Database Flow
 Users
- Γö£ΓöÇΓöÇ Assigned To ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓû║ Leads
- Γö£ΓöÇΓöÇ Created By ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓû║ Lead Activities
- Γö£ΓöÇΓöÇ Addendum By ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓû║ Lead Activities
- Γö£ΓöÇΓöÇ Changed By ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓû║ Lead History
- ΓööΓöÇΓöÇ Actor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓû║ Audit Logs
+ Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Assigned To Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Leads
+ Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Created By Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Lead Activities
+ Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Addendum By Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Lead Activities
+ Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Changed By Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Lead History
+ Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ Actor Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Audit Logs
 
 Business Categories
- Γö£ΓöÇΓöÇΓû║ Business Sub Categories
- ΓööΓöÇΓöÇΓû║ Leads
+ Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Business Sub Categories
+ Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Leads
 
 Business Sub Categories
- ΓööΓöÇΓöÇΓû║ Leads
+ Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Leads
 
 Leads
- Γö£ΓöÇΓöÇΓû║ Lead Activities
- ΓööΓöÇΓöÇΓû║ Lead History
+ Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Lead Activities
+ Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã»â•‘ Lead History
 
+1. [STORY-1.1.1: Secure Login & Authentication](#1-story-111-secure-login--authentication)
+   - [Login with Valid Credentials](#11-story-111--login-with-valid-credentials)
+   - [Login with Invalid Credentials](#12-story-111--login-with-invalid-credentials)
+   - [Inactive Account Rejection](#13-story-111--inactive-account-rejection)
+   - [Account Lockout After Failed Attempts](#14-story-111--account-lockout-after-failed-attempts)
+   - [Audit Log on Successful Login](#15-story-111--audit-log-on-successful-login)
 2. [FEAT-1.2: User & Role Management (Admin Only)](#2-feat-12-user--role-management-admin-only)
-   - [STORY-1.2.1 ΓÇö Create User (Positive)](#21-story-121-create-user-positive)
-   - [STORY-1.2.1 ΓÇö Create User (Negative)](#22-story-121-create-user-negative)
-   - [STORY-1.2.1 ΓÇö Edit User](#23-story-121-edit-user)
-   - [STORY-1.2.1 ΓÇö Deactivate User](#24-story-121-deactivate-user)
-   - [STORY-1.2.1 ΓÇö Role Change & Permission](#25-story-121-role-change--permission)
-   - [STORY-1.2.1 ΓÇö Access Control & Authorization](#26-story-121-access-control--authorization)
-   - [STORY-1.2.1 ΓÇö Audit Log for User Management](#27-story-121-audit-log-for-user-management)
-   - [STORY-1.2.1 ΓÇö Business Rules Validation](#28-story-121-business-rules-validation)
-   - [STORY-1.2.1 ΓÇö Audit Log API](#29-story-121-audit-log-api-query--view)
-   - [STORY-1.2.1 ΓÇö Refresh Token Expiry](#210-story-121-refresh-token-expiry)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Create User (Positive)](#21-story-121-create-user-positive)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Create User (Negative)](#22-story-121-create-user-negative)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Edit User](#23-story-121-edit-user)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Deactivate User](#24-story-121-deactivate-user)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Role Change & Permission](#25-story-121-role-change--permission)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Access Control & Authorization](#26-story-121-access-control--authorization)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Audit Log for User Management](#27-story-121-audit-log-for-user-management)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Business Rules Validation](#28-story-121-business-rules-validation)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Audit Log API](#29-story-121-audit-log-api-query--view)
+   - [STORY-1.2.1 Î“Ã‡Ã¶ Refresh Token Expiry](#210-story-121-refresh-token-expiry)
 3. [Cross-Cutting Security Test Cases](#3-cross-cutting-security-test-cases)
 
 
+
+## 1. STORY-1.1.1: Secure Login & Authentication
+
+### 1.1 STORY-1.1.1 — Login with Valid Credentials
+
+* **TEST-EP1-LOGIN-001 (Positive)**:
+  * *Description:* Valid credentials + Active account - authenticated and redirected to role-based dashboard
+  * *Input:* email = "admin@company.com", password = "ValidP@ss123", account status = "Active"
+  * *Expected Output:* HTTP 200 OK within 2 seconds. JWT access token returned. Response includes ole, employee_id, 
+ame. Redirect to role-based dashboard (Admin -> /admin/dashboard, Marketing -> /marketing/dashboard).
+  * *Traceability:* STORY-1.1.1 AC-1
+
+### 1.2 STORY-1.1.1 — Login with Invalid Credentials
+
+* **TEST-EP1-LOGIN-002 (Negative)**:
+  * *Description:* Invalid credentials show generic error without revealing which field is wrong
+  * *Input:* email = "admin@company.com", password = "WrongP@ss456" (valid email, wrong password); also test email = "unknown@company.com", password = "AnyP@ss789" (unknown email)
+  * *Expected Output:* HTTP 401 Unauthorized. Error message: "Invalid email or password." Same generic message for both wrong-password and unknown-email cases. No hint whether email or password is incorrect. Failed attempt counter incremented.
+  * *Traceability:* STORY-1.1.1 AC-2
+
+### 1.3 STORY-1.1.1 — Inactive Account Rejection
+
+* **TEST-EP1-LOGIN-003 (Negative)**:
+  * *Description:* Inactive/disabled account cannot log in even with correct credentials
+  * *Input:* email = "inactive@company.com", password = "ValidP@ss123", account status = "Inactive"
+  * *Expected Output:* HTTP 403 Forbidden. Error message: "Account is inactive. Contact your administrator." Login rejected. Failed attempt counter NOT incremented. No JWT issued.
+  * *Traceability:* STORY-1.1.1 AC-3
+
+### 1.4 STORY-1.1.1 — Account Lockout After Failed Attempts
+
+* **TEST-EP1-LOGIN-004 (Negative)**:
+  * *Description:* 5 consecutive failed attempts - 6th attempt within 15 minutes - account locked
+  * *Input:* Submit 5 consecutive login attempts with wrong password. On 6th attempt (within 15-minute window), submit any credentials.
+  * *Expected Output:* After 5 failures: HTTP 401 for each with "Invalid email or password." On 6th attempt: HTTP 423 Locked. Error message: "Account temporarily locked due to too many failed attempts. Please try again after 15 minutes." Lockout recorded in users table (lockout_until timestamp set). Failed attempt counter resets after lockout expires. Configurable threshold via System Settings.
+  * *Traceability:* STORY-1.1.1 AC-4
+
+### 1.5 STORY-1.1.1 — Audit Log on Successful Login
+
+* **TEST-EP1-LOGIN-005 (Positive)**:
+  * *Description:* Successful login writes audit log entry
+  * *Input:* Valid credentials - successful login
+  * *Expected Output:* udit_log row created with: ction_type = "LOGIN_SUCCESS", ctor = user.id, entity_affected = "Auth", entity_id = user.id, esult = "Success", ip_address = client IP, details includes timestamp and user agent. Row committed in same request.
+  * *Traceability:* STORY-1.1.1 AC-5
+
+---
 ## 2. FEAT-1.2: User & Role Management (Admin Only)
 
-### 2.1 STORY-1.2.1 ΓÇö Create User (Positive)
+### 2.1 STORY-1.2.1 Î“Ã‡Ã¶ Create User (Positive)
 
 * **TEST-EP1-USER-001 (Positive)**:
   * *Description:* Admin creates Marketing Executive user with all valid fields
@@ -168,7 +219,7 @@ Leads
   * *Traceability:* STORY-1.2.1 AC-1
 
 * **TEST-EP1-USER-003 (Positive)**:
-  * *Description:* Employee ID auto-generation ΓÇö sequential and immutable
+  * *Description:* Employee ID auto-generation Î“Ã‡Ã¶ sequential and immutable
   * *Input:* Admin creates 3 users in sequence
   * *Expected Output:* Employee IDs generated as "EMP-00005", "EMP-00006", "EMP-00007". Format: EMP-XXXXX (5 digits, zero-padded). IDs sequential and never reused. Once assigned, ID cannot be changed.
   * *Traceability:* STORY-1.2.1 BR-1
@@ -176,7 +227,7 @@ Leads
 * **TEST-EP1-USER-004 (Positive)**:
   * *Description:* System-generated password meets complexity requirements
   * *Input:* Inspect password generated for newly created user
-  * *Expected Output:* Temporary password: ΓëÑ 12 characters, contains uppercase, lowercase, number, and special character. Password is bcrypt hashed before storage. Plaintext password only exists in welcome email (one-time).
+  * *Expected Output:* Temporary password: Î“Ã«Ã‘ 12 characters, contains uppercase, lowercase, number, and special character. Password is bcrypt hashed before storage. Plaintext password only exists in welcome email (one-time).
   * *Traceability:* STORY-1.2.1 AC-1, BR-1
 
 * **TEST-EP1-USER-005 (Positive)**:
@@ -204,23 +255,23 @@ Leads
   * *Traceability:* STORY-1.2.1 (Status management)
 
 * **TEST-EP1-USER-009 (Positive)**:
-  * *Description:* Boundary ΓÇö employee name at maximum length (100 characters)
+  * *Description:* Boundary Î“Ã‡Ã¶ employee name at maximum length (100 characters)
   * *Input:* `employee_name = "A" * 100`
   * *Expected Output:* HTTP 201 Created. Name stored successfully. VARCHAR(100) constraint satisfied.
   * *Traceability:* STORY-1.2.1 (Boundary)
 
 * **TEST-EP1-USER-010 (Positive)**:
-  * *Description:* Boundary ΓÇö email at maximum length (254 characters)
+  * *Description:* Boundary Î“Ã‡Ã¶ email at maximum length (254 characters)
   * *Input:* `email = "a" * 243 + "@company.com"`
   * *Expected Output:* HTTP 201 Created. Email stored successfully. VARCHAR(255) constraint satisfied.
   * *Traceability:* STORY-1.2.1 (Boundary)
 
 ---
 
-### 2.2 STORY-1.2.1 ΓÇö Create User (Negative)
+### 2.2 STORY-1.2.1 Î“Ã‡Ã¶ Create User (Negative)
 
 * **TEST-EP1-USER-011 (Negative)**:
-  * *Description:* Duplicate email ΓÇö email already registered
+  * *Description:* Duplicate email Î“Ã‡Ã¶ email already registered
   * *Input:* `email = "john@company.com"` (already exists in `users` table)
   * *Expected Output:* HTTP 409 Conflict. Error message: "Email already registered." User NOT created. No partial data inserted. Transaction rolled back.
   * *Traceability:* STORY-1.2.1 AC-2
@@ -256,13 +307,13 @@ Leads
   * *Traceability:* STORY-1.2.1 (Validation)
 
 * **TEST-EP1-USER-017 (Negative)**:
-  * *Description:* Invalid role ΓÇö not in allowed enum
+  * *Description:* Invalid role Î“Ã‡Ã¶ not in allowed enum
   * *Input:* `role = "Sales Manager"`, other fields valid
   * *Expected Output:* HTTP 400 Bad Request. Error message: "Invalid role. Allowed values: Admin, Marketing Executive." CHECK constraint or ENUM type rejects value.
   * *Traceability:* STORY-1.2.1 (Validation)
 
 * **TEST-EP1-USER-018 (Negative)**:
-  * *Description:* Invalid status ΓÇö not in allowed enum
+  * *Description:* Invalid status Î“Ã‡Ã¶ not in allowed enum
   * *Input:* `status = "Pending"`, other fields valid
   * *Expected Output:* HTTP 400 Bad Request. Error message: "Invalid status. Allowed values: Active, Inactive." CHECK constraint or ENUM type rejects value.
   * *Traceability:* STORY-1.2.1 (Validation)
@@ -304,20 +355,20 @@ Leads
   * *Traceability:* STORY-1.2.1 (Security)
 
 * **TEST-EP1-USER-025 (Negative)**:
-  * *Description:* Missing mandatory field ΓÇö role
+  * *Description:* Missing mandatory field Î“Ã‡Ã¶ role
   * *Input:* `role = null` or omitted, other fields valid
   * *Expected Output:* HTTP 400 Bad Request. Error message: "Role is required." NOT NULL constraint would also trigger at DB level.
   * *Traceability:* STORY-1.2.1 (Validation)
 
 * **TEST-EP1-USER-026 (Negative)**:
-  * *Description:* Missing mandatory field ΓÇö status
+  * *Description:* Missing mandatory field Î“Ã‡Ã¶ status
   * *Input:* `status = null` or omitted, other fields valid
   * *Expected Output:* HTTP 400 Bad Request. Error message: "Status is required." Default value "Active" may apply if configured, but explicit requirement says mandatory.
   * *Traceability:* STORY-1.2.1 (Validation)
 
 ---
 
-### 2.3 STORY-1.2.1 ΓÇö Edit User
+### 2.3 STORY-1.2.1 Î“Ã‡Ã¶ Edit User
 
 * **TEST-EP1-USER-027 (Positive)**:
   * *Description:* Admin edits user name and mobile
@@ -333,7 +384,7 @@ Leads
 
 * **TEST-EP1-USER-029 (Positive)**:
   * *Description:* Verify role change takes effect on next login
-  * *Input:* User "EMP-00002" was changed from Marketing ΓåÆ Admin. User logs out and logs back in.
+  * *Input:* User "EMP-00002" was changed from Marketing Î“Ã¥Ã† Admin. User logs out and logs back in.
   * *Expected Output:* HTTP 200 OK. JWT contains `role = "Admin"`. User redirected to Admin Dashboard. Can access User Management screens.
   * *Traceability:* STORY-1.2.1 AC-4
 
@@ -369,7 +420,7 @@ Leads
 
 ---
 
-### 2.4 STORY-1.2.1 ΓÇö Deactivate User
+### 2.4 STORY-1.2.1 Î“Ã‡Ã¶ Deactivate User
 
 * **TEST-EP1-USER-035 (Positive)**:
   * *Description:* Admin deactivates an Active user
@@ -396,7 +447,7 @@ Leads
   * *Traceability:* STORY-1.2.1 AC-3
 
 * **TEST-EP1-USER-039 (Negative)**:
-  * *Description:* Deactivate user from UI ΓÇö verify no hard delete option
+  * *Description:* Deactivate user from UI Î“Ã‡Ã¶ verify no hard delete option
   * *Input:* Inspect User Management UI for delete button/functionality
   * *Expected Output:* No "Delete" button visible. Only "Deactivate" option available. API endpoint `/api/users/{id}/delete` returns 404 or 403 if attempted directly.
   * *Traceability:* STORY-1.2.1 BR-2
@@ -409,16 +460,16 @@ Leads
 
 ---
 
-### 2.5 STORY-1.2.1 ΓÇö Role Change & Permission
+### 2.5 STORY-1.2.1 Î“Ã‡Ã¶ Role Change & Permission
 
 * **TEST-EP1-USER-041 (Positive)**:
-  * *Description:* Role change from Marketing Executive to Admin ΓÇö immediate UI access after re-login
+  * *Description:* Role change from Marketing Executive to Admin Î“Ã‡Ã¶ immediate UI access after re-login
   * *Input:* User "EMP-00002" re-logins after role change to Admin
   * *Expected Output:* User sees Admin Dashboard. User Management menu visible. Can create/edit users. All Admin permissions active.
   * *Traceability:* STORY-1.2.1 AC-4
 
 * **TEST-EP1-USER-042 (Positive)**:
-  * *Description:* Role change from Admin to Marketing Executive ΓÇö restricted access after re-login
+  * *Description:* Role change from Admin to Marketing Executive Î“Ã‡Ã¶ restricted access after re-login
   * *Input:* User "EMP-00001" re-logins after role change to Marketing Executive
   * *Expected Output:* User sees Marketing Dashboard. User Management menu hidden. Access to `/api/users` returns 403. Can only view own profile and assigned leads.
   * *Traceability:* STORY-1.2.1 AC-4
@@ -443,7 +494,7 @@ Leads
 
 ---
 
-### 2.6 STORY-1.2.1 ΓÇö Access Control & Authorization
+### 2.6 STORY-1.2.1 Î“Ã‡Ã¶ Access Control & Authorization
 
 * **TEST-EP1-USER-046 (Positive)**:
   * *Description:* Admin can view all users list
@@ -489,7 +540,7 @@ Leads
 
 ---
 
-### 2.7 STORY-1.2.1 ΓÇö Audit Log for User Management
+### 2.7 STORY-1.2.1 Î“Ã‡Ã¶ Audit Log for User Management
 
 * **TEST-EP1-USER-053 (Positive)**:
   * *Description:* User creation logged in Audit Log
@@ -505,7 +556,7 @@ Leads
 
 * **TEST-EP1-USER-055 (Positive)**:
   * *Description:* User status change logged in Audit Log
-  * *Input:* Admin deactivates "EMP-00005" (Active ΓåÆ Inactive)
+  * *Input:* Admin deactivates "EMP-00005" (Active Î“Ã¥Ã† Inactive)
   * *Expected Output:* `audit_log` row: `action` = "USER_STATUS_CHANGED", `details` = `{"status": {"old": "Active", "new": "Inactive"}}`. Timestamp and Admin ID recorded.
   * *Traceability:* STORY-1.2.1 BR-3
 
@@ -529,34 +580,34 @@ Leads
 
 ---
 
-### 2.8 STORY-1.2.1 ΓÇö Business Rules Validation
+### 2.8 STORY-1.2.1 Î“Ã‡Ã¶ Business Rules Validation
 
 * **TEST-EP1-USER-059 (Positive)**:
-  * *Description:* Employee ID format verification ΓÇö EMP-XXXXX
+  * *Description:* Employee ID format verification Î“Ã‡Ã¶ EMP-XXXXX
   * *Input:* Create 5 users sequentially
   * *Expected Output:* IDs: EMP-00001, EMP-00002, EMP-00003, EMP-00004, EMP-00005. Format: "EMP-" + 5-digit zero-padded sequential number. No gaps, no duplicates, no manual override possible.
   * *Traceability:* STORY-1.2.1 BR-1
 
 * **TEST-EP1-USER-060 (Positive)**:
-  * *Description:* Employee ID immutability ΓÇö cannot be changed after creation
+  * *Description:* Employee ID immutability Î“Ã‡Ã¶ cannot be changed after creation
   * *Input:* Attempt to UPDATE `users` table SET `employee_id = 'EMP-99999'` WHERE `employee_id = 'EMP-00005'`
-  * *Expected Output:* If DB constraint exists: PostgreSQL error ΓÇö cannot update generated/primary key column. If application-level: HTTP 400 Bad Request. Employee ID permanently tied to user.
+  * *Expected Output:* If DB constraint exists: PostgreSQL error Î“Ã‡Ã¶ cannot update generated/primary key column. If application-level: HTTP 400 Bad Request. Employee ID permanently tied to user.
   * *Traceability:* STORY-1.2.1 BR-1
 
 * **TEST-EP1-USER-061 (Positive)**:
-  * *Description:* Deleting user is not permitted ΓÇö only deactivation
+  * *Description:* Deleting user is not permitted Î“Ã‡Ã¶ only deactivation
   * *Input:* Attempt DELETE on `users` table row for "EMP-00005"
   * *Expected Output:* If ON DELETE RESTRICT on leads: PostgreSQL foreign key violation. If application-level: HTTP 403 Forbidden. User row preserved. Only `status` can be changed to "Inactive".
   * *Traceability:* STORY-1.2.1 BR-2
 
 * **TEST-EP1-USER-062 (Positive)**:
-  * *Description:* Referential integrity ΓÇö leads assigned to deactivated user remain intact
+  * *Description:* Referential integrity Î“Ã‡Ã¶ leads assigned to deactivated user remain intact
   * *Input:* Create lead assigned to "EMP-00005". Deactivate "EMP-00005". Query leads table.
   * *Expected Output:* Lead row still has `assigned_to = 'EMP-00005'`. No CASCADE delete or SET NULL triggered. Foreign key constraint allows inactive reference (if designed) or application handles inactive assignee display.
   * *Traceability:* STORY-1.2.1 BR-2, AC-3
 
 * **TEST-EP1-USER-063 (Positive)**:
-  * *Description:* Referential integrity ΓÇö audit records preserve user reference even if user deactivated
+  * *Description:* Referential integrity Î“Ã‡Ã¶ audit records preserve user reference even if user deactivated
   * *Input:* Inspect `audit_log` for entries performed by "EMP-00005" (now deactivated)
   * *Expected Output:* Audit records still show `performed_by = 'EMP-00005'`. No orphaned records. User name may show as "John Doe (Inactive)" or remain as original name.
   * *Traceability:* STORY-1.2.1 BR-2
@@ -568,20 +619,20 @@ Leads
   * *Traceability:* STORY-1.1.1 BR-3
 
 * **TEST-EP1-USER-065 (Positive)**:
-  * *Description:* System-generated password complexity ΓÇö meets policy
+  * *Description:* System-generated password complexity Î“Ã‡Ã¶ meets policy
   * *Input:* Create 10 users and inspect generated passwords
-  * *Expected Output:* All 10 passwords: ΓëÑ 12 chars, ΓëÑ 1 uppercase, ΓëÑ 1 lowercase, ΓëÑ 1 digit, ΓëÑ 1 special char. No dictionary words. Cryptographically random generation.
+  * *Expected Output:* All 10 passwords: Î“Ã«Ã‘ 12 chars, Î“Ã«Ã‘ 1 uppercase, Î“Ã«Ã‘ 1 lowercase, Î“Ã«Ã‘ 1 digit, Î“Ã«Ã‘ 1 special char. No dictionary words. Cryptographically random generation.
   * *Traceability:* STORY-1.2.1 BR-1
 
 * **TEST-EP1-USER-066 (Positive)**:
-  * *Description:* Welcome email contains only temporary credentials ΓÇö no permanent password
+  * *Description:* Welcome email contains only temporary credentials Î“Ã‡Ã¶ no permanent password
   * *Input:* Inspect welcome email sent to new user
   * *Expected Output:* Email contains: employee_id, temporary password (plaintext, one-time), login URL, instruction to change password. No reference to permanent or default password.
   * *Traceability:* STORY-1.2.1 AC-1
 
 ---
 
-### 2.9 STORY-1.2.1 ΓÇö Audit Log API (Query & View)
+### 2.9 STORY-1.2.1 Î“Ã‡Ã¶ Audit Log API (Query & View)
 
 * **TEST-EP1-USER-061 (Positive)**:
   * *Description:* Admin can list audit logs with pagination
@@ -621,10 +672,10 @@ Leads
 
 ---
 
-### 2.10 STORY-1.2.1 ΓÇö Refresh Token Expiry
+### 2.10 STORY-1.2.1 Î“Ã‡Ã¶ Refresh Token Expiry
 
 * **TEST-EP1-USER-067 (Negative)**:
-  * *Description:* Remember Me refresh token expired after 30 days + 1 second ΓÇö must re-authenticate
+  * *Description:* Remember Me refresh token expired after 30 days + 1 second Î“Ã‡Ã¶ must re-authenticate
   * *Input:* `remember_me = true` during login issues 30-day refresh token. No activity for 30 days + 1 second. Attempt to use expired refresh token via `POST /api/auth/refresh` with `{ refreshToken: "<expired_token>" }`.
   * *Expected Output:* HTTP 401 Unauthorized. `jwt.verify()` throws `TokenExpiredError`. Error message: "Invalid token." User must log in again with email/password. No silent re-authentication possible.
   * *Traceability:* STORY-1.1.1 (Token management)
@@ -653,7 +704,7 @@ Leads
   * *Traceability:* General Security
 
 * **TEST-EP1-SEC-002 (Security)**:
-  * *Description:* HTTPS enforcement ΓÇö no plaintext HTTP access
+  * *Description:* HTTPS enforcement Î“Ã‡Ã¶ no plaintext HTTP access
   * *Input:* Attempt HTTP (non-SSL) request to login endpoint
   * *Expected Output:* HTTP 301/308 redirect to HTTPS. Or connection refused. No credentials transmitted over plaintext.
   * *Traceability:* General Security
@@ -683,7 +734,7 @@ Leads
   * *Traceability:* General Security
 
 * **TEST-EP1-SEC-007 (Security)**:
-  * *Description:* Password history ΓÇö prevent reuse of last N passwords
+  * *Description:* Password history Î“Ã‡Ã¶ prevent reuse of last N passwords
   * *Input:* User changes password to same as previous password
   * *Expected Output:* HTTP 400 Bad Request. Error: "New password cannot be same as current password." If password history stored: "Password cannot match any of your last 5 passwords."
   * *Traceability:* General Security
@@ -695,7 +746,7 @@ Leads
   * *Traceability:* General Security
 
 * **TEST-EP1-SEC-009 (Security)**:
-  * *Description:* Input validation on all fields ΓÇö length, type, format
+  * *Description:* Input validation on all fields Î“Ã‡Ã¶ length, type, format
   * *Input:* Fuzz all input fields with: empty strings, null bytes, Unicode control characters, 10KB strings, binary data
   * *Expected Output:* All invalid inputs rejected with HTTP 400. No server crashes. No data corruption. PostgreSQL type constraints enforce data integrity.
   * *Traceability:* General Security
@@ -713,18 +764,19 @@ Leads
 
 | Section | Tests |
 |---|---|
-| FEAT-1.2: User Management ΓÇö Create User (Positive) | 10 |
-| FEAT-1.2: User Management ΓÇö Create User (Negative) | 16 |
-| FEAT-1.2: User Management ΓÇö Edit User | 8 |
-| FEAT-1.2: User Management ΓÇö Deactivate User | 6 |
-| FEAT-1.2: User Management ΓÇö Role Change & Permission | 5 |
-| FEAT-1.2: User Management ΓÇö Access Control & Authorization | 7 |
-| FEAT-1.2: User Management ΓÇö Audit Log for User Management | 6 |
-| FEAT-1.2: User Management ΓÇö Business Rules Validation | 8 |
-| FEAT-1.2: User Management ΓÇö Audit Log API | 6 |
-| FEAT-1.2: User Management ΓÇö Refresh Token Expiry | 3 |
+| STORY-1.1.1: Secure Login & Authentication | 5 |
+| FEAT-1.2: User Management — Create User (Positive) | 10 |
+| FEAT-1.2: User Management — Create User (Negative) | 16 |
+| FEAT-1.2: User Management — Edit User | 8 |
+| FEAT-1.2: User Management — Deactivate User | 6 |
+| FEAT-1.2: User Management — Role Change & Permission | 5 |
+| FEAT-1.2: User Management — Access Control & Authorization | 7 |
+| FEAT-1.2: User Management — Audit Log for User Management | 6 |
+| FEAT-1.2: User Management — Business Rules Validation | 8 |
+| FEAT-1.2: User Management — Audit Log API | 6 |
+| FEAT-1.2: User Management — Refresh Token Expiry | 3 |
 | Cross-Cutting Security Test Cases | 10 |
-| **Grand Total** | **146** |
+| **Grand Total** | **151** |
 
 ---
  
