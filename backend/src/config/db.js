@@ -1,8 +1,10 @@
 const { Pool } = require('pg');
 
+const isSupabase = process.env.DATABASE_URL?.includes('supabase');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ...(isSupabase ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
 pool.on('error', (err) => {

@@ -1,6 +1,10 @@
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const algolia = require('../utils/algoliaService');
+const LeadSource = require('../models/LeadSource');
+const BusinessCategory = require('../models/BusinessCategory');
+const BusinessSubCategory = require('../models/BusinessSubCategory');
+const Service = require('../models/Service');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -102,6 +106,47 @@ exports.getUserStatusHistory = async (req, res, next) => {
     ]);
 
     res.json({ success: true, data: logs });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getLeadSources = async (req, res, next) => {
+  try {
+    const sources = await LeadSource.findAllActive();
+    res.json({ success: true, data: sources });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getBusinessCategories = async (req, res, next) => {
+  try {
+    const categories = await BusinessCategory.findAllActive();
+    res.json({ success: true, data: categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getBusinessSubCategories = async (req, res, next) => {
+  try {
+    const { categoryId } = req.params;
+    const category = await BusinessCategory.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Business category not found' });
+    }
+    const subcategories = await BusinessSubCategory.findByCategoryId(categoryId);
+    res.json({ success: true, data: subcategories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getServices = async (req, res, next) => {
+  try {
+    const services = await Service.findAllActive();
+    res.json({ success: true, data: services });
   } catch (error) {
     next(error);
   }
