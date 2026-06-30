@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, 'src', '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -9,6 +9,7 @@ const SystemSetting = require('./src/models/SystemSetting');
 
 const authRoutes = require('./src/routes/auth');
 const adminRoutes = require('./src/routes/admin');
+const marketingRoutes = require('./src/routes/marketing');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/marketing', marketingRoutes);
 
 app.use(errorHandler);
 

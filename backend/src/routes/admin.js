@@ -20,6 +20,7 @@ router.get('/users/:id/status-history', protect, authorize('Admin'), adminContro
 router.get('/audit-log', protect, authorize('Admin'), auditLogController.getAuditLogs);
 router.get('/audit-log/:id', protect, authorize('Admin'), auditLogController.getAuditLog);
 
+
 router.get('/settings', protect, authorize('Admin'), systemSettingController.getSettings);
 router.put('/settings/:key', protect, authorize('Admin'), systemSettingController.updateSetting);
 
