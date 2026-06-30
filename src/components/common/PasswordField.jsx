@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function PasswordField({
   label,
@@ -19,12 +20,12 @@ export default function PasswordField({
           {label}
         </label>
         {forgotPasswordLink && (
-          <a
-            href={forgotPasswordLink}
+          <Link
+            to={forgotPasswordLink}
             className="text-label-sm font-label-sm text-primary hover:underline transition-all"
           >
             Forgot Password?
-          </a>
+          </Link>
         )}
       </div>
       <div className="relative group">

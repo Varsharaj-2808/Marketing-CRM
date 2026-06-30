@@ -1,41 +1,24 @@
 import { API_BASE_URL } from '../constants';
-import { DEMO_ACCOUNTS } from '../constants/demoAccounts';
+import { userService } from './userService';
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const DEMO_ACCOUNTS = {
+  'admin@company.com': { password: 'Admin@123', role: 'Admin', name: 'Admin User', employee_id: 'EMP-00001', status: 'Active' },
+  'executive@company.com': { password: 'Executive@123', role: 'Marketing Executive', name: 'Executive User', employee_id: 'EMP-00002', status: 'Active' },
+};
 
 export const api = {
   async login(email, password) {
-    if (email === 'fail@test.com') {
-      return { success: false, status: 401, message: 'Invalid email or password' };
-    }
-
-
-    const demoAccount = DEMO_ACCOUNTS.find(
-      (a) => a.email.toLowerCase() === email.trim().toLowerCase()
-    );
-    if (demoAccount && password === demoAccount.password) {
-      return {
-        success: true,
-        status: 200,
-        token: `mock-jwt-token-${Date.now()}`,
-        user: { ...demoAccount.user },
-        refreshToken: 'mock-refresh-token',
-        redirect: '/dashboard',
-      };
-    }
-
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      const res = await fetch(`${API_BASE_URL}/auth/login?_=${Date.now()}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) {
-        console.error('Login API returned status:', res.status);
-        return { success: false, status: res.status, message: 'Invalid email or password' };
-      }
       const text = await res.text();
       const sanitized = text.replace(/[\u00A0\uFEFF]/g, ' ');
       let json;
@@ -50,23 +33,48 @@ export const api = {
           redirect: '/dashboard',
         };
       }
-      return {
-        success: false,
-        status: json?.status || res.status || 401,
-        message: json?.message || 'Invalid email or password',
-      };
+
+      if (!res.ok && (res.status === 401 || res.status === 403)) {
+        const deactivatedUsers = await userService.getDeactivatedUsers();
+        if (deactivatedUsers?.data?.some(u => u.email === email)) {
+          return { success: false, status: 403, message: 'Your account has been deactivated. Please contact an administrator.' };
+        }
+      }
     } catch (e) {
       console.error('Login API network error:', e);
-      return { success: false, status: 500, message: 'Network error. Please try again.' };
     }
+
+    const demo = DEMO_ACCOUNTS[email];
+    if (demo && demo.password === password) {
+      return {
+        success: true,
+        status: 200,
+        token: `demo_token_${email}_${Date.now()}`,
+        user: { email, name: demo.name, role: demo.role, employee_id: demo.employee_id, status: demo.status },
+        redirect: '/dashboard',
+      };
+    }
+
+    return { success: false, status: 401, message: 'Invalid email or password' };
   },
 
   async forgotPassword(email) {
-    await delay(800);
-    return {
-      success: true,
-      status: 200,
-      message: 'If an account with that email exists, a password reset link has been sent.',
-    };
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/forgot-password?_=${Date.now()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+        body: JSON.stringify({ email }),
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return { success: false, message: 'Failed to process request.' }; }
+    } catch (e) {
+      console.error('Forgot password API error:', e);
+      return { success: false, message: 'Network error. Please try again.' };
+    }
   },
 };
