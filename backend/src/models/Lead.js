@@ -17,10 +17,10 @@ const Lead = {
     const { company_name, contact_person, mobile_number, email, website, city, lead_source, category, sub_category, service_interested, priority, estimated_value } = data;
     const leadId = await this.getNextLeadId();
     const result = await query(
-      `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", stage, "lead_status")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'New Lead', 'New Lead')
+      `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", "lead_id", stage, "lead_status")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New Lead', 'New Lead')
        RETURNING *`,
-      [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, service_interested || null, priority, estimated_value || null, creatorId]
+      [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, service_interested || null, priority, estimated_value || null, creatorId, leadId]
     );
     return result.rows[0];
   },
@@ -108,6 +108,115 @@ const Lead = {
       created_at: 'l.created_at',
       updated_at: 'l.updated_at',
     };
+
+    const sortCol = allowedSortColumns[sortBy] || 'l.created_at';
+    const sortDir = sortOrder && sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    const countResult = await query(
+      `SELECT COUNT(*) FROM leads l ${where}`,
+      values
+    );
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    const offset = (page - 1) * limit;
+    const sql = `SELECT l.*, u.name as assigned_to_name
+                 FROM leads l
+                 LEFT JOIN users u ON l.assigned_to = u.id
+                 ${where}
+                 ORDER BY ${sortCol} ${sortDir}
+                 LIMIT $${idx++} OFFSET $${idx++}`;
+    values.push(limit, offset);
+
+    const result = await query(sql, values);
+
+    return {
+      data: result.rows,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+    };
+  },
+  async findAllAdmin(filters = {}) {
+    const {
+      search, status, priority, stage, source, category, assigned_to, sortBy, sortOrder,
+      page = 1, limit = 25, from_date, to_date,
+    } = filters;
+
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    if (search) {
+      const searchPattern = `%${search}%`;
+      conditions.push(`(
+        l.company_name ILIKE $${idx} OR
+        l.contact_person ILIKE $${idx} OR
+        l.mobile_number ILIKE $${idx} OR
+        l.email ILIKE $${idx} OR
+        l.lead_source ILIKE $${idx} OR
+        l.lead_id ILIKE $${idx}
+      )`);
+      values.push(searchPattern);
+      idx++;
+    }
+
+    if (status) {
+      conditions.push(`l.stage = $${idx++}`);
+      values.push(status);
+    }
+
+    if (priority) {
+      conditions.push(`l.priority = $${idx++}`);
+      values.push(priority);
+    }
+
+    if (stage) {
+      conditions.push(`l.stage = $${idx++}`);
+      values.push(stage);
+    }
+
+    if (source) {
+      conditions.push(`l.lead_source = $${idx++}`);
+      values.push(source);
+    }
+
+    if (category) {
+      conditions.push(`l.category = $${idx++}`);
+      values.push(category);
+    }
+
+    if (assigned_to) {
+      conditions.push(`l.assigned_to = $${idx++}`);
+      values.push(assigned_to);
+    }
+
+    if (from_date) {
+      conditions.push(`l.created_at >= $${idx++}`);
+      values.push(from_date);
+    }
+
+    if (to_date) {
+      conditions.push(`l.created_at <= $${idx++}`);
+      values.push(to_date);
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const allowedSortColumns = {
+      lead_id: 'l.lead_id',
+      company_name: 'l.company_name',
+      contact_person: 'l.contact_person',
+      mobile_number: 'l.mobile_number',
+      email: 'l.email',
+      lead_source: 'l.lead_source',
+      priority: 'l.priority',
+      estimated_value: 'l.estimated_value',
+      stage: 'l.stage',
+      created_at: 'l.created_at',
+      updated_at: 'l.updated_at',
+    };
+
+    this.VALID_SORT_FIELDS = Object.keys(allowedSortColumns);
 
     const sortCol = allowedSortColumns[sortBy] || 'l.created_at';
     const sortDir = sortOrder && sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';

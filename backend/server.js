@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, 'src', '.env') 
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 const { testConnection } = require('./src/config/db');
 const errorHandler = require('./src/middleware/errorHandler');
 const { testConnection: testAlgolia } = require('./src/utils/algoliaService');
@@ -18,6 +19,18 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/exports', express.static(path.join(__dirname, 'exports'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.xlsx')) {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+    } else if (filePath.endsWith('.csv')) {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+    }
+  },
+}));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'CRM API is running', timestamp: new Date().toISOString() });
