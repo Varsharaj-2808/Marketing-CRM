@@ -1,257 +1,451 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchLeads } from '../../services/leadService';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView } from '../../services/leadService';
 import EmptyState from '../../components/common/EmptyState';
-import Badge from '../../components/common/Badge';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import FilterPanel from '../../components/leads/FilterPanel';
+import LeadTable from '../../components/leads/LeadTable';
+import Pagination from '../../components/leads/Pagination';
+import SavedViewsPanel, { DEFAULT_SAVED_VIEWS } from '../../components/leads/SavedViewsPanel';
+import SearchBar from '../../components/leads/SearchBar';
+import Toast from '../../components/common/Toast';
+import BulkAssignModal from '../../components/leads/BulkAssignModal';
+import { getLeadField, toDisplayText } from '../../utils/leadDisplay';
 
-const STATUS_MAP = {
-  New: 'new',
-  Contacted: 'contacted',
-  Qualified: 'qualified',
-  Converted: 'converted',
-  Lost: 'lost',
+const PAGE_SIZE = 25;
+
+const EMPTY_FILTERS = {
+  status: '',
+  stage: '',
+  source: '',
+  category: '',
+  priority: '',
+  assignedTo: '',
+  dateFrom: '',
+  dateTo: '',
 };
+
+function normalizeLead(lead) {
+  const id = getLeadField(lead, ['id', '_id', 'leadId', 'lead_id'], '');
+  return {
+    id,
+    leadId: getLeadField(lead, ['leadId', 'lead_id', 'id'], 'LD-0000'),
+    companyName: getLeadField(lead, ['companyName', 'company_name', 'company'], '-'),
+    contactPerson: getLeadField(lead, ['contactPerson', 'contact_person', 'contactName'], '-'),
+    mobileNumber: getLeadField(lead, ['mobileNumber', 'mobile_number', 'mobile', 'phone'], '-'),
+    status: getLeadField(lead, ['status'], '-'),
+    stage: getLeadField(lead, ['stage', 'leadStage', 'lead_stage'], '-'),
+    source: getLeadField(lead, ['source', 'leadSource', 'lead_source'], '-'),
+    category: getLeadField(lead, ['category', 'businessCategory', 'business_category'], '-'),
+    priority: getLeadField(lead, ['priority'], '-'),
+    assignedTo: lead.assignedTo ?? lead.assigned_to ?? null,
+    assignedToName: toDisplayText(lead.assignedTo ?? lead.assigned_to, 'Unassigned'),
+    createdAt: getLeadField(lead, ['createdAt', 'created_at', 'createdDate', 'created_date'], ''),
+    estimatedValue: getLeadField(lead, ['estimatedValue', 'estimated_value', 'value'], ''),
+  };
+}
+
+function normalizeListResponse(response) {
+  const data = response?.data || response?.leads || response?.results || [];
+  const pagination = response?.pagination || {};
+  const total = Number(
+    pagination.total ??
+    pagination.totalRecords ??
+    response?.total ??
+    response?.totalCount ??
+    data.length
+  );
+  const totalPages = Number(
+    pagination.totalPages ??
+    response?.totalPages ??
+    Math.max(1, Math.ceil(total / PAGE_SIZE))
+  );
+
+  return {
+    leads: Array.isArray(data) ? data.map(normalizeLead) : [],
+    totalRecords: Number.isFinite(total) ? total : 0,
+    totalPages: Number.isFinite(totalPages) ? totalPages : 1,
+  };
+}
+
+function buildQuery({ page, search, filters, sort }) {
+  const query = { page, limit: PAGE_SIZE };
+  if (search.trim().length >= 2) query.search = search.trim();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) query[key] = value;
+  });
+  if (sort.sortBy) {
+    query.sortBy = sort.sortBy;
+    query.sortOrder = sort.sortOrder;
+  }
+  return query;
+}
 
 export default function LeadList() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const { user } = useAuth();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdmin = user?.role === 'Admin';
+  const isMarketingExecutive = user?.role === 'Marketing Executive';
 
   const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [sort, setSort] = useState({ sortBy: '', sortOrder: 'desc' });
+  const [savedViews, setSavedViews] = useState(DEFAULT_SAVED_VIEWS);
+  const [activeViewId, setActiveViewId] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalLeads, setTotalLeads] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [reassigning, setReassigning] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+  const [toastShow, setToastShow] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const accessDenied = isAdminRoute && !isAdmin;
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setActiveSearch(searchInput.trim().length >= 2 ? searchInput.trim() : '');
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  const query = useMemo(
+    () => buildQuery({ page, search: activeSearch, filters, sort }),
+    [page, activeSearch, filters, sort]
+  );
 
   const loadLeads = useCallback(async () => {
+    if (accessDenied) return;
     setLoading(true);
+    setError('');
     try {
-      const params = { page, limit: 10 };
-      if (search) params.search = search;
-      if (statusFilter) params.status = statusFilter;
-      if (priorityFilter) params.priority = priorityFilter;
-      const res = await fetchLeads(params);
-      const data = res?.data || res?.leads || [];
-      setLeads(Array.isArray(data) ? data : []);
-      setTotalPages(res?.totalPages || res?.pagination?.totalPages || 1);
-      setTotalLeads(res?.total || res?.pagination?.total || data.length || 0);
-    } catch {
+      const response = isAdmin ? await fetchAdminLeads(query) : await fetchMarketingLeads(query);
+      const normalized = normalizeListResponse(response);
+      let filteredLeads = normalized.leads;
+      let totalRecords = normalized.totalRecords;
+      if (!isAdmin && user) {
+        const userId = user.id || user.employee_id || user.employeeId;
+        filteredLeads = normalized.leads.filter((l) => {
+          const assignedId = l.assignedTo?.employee_id || l.assignedTo?.id || null;
+          return assignedId === userId;
+        });
+        totalRecords = filteredLeads.length;
+      }
+      setLeads(filteredLeads);
+      setTotalPages(Math.max(1, Math.ceil(totalRecords / PAGE_SIZE)));
+      setTotalRecords(totalRecords);
+    } catch (err) {
+      if (err?.status === 403) {
+        setError('Access Denied');
+      } else {
+        setError('Failed to load leads.');
+      }
       setLeads([]);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, priorityFilter]);
+  }, [accessDenied, isAdmin, query]);
 
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
 
-  const handleSearch = useCallback((e) => {
-    setSearch(e.target.value);
-    setPage(1);
-  }, []);
 
-  const handleStatusFilter = useCallback((e) => {
-    setStatusFilter(e.target.value);
-    setPage(1);
-  }, []);
 
-  const handlePriorityFilter = useCallback((e) => {
-    setPriorityFilter(e.target.value);
+  const handleFilterChange = (nextFilters) => {
+    setFilters(nextFilters);
+    setActiveViewId('');
     setPage(1);
-  }, []);
+  };
+
+  const handleSort = (sortBy) => {
+    setSort((current) => ({
+      sortBy,
+      sortOrder: current.sortBy === sortBy && current.sortOrder === 'desc' ? 'asc' : 'desc',
+    }));
+    setActiveViewId('');
+    setPage(1);
+  };
+
+  const handleApplySavedView = (view) => {
+    setFilters({ ...EMPTY_FILTERS, ...(view.filters || {}) });
+    setSort(view.sort || { sortBy: '', sortOrder: 'desc' });
+    setSearchInput(view.search || '');
+    setActiveSearch(view.search || '');
+    setActiveViewId(view.id);
+    setPage(1);
+  };
+
+  const handleSaveCurrentView = async () => {
+    const name = window.prompt('View name', activeSearch || filters.priority || filters.status ? 'Current Lead View' : 'My Lead View');
+    if (!name?.trim()) return;
+    const res = await createSavedView({ name: name.trim(), filters });
+    const newView = res?.data || { id: `view-${Date.now()}`, name: name.trim(), filters };
+    const view = {
+      id: newView.id,
+      name: newView.name,
+      filters: newView.filters || filters,
+      sort,
+      search: activeSearch,
+    };
+    setSavedViews((prev) => [...prev, view]);
+    setActiveViewId(view.id);
+  };
+
+  const handleDeleteSavedView = async (viewId) => {
+    await deleteSavedView(viewId);
+    setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
+    if (activeViewId === viewId) setActiveViewId('');
+  };
+
+  useEffect(() => {
+    setSelectedLeadIds(new Set());
+  }, [page, activeSearch, filters]);
+
+  const handleToggleSelect = (id) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedLeadIds((prev) => {
+      const allIds = leads.map((l) => l.id);
+      const allSelected = allIds.every((id) => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev);
+        allIds.forEach((id) => next.delete(id));
+        return next;
+      }
+      const next = new Set(prev);
+      allIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const handleClearSelection = () => setSelectedLeadIds(new Set());
+
+  const selectedCount = selectedLeadIds.size;
+
+  const handleBulkReassign = () => {
+    setReassignModalOpen(true);
+  };
+
+  const handleConfirmReassign = async (assignedTo, reason) => {
+    setReassigning(true);
+    try {
+      const leadIds = Array.from(selectedLeadIds);
+      await bulkAssignLeads(leadIds, assignedTo, reason);
+      setReassignModalOpen(false);
+      handleClearSelection();
+      setToastMessage(`${leadIds.length} lead(s) assigned successfully`);
+      setToastType('success');
+      setToastShow(true);
+      loadLeads();
+    } catch {
+      setToastMessage('Failed to reassign leads. Please try again.');
+      setToastType('error');
+      setToastShow(true);
+    } finally {
+      setReassigning(false);
+    }
+  };
+
+  const handleBulkExport = () => {
+    const selectedLeads = leads.filter((l) => selectedLeadIds.has(l.id));
+    const csv = [
+      ['Lead ID', 'Company Name', 'Contact Person', 'Mobile', 'Status', 'Stage', 'Source', 'Category', 'Priority', 'Assigned To', 'Created Date', 'Estimated Value'].join(','),
+      ...selectedLeads.map((l) =>
+        [l.leadId, l.companyName, l.contactPerson, l.mobileNumber, l.status, l.stage, l.source, l.category, l.priority, l.assignedToName, l.createdAt, l.estimatedValue].join(',')
+      ),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leads-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    handleClearSelection();
+  };
+
+  const handleOpenLead = (leadId) => {
+    navigate(`${isAdmin ? '/admin' : '/marketing'}/leads/${leadId}`);
+  };
+
+  if (accessDenied) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="rounded-lg border border-error/20 bg-white/70 p-8 text-center">
+          <h1 className="text-headline-md font-headline-md text-error">Access Denied</h1>
+        </div>
+      </div>
+    );
+  }
+
+  const pageTitle = isAdmin ? 'All Leads' : 'My Leads';
+  const subtitle = totalRecords === 1 ? '1 matching record' : `${totalRecords} matching records`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <div className="glass-card rounded-3xl p-5 sm:p-6 md:p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#4f46e5] via-[#712ae2] to-[#8b5cf6] bg-[length:200%_100%] animate-shimmer" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="mx-auto max-w-[1500px] px-2 py-4 sm:px-4 sm:py-6">
+      <div className="glass-card rounded-lg p-4 sm:p-5">
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="font-headline-md text-headline-md text-on-surface">
-              Lead Management
-            </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant/70">
-              {totalLeads > 0 ? `${totalLeads} lead${totalLeads !== 1 ? 's' : ''} found` : 'Manage your leads'}
-            </p>
+            <h1 className="text-headline-md font-headline-md text-on-surface">{pageTitle}</h1>
+            <p className="mt-1 text-body-md text-on-surface-variant">{subtitle}</p>
           </div>
-          <button
-            onClick={() => navigate('/app/leads/create')}
-            className="btn-gradient px-6 py-3 rounded-xl text-white font-label-md text-label-md flex items-center gap-2 self-start"
-          >
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            Create Lead
-          </button>
+          <div className="flex w-full items-center gap-2 lg:max-w-xl">
+            <div className="flex-1">
+              <SearchBar value={searchInput} onChange={setSearchInput} />
+            </div>
+            {(isAdmin || isMarketingExecutive) && (
+              <button
+                type="button"
+                onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/create`)}
+                className="btn-gradient h-10 rounded-lg px-4 text-label-md font-label-md text-white whitespace-nowrap"
+              >
+                Create Lead
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
-              <span className="material-symbols-outlined text-[20px]">search</span>
+        <div className="mb-4">
+          {isAdmin && (
+            <div className="mb-4">
+              <SavedViewsPanel
+                views={savedViews}
+                activeViewId={activeViewId}
+                onApplyView={handleApplySavedView}
+                onSaveView={handleSaveCurrentView}
+                onDeleteView={handleDeleteSavedView}
+              />
             </div>
-            <input
-              type="text"
-              value={search}
-              onChange={handleSearch}
-              placeholder="Search leads..."
-              className="w-full bg-white/50 border border-outline-variant rounded-xl py-3 pl-10 pr-4 font-body-md text-on-surface placeholder:text-outline/50 transition-all focus:outline-none input-focus-effect"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={handleStatusFilter}
-            className="bg-white/50 border border-outline-variant rounded-xl py-3 px-4 font-body-md text-on-surface transition-all focus:outline-none input-focus-effect appearance-none cursor-pointer min-w-[140px]"
-          >
-            <option value="">All Status</option>
-            <option value="New">New</option>
-            <option value="Contacted">Contacted</option>
-            <option value="Qualified">Qualified</option>
-            <option value="Converted">Converted</option>
-            <option value="Lost">Lost</option>
-          </select>
-          <select
-            value={priorityFilter}
-            onChange={handlePriorityFilter}
-            className="bg-white/50 border border-outline-variant rounded-xl py-3 px-4 font-body-md text-on-surface transition-all focus:outline-none input-focus-effect appearance-none cursor-pointer min-w-[140px]"
-          >
-            <option value="">All Priority</option>
-            <option value="Hot">Hot</option>
-            <option value="Warm">Warm</option>
-            <option value="Cold">Cold</option>
-          </select>
+          )}
+          <FilterPanel
+            filters={filters}
+            isAdmin={isAdmin}
+            onChange={handleFilterChange}
+            onClear={() => {
+              setFilters(EMPTY_FILTERS);
+              setActiveViewId('');
+              setPage(1);
+            }}
+          />
         </div>
 
         {loading ? (
-          <LoadingSpinner text="Loading leads..." />
+          <div className="rounded-lg border border-outline-variant/40 bg-white/35 py-12">
+            <LoadingSpinner text="Loading leads..." />
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-error/20 bg-white/65 p-8 text-center">
+            <h2 className="text-headline-md font-headline-md text-error">{error}</h2>
+            {error !== 'Access Denied' && (
+              <button
+                type="button"
+                onClick={loadLeads}
+                className="mt-4 rounded-lg bg-primary px-4 py-2 text-label-md font-label-md text-white transition-colors hover:bg-primary/90"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         ) : leads.length === 0 ? (
-          <EmptyState
-            icon="leaderboard"
-            title="No leads found"
-            description={
-              search || statusFilter || priorityFilter
-                ? 'Try adjusting your search or filters.'
-                : 'Create your first lead to get started.'
-            }
-            action={
-              !search && !statusFilter && !priorityFilter ? (
-                <button
-                  onClick={() => navigate('/app/leads/create')}
-                  className="btn-gradient px-6 py-3 rounded-xl text-white font-label-md text-label-md flex items-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-[20px]">add</span>
-                  Create Lead
-                </button>
-              ) : null
-            }
-          />
+          <div className="rounded-lg border border-outline-variant/40 bg-white/35">
+            <EmptyState
+              icon="leaderboard"
+              title="No Leads Found"
+              description="No leads found matching your criteria."
+            />
+          </div>
         ) : (
-          <>
-            <div className="overflow-x-auto -mx-5 sm:-mx-6 md:-mx-8">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-outline-variant/30">
-                    <th className="text-left px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant">Lead ID</th>
-                    <th className="text-left px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant">Company</th>
-                    <th className="text-left px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant hidden sm:table-cell">Contact</th>
-                    <th className="text-left px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant hidden md:table-cell">Mobile</th>
-                    <th className="text-left px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant">Status</th>
-                    <th className="text-left px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant hidden lg:table-cell">Priority</th>
-                    <th className="text-right px-4 sm:px-6 py-3 font-label-md text-label-md text-on-surface-variant">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((lead) => (
-                    <tr
-                      key={lead.id || lead._id || lead.leadId}
-                      className="border-b border-outline-variant/20 hover:bg-white/30 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/app/leads/${lead.id || lead._id || lead.leadId}`)}
-                    >
-                      <td className="px-4 sm:px-6 py-4 font-label-md text-label-md text-primary">
-                        {lead.leadId || lead.id || 'LD-0000'}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 font-body-md text-body-md text-on-surface">
-                        {lead.companyName}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 font-body-md text-body-md text-on-surface hidden sm:table-cell">
-                        {lead.contactPerson}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 font-body-md text-body-md text-on-surface-variant hidden md:table-cell">
-                        {lead.mobileNumber}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4">
-                        <Badge variant={STATUS_MAP[lead.status] || 'new'}>
-                          {lead.status || 'New'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
-                        <Badge variant={lead.priority?.toLowerCase() || 'new'}>
-                          {lead.priority || 'New'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/app/leads/${lead.id || lead._id || lead.leadId}`);
-                          }}
-                          className="text-primary hover:text-primary/80 font-label-md text-label-md transition-colors"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-6 border-t border-outline-variant/30 mt-6">
-                <p className="text-label-sm text-label-sm text-on-surface-variant/70">
-                  Page {page} of {totalPages}
-                </p>
+          <div className="space-y-4">
+            <LeadTable
+              leads={leads}
+              isAdmin={isAdmin}
+              sort={sort}
+              onSort={handleSort}
+              onOpenLead={handleOpenLead}
+              selectedIds={selectedLeadIds}
+              onToggleSelect={handleToggleSelect}
+              onSelectAll={handleSelectAll}
+            />
+            {isAdmin && selectedCount > 0 && (
+              <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+                <span className="text-label-md font-label-md text-on-surface">
+                  {selectedCount} lead{selectedCount > 1 ? 's' : ''} selected
+                </span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                    className="px-3 py-2 rounded-xl border border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-white/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={handleBulkReassign}
+                    className="rounded-lg bg-primary px-4 py-2 text-label-sm font-label-sm text-white transition-colors hover:bg-primary/90"
                   >
-                    Previous
+                    Reassign
                   </button>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    const start = Math.max(1, page - 2);
-                    const pg = start + i;
-                    if (pg > totalPages) return null;
-                    return (
-                      <button
-                        key={pg}
-                        onClick={() => setPage(pg)}
-                        className={`w-9 h-9 rounded-xl font-label-sm text-label-sm transition-all ${
-                          pg === page
-                            ? 'bg-primary text-white'
-                            : 'border border-outline-variant text-on-surface-variant hover:bg-white/30'
-                        }`}
-                      >
-                        {pg}
-                      </button>
-                    );
-                  })}
                   <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="px-3 py-2 rounded-xl border border-outline-variant text-on-surface-variant font-label-sm text-label-sm hover:bg-white/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={handleBulkExport}
+                    className="rounded-lg border border-outline-variant bg-white px-4 py-2 text-label-sm font-label-sm text-on-surface transition-colors hover:bg-white/80"
                   >
-                    Next
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearSelection}
+                    className="rounded-lg px-3 py-2 text-label-sm font-label-sm text-on-surface-variant transition-colors hover:bg-white/60"
+                  >
+                    Clear
                   </button>
                 </div>
               </div>
             )}
-          </>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </div>
         )}
+
+        {!isAdmin && isMarketingExecutive && (
+          <p className="mt-4 text-label-sm text-on-surface-variant">
+            Showing leads assigned to {user?.name || 'you'}.
+          </p>
+        )}
+        <BulkAssignModal
+          isOpen={reassignModalOpen}
+          onClose={() => !reassigning && setReassignModalOpen(false)}
+          selectedCount={selectedCount}
+          selectedLeads={leads.filter((l) => selectedLeadIds.has(l.id))}
+          onAssign={handleConfirmReassign}
+          assigning={reassigning}
+        />
+
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          show={toastShow}
+          onClose={() => setToastShow(false)}
+        />
       </div>
     </div>
   );

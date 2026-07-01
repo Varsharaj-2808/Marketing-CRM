@@ -2,10 +2,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 const NAV_ITEMS = [
-  { path: '/app/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/app/leads', label: 'My Leads', icon: 'group' },
-  { path: '/app/follow-ups', label: 'Follow-ups', icon: 'event_note' },
-  { path: '/app/reports', label: 'Reports', icon: 'assessment' },
+  { path: '/marketing/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { path: '/marketing/leads', label: 'My Leads', icon: 'group' },
+  { path: '/marketing/follow-ups', label: 'Follow-ups', icon: 'event_note' },
+  { path: '/marketing/reports', label: 'Reports', icon: 'assessment' },
 ];
 
 export default function SideNavBar() {

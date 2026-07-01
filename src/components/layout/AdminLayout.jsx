@@ -1,9 +1,11 @@
-﻿import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+﻿import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import NotificationBell from '../leads/NotificationBell';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { path: '/admin/leads', label: 'Leads', icon: 'leaderboard' },
   { path: '/admin/users', label: 'User Management', icon: 'group' },
   { path: '/admin/audit-logs', label: 'Audit Logs', icon: 'receipt_long' },
   { path: '/admin/security', label: 'Security Policy', icon: 'security' },
@@ -16,13 +18,8 @@ export default function AdminLayout() {
   const { user, isAuthenticated, logout, token } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/app/login', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  if (!isAuthenticated || !user) return null;
+  if (!isAuthenticated || !user) return <Navigate to="/app/login" replace />;
+  if (user.role !== 'Admin') return <Navigate to="/marketing/dashboard" replace />;
 
   const handleLogout = () => {
     logout();
@@ -46,10 +43,7 @@ export default function AdminLayout() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="p-1.5 rounded-full hover:bg-primary/5 transition-colors relative">
-            <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-error rounded-full"></span>
-          </button>
+          <NotificationBell />
           <button className="p-1.5 rounded-full bg-primary/5 text-primary border border-primary/10">
             <span className="material-symbols-outlined">settings</span>
           </button>

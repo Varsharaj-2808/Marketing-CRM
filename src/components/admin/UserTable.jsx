@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toDisplayText } from '../../utils/leadDisplay';
 
 const STATUS_STYLES = {
   Active: 'bg-emerald-500/10 text-emerald-600',
@@ -26,19 +27,19 @@ export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
               key={user.employee_id || user.id || Math.random()}
               className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors group relative"
             >
-              <td className="py-3 px-3 font-semibold text-on-surface">{user.employee_id}</td>
-              <td className="py-3 px-3 text-on-surface">{user.employee_name}</td>
-              <td className="py-3 px-3 text-on-surface-variant">{user.email}</td>
-              <td className="py-3 px-3 text-on-surface-variant">{user.mobile}</td>
+              <td className="py-3 px-3 font-semibold text-on-surface">{toDisplayText(user.employee_id, '-')}</td>
+              <td className="py-3 px-3 text-on-surface">{toDisplayText(user.employee_name, '-')}</td>
+              <td className="py-3 px-3 text-on-surface-variant">{toDisplayText(user.email, '-')}</td>
+              <td className="py-3 px-3 text-on-surface-variant">{toDisplayText(user.mobile, '-')}</td>
               <td className="py-3 px-3">
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-label-sm font-semibold">
-                  {user.role}
+                  {toDisplayText(user.role, '-')}
                 </span>
               </td>
               <td className="py-3 px-3">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label-sm font-semibold ${STATUS_STYLES[user.status] || 'bg-surface-container-high text-on-surface-variant'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${user.status === 'Active' ? 'bg-emerald-500' : 'bg-error'}`}></span>
-                  {user.status}
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label-sm font-semibold ${STATUS_STYLES[toDisplayText(user.status)] || 'bg-surface-container-high text-on-surface-variant'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${toDisplayText(user.status) === 'Active' ? 'bg-emerald-500' : 'bg-error'}`}></span>
+                  {toDisplayText(user.status, '-')}
                 </span>
               </td>
               <td className="py-3 px-3">
@@ -49,7 +50,7 @@ export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
                   >
                     Edit
                   </button>
-                  {user.status === 'Active' ? (
+                  {toDisplayText(user.status) === 'Active' ? (
                     <button
                       onClick={() => onDeactivate(user)}
                       className="px-2.5 py-1 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"

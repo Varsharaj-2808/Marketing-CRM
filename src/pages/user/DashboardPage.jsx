@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { toDisplayText } from '../../utils/leadDisplay';
 import StatsCard from '../../components/user/StatsCard';
 import TaskList from '../../components/user/TaskList';
 import LeadDistribution from '../../components/user/LeadDistribution';
@@ -144,7 +145,7 @@ export default function DashboardPage() {
               <span className="w-1.5 h-1.5 bg-primary rounded-full mr-1.5 animate-pulse"></span>
               Live Marketing Status
             </span>
-            <h1 className="font-display-lg text-display-lg text-on-surface mb-1">Welcome back, {user.name}.</h1>
+            <h1 className="font-display-lg text-display-lg text-on-surface mb-1">Welcome back, {toDisplayText(user.name, 'User')}.</h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
               Your Q3 marketing campaigns are performing <span className="text-secondary font-bold">12% above benchmark</span>. You have 4 pending security reviews for the upcoming lead magnets.
             </p>

@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { toDisplayText } from '../../utils/leadDisplay';
 import Skeleton from '../../components/common/Skeleton';
 import SkeletonCard from '../../components/common/SkeletonCard';
 
@@ -190,7 +191,7 @@ export default function AdminDashboardPage() {
     <div className="mt-4">
       <section className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="font-display-lg text-display-lg text-primary mb-2">Welcome back, {user.name}</h1>
+          <h1 className="font-display-lg text-display-lg text-primary mb-2">Welcome back, {toDisplayText(user.name, 'Admin')}</h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Here is an overview of the security state and user activities across the enterprise.</p>
         </div>
         <div className="glass-card flex items-center gap-3 px-4 py-3 rounded-xl">

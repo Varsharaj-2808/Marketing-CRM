@@ -73,6 +73,75 @@ function findUser(id) {
   return usersStore.find(u => u.employee_id === id || u.id === id);
 }
 
+function getCurrentUser() {
+  try {
+    const raw = localStorage.getItem('crm_user');
+    if (!raw) return null;
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function isCurrentUserAdmin() {
+  const user = getCurrentUser();
+  return user?.role === 'Admin';
+}
+
+function getCurrentUserId() {
+  const user = getCurrentUser();
+  return user?.id || user?._id || user?.employee_id || user?.employeeId || null;
+}
+
+function applyLeadFilters(leads, url) {
+  const search = url.searchParams.get('search')?.toLowerCase() || '';
+  const status = url.searchParams.get('status') || '';
+  const assignedTo = url.searchParams.get('assignedTo') || '';
+  const sortField = url.searchParams.get('sortField') || 'createdAt';
+  const sortOrder = url.searchParams.get('sortOrder') || 'desc';
+  const page = parseInt(url.searchParams.get('page')) || 1;
+  const limit = parseInt(url.searchParams.get('limit')) || 25;
+
+  let filtered = [...leads];
+
+  if (search) {
+    filtered = filtered.filter((l) =>
+      l.companyName?.toLowerCase().includes(search) ||
+      l.contactPerson?.toLowerCase().includes(search) ||
+      l.mobileNumber?.includes(search) ||
+      l.email?.toLowerCase().includes(search) ||
+      l.leadId?.toLowerCase().includes(search)
+    );
+  }
+
+  if (status) {
+    filtered = filtered.filter((l) => l.status === status);
+  }
+
+  if (assignedTo) {
+    filtered = filtered.filter((l) => l.assignedTo === assignedTo);
+  }
+
+  filtered.sort((a, b) => {
+    const aVal = a[sortField];
+    const bVal = b[sortField];
+    if (!aVal || !bVal) return 0;
+    const cmp = typeof aVal === 'string' ? aVal.localeCompare(bVal) : aVal - bVal;
+    return sortOrder === 'asc' ? cmp : -cmp;
+  });
+
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = (page - 1) * limit;
+  const data = filtered.slice(start, start + limit);
+
+  return {
+    body: { success: true, data, pagination: { page, limit, total, totalPages } },
+    status: 200,
+  };
+}
+
 export const handlers = [
   http.get(`${BASE}/admin/lead-sources`, () => {
     return HttpResponse.json({
@@ -221,13 +290,6 @@ export const handlers = [
     if (idx === -1) return HttpResponse.json({ success: false, message: 'Sub-category not found.' }, { status: 404 });
     subs.splice(idx, 1);
     return HttpResponse.json({ success: true, message: 'Sub-category deleted successfully.' });
-  }),
-
-  http.get(`${BASE}/admin/users`, () => {
-    return HttpResponse.json({
-      success: true,
-      data: usersStore,
-    });
   }),
 
   http.get(`${BASE}/admin/users/deactivated`, () => {
@@ -387,15 +449,29 @@ export const handlers = [
   }),
 
   http.get(`${BASE}/marketing/leads/:leadId/lead-history`, ({ params }) => {
-    const { leadId } = params;
-    const lead = mockLeadsStore.find((l) => l.id === leadId || l.leadId === leadId);
-    if (!lead) {
-      return HttpResponse.json({ success: false, message: 'Lead not found.' }, { status: 404 });
+    try {
+      const leadId = params?.leadId;
+      if (!leadId) {
+        return HttpResponse.json({ success: false, message: 'Lead ID required.' }, { status: 400 });
+      }
+      const lead = mockLeadsStore.find((l) => l.id === leadId || l.leadId === leadId);
+      if (!lead) {
+        return HttpResponse.json({ success: false, message: 'Lead not found.' }, { status: 404 });
+      }
+      if (!isCurrentUserAdmin()) {
+        const userId = getCurrentUserId();
+        const assigned = lead.assignedTo ?? lead.assigned_to ?? null;
+        if (assigned !== userId) {
+          return HttpResponse.json({ success: false, message: 'Access Denied' }, { status: 403 });
+        }
+      }
+      return HttpResponse.json({
+        success: true,
+        data: lead.timeline || [],
+      });
+    } catch {
+      return HttpResponse.json({ success: false, message: 'Internal server error.' }, { status: 500 });
     }
-    return HttpResponse.json({
-      success: true,
-      data: lead.timeline || [],
-    });
   }),
 
   http.post(`${BASE}/marketing/leads/check-duplicate`, async ({ request }) => {
@@ -428,7 +504,9 @@ export const handlers = [
 
   http.post(`${BASE}/marketing/leads`, async ({ request }) => {
     const body = await request.json();
-    const newLead = createMockLead(body);
+    const assignedUser = findUser(body.assignedTo);
+    const createdByName = assignedUser?.name || 'Admin User';
+    const newLead = createMockLead(body, createdByName);
     mockLeadsStore.unshift(newLead);
 
     return HttpResponse.json({
@@ -453,6 +531,17 @@ export const handlers = [
         { success: false, message: 'Lead not found.' },
         { status: 404 }
       );
+    }
+
+    if (!isCurrentUserAdmin()) {
+      const userId = getCurrentUserId();
+      const assigned = lead.assignedTo ?? lead.assigned_to ?? null;
+      if (assigned !== userId) {
+        return HttpResponse.json(
+          { success: false, message: 'Access Denied' },
+          { status: 403 }
+        );
+      }
     }
 
     return HttpResponse.json({
@@ -485,6 +574,300 @@ export const handlers = [
 
   http.post(`${BASE}/auth/logout`, () => {
     return HttpResponse.json({ success: true, message: 'Logged out successfully.' });
+  }),
+
+  http.get(`${BASE}/admin/leads`, ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const limit = parseInt(url.searchParams.get('limit')) || 25;
+    const search = url.searchParams.get('search')?.toLowerCase() || '';
+    const status = url.searchParams.get('status') || '';
+    const sortBy = url.searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
+
+    let filtered = [...mockLeadsStore];
+
+    if (search) {
+      filtered = filtered.filter((l) =>
+        l.companyName?.toLowerCase().includes(search) ||
+        l.contactPerson?.toLowerCase().includes(search) ||
+        l.mobileNumber?.includes(search) ||
+        l.email?.toLowerCase().includes(search) ||
+        l.leadId?.toLowerCase().includes(search)
+      );
+    }
+
+    if (status) {
+      filtered = filtered.filter((l) => l.status === status);
+    }
+
+    filtered.sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+      if (!aVal || !bVal) return 0;
+      const cmp = typeof aVal === 'string' ? aVal.localeCompare(bVal) : aVal - bVal;
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const start = (page - 1) * limit;
+    const data = filtered.slice(start, start + limit);
+
+    return HttpResponse.json({
+      success: true,
+      data,
+      pagination: { page, limit, total, totalPages },
+    });
+  }),
+
+  http.get(`${BASE}/admin/leads/:leadId`, ({ params }) => {
+    const { leadId } = params;
+    const lead = mockLeadsStore.find(
+      (l) => l.id === leadId || l.leadId === leadId
+    );
+    if (!lead) {
+      return HttpResponse.json(
+        { success: false, message: 'Lead not found.' },
+        { status: 404 }
+      );
+    }
+    return HttpResponse.json({
+      success: true,
+      data: lead,
+    });
+  }),
+
+  http.get(`${BASE}/marketing/leads`, ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const limit = parseInt(url.searchParams.get('limit')) || 25;
+
+    const total = mockLeadsStore.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const start = (page - 1) * limit;
+    const data = mockLeadsStore.slice(start, start + limit);
+
+    return HttpResponse.json({
+      success: true,
+      data,
+      pagination: { page, limit, total, totalPages },
+    });
+  }),
+
+  http.get(`${BASE}/admin/users`, ({ request }) => {
+    const url = new URL(request.url);
+    const role = url.searchParams.get('role');
+    let result = usersStore;
+    if (role) {
+      result = usersStore.filter((u) => u.role === role);
+    }
+    return HttpResponse.json({
+      success: true,
+      data: result,
+    });
+  }),
+
+  http.patch(`${BASE}/leads/:leadId/assign`, async ({ params, request }) => {
+    const { leadId } = params;
+    const body = await request.json();
+    const { assignedTo, reason } = body;
+
+    const idx = mockLeadsStore.findIndex(
+      (l) => l.id === leadId || l.leadId === leadId
+    );
+    if (idx === -1) {
+      return HttpResponse.json(
+        { success: false, message: 'Lead not found.' },
+        { status: 404 }
+      );
+    }
+
+    const targetUser = usersStore.find(
+      (u) => u.employee_id === assignedTo || u.id === assignedTo
+    );
+    const targetName = targetUser?.name || assignedTo;
+    const previousOwner = mockLeadsStore[idx].assignedTo
+      ? (usersStore.find(
+          (u) =>
+            u.employee_id === mockLeadsStore[idx].assignedTo ||
+            u.id === mockLeadsStore[idx].assignedTo
+        )?.name || mockLeadsStore[idx].assignedTo)
+      : null;
+
+    const now = new Date().toISOString();
+    const currentUser = getCurrentUser();
+    const actorName = currentUser?.name || 'Admin User';
+
+    mockLeadsStore[idx] = {
+      ...mockLeadsStore[idx],
+      assignedTo,
+      assignedAt: now,
+      updatedAt: now,
+    };
+
+    const timelineEntry = {
+      action: previousOwner ? 'Lead Reassigned' : 'Lead Assigned',
+      message: previousOwner ? 'Lead Reassigned' : 'Lead Assigned',
+      description: previousOwner ? `Lead reassigned from ${previousOwner} to ${targetName}` : `Lead assigned to ${targetName}`,
+      previousOwner: previousOwner || null,
+      newOwner: targetName,
+      reason: reason || '',
+      user: actorName,
+      createdBy: { id: currentUser?.id || 'EMP-00001', name: actorName },
+      createdAt: now,
+      timestamp: now,
+    };
+
+    if (!mockLeadsStore[idx].timeline) {
+      mockLeadsStore[idx].timeline = [];
+    }
+    mockLeadsStore[idx].timeline.unshift(timelineEntry);
+
+    return HttpResponse.json({
+      success: true,
+      message: previousOwner ? 'Lead reassigned successfully' : 'Lead assigned successfully',
+    });
+  }),
+
+  http.post(`${BASE}/admin/leads/bulk-assign`, async ({ request }) => {
+    const body = await request.json();
+    const { leadIds, assignedTo, reason } = body;
+
+    const targetUser = usersStore.find(
+      (u) => u.employee_id === assignedTo || u.id === assignedTo
+    );
+    const targetName = targetUser?.name || assignedTo;
+    const now = new Date().toISOString();
+    const currentUser = getCurrentUser();
+    const actorName = currentUser?.name || 'Admin User';
+
+    let count = 0;
+    leadIds.forEach((id) => {
+      const idx = mockLeadsStore.findIndex((l) => l.id === id || l.leadId === id);
+      if (idx !== -1) {
+        count++;
+        const previousOwner = mockLeadsStore[idx].assignedTo
+          ? (usersStore.find(
+              (u) =>
+                u.employee_id === mockLeadsStore[idx].assignedTo ||
+                u.id === mockLeadsStore[idx].assignedTo
+            )?.name || mockLeadsStore[idx].assignedTo)
+          : null;
+
+        mockLeadsStore[idx] = {
+          ...mockLeadsStore[idx],
+          assignedTo,
+          assignedAt: now,
+          updatedAt: now,
+        };
+
+        const timelineEntry = {
+          action: previousOwner ? 'Lead Reassigned' : 'Lead Assigned',
+          message: previousOwner ? 'Lead Reassigned' : 'Lead Assigned',
+          description: previousOwner
+            ? `Lead reassigned from ${previousOwner} to ${targetName}`
+            : `Lead assigned to ${targetName}`,
+          previousOwner: previousOwner || null,
+          newOwner: targetName,
+          reason: reason || '',
+          user: actorName,
+          createdBy: { id: currentUser?.id || 'EMP-00001', name: actorName },
+          createdAt: now,
+          timestamp: now,
+        };
+
+        if (!mockLeadsStore[idx].timeline) {
+          mockLeadsStore[idx].timeline = [];
+        }
+        mockLeadsStore[idx].timeline.unshift(timelineEntry);
+      }
+    });
+
+    return HttpResponse.json({
+      assigned: true,
+      count,
+    });
+  }),
+
+  http.get(`${BASE}/notifications`, () => {
+    const now = new Date();
+    const notifications = [
+      {
+        id: 'notif-001',
+        type: 'assignment',
+        message: 'Lead LD-2026-00001 has been assigned to John Executive',
+        leadId: 'lead-001',
+        read: false,
+        role: 'Admin',
+        createdAt: new Date(now - 3600000).toISOString(),
+        timestamp: new Date(now - 3600000).toISOString(),
+      },
+      {
+        id: 'notif-002',
+        type: 'assignment',
+        message: 'Lead LD-2026-00002 has been reassigned to Sarah Manager',
+        leadId: 'lead-002',
+        read: false,
+        role: 'Admin',
+        createdAt: new Date(now - 7200000).toISOString(),
+        timestamp: new Date(now - 7200000).toISOString(),
+      },
+      {
+        id: 'notif-003',
+        type: 'assignment',
+        message: 'Lead LD-2026-00003 has been assigned to John Executive',
+        leadId: 'lead-003',
+        read: true,
+        role: 'Admin',
+        createdAt: new Date(now - 86400000).toISOString(),
+        timestamp: new Date(now - 86400000).toISOString(),
+      },
+    ];
+    return HttpResponse.json({
+      success: true,
+      data: notifications,
+    });
+  }),
+
+  http.patch(`${BASE}/notifications/:id/read`, ({ params }) => {
+    const { id } = params;
+    return HttpResponse.json({
+      success: true,
+      message: `Notification ${id} marked as read.`,
+    });
+  }),
+
+  http.get(`${BASE}/lead-history/:leadId`, ({ params }) => {
+    const { leadId } = params;
+    const lead = mockLeadsStore.find(
+      (l) => l.id === leadId || l.leadId === leadId
+    );
+    if (!lead) {
+      return HttpResponse.json(
+        { success: false, message: 'Lead not found.' },
+        { status: 404 }
+      );
+    }
+    const history = lead.timeline || [];
+    if (history.length === 0 && lead.createdAt) {
+      const userName =
+        typeof lead.createdBy === 'object'
+          ? lead.createdBy?.name
+          : lead.createdBy || '';
+      history.push({
+        action: 'Lead Created',
+        message: 'Lead Created',
+        user: userName,
+        createdBy: lead.createdBy,
+        createdAt: lead.createdAt,
+        timestamp: lead.createdAt,
+      });
+    }
+    return HttpResponse.json({
+      success: true,
+      data: history,
+    });
   }),
 
   http.delete(`${BASE}/admin/users/:id`, ({ params }) => {

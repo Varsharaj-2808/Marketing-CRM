@@ -7,8 +7,9 @@ import DashboardPage from './pages/user/DashboardPage';
 import LeadList from './pages/leads/LeadList';
 import CreateLead from './pages/leads/CreateLead';
 import LeadDetails from './pages/leads/LeadDetails';
+import LeadHistory from './pages/leads/LeadHistory';
 import AdminLayout from './components/layout/AdminLayout';
-import AppLayout from './components/layout/AppLayout';
+import MarketingLayout from './components/layout/MarketingLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import SecurityPage from './pages/admin/SecurityPage';
@@ -25,14 +26,15 @@ const router = createBrowserRouter([
   { path: '/app/reset-password', element: <ResetPasswordPage /> },
 
   {
-    path: '/app',
-    element: <AppLayout />,
+    path: '/marketing',
+    element: <MarketingLayout />,
     children: [
-      { index: true, element: <Navigate to="/app/dashboard" replace /> },
+      { index: true, element: <Navigate to="/marketing/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'leads', element: <LeadList /> },
       { path: 'leads/create', element: <CreateLead /> },
       { path: 'leads/:leadId', element: <LeadDetails /> },
+      { path: 'leads/:leadId/lead-history', element: <LeadHistory /> },
     ],
   },
 
@@ -48,6 +50,10 @@ const router = createBrowserRouter([
       { path: 'categories', element: <CategoriesPage /> },
       { path: 'services', element: <ServicesPage /> },
       { path: 'lead-sources', element: <LeadSourcesPage /> },
+      { path: 'leads', element: <LeadList /> },
+      { path: 'leads/create', element: <CreateLead /> },
+      { path: 'leads/:leadId', element: <LeadDetails /> },
+      { path: 'leads/:leadId/lead-history', element: <LeadHistory /> },
     ],
   },
 ]);

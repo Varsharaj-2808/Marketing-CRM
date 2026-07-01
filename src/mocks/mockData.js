@@ -71,8 +71,10 @@ function generateLeadId() {
   return `LD-${YEAR}-${String(leadCounter).padStart(5, '0')}`;
 }
 
-export function createMockLead(data) {
+export function createMockLead(data, createdByName) {
   const now = new Date().toISOString();
+  const userName = createdByName || 'Admin User';
+  const userId = data.assignedTo || 'EMP-00001';
   const newLead = {
     id: `lead-${String(leadCounter).padStart(5, '0')}`,
     leadId: generateLeadId(),
@@ -80,13 +82,16 @@ export function createMockLead(data) {
     status: 'New',
     createdAt: now,
     updatedAt: now,
-    createdBy: { id: data.assignedTo || 'EMP-00001', name: 'Admin User' },
+    createdBy: { id: userId, name: userName },
     timeline: [
       {
+        action: 'Lead Created',
         message: 'Lead Created',
         description: 'Lead Created',
-        createdBy: { id: data.assignedTo || 'EMP-00001', name: 'Admin User' },
+        user: userName,
+        createdBy: { id: userId, name: userName },
         createdAt: now,
+        timestamp: now,
       },
     ],
   };

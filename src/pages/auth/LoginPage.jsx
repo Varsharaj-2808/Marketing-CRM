@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useLockoutTimer } from '../../hooks/useLockoutTimer';
 import { validateLoginForm } from '../../validations/loginSchema';
@@ -39,11 +39,9 @@ export default function LoginPage() {
     setShowDemo(false);
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate(user?.role === 'Admin' ? '/admin/dashboard' : '/app/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate, user]);
+  if (isAuthenticated) {
+    return <Navigate to={user?.role === 'Admin' ? '/admin/dashboard' : '/marketing/dashboard'} replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

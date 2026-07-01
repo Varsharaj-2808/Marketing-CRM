@@ -1,16 +1,17 @@
-﻿import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import { toDisplayText } from '../../utils/leadDisplay';
+import NotificationBell from '../leads/NotificationBell';
 
 const NAV_ITEMS = [
-  { path: '/app/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/app/leads', label: 'My Leads', icon: 'group' },
-  { path: '/app/follow-ups', label: 'Follow-ups', icon: 'event_note' },
-  { path: '/app/reports', label: 'Reports', icon: 'assessment' },
+  { path: '/marketing/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { path: '/marketing/leads', label: 'My Leads', icon: 'group' },
+  { path: '/marketing/follow-ups', label: 'Follow-ups', icon: 'event_note' },
+  { path: '/marketing/reports', label: 'Reports', icon: 'assessment' },
 ];
 
-export default function AppLayout() {
+export default function MarketingLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
@@ -40,10 +41,7 @@ export default function AppLayout() {
           </div>
         </div>
         <div className="flex items-center gap-x-3">
-          <button className="p-1.5 rounded-full hover:bg-primary/5 transition-colors relative">
-            <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-error rounded-full"></span>
-          </button>
+          <NotificationBell />
           <button className="p-1.5 rounded-full hover:bg-primary/5 transition-colors">
             <span className="material-symbols-outlined text-on-surface-variant">settings</span>
           </button>
@@ -65,7 +63,7 @@ export default function AppLayout() {
 
       <aside className={`fixed left-0 top-0 h-full w-56 z-40 bg-white/80 backdrop-blur-xl border-r border-white/10 shadow-xl shadow-slate-900/5 flex flex-col p-4 pt-20 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:z-40`}>
         <div className="mb-3">
-          <h2 className="font-headline-md text-headline-md text-primary">User Portal</h2>
+          <h2 className="font-headline-md text-headline-md text-primary">Marketing Portal</h2>
           <p className="text-label-sm text-on-surface-variant opacity-70">Marketing Team</p>
         </div>
         <nav className="flex-grow flex flex-col gap-y-0.5">
