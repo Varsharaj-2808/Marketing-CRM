@@ -150,6 +150,64 @@ exports.getLeads = async (req, res, next) => {
   }
 };
 
+exports.getAdminLeads = async (req, res, next) => {
+  try {
+    const {
+      search, status, priority, stage, source, category, assigned_to,
+      sortBy, sortOrder, page, limit, from_date, to_date,
+    } = req.query;
+
+    const pageNum = page !== undefined ? parseInt(page) : 1;
+    const limitNum = limit !== undefined ? parseInt(limit) : 25;
+
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).json({ page: 'Page must be a positive integer' });
+    }
+
+    if (sortBy) {
+      const validSortFields = [
+        'company_name', 'contact_person', 'priority', 'status', 'stage',
+        'estimated_value', 'created_at',
+      ];
+      if (!validSortFields.includes(sortBy)) {
+        return res.status(400).json({
+          sortBy: `Invalid sort field. Must be one of: ${validSortFields.join(', ')}`,
+        });
+      }
+    }
+
+    if (from_date && to_date && new Date(from_date) > new Date(to_date)) {
+      return res.status(400).json({ from_date: 'from_date cannot be greater than to_date' });
+    }
+
+    const result = await Lead.findAllAdmin({
+      search,
+      status,
+      priority,
+      stage,
+      source,
+      category,
+      assigned_to,
+      sortBy,
+      sortOrder,
+      page: pageNum,
+      limit: limitNum,
+      from_date,
+      to_date,
+    });
+
+    res.json({
+      page: result.page,
+      totalPages: result.totalPages,
+      totalCount: result.totalCount,
+      limit: result.limit || limitNum,
+      data: result.data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getLeadHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
