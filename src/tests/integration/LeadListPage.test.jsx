@@ -240,6 +240,25 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     expect(screen.getByLabelText('Priority')).toHaveValue('High');
   });
 
+  it('TASK-2.2.1-04: saved view modal can create a new view', async () => {
+    setUser(adminUser);
+    global.fetch = vi.fn().mockResolvedValue(mockRes({
+      success: true,
+      data: [leads[0]],
+      pagination: { page: 1, limit: 25, total: 1, totalPages: 1 },
+    }));
+
+    renderLeadList('/admin/leads');
+    await screen.findByText('Supabase Labs');
+
+    fireEvent.click(screen.getByRole('button', { name: /save current view/i }));
+    const input = await screen.findByLabelText(/view name/i);
+    fireEvent.change(input, { target: { value: 'Quarterly Review' } });
+    fireEvent.click(screen.getByRole('button', { name: /save view/i }));
+
+    expect(await screen.findByText('Quarterly Review')).toBeInTheDocument();
+  });
+
   it('TASK-2.2.1-06: lead list renders object-shaped fields as readable text', async () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockResolvedValue(mockRes({

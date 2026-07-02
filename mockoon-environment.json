@@ -1186,6 +1186,43 @@
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
+    },
+    {
+      "uuid": "1a000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "PATCH /leads/:leadId/assign — Assign/reassign a lead to a user",
+      "method": "patch",
+      "endpoint": "leads/:leadId/assign",
+      "responses": [
+        {
+          "uuid": "1a100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"message\":\"Lead assigned successfully\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Assigned",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
   "folders": [
@@ -1236,6 +1273,10 @@
         {
           "type": "route",
           "uuid": "19000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "1a000000-0000-4000-a000-000000000001"
         }
       ]
     },

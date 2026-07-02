@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../../context/AuthContext';
 import LeadDetails from '../../pages/leads/LeadDetails';
 import LeadList from '../../pages/leads/LeadList';
+import NotificationBell from '../../components/leads/NotificationBell';
+import * as notificationService from '../../services/notificationService';
 
 function mockRes(data, status = 200) {
   return Promise.resolve({
@@ -161,6 +163,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  global.fetch = undefined;
 });
 
 describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
@@ -765,9 +768,41 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
   });
 });
 
+function seedNotifications(notifs) {
+  localStorage.setItem('crm_notifications', JSON.stringify(notifs));
+}
+
+function clearNotifications() {
+  localStorage.removeItem('crm_notifications');
+  sessionStorage.removeItem('crm_notifications');
+}
+
+function renderBell(path = '/admin/leads') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <NotificationBell />
+    </MemoryRouter>
+  );
+}
+
+function makeNotif(overrides = {}) {
+  return {
+    id: 'notif-test-001',
+    type: 'assignment',
+    message: 'Lead LD-2026-00001 has been assigned to Ravi Executive',
+    leadId: 'lead-001',
+    read: false,
+    role: 'Admin',
+    createdAt: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
 describe('STORY-2.3.1 Notifications — New Owner Notification', () => {
   it('test-ep-2.3.1-026: notificationService returns assignment notifications', async () => {
     const { fetchNotifications } = await import('../../services/notificationService');
+    clearNotifications();
     const result = await fetchNotifications();
     expect(result.success).toBe(true);
     expect(Array.isArray(result.data)).toBe(true);
@@ -778,6 +813,7 @@ describe('STORY-2.3.1 Notifications — New Owner Notification', () => {
 
   it('test-ep-2.3.1-027: notification messages include lead assignment text', async () => {
     const { fetchNotifications } = await import('../../services/notificationService');
+    clearNotifications();
     const result = await fetchNotifications();
     const assignmentNotif = result.data.find((n) => n.type === 'assignment');
     expect(assignmentNotif.message).toMatch(/assigned/i);
@@ -786,11 +822,118 @@ describe('STORY-2.3.1 Notifications — New Owner Notification', () => {
 
   it('test-ep-2.3.1-028: notification has readable timestamp', async () => {
     const { fetchNotifications } = await import('../../services/notificationService');
+    clearNotifications();
     const result = await fetchNotifications();
     const notif = result.data[0];
     expect(notif.createdAt).toBeDefined();
     const date = new Date(notif.createdAt);
     expect(date.getTime()).not.toBeNaN();
+  });
+
+  it('test-ep-2.3.1-030: notification bell badge shows unread count after assignment', async () => {
+    clearNotifications();
+    seedNotifications([makeNotif({ read: false }), makeNotif({ id: 'notif-002', read: true })]);
+
+    renderBell();
+
+    await screen.findByText('1');
+    const bellButton = screen.getByRole('button', { name: /notifications/i });
+    expect(bellButton).toHaveAttribute('aria-label', 'Notifications (1 unread)');
+  });
+
+  it('test-ep-2.3.1-031: clicking bell opens dropdown with notification items', async () => {
+    clearNotifications();
+    seedNotifications([makeNotif()]);
+
+    renderBell();
+
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+
+    expect(await screen.findByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText(/assigned to Ravi Executive/i)).toBeInTheDocument();
+  });
+
+  it('test-ep-2.3.1-032: clicking a notification navigates to the lead detail page', async () => {
+    clearNotifications();
+    seedNotifications([makeNotif()]);
+
+    renderBell('/admin/leads');
+
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+    await screen.findByText('Notifications');
+
+    const notifButton = screen.getByText(/assigned to Ravi Executive/i).closest('button');
+    expect(notifButton).not.toBeNull();
+
+    fireEvent.click(notifButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+    });
+  });
+
+  it('test-ep-2.3.1-033: badge count decreases after notification is clicked', async () => {
+    clearNotifications();
+    seedNotifications([makeNotif({ read: false }), makeNotif({ id: 'notif-002', read: false, message: 'Another notification' })]);
+
+    renderBell();
+
+    await screen.findByText('2');
+    const bellButton = screen.getByRole('button', { name: /notifications/i });
+    expect(bellButton).toHaveAttribute('aria-label', 'Notifications (2 unread)');
+
+    fireEvent.click(bellButton);
+    await screen.findByText('Notifications');
+
+    const notifButtons = screen.getAllByRole('button');
+    const firstNotif = notifButtons.find((b) => b.textContent.includes('assigned to Ravi Executive'));
+    expect(firstNotif).toBeDefined();
+
+    fireEvent.click(firstNotif);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /notifications/i })).toHaveAttribute('aria-label', 'Notifications (1 unread)');
+    });
+    const notif1 = JSON.parse(localStorage.getItem('crm_notifications'));
+    expect(notif1.find((n) => n.id === 'notif-test-001').read).toBe(true);
+  });
+
+  it('test-ep-2.3.1-034: notification dropdown shows empty state', async () => {
+    clearNotifications();
+    seedNotifications([]);
+
+    renderBell();
+
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+
+    expect(await screen.findByText(/No notifications yet/i)).toBeInTheDocument();
+  });
+
+  it('test-ep-2.3.1-035: notification read state persists across remounts', async () => {
+    clearNotifications();
+    seedNotifications([makeNotif({ read: false })]);
+
+    const { unmount } = renderBell();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /notifications/i })).toHaveAttribute('aria-label', 'Notifications (1 unread)');
+    });
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+    await screen.findByText('Notifications');
+
+    const notifButton = screen.getByText(/assigned to Ravi Executive/i).closest('button');
+    fireEvent.click(notifButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /notifications/i })).toHaveAttribute('aria-label', 'Notifications');
+    });
+
+    unmount();
+
+    renderBell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /notifications/i })).toHaveAttribute('aria-label', 'Notifications');
+    });
   });
 });
 
@@ -804,5 +947,137 @@ describe('STORY-2.3.1 Role-Based Access — ME vs Admin', () => {
     await screen.findByText('Lead Details');
     expect(screen.queryByRole('button', { name: /Assign/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reassign/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('STORY-2.3.1 Lead Owner — Reassignment Updates', () => {
+  const meUser = {
+    id: 'ME-001',
+    employee_id: 'ME-001',
+    name: 'Maya Executive',
+    email: 'maya@company.com',
+    role: 'Marketing Executive',
+  };
+
+  function mockLeadsResponse(leadData) {
+    return {
+      success: true,
+      data: leadData,
+      pagination: { page: 1, limit: 25, total: leadData.length, totalPages: 1 },
+    };
+  }
+
+  it('test-ep-2.3.1-036: lead disappears from old owner\'s list after reassignment', async () => {
+    let callCount = 0;
+    const myLead = {
+      id: 'lead-me-1', leadId: 'LD-ME-1', companyName: 'My Corp',
+      contactPerson: 'Alice', mobileNumber: '9000000100',
+      status: '', stage: 'New', priority: 'High',
+      assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
+      createdAt: '2026-06-01T10:00:00.000Z',
+    };
+    const otherLead = {
+      id: 'lead-other', leadId: 'LD-OTHER', companyName: 'Other Corp',
+      contactPerson: 'Bob', mobileNumber: '9000000101',
+      status: '', stage: 'Contacted', priority: 'Medium',
+      assignedTo: { id: 'EMP-00002', employee_id: 'EMP-00002', name: 'Ravi Executive' },
+      createdAt: '2026-06-01T10:00:00.000Z',
+    };
+
+    global.fetch = vi.fn((input) => {
+      callCount++;
+      if (callCount === 1) {
+        return mockRes(mockLeadsResponse([myLead, otherLead]));
+      }
+      return mockRes(mockLeadsResponse([otherLead]));
+    });
+    setUser(meUser);
+
+    renderLeadList('/marketing/leads');
+
+    await waitFor(() => {
+      expect(screen.getByText('My Corp')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Showing leads assigned to Maya Executive/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'zz' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText('My Corp')).not.toBeInTheDocument();
+    }, { timeout: 1000 });
+  });
+
+  it('test-ep-2.3.1-037: lead appears in new owner\'s list after reassignment', async () => {
+    let callCount = 0;
+    const unassignedLead = {
+      id: 'lead-unassigned', leadId: 'LD-UNASSIGNED', companyName: 'New Corp',
+      contactPerson: 'Charlie', mobileNumber: '9000000102',
+      status: '', stage: 'Qualified', priority: 'Low',
+      assignedTo: { id: 'EMP-00002', employee_id: 'EMP-00002', name: 'Ravi Executive' },
+      createdAt: '2026-06-01T10:00:00.000Z',
+    };
+
+    global.fetch = vi.fn((input) => {
+      callCount++;
+      if (callCount === 1) {
+        return mockRes(mockLeadsResponse([unassignedLead]));
+      }
+      return mockRes(mockLeadsResponse([{
+        ...unassignedLead,
+        assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
+      }]));
+    });
+    setUser(meUser);
+
+    renderLeadList('/marketing/leads');
+
+    await waitFor(() => {
+      expect(screen.queryByText('New Corp')).not.toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'zz' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('New Corp')).toBeInTheDocument();
+    }, { timeout: 1000 });
+
+    expect(screen.getByText(/Showing leads assigned to Maya Executive/i)).toBeInTheDocument();
+  });
+});
+
+describe('STORY-2.3.1 Timeline — Assignment Event Display', () => {
+  it('test-ep-2.3.1-038: timeline shows assignment event after assign API', async () => {
+    setUser(adminUser);
+    const assignmentEntry = {
+      action: 'Lead Assigned',
+      message: 'Lead assigned to Ravi Executive',
+      user: 'Admin User',
+      previousOwner: 'Nikhil Marketing',
+      newOwner: 'Ravi Executive',
+      reason: 'Initial assignment',
+      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    const leadWithAssignment = {
+      ...unownedLead,
+      assignedTo: 'EMP-00002',
+      timeline: [...unownedLead.timeline, assignmentEntry],
+    };
+
+    global.fetch = vi.fn((input) => {
+      const url = String(input);
+      if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [assignmentEntry] });
+      return mockRes({ success: true, data: leadWithAssignment });
+    });
+
+    renderLeadDetail('/admin/leads/lead-001');
+
+    await screen.findByText('Lead Details');
+
+    expect(await screen.findByText(/Lead Assigned/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ravi Executive/)).toBeInTheDocument();
   });
 });

@@ -314,9 +314,10 @@ export default function LeadDetails() {
               {isAdmin && (
                 <button
                   onClick={() => setAssignModalOpen(true)}
+                  aria-label={assignedToDisplay === 'Unassigned' ? 'Assign lead' : 'Reassign lead'}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white font-label-sm text-label-sm hover:bg-primary/90 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">swap_horiz</span>
                   {assignedToDisplay === 'Unassigned' ? 'Assign' : 'Reassign'}
                 </button>
               )}

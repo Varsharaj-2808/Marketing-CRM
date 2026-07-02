@@ -909,3 +909,104 @@ describe('STORY-2.4.1 Lead Stage Management — Access Control', () => {
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/reopen'), expect.any(Object));
   });
 });
+
+describe('STORY-2.4.1 Timeline Loading and Full History', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('test-ep-2.4.1-040: timeline section shows loading skeleton while history is being fetched', async () => {
+    setUser(marketingUser);
+    let resolveHistory;
+    global.fetch = vi.fn((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) {
+        return new Promise((resolve) => { resolveHistory = resolve; });
+      }
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-tl-1', leadId: 'LD-TL-1', companyName: 'Timeline Test',
+          contactPerson: 'Wendy', mobileNumber: '9000000130',
+          status: '', stage: 'New', priority: 'High',
+          createdAt: '2026-06-25T10:00:00.000Z', createdBy: { name: 'Admin User' },
+          timeline: null,
+        },
+      });
+    });
+
+    renderLeadDetails('/marketing/leads/lead-tl-1');
+
+    await screen.findByText('Lead Details');
+
+    expect(screen.getByText(/Loading history\.\.\./i)).toBeInTheDocument();
+
+    resolveHistory(mockRes({ success: true, data: [{ action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-25T10:00:00.000Z' }] }));
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading history\.\.\./i)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Lead Created')).toBeInTheDocument();
+  });
+
+  it('test-ep-2.4.1-041: View Full History button navigates to page with all history entries', async () => {
+    setUser(marketingUser);
+    const historyEntries = [
+      { action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-20T10:00:00.000Z' },
+      { action: 'Stage Updated', message: 'Lead moved to Contacted', user: 'Admin User', timestamp: '2026-06-21T10:00:00.000Z' },
+      { action: 'Stage Updated', message: 'Lead moved to Negotiation', user: 'Admin User', timestamp: '2026-06-22T10:00:00.000Z' },
+    ];
+
+    function renderLeadDetailsWithHistory(path) {
+      return render(
+        <MemoryRouter initialEntries={[path]}>
+          <AuthProvider>
+            <Routes>
+              <Route path="/marketing/leads/:leadId" element={<LeadDetails />} />
+              <Route path="/marketing/leads/:leadId/lead-history" element={<LeadHistory />} />
+            </Routes>
+          </AuthProvider>
+        </MemoryRouter>
+      );
+    }
+
+    global.fetch = vi.fn((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) {
+        return mockRes({ success: true, data: historyEntries });
+      }
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-tl-2', leadId: 'LD-TL-2', companyName: 'History Corp',
+          contactPerson: 'Xander', mobileNumber: '9000000131',
+          status: '', stage: 'New', priority: 'Medium',
+          createdAt: '2026-06-20T10:00:00.000Z', createdBy: { name: 'Admin User' },
+        },
+      });
+    });
+
+    renderLeadDetailsWithHistory('/marketing/leads/lead-tl-2');
+
+    await screen.findByText('Lead Details');
+
+    const viewFullHistoryBtn = screen.getByRole('button', { name: /View Full History/i });
+    expect(viewFullHistoryBtn).toBeInTheDocument();
+
+    fireEvent.click(viewFullHistoryBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Lead History')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Lead Created')).toBeInTheDocument();
+    expect(screen.getAllByText(/Stage Updated/)).toHaveLength(2);
+    expect(screen.getAllByText(/By: Admin User/)).toHaveLength(3);
+  });
+});

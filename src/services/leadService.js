@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants';
+import { addNotification } from './notificationService';
 
 const FALLBACK_CATEGORIES = [
   { id: 'cat-001', name: 'IT Services' },
@@ -192,20 +193,24 @@ export async function fetchMarketingLeads(params = {}) {
   }
 }
 
+export function getLeadFromStore(id) {
+  const lead = findLeadInStore(id);
+  return lead ? { ...lead } : null;
+}
+
 export async function fetchLeadById(id, cacheBuster) {
-  if (cacheBuster) {
-    const localLead = findLeadInStore(id);
-    if (localLead) return { success: true, data: localLead };
-  }
+  const fallback = findLeadInStore(id);
   try {
     const url = cacheBuster
       ? `${API_BASE_URL}/marketing/leads/${id}?_=${cacheBuster}`
       : `${API_BASE_URL}/marketing/leads/${id}`;
     return await requestJson(url);
   } catch (err) {
-    if (err?.status) throw err;
-    const fallback = findLeadInStore(id);
-    return { success: true, data: fallback || LEAD_STORE[0] };
+    if (err?.status && err.status !== 404) throw err;
+    if (fallback) {
+      return { success: true, data: fallback };
+    }
+    return { success: true, data: LEAD_STORE[0] };
   }
 }
 
@@ -380,24 +385,27 @@ export async function fetchLeadHistory(leadId) {
   try {
     return await requestJson(`${API_BASE_URL}/marketing/leads/${leadId}/lead-history?_=${Date.now()}`);
   } catch {
+    const localLead = findLeadInStore(leadId);
+    if (localLead?.timeline?.length > 0) {
+      return { success: true, data: localLead.timeline };
+    }
     return { success: true, data: [] };
   }
 }
 
 export async function fetchAdminLeadById(id, cacheBuster) {
-  if (cacheBuster) {
-    const localLead = findLeadInStore(id);
-    if (localLead) return { success: true, data: localLead };
-  }
+  const fallback = findLeadInStore(id);
   try {
     const url = cacheBuster
       ? `${API_BASE_URL}/admin/leads/${id}?_=${cacheBuster}`
       : `${API_BASE_URL}/admin/leads/${id}`;
     return await requestJson(url);
   } catch (err) {
-    if (err?.status) throw err;
-    const fallback = FALLBACK_LEADS.find(l => l.id === id || l.leadId === id);
-    return { success: true, data: fallback || FALLBACK_LEADS[0] };
+    if (err?.status && err.status !== 404) throw err;
+    if (fallback) {
+      return { success: true, data: fallback };
+    }
+    return { success: true, data: FALLBACK_LEADS[0] };
   }
 }
 
@@ -414,22 +422,35 @@ export async function assignLead(leadId, assignedTo, reason) {
       error.status = res.status;
       throw error;
     }
+
     const lead = findLeadInStore(leadId);
     if (lead) {
       lead.assignedTo = assignedTo;
       lead.assignedAt = new Date().toISOString();
       lead.updatedAt = new Date().toISOString();
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Lead Assigned',
+        message: `Lead assigned to ${assignedTo}`,
+        user: 'System',
+        timestamp: new Date().toISOString(),
+      }];
     }
+
+    if (lead?.leadId) {
+      addNotification({
+        type: 'assignment',
+        message: `Lead ${lead.leadId} has been assigned to ${assignedTo}`,
+        leadId,
+        read: false,
+        role: 'Admin',
+        createdAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+      }).catch(() => {});
+    }
+
     return json || { success: true, message: 'Lead assigned successfully' };
   } catch (err) {
-    if (err?.status) throw err;
-    const lead = findLeadInStore(leadId);
-    if (lead) {
-      lead.assignedTo = assignedTo;
-      lead.assignedAt = new Date().toISOString();
-      lead.updatedAt = new Date().toISOString();
-    }
-    return { success: true, message: 'Lead assigned successfully' };
+    throw err;
   }
 }
 

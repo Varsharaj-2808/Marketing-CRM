@@ -141,9 +141,10 @@ export default function AssignLeadModal({ isOpen, onClose, lead, onAssign, assig
           onClick={handleConfirm}
           disabled={!assignedTo || assigning || loadingUsers}
           className="rounded-xl bg-primary px-4 py-2.5 font-label-md text-label-md text-white transition-colors hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+          aria-label={assigning ? 'Assigning...' : hasOwner ? 'Reassign' : 'Assign'}
         >
           {assigning && (
-            <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+            <span className="material-symbols-outlined animate-spin text-[18px]" aria-hidden="true">progress_activity</span>
           )}
           {assigning ? 'Assigning...' : hasOwner ? 'Reassign' : 'Assign'}
         </button>

@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView } from '../../services/leadService';
 import EmptyState from '../../components/common/EmptyState';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import FilterPanel from '../../components/leads/FilterPanel';
 import LeadTable from '../../components/leads/LeadTable';
 import Pagination from '../../components/leads/Pagination';
@@ -147,7 +148,9 @@ export default function LeadList() {
       setTotalPages(Math.max(1, Math.ceil(totalRecords / PAGE_SIZE)));
       setTotalRecords(totalRecords);
     } catch (err) {
-      if (err?.status === 403) {
+      const status = err?.status || err?.response?.status;
+      const message = err?.message || err?.payload?.message || '';
+      if (status === 403 || /access denied/i.test(message)) {
         setError('Access Denied');
       } else {
         setError('Failed to load leads.');
@@ -190,20 +193,34 @@ export default function LeadList() {
     setPage(1);
   };
 
-  const handleSaveCurrentView = async () => {
-    const name = window.prompt('View name', activeSearch || filters.priority || filters.status ? 'Current Lead View' : 'My Lead View');
-    if (!name?.trim()) return;
-    const res = await createSavedView({ name: name.trim(), filters });
-    const newView = res?.data || { id: `view-${Date.now()}`, name: name.trim(), filters };
+  const handleSaveCurrentView = async (nameOverride) => {
+    const promptName = nameOverride || window.prompt('View name', activeSearch || filters.priority || filters.status ? 'Current Lead View' : 'My Lead View');
+    const name = promptName?.trim();
+    if (!name) return;
+    const res = await createSavedView({ name, filters, sort, search: activeSearch });
+    const newView = res?.data || res || { id: `view-${Date.now()}`, name, filters, sort, search: activeSearch };
     const view = {
-      id: newView.id,
-      name: newView.name,
+      id: newView.id || newView._id || `view-${Date.now()}`,
+      name: newView.name || name,
       filters: newView.filters || filters,
-      sort,
-      search: activeSearch,
+      sort: newView.sort || sort,
+      search: newView.search || activeSearch,
     };
     setSavedViews((prev) => [...prev, view]);
     setActiveViewId(view.id);
+  };
+
+  const handleUpdateSavedView = async (viewId, nameOverride) => {
+    const name = nameOverride?.trim();
+    if (!name) return;
+    setSavedViews((prev) => prev.map((view) => (view.id === viewId ? {
+      ...view,
+      name,
+      filters,
+      sort,
+      search: activeSearch,
+    } : view)));
+    setActiveViewId(viewId);
   };
 
   const handleDeleteSavedView = async (viewId) => {
@@ -340,6 +357,7 @@ export default function LeadList() {
                 activeViewId={activeViewId}
                 onApplyView={handleApplySavedView}
                 onSaveView={handleSaveCurrentView}
+                onUpdateView={handleUpdateSavedView}
                 onDeleteView={handleDeleteSavedView}
               />
             </div>
@@ -357,8 +375,11 @@ export default function LeadList() {
         </div>
 
         {loading ? (
-          <div className="rounded-lg border border-outline-variant/40 bg-white/35 py-12">
+          <div className="rounded-lg border border-outline-variant/40 bg-white/35 px-4 py-8">
             <LoadingSpinner text="Loading leads..." />
+            <div className="mt-6">
+              <SkeletonTable rows={5} cols={10} />
+            </div>
           </div>
         ) : error ? (
           <div className="rounded-lg border border-error/20 bg-white/65 p-8 text-center">
