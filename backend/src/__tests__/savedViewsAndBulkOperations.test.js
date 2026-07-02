@@ -685,7 +685,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
 
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
       ['FROM leads WHERE id IN', () => ({ rows: [{ id: 'lead-001', lead_id: 'LD-2026-00001', assigned_to: null }, { id: 'lead-002', lead_id: 'LD-2026-00002', assigned_to: null }] })],
     ]);
 
@@ -705,7 +705,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
 
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
       ['FROM leads WHERE id IN', () => ({ rows: [{ id: 'lead-001', lead_id: 'LD-2026-00001', assigned_to: null }] })],
     ]);
 
@@ -725,7 +725,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
 
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
       ['FROM leads WHERE id IN', () => ({ rows: [{ id: 'lead-001', lead_id: 'LD-2026-00001', assigned_to: null }] })],
     ]);
 
@@ -744,7 +744,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
 
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: ADMIN_USER.id, role: 'Admin', accountStatus: 'active', status: 'active', name: 'Admin User' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: ADMIN_USER.id, role: 'Admin', accountStatus: 'active', status: 'active', name: 'Admin User' }] })],
       ['FROM leads WHERE id IN', () => ({ rows: [{ id: 'lead-001', lead_id: 'LD-2026-00001', assigned_to: null }] })],
     ]);
 
@@ -782,7 +782,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
   test('test-ep-2.2.1-046: Non-existent assigned_to user — 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [] })],
+      ['"employee_id" = $1', () => ({ rows: [] })],
     ]);
     const app = createTestApp();
     const res = await request(app)
@@ -796,7 +796,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
   test('test-ep-2.2.1-047: Deactivated/inactive user as assignee — 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: 'inactive-user', role: 'Marketing Executive', accountStatus: 'inactive', status: 'inactive' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: 'inactive-user', role: 'Marketing Executive', accountStatus: 'inactive', status: 'inactive' }] })],
     ]);
     const app = createTestApp();
     const res = await request(app)
@@ -810,7 +810,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
   test('test-ep-2.2.1-048: One or more lead IDs do not exist (partial failure) — 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active' }] })],
       ['FROM leads WHERE id IN', () => ({ rows: [{ id: 'lead-001', lead_id: 'LD-2026-00001', assigned_to: null }] })],
     ]);
     const app = createTestApp();
@@ -849,7 +849,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
 
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
-      ['"accountStatus"', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
+      ['"employee_id" = $1', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active', name: 'Marketing User' }] })],
       ['FROM leads WHERE id IN', () => ({ rows: leads })],
     ]);
 

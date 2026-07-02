@@ -3,6 +3,8 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const leadController = require('../controllers/leadController');
 const adminController = require('../controllers/adminController');
+const assignController = require('../controllers/assignController');
+const notificationController = require('../controllers/notificationController');
 
 router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.createLead);
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
@@ -15,5 +17,8 @@ router.get('/lead-sources', protect, authorize('Admin', 'Marketing Executive'), 
 router.get('/categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessCategories);
 router.get('/categories/:categoryId/subcategories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessSubCategories);
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
+
+router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), assignController.getTimeline);
+router.get('/notifications/count', protect, authorize('Admin', 'Marketing Executive'), notificationController.getNotificationCount);
 
 module.exports = router;

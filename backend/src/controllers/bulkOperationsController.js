@@ -1,7 +1,9 @@
 const { query, getClient } = require('../config/db');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
+const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
+const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
 
@@ -36,6 +38,16 @@ exports.bulkSelect = async (req, res, next) => {
   }
 };
 
+const resolveUser = async (identifier) => {
+  const byEmp = await User.findByEmployeeId(identifier);
+  if (byEmp) return byEmp;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(identifier)) {
+    return User.findById(identifier);
+  }
+  return null;
+};
+
 exports.bulkAssign = async (req, res, next) => {
   const { lead_ids, assigned_to, reason } = req.body;
   const { ipAddress, userAgent } = getIpAndAgent(req);
@@ -55,18 +67,17 @@ exports.bulkAssign = async (req, res, next) => {
       }
     }
 
-    const userResult = await query('SELECT id, role, "accountStatus" FROM users WHERE id = $1', [assigned_to]);
-    const targetUser = userResult.rows[0];
+    const uniqueIds = [...new Set(lead_ids)];
+
+    const targetUser = await resolveUser(assigned_to.trim());
     if (!targetUser) {
       return res.status(404).json({ error: 'Assigned user not found' });
     }
 
-    const userStatus = targetUser.accountStatus;
+    const userStatus = targetUser.accountStatus || targetUser.status;
     if (userStatus !== 'active') {
       return res.status(400).json({ error: 'Cannot assign leads to a deactivated user' });
     }
-
-    const uniqueIds = [...new Set(lead_ids)];
 
     const leadPlaceholders = uniqueIds.map((_, i) => `$${i + 1}`).join(', ');
     const leadResult = await query(
@@ -81,27 +92,48 @@ exports.bulkAssign = async (req, res, next) => {
       return res.status(404).json({ error: `Lead(s) not found: ${missingIds.join(', ')}` });
     }
 
+    const hasAnyOwner = leadResult.rows.some(l => l.assigned_to !== null);
+    if (hasAnyOwner && (reason === undefined || reason === null || reason === '')) {
+      return res.status(400).json({ reason: 'Reassignment reason is required when one or more leads already have an owner' });
+    }
+
+    if (reason !== undefined && reason !== null && reason !== '' && reason.trim && reason.trim().length === 0) {
+      return res.status(400).json({ reason: 'Reassignment reason cannot be empty' });
+    }
+
+    const leadsToProcess = leadResult.rows.filter(l => l.assigned_to !== targetUser.id);
+
+    if (leadsToProcess.length === 0) {
+      return res.json({
+        assigned: true,
+        count: 0,
+      });
+    }
+
     const client = await getClient();
+    let changedCount = 0;
     try {
       await client.query('BEGIN');
 
-      for (const lead of leadResult.rows) {
+      for (const lead of leadsToProcess) {
         await client.query(
-          'UPDATE leads SET assigned_to = $1, updated_at = NOW() WHERE id = $2',
-          [assigned_to, lead.id]
+          'UPDATE leads SET assigned_to = $1, assigned_at = NOW(), updated_at = NOW() WHERE id = $2',
+          [targetUser.id, lead.id]
         );
 
         const oldAssignedTo = lead.assigned_to || 'Unassigned';
-        let changeSummary = `Lead reassigned from ${oldAssignedTo} to ${targetUser.name || assigned_to}`;
+        let changeSummary = `Lead reassigned from ${oldAssignedTo} to ${targetUser.employee_id}`;
         if (reason) {
           changeSummary += `. Reason: ${reason}`;
         }
 
-        const historyResult = await client.query(
+        await client.query(
           `INSERT INTO lead_history (lead_id, field_name, old_value, new_value, change_summary, changed_by)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-          [lead.id, 'assigned_to', oldAssignedTo, assigned_to, changeSummary, req.user.id]
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [lead.id, 'assigned_to', oldAssignedTo, targetUser.employee_id, changeSummary, req.user.id]
         );
+
+        changedCount++;
       }
 
       await client.query('COMMIT');
@@ -112,13 +144,27 @@ exports.bulkAssign = async (req, res, next) => {
       client.release();
     }
 
+    for (const lead of leadsToProcess) {
+      try {
+        const message = `Lead ${lead.lead_id} has been assigned to you`;
+        await Notification.create({
+          userId: targetUser.id,
+          notificationType: 'lead_assigned',
+          leadId: lead.id,
+          message,
+        });
+      } catch (notifError) {
+        console.error('Notification creation failed (non-blocking):', notifError.message);
+      }
+    }
+
     await AuditLog.create({
       userId: req.user.id,
       email: req.user.email,
       action: 'BULK_ASSIGN',
       resource: 'Lead',
       resourceId: uniqueIds.join(', '),
-      details: JSON.stringify({ lead_ids: uniqueIds, assigned_to, reason: reason || null, count: uniqueIds.length }),
+      details: JSON.stringify({ lead_ids: uniqueIds, assigned_to: targetUser.id, reason: reason || null, count: changedCount }),
       ipAddress,
       userAgent,
       result: 'Success',
@@ -126,7 +172,7 @@ exports.bulkAssign = async (req, res, next) => {
 
     res.json({
       assigned: true,
-      count: uniqueIds.length,
+      count: changedCount,
     });
   } catch (error) {
     next(error);

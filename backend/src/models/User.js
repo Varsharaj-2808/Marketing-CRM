@@ -42,6 +42,18 @@ const User = {
     return result.rows;
   },
 
+  async findActiveByRole(role) {
+    const result = await query(
+      `SELECT id, "employee_id", name as employee_name, email, role,
+              "accountStatus" as status
+       FROM users
+       WHERE role = $1 AND "accountStatus" = 'active'
+       ORDER BY name ASC`,
+      [role]
+    );
+    return result.rows;
+  },
+
   async getNextEmployeeId() {
     const result = await query(
       `SELECT COALESCE(
