@@ -23,6 +23,20 @@ const LeadHistory = {
     );
     return result.rows;
   },
+
+  async findAssignments(leadId) {
+    const result = await query(
+      `SELECT h.*, u.name as changed_by_name,
+              u2."employee_id" as actor_employee_id
+       FROM lead_history h
+       LEFT JOIN users u ON h.changed_by = u.id
+       LEFT JOIN users u2 ON h.changed_by = u2.id
+       WHERE h.lead_id = $1 AND h.field_name = 'assigned_to'
+       ORDER BY h.created_at DESC`,
+      [leadId]
+    );
+    return result.rows;
+  },
 };
 
 module.exports = LeadHistory;

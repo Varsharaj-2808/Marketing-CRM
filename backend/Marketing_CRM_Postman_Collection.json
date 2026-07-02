@@ -1,0 +1,886 @@
+{
+  "info": {
+    "name": "Marketing CRM - Lead Management API",
+    "description": "Complete Postman collection for all Lead Management APIs across STORY-2.1.1 (Lead CRUD), STORY-2.2.1 (Saved Views & Bulk Operations), and STORY-2.3.1 (Lead Assignment & Reassignment).\n\nBase URL variable: {{base_url}} = http://localhost:5000/api\nAuth: JWT Bearer token in {{admin_token}} or {{me_token}} variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLXV1aWQiLCJlbWFpbCI6ImFkbWluQGNvbXBhbnkuY29tIiwicm9sZSI6IkFkbWluIn0.example",
+      "type": "string"
+    },
+    {
+      "key": "me_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1lLXV1aWQiLCJlbWFpbCI6Im1hcmtldGluZ0Bjb21wYW55LmNvbSIsInJvbGUiOiJNYXJrZXRpbmcgRXhlY3V0aXZlIn0.example",
+      "type": "string"
+    },
+    {
+      "key": "lead_id",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string"
+    },
+    {
+      "key": "view_id",
+      "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "type": "string"
+    },
+    {
+      "key": "category_id",
+      "value": "d3b07384-d113-4a00-a541-b8448fb8b801",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "STORY-2.1.1 — Lead CRUD (Marketing Executive)",
+      "item": [
+        {
+          "name": "POST /marketing/leads — Create Lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"Supabase Systems\",\n  \"contact_person\": \"Jane Doe\",\n  \"mobile_number\": \"9876543210\",\n  \"email\": \"jane@supabase.com\",\n  \"website\": \"https://supabase.com\",\n  \"city\": \"San Francisco\",\n  \"lead_source\": \"Website\",\n  \"category\": \"{{category_id}}\",\n  \"sub_category\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n  \"service_interested\": [\"Web Dev\", \"App Development\"],\n  \"priority\": \"Hot\",\n  \"estimated_value\": 12000.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/marketing/leads",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads"]
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lead created successfully.\",\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"lead_id\": \"LD-2026-00005\",\n    \"company_name\": \"Supabase Systems\",\n    \"contact_person\": \"Jane Doe\",\n    \"mobile_number\": \"9876543210\",\n    \"email\": \"jane@supabase.com\",\n    \"website\": \"https://supabase.com\",\n    \"city\": \"San Francisco\",\n    \"lead_source\": \"Website\",\n    \"category\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"service_interested\": [\"Web Dev\", \"App Development\"],\n    \"priority\": \"Hot\",\n    \"estimated_value\": 12000,\n    \"stage\": \"New Lead\",\n    \"assigned_to\": \"me-uuid\",\n    \"assigned_to_name\": \"Marketing User\",\n    \"assigned_at\": \"2026-07-02T10:00:00.000Z\",\n    \"created_at\": \"2026-07-02T10:00:00.000Z\",\n    \"updated_at\": \"2026-07-02T10:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Missing Fields",
+              "code": 400,
+              "body": "{\n  \"company_name\": \"Company Name is required\",\n  \"contact_person\": \"Contact Person is required\",\n  \"mobile_number\": \"Mobile Number is required\",\n  \"lead_source\": \"Lead Source is required\",\n  \"category\": \"Business Category is required\",\n  \"priority\": \"Priority is required\"\n}"
+            },
+            {
+              "name": "400 Bad Request — Invalid Mobile",
+              "code": 400,
+              "body": "{\n  \"mobile_number\": \"Mobile Number must be exactly 10 numeric digits\"\n}"
+            },
+            {
+              "name": "400 Bad Request — Invalid Priority",
+              "code": 400,
+              "body": "{\n  \"priority\": \"Priority must be one of: Hot, Warm, Cold\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/leads/check-mobile — Check Mobile Duplicate",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/leads/check-mobile?mobile=9876543210",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads", "check-mobile"],
+              "query": [
+                { "key": "mobile", "value": "9876543210" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Not Duplicate",
+              "code": 200,
+              "body": "{\n  \"isDuplicate\": false\n}"
+            },
+            {
+              "name": "200 — Duplicate Found",
+              "code": 200,
+              "body": "{\n  \"isDuplicate\": true,\n  \"leadId\": \"LD-2026-00001\"\n}"
+            },
+            {
+              "name": "400 — Missing Mobile",
+              "code": 400,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Mobile number is required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/leads/check-email — Check Email Duplicate",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/leads/check-email?email=jane@company.com",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads", "check-email"],
+              "query": [
+                { "key": "email", "value": "jane@company.com" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Not Duplicate",
+              "code": 200,
+              "body": "{\n  \"isDuplicate\": false\n}"
+            },
+            {
+              "name": "200 — Duplicate Found",
+              "code": 200,
+              "body": "{\n  \"isDuplicate\": true,\n  \"leadId\": \"LD-2026-00001\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/lead-sources — List Lead Sources",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/lead-sources",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "lead-sources"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "[\n  { \"id\": 1, \"name\": \"Website\", \"status\": \"Active\" },\n  { \"id\": 2, \"name\": \"Referral\", \"status\": \"Active\" },\n  { \"id\": 3, \"name\": \"Social Media\", \"status\": \"Active\" },\n  { \"id\": 4, \"name\": \"Cold Call\", \"status\": \"Active\" }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/categories — List Business Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/categories",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "categories"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"category_name\": \"IT Services\",\n    \"status\": \"Active\"\n  },\n  {\n    \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"category_name\": \"Consulting\",\n    \"status\": \"Active\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/categories/:id/subcategories — List Subcategories",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/categories/{{category_id}}/subcategories",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "categories", "{{category_id}}", "subcategories"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"sub_category_name\": \"Web Development\",\n    \"status\": \"Active\"\n  },\n  {\n    \"id\": \"f5d29506-f335-6c22-c763-d0661ad0da13\",\n    \"sub_category_name\": \"Mobile Development\",\n    \"status\": \"Active\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/services — List Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/services",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "services"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "[\n  { \"id\": 1, \"name\": \"App Development\", \"status\": \"Active\" },\n  { \"id\": 2, \"name\": \"Web Development\", \"status\": \"Active\" },\n  { \"id\": 3, \"name\": \"Cloud Migration\", \"status\": \"Active\" }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/leads/:id — Get Lead Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/leads/{{lead_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads", "{{lead_id}}"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"lead_id\": \"LD-2026-00005\",\n    \"company_name\": \"Supabase Systems\",\n    \"contact_person\": \"Jane Doe\",\n    \"mobile_number\": \"9876543210\",\n    \"email\": \"jane@supabase.com\",\n    \"lead_source\": \"Website\",\n    \"category\": \"IT Services\",\n    \"priority\": \"Hot\",\n    \"stage\": \"New Lead\",\n    \"estimated_value\": 12000,\n    \"assigned_to\": \"me-uuid\",\n    \"assigned_to_name\": \"Marketing User\",\n    \"assigned_at\": \"2026-07-02T10:00:00.000Z\",\n    \"created_at\": \"2026-07-02T10:00:00.000Z\",\n    \"updated_at\": \"2026-07-02T10:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Lead not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/leads/:id/lead-history — Get Lead History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/leads/{{lead_id}}/lead-history",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads", "{{lead_id}}", "lead-history"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"hist-uuid-1\",\n      \"lead_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"field_name\": \"lead_created\",\n      \"change_summary\": \"Lead Created by Jane Miller on 2026-07-02T10:00:00.000Z\",\n      \"changed_by\": \"me-uuid\",\n      \"changed_by_name\": \"Jane Miller\",\n      \"created_at\": \"2026-07-02T10:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/leads — List Leads (ME: own / Admin: all)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/leads?search=Supabase&priority=Hot&stage=New%20Lead&sortBy=estimated_value&sortOrder=desc&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads"],
+              "query": [
+                { "key": "search", "value": "Supabase", "description": "Search by company name, contact person, lead ID" },
+                { "key": "priority", "value": "Hot", "description": "Filter by priority: Hot, Warm, Cold" },
+                { "key": "stage", "value": "New Lead", "description": "Filter by stage" },
+                { "key": "sortBy", "value": "estimated_value", "description": "Sort field: company_name, contact_person, priority, status, stage, estimated_value, created_at" },
+                { "key": "sortOrder", "value": "desc", "description": "asc or desc" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — ME view (own leads only)",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"lead_id\": \"LD-2026-00005\",\n      \"company_name\": \"Supabase Systems\",\n      \"contact_person\": \"Jane Doe\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"jane@supabase.com\",\n      \"lead_source\": \"Website\",\n      \"category\": \"IT Services\",\n      \"priority\": \"Hot\",\n      \"stage\": \"New Lead\",\n      \"estimated_value\": 12000,\n      \"assigned_to\": \"me-uuid\",\n      \"assigned_to_name\": \"Jane Miller\",\n      \"assigned_at\": \"2026-07-02T10:00:00.000Z\",\n      \"created_at\": \"2026-07-02T10:00:00.000Z\",\n      \"updated_at\": \"2026-07-02T10:00:00.000Z\"\n    }\n  ],\n  \"page\": 1,\n  \"totalPages\": 1,\n  \"totalCount\": 1\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "STORY-2.2.1 — Saved Views & Bulk Operations (Admin)",
+      "item": [
+        {
+          "name": "Create Saved View",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"High Priority Leads\",\n  \"filters\": {\n    \"status\": \"Open\",\n    \"priority\": \"High\",\n    \"stage\": \"Contacted\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/saved-views",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "saved-views"]
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"6ba7b810-9dad-11d1-80b4-00c04fd430c8\",\n  \"name\": \"High Priority Leads\",\n  \"filters\": {\n    \"status\": \"Open\",\n    \"priority\": \"High\",\n    \"stage\": \"Contacted\"\n  },\n  \"created_by\": \"admin-uuid\",\n  \"created_at\": \"2026-07-02T10:00:00.000Z\",\n  \"updated_at\": \"2026-07-02T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 — Missing Name",
+              "code": 400,
+              "body": "{\n  \"name\": \"Name is required\"\n}"
+            },
+            {
+              "name": "400 — Empty Name",
+              "code": 400,
+              "body": "{\n  \"name\": \"Name cannot be empty\"\n}"
+            },
+            {
+              "name": "400 — Name Too Long",
+              "code": 400,
+              "body": "{\n  \"name\": \"Name must be 100 characters or less\"\n}"
+            },
+            {
+              "name": "409 — Duplicate Name",
+              "code": 409,
+              "body": "{\n  \"error\": \"A saved view with this name already exists\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /admin/leads/saved-views/:viewId — Update Saved View",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated View\",\n  \"filters\": {\n    \"priority\": \"High\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/saved-views/{{view_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "saved-views", "{{view_id}}"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"6ba7b810-9dad-11d1-80b4-00c04fd430c8\",\n  \"name\": \"Updated View\",\n  \"filters\": {\n    \"priority\": \"High\"\n  },\n  \"created_by\": \"admin-uuid\",\n  \"created_at\": \"2026-07-01T10:00:00.000Z\",\n  \"updated_at\": \"2026-07-02T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 — No Fields",
+              "code": 400,
+              "body": "{\n  \"error\": \"At least one field (name or filters) must be provided\"\n}"
+            },
+            {
+              "name": "400 — Invalid viewId format",
+              "code": 400,
+              "body": "{\n  \"error\": \"Invalid view ID format\"\n}"
+            },
+            {
+              "name": "404 — Not Found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Saved view not found\"\n}"
+            },
+            {
+              "name": "403 — IDOR (different admin's view)",
+              "code": 403,
+              "body": "{\n  \"error\": \"You do not have permission to modify this saved view\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE /admin/leads/saved-views/:viewId — Delete Saved View",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/leads/saved-views/{{view_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "saved-views", "{{view_id}}"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Deleted\"\n}"
+            },
+            {
+              "name": "404 — Not Found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Saved view not found\"\n}"
+            },
+            {
+              "name": "403 — IDOR (different admin's view)",
+              "code": 403,
+              "body": "{\n  \"error\": \"You do not have permission to delete this saved view\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/leads/bulk-select — Bulk Select Leads",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lead_ids\": [\n    \"550e8400-e29b-41d4-a716-446655440000\",\n    \"660e8400-e29b-41d4-a716-446655440001\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/bulk-select",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "bulk-select"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"selected\": true,\n  \"count\": 2,\n  \"lead_ids\": [\n    \"550e8400-e29b-41d4-a716-446655440000\",\n    \"660e8400-e29b-41d4-a716-446655440001\"\n  ]\n}"
+            },
+            {
+              "name": "200 — Empty Array",
+              "code": 200,
+              "body": "{\n  \"selected\": true,\n  \"count\": 0,\n  \"lead_ids\": []\n}"
+            },
+            {
+              "name": "200 — Duplicates Deduplicated",
+              "code": 200,
+              "body": "{\n  \"selected\": true,\n  \"count\": 2,\n  \"lead_ids\": [\n    \"550e8400-e29b-41d4-a716-446655440000\",\n    \"660e8400-e29b-41d4-a716-446655440001\"\n  ]\n}"
+            },
+            {
+              "name": "400 — Not an array",
+              "code": 400,
+              "body": "{\n  \"lead_ids\": \"Must be an array of lead ID strings\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/leads/bulk-assign — Bulk Assign Leads",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lead_ids\": [\n    \"550e8400-e29b-41d4-a716-446655440000\",\n    \"660e8400-e29b-41d4-a716-446655440001\"\n  ],\n  \"assigned_to\": \"EMP-00002\",\n  \"reason\": \"Region reallocation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/bulk-assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "bulk-assign"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"assigned\": true,\n  \"count\": 2\n}"
+            },
+            {
+              "name": "400 — Empty lead_ids",
+              "code": 400,
+              "body": "{\n  \"lead_ids\": \"At least one lead ID is required\"\n}"
+            },
+            {
+              "name": "400 — Missing assigned_to",
+              "code": 400,
+              "body": "{\n  \"assigned_to\": \"Target user ID is required\"\n}"
+            },
+            {
+              "name": "400 — Reason required (leads have owners)",
+              "code": 400,
+              "body": "{\n  \"reason\": \"Reassignment reason is required when one or more leads already have an owner\"\n}"
+            },
+            {
+              "name": "404 — Assigned user not found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Assigned user not found\"\n}"
+            },
+            {
+              "name": "404 — Lead(s) not found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Lead(s) not found: nonexistent-lead\"\n}"
+            },
+            {
+              "name": "400 — Deactivated user",
+              "code": 400,
+              "body": "{\n  \"error\": \"Cannot assign leads to a deactivated user\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/leads/export — Export Leads",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lead_ids\": [\n    \"550e8400-e29b-41d4-a716-446655440000\",\n    \"660e8400-e29b-41d4-a716-446655440001\"\n  ],\n  \"format\": \"xlsx\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/export",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "export"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — xlsx",
+              "code": 200,
+              "body": "{\n  \"download_url\": \"/exports/leads-2026-07-02-a1b2c3.xlsx\"\n}"
+            },
+            {
+              "name": "200 OK — csv",
+              "code": 200,
+              "body": "{\n  \"download_url\": \"/exports/leads-2026-07-02-d4e5f6.csv\"\n}"
+            },
+            {
+              "name": "400 — Invalid format",
+              "code": 400,
+              "body": "{\n  \"format\": \"Format must be 'xlsx' or 'csv'\"\n}"
+            },
+            {
+              "name": "400 — Missing format",
+              "code": 400,
+              "body": "{\n  \"format\": \"Export format is required\"\n}"
+            },
+            {
+              "name": "404 — Lead not found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Lead(s) not found: nonexistent-lead\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /admin/leads — Admin Lead List (filtered, sorted, paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/leads?search=Tech&status=Open&priority=High&stage=Contacted&source=Website&category=IT%20Services&assigned_to=EMP-00002&sortBy=created_at&sortOrder=desc&page=1&limit=25&from_date=2026-01-01&to_date=2026-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads"],
+              "query": [
+                { "key": "search", "value": "Tech" },
+                { "key": "status", "value": "Open" },
+                { "key": "priority", "value": "High" },
+                { "key": "stage", "value": "Contacted" },
+                { "key": "source", "value": "Website" },
+                { "key": "category", "value": "IT Services" },
+                { "key": "assigned_to", "value": "EMP-00002" },
+                { "key": "sortBy", "value": "created_at" },
+                { "key": "sortOrder", "value": "desc" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "25" },
+                { "key": "from_date", "value": "2026-01-01" },
+                { "key": "to_date", "value": "2026-12-31" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"page\": 1,\n  \"totalPages\": 3,\n  \"totalCount\": 65,\n  \"limit\": 25,\n  \"data\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"lead_id\": \"LD-2026-00005\",\n      \"company_name\": \"Tech Corp\",\n      \"contact_person\": \"John Doe\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"john@techcorp.com\",\n      \"lead_source\": \"Website\",\n      \"category\": \"IT Services\",\n      \"priority\": \"High\",\n      \"stage\": \"Contacted\",\n      \"estimated_value\": 50000,\n      \"assigned_to\": \"me-uuid\",\n      \"assigned_to_name\": \"Marketing User\",\n      \"assigned_at\": \"2026-06-15T10:00:00.000Z\",\n      \"created_at\": \"2026-06-01T10:00:00.000Z\",\n      \"updated_at\": \"2026-06-15T10:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "400 — Invalid sort field",
+              "code": 400,
+              "body": "{\n  \"sortBy\": \"Invalid sort field. Must be one of: company_name, contact_person, priority, status, stage, estimated_value, created_at\"\n}"
+            },
+            {
+              "name": "400 — Invalid page",
+              "code": 400,
+              "body": "{\n  \"page\": \"Page must be a positive integer\"\n}"
+            },
+            {
+              "name": "400 — Invalid date range",
+              "code": 400,
+              "body": "{\n  \"from_date\": \"from_date cannot be greater than to_date\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "STORY-2.3.1 — Lead Assignment & Reassignment",
+      "item": [
+        {
+          "name": "PATCH /admin/leads/:id/assign — Assign Lead (no previous owner)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to\": \"EMP-00002\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/{{lead_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "{{lead_id}}", "assign"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Initial assignment",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lead assigned successfully.\",\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"lead_id\": \"LD-2026-00005\",\n    \"company_name\": \"Supabase Systems\",\n    \"contact_person\": \"Jane Doe\",\n    \"mobile_number\": \"9876543210\",\n    \"assigned_to\": \"me-uuid\",\n    \"assigned_to_name\": \"Marketing User\",\n    \"assigned_at\": \"2026-07-02T10:00:00.000Z\",\n    \"stage\": \"New Lead\",\n    \"created_at\": \"2026-07-01T10:00:00.000Z\",\n    \"updated_at\": \"2026-07-02T10:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "200 OK — Reassignment with reason",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lead assigned successfully.\",\n  \"data\": { ... }\n}"
+            },
+            {
+              "name": "200 OK — No-op (same owner)",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lead ownership unchanged\",\n  \"data\": { ... }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /admin/leads/:id/assign — Reassign with Reason",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to\": \"EMP-00003\",\n  \"reason\": \"Region reallocation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/{{lead_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "{{lead_id}}", "assign"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lead assigned successfully.\",\n  \"data\": { ... }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /admin/leads/:id/assign — Error: Missing Reason",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to\": \"EMP-00003\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/{{lead_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "{{lead_id}}", "assign"]
+            }
+          },
+          "response": [
+            {
+              "name": "400 — Reason required",
+              "code": 400,
+              "body": "{\n  \"reason\": \"Reassignment reason is required when the lead already has an owner\"\n}"
+            },
+            {
+              "name": "400 — Empty reason",
+              "code": 400,
+              "body": "{\n  \"reason\": \"Reassignment reason cannot be empty\"\n}"
+            },
+            {
+              "name": "400 — Reason too long",
+              "code": 400,
+              "body": "{\n  \"reason\": \"Reason must be 500 characters or less\"\n}"
+            },
+            {
+              "name": "400 — Missing assigned_to",
+              "code": 400,
+              "body": "{\n  \"assigned_to\": \"Target user ID is required\"\n}"
+            },
+            {
+              "name": "404 — Lead not found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Lead not found\"\n}"
+            },
+            {
+              "name": "404 — User not found",
+              "code": 404,
+              "body": "{\n  \"error\": \"Assigned user not found\"\n}"
+            },
+            {
+              "name": "400 — Deactivated user",
+              "code": 400,
+              "body": "{\n  \"error\": \"Cannot assign leads to a deactivated user\"\n}"
+            },
+            {
+              "name": "403 — Forbidden (ME role)",
+              "code": 403,
+              "body": "{\n  \"error\": \"Forbidden. Admin access required.\"\n}"
+            },
+            {
+              "name": "401 — Unauthenticated",
+              "code": 401,
+              "body": "{\n  \"error\": \"Authentication required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/leads/:id/timeline — Assignment Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/leads/{{lead_id}}/timeline?filter=Assignment",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "leads", "{{lead_id}}", "timeline"],
+              "query": [
+                { "key": "filter", "value": "Assignment", "description": "Optional: 'Assignment' filters to assignment events only. Omit for all history." }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"hist-uuid-3\",\n      \"event_type\": \"Assigned/Reassigned\",\n      \"previous_owner\": \"EMP-00002\",\n      \"new_owner\": \"EMP-00003\",\n      \"reason\": \"Region reallocation\",\n      \"actor\": \"EMP-00001\",\n      \"timestamp\": \"2026-07-02T10:00:00.000Z\",\n      \"change_summary\": \"Lead reassigned from EMP-00002 to EMP-00003. Reason: Region reallocation\",\n      \"changed_by_name\": \"Admin User\"\n    },\n    {\n      \"id\": \"hist-uuid-2\",\n      \"event_type\": \"Assigned/Reassigned\",\n      \"previous_owner\": null,\n      \"new_owner\": \"EMP-00002\",\n      \"reason\": null,\n      \"actor\": \"EMP-00001\",\n      \"timestamp\": \"2026-07-01T10:00:00.000Z\",\n      \"change_summary\": \"Lead reassigned from Unassigned to EMP-00002\",\n      \"changed_by_name\": \"Admin User\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "403 — Access Denied (not owner)",
+              "code": 403,
+              "body": "{\n  \"error\": \"Access denied. Lead not assigned to you.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /marketing/notifications/count — Notification Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{me_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/marketing/notifications/count",
+              "host": ["{{base_url}}"],
+              "path": ["marketing", "notifications", "count"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"unread_count\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /admin/leads/bulk-assign — Bulk Reassign with Reason",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lead_ids\": [\n    \"550e8400-e29b-41d4-a716-446655440000\",\n    \"660e8400-e29b-41d4-a716-446655440001\"\n  ],\n  \"assigned_to\": \"EMP-00003\",\n  \"reason\": \"Team restructure\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/leads/bulk-assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "leads", "bulk-assign"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"assigned\": true,\n  \"count\": 2\n}"
+            },
+            {
+              "name": "200 — Mixed owned/unowned",
+              "code": 200,
+              "body": "{\n  \"assigned\": true,\n  \"count\": 2\n}"
+            },
+            {
+              "name": "200 — With no-ops (same owner)",
+              "code": 200,
+              "body": "{\n  \"assigned\": true,\n  \"count\": 1\n}"
+            },
+            {
+              "name": "400 — Reason required",
+              "code": 400,
+              "body": "{\n  \"reason\": \"Reassignment reason is required when one or more leads already have an owner\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /admin/users?role=Marketing%20Executive — Assignee Dropdown",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?role=Marketing%20Executive",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"],
+              "query": [
+                { "key": "role", "value": "Marketing Executive" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Active MEs",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"me-uuid-2\",\n      \"employee_id\": \"EMP-00002\",\n      \"employee_name\": \"Alice Johnson\",\n      \"email\": \"alice@company.com\",\n      \"role\": \"Marketing Executive\",\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"me-uuid-3\",\n      \"employee_id\": \"EMP-00003\",\n      \"employee_name\": \"Bob Smith\",\n      \"email\": \"bob@company.com\",\n      \"role\": \"Marketing Executive\",\n      \"status\": \"active\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "200 OK — Empty (no active MEs)",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": []\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

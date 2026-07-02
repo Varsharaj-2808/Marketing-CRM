@@ -116,6 +116,11 @@ exports.getUsers = async (req, res, next) => {
   try {
     const { search, role, status, page, limit } = req.query;
 
+    if (role === 'Marketing Executive') {
+      const users = await User.findActiveByRole('Marketing Executive');
+      return res.json({ success: true, data: users });
+    }
+
     if (search || role || status) {
       const algoliaResult = await algolia.searchUsers(
         search || '',

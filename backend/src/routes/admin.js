@@ -8,6 +8,7 @@ const systemSettingController = require('../controllers/systemSettingController'
 const savedViewController = require('../controllers/savedViewController');
 const bulkOperationsController = require('../controllers/bulkOperationsController');
 const leadController = require('../controllers/leadController');
+const assignController = require('../controllers/assignController');
 
 router.post('/users', protect, authorize('Admin'), userController.createUser);
 router.get('/users', protect, authorize('Admin'), userController.getUsers);
@@ -34,6 +35,7 @@ router.post('/leads/bulk-select', protect, authorize('Admin'), bulkOperationsCon
 router.post('/leads/bulk-assign', protect, authorize('Admin'), bulkOperationsController.bulkAssign);
 router.post('/leads/export', protect, authorize('Admin'), bulkOperationsController.exportLeads);
 
+router.patch('/leads/:id/assign', protect, authorize('Admin'), assignController.assignLead);
 router.get('/leads', protect, authorize('Admin'), leadController.getAdminLeads);
 
 module.exports = router;

@@ -47,6 +47,16 @@ const Lead = {
     return result.rows[0] || null;
   },
 
+  async updateAssignedTo(id, assignedToUserId) {
+    const result = await query(
+      `UPDATE leads SET assigned_to = $1, assigned_at = NOW(), updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [assignedToUserId, id]
+    );
+    return result.rows[0] || null;
+  },
+
   async findByMobile(mobile) {
     const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2', [mobile, 'Closed Lost']);
     return result.rows[0] || null;
