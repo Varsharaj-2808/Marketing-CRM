@@ -928,6 +928,141 @@
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
+    },
+    {
+      "uuid": "17000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "PUT /marketing/leads/:id/status — Update lead stage",
+      "method": "put",
+      "endpoint": "marketing/leads/:id/status",
+      "responses": [
+        {
+          "uuid": "17100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"stage\":\"{{body 'stage'}}\",\"updatedAt\":\"{{nowIso}}\"},\"message\":\"Stage updated successfully.\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Stage updated",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "17200000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Invalid stage transition. Allowed transitions from [current stage]: [list]\"}",
+          "latency": 0,
+          "statusCode": 422,
+          "label": "422 — Invalid transition",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "18000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "POST /marketing/leads/:id/close — Close lead as Won or Lost",
+      "method": "post",
+      "endpoint": "marketing/leads/:id/close",
+      "responses": [
+        {
+          "uuid": "18100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"status\":\"{{body 'status'}}\",\"stage\":\"Closed\",\"updatedAt\":\"{{nowIso}}\"},\"message\":\"Lead closed successfully.\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead closed",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "19000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "POST /admin/leads/:id/reopen — Admin reopen a closed lead",
+      "method": "post",
+      "endpoint": "admin/leads/:id/reopen",
+      "responses": [
+        {
+          "uuid": "19100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"status\":\"\",\"stage\":\"Contacted\",\"updatedAt\":\"{{nowIso}}\"},\"message\":\"Lead reopened successfully.\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead reopened",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
   "folders": [
@@ -966,6 +1101,18 @@
         {
           "type": "route",
           "uuid": "80000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "17000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "18000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "19000000-0000-4000-a000-000000000001"
         }
       ]
     },
