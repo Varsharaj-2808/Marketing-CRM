@@ -193,6 +193,10 @@ export async function fetchMarketingLeads(params = {}) {
 }
 
 export async function fetchLeadById(id, cacheBuster) {
+  if (cacheBuster) {
+    const localLead = findLeadInStore(id);
+    if (localLead) return { success: true, data: localLead };
+  }
   try {
     const url = cacheBuster
       ? `${API_BASE_URL}/marketing/leads/${id}?_=${cacheBuster}`
@@ -381,6 +385,10 @@ export async function fetchLeadHistory(leadId) {
 }
 
 export async function fetchAdminLeadById(id, cacheBuster) {
+  if (cacheBuster) {
+    const localLead = findLeadInStore(id);
+    if (localLead) return { success: true, data: localLead };
+  }
   try {
     const url = cacheBuster
       ? `${API_BASE_URL}/admin/leads/${id}?_=${cacheBuster}`
@@ -401,12 +409,26 @@ export async function assignLead(leadId, assignedTo, reason) {
       body: JSON.stringify({ assignedTo, reason }),
     });
     const json = await safeJson(res);
-    if (res.ok && json?.success) return json;
-    const error = new Error(json?.message || 'Assign failed');
-    error.status = res.status;
-    throw error;
+    if (!res.ok) {
+      const error = new Error(json?.message || 'Assign failed');
+      error.status = res.status;
+      throw error;
+    }
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.assignedTo = assignedTo;
+      lead.assignedAt = new Date().toISOString();
+      lead.updatedAt = new Date().toISOString();
+    }
+    return json || { success: true, message: 'Lead assigned successfully' };
   } catch (err) {
     if (err?.status) throw err;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.assignedTo = assignedTo;
+      lead.assignedAt = new Date().toISOString();
+      lead.updatedAt = new Date().toISOString();
+    }
     return { success: true, message: 'Lead assigned successfully' };
   }
 }
@@ -419,13 +441,23 @@ export async function updateLeadStage(leadId, stage) {
       body: JSON.stringify({ stage }),
     });
     const json = await safeJson(res);
-    if (res.ok && (json?.success || json?.data)) return json;
     if (!res.ok) {
       const error = new Error(json?.message || 'Failed to update stage.');
       error.status = res.status;
       throw error;
     }
-    return json;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.stage = stage;
+      lead.updatedAt = new Date().toISOString();
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Stage Updated',
+        message: `Lead moved to ${stage}`,
+        user: 'System',
+        timestamp: new Date().toISOString(),
+      }];
+    }
+    return json || { success: true, data: { stage } };
   } catch (err) {
     if (err?.status) throw err;
     const lead = findLeadInStore(leadId);
@@ -451,13 +483,26 @@ export async function closeLeadAsLost(leadId, reason) {
       body: JSON.stringify({ status: 'Lost', lostReason: reason }),
     });
     const json = await safeJson(res);
-    if (res.ok && (json?.success || json?.data)) return json;
     if (!res.ok) {
       const error = new Error(json?.message || 'Failed to close lead as Lost.');
       error.status = res.status;
       throw error;
     }
-    return json;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.status = 'Lost';
+      lead.stage = 'Closed';
+      lead.lostReason = reason;
+      lead.updatedAt = new Date().toISOString();
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Lead Closed',
+        message: `Lead closed as Lost (${reason})`,
+        user: 'System',
+        reason,
+        timestamp: new Date().toISOString(),
+      }];
+    }
+    return json || { success: true, data: { status: 'Lost', lostReason: reason } };
   } catch (err) {
     if (err?.status) throw err;
     const lead = findLeadInStore(leadId);
@@ -486,13 +531,28 @@ export async function closeLeadAsWon(leadId, dealValue, closureDate) {
       body: JSON.stringify({ status: 'Won', dealValue, closureDate }),
     });
     const json = await safeJson(res);
-    if (res.ok && (json?.success || json?.data)) return json;
     if (!res.ok) {
       const error = new Error(json?.message || 'Failed to close lead as Won.');
       error.status = res.status;
       throw error;
     }
-    return json;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.status = 'Won';
+      lead.stage = 'Closed';
+      lead.dealValue = dealValue;
+      lead.closureDate = closureDate;
+      lead.updatedAt = new Date().toISOString();
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Lead Closed',
+        message: `Lead closed as Won with deal value ${dealValue}`,
+        user: 'System',
+        dealValue,
+        closureDate,
+        timestamp: new Date().toISOString(),
+      }];
+    }
+    return json || { success: true, data: { status: 'Won', dealValue, closureDate } };
   } catch (err) {
     if (err?.status) throw err;
     const lead = findLeadInStore(leadId);
@@ -523,13 +583,28 @@ export async function reopenLead(leadId, reason) {
       body: JSON.stringify({ reason }),
     });
     const json = await safeJson(res);
-    if (res.ok && (json?.success || json?.data)) return json;
     if (!res.ok) {
       const error = new Error(json?.message || 'Failed to reopen lead.');
       error.status = res.status;
       throw error;
     }
-    return json;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.status = '';
+      lead.stage = 'Contacted';
+      delete lead.lostReason;
+      delete lead.dealValue;
+      delete lead.closureDate;
+      lead.updatedAt = new Date().toISOString();
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Lead Reopened',
+        message: `Lead reopened: ${reason}`,
+        user: 'System',
+        reason,
+        timestamp: new Date().toISOString(),
+      }];
+    }
+    return json || { success: true, data: { status: '', stage: 'Contacted' } };
   } catch (err) {
     if (err?.status) throw err;
     const lead = findLeadInStore(leadId);
@@ -560,12 +635,30 @@ export async function bulkAssignLeads(leadIds, assignedTo, reason) {
       body: JSON.stringify({ leadIds, assignedTo, reason }),
     });
     const json = await safeJson(res);
-    if (res.ok && json?.assigned) return json;
-    const error = new Error(json?.message || 'Bulk assign failed');
-    error.status = res.status;
-    throw error;
+    if (!res.ok) {
+      const error = new Error(json?.message || 'Bulk assign failed');
+      error.status = res.status;
+      throw error;
+    }
+    leadIds.forEach((id) => {
+      const lead = findLeadInStore(id);
+      if (lead) {
+        lead.assignedTo = assignedTo;
+        lead.assignedAt = new Date().toISOString();
+        lead.updatedAt = new Date().toISOString();
+      }
+    });
+    return json || { assigned: true, count: leadIds.length };
   } catch (err) {
     if (err?.status) throw err;
+    leadIds.forEach((id) => {
+      const lead = findLeadInStore(id);
+      if (lead) {
+        lead.assignedTo = assignedTo;
+        lead.assignedAt = new Date().toISOString();
+        lead.updatedAt = new Date().toISOString();
+      }
+    });
     return { assigned: true, count: leadIds.length };
   }
 }
