@@ -95,6 +95,39 @@
           "default": false,
           "crudKey": "none",
           "callbacks": []
+        },
+        {
+          "uuid": "23000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"website\":\"https://growthmark.com\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"city\":\"Delhi\",\"businessCategory\":\"Digital Marketing\",\"businessSubCategory\":\"SEO Services\",\"leadSource\":\"Referral\",\"servicesInterested\":[\"SEO Services\",\"Social Media Management\"],\"priority\":\"Warm\",\"estimatedValue\":200000,\"status\":\"\",\"stage\":\"New\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00002\",\"name\":\"John Executive\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"John Executive\",\"createdBy\":{\"id\":\"EMP-00002\",\"name\":\"John Executive\"},\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"timestamp\":\"2026-06-14T09:00:00.000Z\"}]}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead detail (lead-002)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "leadId",
+              "value": "lead-002",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
         }
       ],
       "enabled": true,
@@ -469,7 +502,7 @@
       "responses": [
         {
           "uuid": "71000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\"}],\"pagination\":{\"page\":1,\"limit\":25,\"total\":1,\"totalPages\":1}}",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\"},{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Warm\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\"}],\"pagination\":{\"page\":1,\"limit\":25,\"total\":2,\"totalPages\":1}}",
           "latency": 0,
           "statusCode": 200,
           "label": "200 — My Leads list",
@@ -545,6 +578,39 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "83000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Warm\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00002\",\"name\":\"John Executive\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"John Executive\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"timestamp\":\"2026-06-14T09:00:00.000Z\"}]}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead detail (lead-002)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "leadId",
+              "value": "lead-002",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
@@ -891,6 +957,39 @@
       "endpoint": "auth/login",
       "responses": [
         {
+          "uuid": "16100000-0000-4000-a000-000000000002",
+          "body": "{\"success\":true,\"data\":{\"token\":\"mock-jwt-token-{{now}}\",\"refreshToken\":\"mock-refresh-token\",\"user\":{\"id\":\"EMP-00002\",\"employee_id\":\"EMP-00002\",\"name\":\"John Executive\",\"email\":\"executive@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"}}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Executive login success",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "email",
+              "value": "executive@company.com",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
           "uuid": "16100000-0000-4000-a000-000000000001",
           "body": "{\"success\":true,\"data\":{\"token\":\"mock-jwt-token-{{now}}\",\"refreshToken\":\"mock-refresh-token\",\"user\":{\"id\":\"ADM-001\",\"employee_id\":\"ADM-001\",\"name\":\"Admin User\",\"email\":\"admin@company.com\",\"role\":\"Admin\",\"status\":\"active\"}}}",
           "latency": 0,
@@ -916,6 +1015,30 @@
               "regex": {}
             }
           ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "16300000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Invalid credentials.\"}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "401 — Invalid credentials",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,

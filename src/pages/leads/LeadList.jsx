@@ -136,7 +136,9 @@ export default function LeadList() {
       if (!isAdmin && user) {
         const userId = user.id || user.employee_id || user.employeeId;
         filteredLeads = normalized.leads.filter((l) => {
-          const assignedId = l.assignedTo?.employee_id || l.assignedTo?.id || null;
+          const assignedId = typeof l.assignedTo === 'object' && l.assignedTo
+            ? (l.assignedTo.employee_id || l.assignedTo.id)
+            : l.assignedTo || null;
           return assignedId === userId;
         });
         totalRecords = filteredLeads.length;
