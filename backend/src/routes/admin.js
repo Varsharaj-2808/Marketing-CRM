@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
+const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
 const adminController = require('../controllers/adminController');
 const userController = require('../controllers/userController');
 const auditLogController = require('../controllers/auditLogController');
@@ -37,5 +38,8 @@ router.post('/leads/export', protect, authorize('Admin'), bulkOperationsControll
 
 router.patch('/leads/:id/assign', protect, authorize('Admin'), assignController.assignLead);
 router.get('/leads', protect, authorize('Admin'), leadController.getAdminLeads);
+
+router.post('/leads/:id/reopen', protectStageManagement, authorizeStageManagement('Admin'), adminController.reopenLead);
+router.get('/leads/:id/lead-history', protectStageManagement, authorizeStageManagement('Admin'), leadController.getLeadHistory);
 
 module.exports = router;
