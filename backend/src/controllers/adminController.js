@@ -5,6 +5,8 @@ const LeadSource = require('../models/LeadSource');
 const BusinessCategory = require('../models/BusinessCategory');
 const BusinessSubCategory = require('../models/BusinessSubCategory');
 const Service = require('../models/Service');
+const Lead = require('../models/Lead');
+const LeadHistory = require('../models/LeadHistory');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -147,6 +149,72 @@ exports.getServices = async (req, res, next) => {
   try {
     const services = await Service.findAllActive();
     res.json({ success: true, data: services });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+exports.reopenLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    if (reason === undefined) {
+      return res.status(400).json({ reason: 'Reopen reason is required' });
+    }
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      return res.status(400).json({ reason: 'Reopen reason cannot be empty' });
+    }
+    if (reason.length > 500) {
+      return res.status(400).json({ reason: 'Reopen reason must not exceed 500 characters' });
+    }
+
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+    }
+
+    const lead = await Lead.findById(id);
+    if (!lead || lead.deleted_at) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    if (lead.stage !== 'Won' && lead.stage !== 'Lost') {
+      return res.status(400).json({ error: `Lead is not closed. Current stage: ${lead.stage}` });
+    }
+
+    const updatedLead = await Lead.reopen(id);
+
+    await LeadHistory.create({
+      leadId: id,
+      fieldName: 'Lead Reopened',
+      oldValue: lead.stage,
+      newValue: 'Contacted',
+      changeSummary: `Lead reopened by Admin (Reason: ${reason})`,
+      changedBy: req.user.id,
+      reason
+    });
+
+    const { ipAddress, userAgent } = getIpAndAgent(req);
+    await AuditLog.create({
+      userId: req.user.id,
+      email: req.user.email,
+      action: 'LEAD_REOPENED',
+      resource: 'Lead',
+      resourceId: updatedLead.lead_id,
+      details: JSON.stringify({ oldStage: lead.stage, reason }),
+      ipAddress,
+      userAgent,
+      result: 'Success'
+    });
+
+    const responseLead = { ...updatedLead, status: updatedLead.lead_status };
+    return res.status(200).json({ success: true, data: responseLead });
   } catch (error) {
     next(error);
   }

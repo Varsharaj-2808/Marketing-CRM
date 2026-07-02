@@ -255,6 +255,49 @@ const Lead = {
       totalCount,
     };
   },
+  async updateStage(id, stage, leadStatus) {
+    const result = await query(
+      `UPDATE leads
+       SET stage = $1, lead_status = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [stage, leadStatus, id]
+    );
+    return result.rows[0] || null;
+  },
+
+  async closeLost(id, lostReason) {
+    const result = await query(
+      `UPDATE leads
+       SET stage = 'Lost', lead_status = 'Closed', lost_reason = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [lostReason, id]
+    );
+    return result.rows[0] || null;
+  },
+
+  async closeWon(id, finalDealValue, closureDate) {
+    const result = await query(
+      `UPDATE leads
+       SET stage = 'Won', lead_status = 'Closed', final_deal_value = $1, closure_date = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [finalDealValue, closureDate, id]
+    );
+    return result.rows[0] || null;
+  },
+
+  async reopen(id) {
+    const result = await query(
+      `UPDATE leads
+       SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+    return result.rows[0] || null;
+  },
 };
 
 module.exports = Lead;
