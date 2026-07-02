@@ -1,18 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchLeadById, fetchLeadHistory, assignLead } from '../../services/leadService';
+import {
+  fetchLeadById,
+  fetchAdminLeadById,
+  fetchLeadHistory,
+  assignLead,
+  updateLeadStage,
+  closeLeadAsLost,
+  closeLeadAsWon,
+  reopenLead,
+} from '../../services/leadService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Toast from '../../components/common/Toast';
 import AssignLeadModal from '../../components/leads/AssignLeadModal';
+import StageControl from '../../components/leads/StageControl';
+import LostClosureModal from '../../components/leads/LostClosureModal';
+import WonClosureModal from '../../components/leads/WonClosureModal';
+import ReopenLeadModal from '../../components/leads/ReopenLeadModal';
 import { getLeadField, toDisplayText } from '../../utils/leadDisplay';
 
 const STATUS_MAP = {
-  New: 'new',
-  Contacted: 'contacted',
-  Qualified: 'qualified',
-  Converted: 'converted',
+  Won: 'converted',
   Lost: 'lost',
 };
 
@@ -56,17 +66,23 @@ export default function LeadDetails() {
 
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [stageLoading, setStageLoading] = useState(false);
+  const [lostModalOpen, setLostModalOpen] = useState(false);
+  const [wonModalOpen, setWonModalOpen] = useState(false);
+  const [reopenModalOpen, setReopenModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [toastShow, setToastShow] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  function loadLeadData() {
+  function loadLeadData(fromMutation) {
     setLoading(true);
     setTimeline([]);
     setAccessDenied(false);
     setErrorMessage('');
-    fetchLeadById(leadId)
+    const leadFetcher = isAdminRoute ? fetchAdminLeadById : fetchLeadById;
+    const cacheBuster = fromMutation ? Date.now() : null;
+    leadFetcher(leadId, cacheBuster)
       .then((res) => {
         const leadData = res?.data || res?.lead || res || null;
         setLead(leadData);
@@ -122,28 +138,117 @@ export default function LeadDetails() {
   }
 
   useEffect(() => {
-    if (leadId) loadLeadData();
+    if (leadId) loadLeadData(false);
   }, [leadId, isAdmin, user]);
 
-  async function handleAssign(assignedTo, reason) {
+  async function handleAssign(assignedTo, reason, userName) {
     setAssigning(true);
+    const hasOwner = !!(lead?.assignedTo ?? lead?.assigned_to);
     try {
       await assignLead(leadId, assignedTo, reason);
       setAssignModalOpen(false);
-      setToastMessage('Lead assigned successfully');
+      setToastMessage(hasOwner ? `Lead reassigned to ${userName}` : `Lead assigned to ${userName}`);
       setToastType('success');
       setToastShow(true);
-      loadLeadData();
+      loadLeadData(true);
     } catch (err) {
       if (err?.status === 404) {
-        setToastMessage('Lead not found.');
+        setAssignModalOpen(false);
+        setToastMessage('Lead not found. It may have been deleted.');
+        setToastType('error');
+        setToastShow(true);
+        navigate(isAdminRoute ? '/admin/leads' : '/marketing/leads');
       } else {
         setToastMessage('Failed to assign lead. Please try again.');
+        setToastType('error');
+        setToastShow(true);
       }
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function handleStageChange(event) {
+    const nextStage = event.target.value;
+    if (!nextStage || nextStage === lead.stage) return;
+    if (nextStage === 'Lost') {
+      setLostModalOpen(true);
+      return;
+    }
+    setStageLoading(true);
+    try {
+      await updateLeadStage(leadId, nextStage);
+      setToastMessage(`Stage updated to ${nextStage}`);
+      setToastType('success');
+      setToastShow(true);
+      loadLeadData(true);
+    } catch {
+      setToastMessage('Failed to update stage. Please try again.');
       setToastType('error');
       setToastShow(true);
     } finally {
-      setAssigning(false);
+      setStageLoading(false);
+    }
+  }
+
+  async function handleCloseAsWon() {
+    setWonModalOpen(true);
+  }
+
+  async function handleLostConfirm(reason) {
+    setStageLoading(true);
+    try {
+      await closeLeadAsLost(leadId, reason);
+      setLostModalOpen(false);
+      setToastMessage('Lead closed as Lost');
+      setToastType('success');
+      setToastShow(true);
+      loadLeadData(true);
+    } catch {
+      setLostModalOpen(false);
+      setToastMessage('Failed to close lead. Please try again.');
+      setToastType('error');
+      setToastShow(true);
+    } finally {
+      setStageLoading(false);
+    }
+  }
+
+  async function handleWonConfirm(dealValue, closureDate) {
+    setStageLoading(true);
+    try {
+      await closeLeadAsWon(leadId, dealValue, closureDate);
+      setWonModalOpen(false);
+      setToastMessage('Lead closed as Won');
+      setToastType('success');
+      setToastShow(true);
+      loadLeadData(true);
+    } catch {
+      setWonModalOpen(false);
+      setToastMessage('Failed to close lead. Please try again.');
+      setToastType('error');
+      setToastShow(true);
+    } finally {
+      setStageLoading(false);
+    }
+  }
+
+  async function handleReopenConfirm(reason) {
+    setStageLoading(true);
+    try {
+      await reopenLead(leadId, reason);
+      setReopenModalOpen(false);
+      setToastMessage('Lead reopened successfully. Stage set to Contacted.');
+      setToastType('success');
+      setToastShow(true);
+      loadLeadData(true);
+    } catch {
+      setReopenModalOpen(false);
+      setToastMessage('Failed to reopen lead. Please try again.');
+      setToastType('error');
+      setToastShow(true);
+    } finally {
+      setStageLoading(false);
     }
   }
 
@@ -216,6 +321,19 @@ export default function LeadDetails() {
                 </button>
               )}
             </div>
+          </div>
+
+          <div className="mb-6">
+            <StageControl
+              currentStage={getLeadField(lead, ['stage'], 'New')}
+              currentStatus={getLeadField(lead, ['status'], '')}
+              isAdmin={isAdmin}
+              onStageChange={handleStageChange}
+              onCloseAsWon={handleCloseAsWon}
+              onOpenReopen={() => setReopenModalOpen(true)}
+              disabled={stageLoading}
+              loading={stageLoading}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -366,6 +484,28 @@ export default function LeadDetails() {
         lead={lead}
         onAssign={handleAssign}
         assigning={assigning}
+      />
+
+      <LostClosureModal
+        isOpen={lostModalOpen}
+        onClose={() => setLostModalOpen(false)}
+        onConfirm={handleLostConfirm}
+        loading={stageLoading}
+      />
+
+      <WonClosureModal
+        isOpen={wonModalOpen}
+        onClose={() => setWonModalOpen(false)}
+        onConfirm={handleWonConfirm}
+        loading={stageLoading}
+      />
+
+      <ReopenLeadModal
+        isOpen={reopenModalOpen}
+        onClose={() => setReopenModalOpen(false)}
+        onConfirm={handleReopenConfirm}
+        loading={stageLoading}
+        closedStage={getLeadField(lead, ['status'], 'Closed')}
       />
 
       <Toast

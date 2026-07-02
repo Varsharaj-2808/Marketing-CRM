@@ -86,7 +86,7 @@ function setupE2eMocks(options = {}) {
         data: {
           id,
           leadId,
-          status: 'New',
+          stage: 'New',
           createdAt: new Date().toISOString(),
           createdBy: { id: 'EMP-00002', name: 'John Executive' },
           timeline: [

@@ -35,8 +35,8 @@ const leads = Array.from({ length: 26 }, (_, index) => ({
   companyName: index === 0 ? 'Supabase Labs' : `Company ${index + 1}`,
   contactPerson: index === 0 ? 'Alice Johnson' : `Contact ${index + 1}`,
   mobileNumber: `98765432${String(index + 1).padStart(2, '0')}`,
-  status: index % 2 === 0 ? 'Open' : 'Contacted',
-  stage: index % 2 === 0 ? 'Qualified' : 'Proposal',
+  status: '',
+  stage: index % 2 === 0 ? 'Qualified' : 'Proposal Sent',
   source: index % 2 === 0 ? 'Website' : 'Referral',
   category: index % 2 === 0 ? 'IT Services' : 'Consulting',
   priority: index % 2 === 0 ? 'High' : 'Low',
@@ -168,7 +168,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     await screen.findByText('Supabase Labs');
 
     fireEvent.click(screen.getByRole('button', { name: /created date/i }));
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Open' } });
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Won' } });
     fireEvent.change(screen.getByLabelText('Priority'), { target: { value: 'High' } });
     fireEvent.change(screen.getByLabelText('Stage'), { target: { value: 'Qualified' } });
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'Website' } });
@@ -187,7 +187,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     });
 
     const lastUrl = fetch.mock.calls.at(-1)[0];
-    expect(lastUrl).toContain('status=Open');
+    expect(lastUrl).toContain('status=Won');
     expect(lastUrl).toContain('priority=High');
     expect(lastUrl).toContain('stage=Qualified');
     expect(lastUrl).toContain('source=Website');
@@ -232,12 +232,11 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     fireEvent.click(screen.getByRole('button', { name: /my hot leads/i }));
 
     await waitFor(() => {
-      expect(fetch.mock.calls.at(-1)[0]).toContain('status=Open');
       expect(fetch.mock.calls.at(-1)[0]).toContain('priority=High');
       expect(fetch.mock.calls.at(-1)[0]).toContain('sortBy=createdAt');
       expect(fetch.mock.calls.at(-1)[0]).toContain('sortOrder=desc');
     });
-    expect(screen.getByLabelText('Status')).toHaveValue('Open');
+    expect(screen.getByLabelText('Status')).toHaveValue('');
     expect(screen.getByLabelText('Priority')).toHaveValue('High');
   });
 
@@ -251,8 +250,8 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
         company: { id: 'company-1', name: 'Object Corp' },
         contactPerson: { id: 'contact-1', name: 'Nisha Rao' },
         mobileNumber: '9000000001',
-        status: { id: 'open', name: 'Open' },
-        stage: { id: 'proposal', name: 'Proposal' },
+        status: { id: 'won', name: 'Won' },
+        stage: { id: 'proposal-sent', name: 'Proposal Sent' },
         source: { id: 'ref', name: 'Referral' },
         category: { id: 'it', name: 'IT Services' },
         priority: { id: 'high', label: 'High' },
@@ -268,7 +267,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     await waitFor(() => {
       expect(screen.getByText('Object Corp')).toBeInTheDocument();
       expect(screen.getByText('Nisha Rao')).toBeInTheDocument();
-      expect(screen.getAllByText('Proposal').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Proposal Sent').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Referral').length).toBeGreaterThan(0);
       expect(screen.getByText('Maya Executive')).toBeInTheDocument();
     });
@@ -289,7 +288,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
           companyName: { id: 'company-1', name: 'Object Detail Corp' },
           contactPerson: { id: 'contact-1', name: 'Isha Menon' },
           mobileNumber: '9000000002',
-          status: { id: 'open', name: 'Open' },
+          status: { id: 'won', name: 'Won' },
           priority: { id: 'high', label: 'High' },
           leadSource: { id: 'web', name: 'Website' },
           assignedTo: { id: 'ME-001', name: 'Maya Executive' },

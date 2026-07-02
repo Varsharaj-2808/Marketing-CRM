@@ -3,11 +3,7 @@ import SortableTableHeader from './SortableTableHeader';
 import { toDisplayText } from '../../utils/leadDisplay';
 
 const STATUS_VARIANTS = {
-  New: 'new',
-  Open: 'new',
-  Contacted: 'contacted',
-  Qualified: 'qualified',
-  Converted: 'converted',
+  Won: 'converted',
   Lost: 'lost',
 };
 

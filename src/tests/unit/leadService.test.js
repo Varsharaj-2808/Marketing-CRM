@@ -184,16 +184,16 @@ describe('leadService', () => {
       expect(result.data).toEqual([]);
     });
 
-    it('TEST-EP2-LEAD-UNIT-009: fetches leads with search and status params', async () => {
+    it('TEST-EP2-LEAD-UNIT-009: fetches leads with search and stage params', async () => {
       global.fetch = vi.fn().mockResolvedValue(
         mockRes({ success: true, data: [], total: 0 })
       );
 
-      await fetchLeads({ search: 'Tech', status: 'New', page: '1', limit: '10' });
+      await fetchLeads({ search: 'Tech', stage: 'New', page: '1', limit: '10' });
 
       const calledUrl = fetch.mock.calls[0][0];
       expect(calledUrl).toContain('search=Tech');
-      expect(calledUrl).toContain('status=New');
+      expect(calledUrl).toContain('stage=New');
       expect(calledUrl).toContain('page=1');
       expect(calledUrl).toContain('limit=10');
     });

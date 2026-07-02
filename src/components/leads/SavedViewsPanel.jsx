@@ -2,14 +2,14 @@ const DEFAULT_SAVED_VIEWS = [
   {
     id: 'my-hot-leads',
     name: 'My Hot Leads',
-    filters: { priority: 'High', status: 'Open' },
+    filters: { priority: 'High' },
     sort: { sortBy: 'createdAt', sortOrder: 'desc' },
     search: '',
   },
   {
     id: 'pending-follow-up-today',
     name: 'Pending Follow-up Today',
-    filters: { stage: 'Contacted', status: 'Open' },
+    filters: { stage: 'Contacted' },
     sort: { sortBy: 'createdAt', sortOrder: 'desc' },
     search: '',
   },

@@ -7,10 +7,7 @@ import Badge from '../../components/common/Badge';
 import { getLeadField, toDisplayText } from '../../utils/leadDisplay';
 
 const STATUS_MAP = {
-  New: 'new',
-  Contacted: 'contacted',
-  Qualified: 'qualified',
-  Converted: 'converted',
+  Won: 'converted',
   Lost: 'lost',
 };
 

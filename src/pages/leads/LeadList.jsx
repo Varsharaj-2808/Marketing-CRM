@@ -246,19 +246,24 @@ export default function LeadList() {
     setReassignModalOpen(true);
   };
 
-  const handleConfirmReassign = async (assignedTo, reason) => {
+  const handleConfirmReassign = async (assignedTo, reason, userName) => {
     setReassigning(true);
     try {
       const leadIds = Array.from(selectedLeadIds);
-      await bulkAssignLeads(leadIds, assignedTo, reason);
+      const res = await bulkAssignLeads(leadIds, assignedTo, reason);
       setReassignModalOpen(false);
       handleClearSelection();
-      setToastMessage(`${leadIds.length} lead(s) assigned successfully`);
+      const count = res?.count || leadIds.length;
+      setToastMessage(`${count} lead${count > 1 ? 's' : ''} assigned to ${userName}`);
       setToastType('success');
       setToastShow(true);
       loadLeads();
-    } catch {
-      setToastMessage('Failed to reassign leads. Please try again.');
+    } catch (err) {
+      if (err?.status === 400) {
+        setToastMessage('Reassignment reason is required as one or more leads already have an owner.');
+      } else {
+        setToastMessage('Failed to assign leads. Please try again.');
+      }
       setToastType('error');
       setToastShow(true);
     } finally {

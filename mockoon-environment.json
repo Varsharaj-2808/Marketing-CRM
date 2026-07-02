@@ -1,0 +1,1079 @@
+{
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "Marketing CRM API (STORY-2.3.1)",
+  "description": "Mockoon environment for Lead Assignment & Reassignment. All routes strip /api via Vite proxy → localhost:3001.",
+  "data": [],
+  "routes": [
+    {
+      "uuid": "10000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /admin/leads — Paginated list with search, status, stage, sort, date filters",
+      "method": "get",
+      "endpoint": "admin/leads",
+      "responses": [
+        {
+          "uuid": "20000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\"},{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"status\":\"\",\"stage\":\"Contacted\",\"priority\":\"Warm\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\"},{\"id\":\"lead-003\",\"leadId\":\"LD-2026-00003\",\"companyName\":\"MediCare Group\",\"contactPerson\":\"Dr. Raj Patel\",\"mobileNumber\":\"7654321098\",\"email\":\"raj@medicare.com\",\"status\":\"\",\"stage\":\"Negotiation\",\"priority\":\"Cold\",\"assignedTo\":\"EMP-00003\",\"assignedAt\":\"2026-06-13T08:00:00.000Z\",\"createdAt\":\"2026-06-13T08:00:00.000Z\",\"updatedAt\":\"2026-06-13T08:00:00.000Z\"},{\"id\":\"lead-004\",\"leadId\":\"LD-2026-00004\",\"companyName\":\"Acme Corp\",\"contactPerson\":\"John Smith\",\"mobileNumber\":\"9876543211\",\"email\":\"john@acme.com\",\"status\":\"\",\"stage\":\"Qualified\",\"priority\":\"High\",\"assignedTo\":null,\"assignedAt\":null,\"createdAt\":\"2026-06-12T07:00:00.000Z\",\"updatedAt\":\"2026-06-12T07:00:00.000Z\"},{\"id\":\"lead-005\",\"leadId\":\"LD-2026-00005\",\"companyName\":\"Globex Inc\",\"contactPerson\":\"Jane Doe\",\"mobileNumber\":\"9876543212\",\"email\":\"jane@globex.com\",\"status\":\"\",\"stage\":\"Proposal Sent\",\"priority\":\"Medium\",\"assignedTo\":null,\"assignedAt\":null,\"createdAt\":\"2026-06-11T06:00:00.000Z\",\"updatedAt\":\"2026-06-11T06:00:00.000Z\"}],\"pagination\":{\"page\":1,\"limit\":25,\"total\":5,\"totalPages\":1}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead list",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "20000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /admin/leads/:leadId — Single lead detail",
+      "method": "get",
+      "endpoint": "admin/leads/:leadId",
+      "responses": [
+        {
+          "uuid": "21000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"website\":\"https://techcorp.com\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"city\":\"Mumbai\",\"businessCategory\":\"IT Services\",\"businessSubCategory\":\"Web Development\",\"leadSource\":\"Website\",\"servicesInterested\":[\"Web Development\",\"Cloud Solutions\"],\"priority\":\"Hot\",\"estimatedValue\":500000,\"status\":\"\",\"stage\":\"New\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead detail",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "22000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "404 — Lead not found",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "30000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "PATCH /leads/:leadId/assign — Assign or reassign a lead to a user",
+      "method": "patch",
+      "endpoint": "leads/:leadId/assign",
+      "responses": [
+        {
+          "uuid": "31000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"message\":\"Lead assigned successfully\",\"data\":{\"assignedTo\":\"{{body 'assignedTo'}}\",\"assignedAt\":\"{{nowIso}}\",\"updatedAt\":\"{{nowIso}}\"}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Assign success (new assignment)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "32000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"message\":\"Lead reassigned successfully\",\"data\":{\"assignedTo\":\"{{body 'assignedTo'}}\",\"assignedAt\":\"{{nowIso}}\",\"updatedAt\":\"{{nowIso}}\"}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Reassign success (lead had owner)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "33000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "404 — Lead not found",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "34000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"AssignedTo field is required.\"}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "400 — Missing assignedTo",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "assignedTo",
+              "value": "",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "40000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "POST /admin/leads/bulk-assign — Assign multiple leads to a user",
+      "method": "post",
+      "endpoint": "admin/leads/bulk-assign",
+      "responses": [
+        {
+          "uuid": "41000000-0000-4000-a000-000000000001",
+          "body": "{\"assigned\":true,\"count\":\"{{body 'leadIds' length}}\",\"message\":\"{{body 'leadIds' length}} lead(s) assigned successfully\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Bulk assign success",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "42000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"leadIds array is required.\"}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "400 — Missing leadIds",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "leadIds",
+              "value": "",
+              "invert": false,
+              "operator": "null",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "50000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /marketing/leads/:leadId/lead-history — Paginated lead timeline (access-controlled)",
+      "method": "get",
+      "endpoint": "marketing/leads/:leadId/lead-history",
+      "responses": [
+        {
+          "uuid": "51000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"description\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — History (lead with no assignment events)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "52000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"action\":\"Lead Reassigned\",\"message\":\"Lead Reassigned\",\"description\":\"Lead reassigned from Alice Johnson to Bob Smith\",\"previousOwner\":\"Alice Johnson\",\"newOwner\":\"Bob Smith\",\"reason\":\"Workload rebalancing\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-07-01T12:00:00.000Z\",\"timestamp\":\"2026-07-01T12:00:00.000Z\"},{\"action\":\"Lead Assigned\",\"message\":\"Lead Assigned\",\"description\":\"Lead assigned to Alice Johnson\",\"previousOwner\":null,\"newOwner\":\"Alice Johnson\",\"reason\":\"\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"},{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — History with assignment events",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "53000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Access Denied\"}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "403 — Access Denied (non-admin, not assigned)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "54000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "404 — Lead not found",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "60000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /lead-history/:leadId — Alternative lead-history endpoint",
+      "method": "get",
+      "endpoint": "lead-history/:leadId",
+      "responses": [
+        {
+          "uuid": "61000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — History",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "62000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "404 — Lead not found",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "70000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /marketing/leads — Marketing executive lead list",
+      "method": "get",
+      "endpoint": "marketing/leads",
+      "responses": [
+        {
+          "uuid": "71000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\"}],\"pagination\":{\"page\":1,\"limit\":25,\"total\":1,\"totalPages\":1}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — My Leads list",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "80000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /marketing/leads/:leadId — Single lead for marketing executive",
+      "method": "get",
+      "endpoint": "marketing/leads/:leadId",
+      "responses": [
+        {
+          "uuid": "81000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Lead detail",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "82000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":false,\"message\":\"Access Denied\"}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "403 — Access Denied",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "90000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /admin/users — List users for assign modal",
+      "method": "get",
+      "endpoint": "admin/users",
+      "responses": [
+        {
+          "uuid": "91000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"EMP-00001\",\"employee_id\":\"EMP-00001\",\"name\":\"Admin User\",\"email\":\"admin@company.com\",\"role\":\"Admin\",\"status\":\"active\"},{\"id\":\"EMP-00002\",\"employee_id\":\"EMP-00002\",\"name\":\"John Executive\",\"email\":\"john@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00003\",\"employee_id\":\"EMP-00003\",\"name\":\"Sarah Manager\",\"email\":\"sarah@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00004\",\"employee_id\":\"EMP-00004\",\"name\":\"Ravi Executive\",\"email\":\"ravi@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00005\",\"employee_id\":\"EMP-00005\",\"name\":\"Maya Executive\",\"email\":\"maya@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — All users",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "92000000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"EMP-00002\",\"employee_id\":\"EMP-00002\",\"name\":\"John Executive\",\"email\":\"john@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00003\",\"employee_id\":\"EMP-00003\",\"name\":\"Sarah Manager\",\"email\":\"sarah@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00004\",\"employee_id\":\"EMP-00004\",\"name\":\"Ravi Executive\",\"email\":\"ravi@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00005\",\"employee_id\":\"EMP-00005\",\"name\":\"Maya Executive\",\"email\":\"maya@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Marketing Executives only (?role=Marketing Executive)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "role",
+              "value": "Marketing Executive",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "10000000-0000-4000-a000-00000000000a",
+      "type": "http",
+      "documentation": "POST /marketing/leads — Create a new lead",
+      "method": "post",
+      "endpoint": "marketing/leads",
+      "responses": [
+        {
+          "uuid": "10100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"id\":\"lead-{{now}}\",\"leadId\":\"LD-2026-{{now}}\",\"stage\":\"New\",\"status\":\"\",\"createdAt\":\"{{nowIso}}\",\"updatedAt\":\"{{nowIso}}\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"{{nowIso}}\",\"timestamp\":\"{{nowIso}}\"}]},\"message\":\"Lead created successfully.\"}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "201 — Created",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "11000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /notifications — Notification list including assignment notifications",
+      "method": "get",
+      "endpoint": "notifications",
+      "responses": [
+        {
+          "uuid": "11100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"notif-001\",\"type\":\"assignment\",\"message\":\"Lead LD-2026-00001 has been assigned to John Executive\",\"leadId\":\"lead-001\",\"read\":false,\"role\":\"Admin\",\"createdAt\":\"2026-07-01T11:00:00.000Z\",\"timestamp\":\"2026-07-01T11:00:00.000Z\"},{\"id\":\"notif-002\",\"type\":\"assignment\",\"message\":\"Lead LD-2026-00002 has been reassigned to Sarah Manager\",\"leadId\":\"lead-002\",\"read\":false,\"role\":\"Admin\",\"createdAt\":\"2026-07-01T10:00:00.000Z\",\"timestamp\":\"2026-07-01T10:00:00.000Z\"},{\"id\":\"notif-003\",\"type\":\"assignment\",\"message\":\"Lead LD-2026-00003 has been assigned to John Executive\",\"leadId\":\"lead-003\",\"read\":true,\"role\":\"Admin\",\"createdAt\":\"2026-06-30T10:00:00.000Z\",\"timestamp\":\"2026-06-30T10:00:00.000Z\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Notifications with assignment entries",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "12000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "PATCH /notifications/:id/read — Mark a notification as read",
+      "method": "patch",
+      "endpoint": "notifications/:id/read",
+      "responses": [
+        {
+          "uuid": "12100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"message\":\"Notification marked as read.\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Marked as read",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "13000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /admin/categories — List business categories",
+      "method": "get",
+      "endpoint": "admin/categories",
+      "responses": [
+        {
+          "uuid": "13100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"cat-001\",\"name\":\"IT Services\"},{\"id\":\"cat-002\",\"name\":\"Digital Marketing\"},{\"id\":\"cat-003\",\"name\":\"Consulting\"},{\"id\":\"cat-004\",\"name\":\"Real Estate\"},{\"id\":\"cat-005\",\"name\":\"Healthcare\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Categories",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "14000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "GET /admin/categories/:categoryId/sub-categories",
+      "method": "get",
+      "endpoint": "admin/categories/:categoryId/sub-categories",
+      "responses": [
+        {
+          "uuid": "14100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":[{\"id\":\"sub-001\",\"name\":\"Web Development\"},{\"id\":\"sub-002\",\"name\":\"Mobile App Development\"},{\"id\":\"sub-003\",\"name\":\"Cloud Solutions\"}]}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Sub-categories (default: IT Services)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "15000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "POST /marketing/leads/check-duplicate",
+      "method": "post",
+      "endpoint": "marketing/leads/check-duplicate",
+      "responses": [
+        {
+          "uuid": "15100000-0000-4000-a000-000000000001",
+          "body": "{\"duplicate\":false,\"exists\":false}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Mobile is unique",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        },
+        {
+          "uuid": "15200000-0000-4000-a000-000000000001",
+          "body": "{\"duplicate\":true,\"exists\":true,\"leadId\":\"LD-2026-00001\",\"data\":{\"duplicate\":true,\"leadId\":\"LD-2026-00001\",\"id\":\"lead-001\"},\"message\":\"A lead with this mobile number already exists.\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Duplicate found (mobile: 9876543210)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "mobileNumber",
+              "value": "9876543210",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "16000000-0000-4000-a000-000000000001",
+      "type": "http",
+      "documentation": "POST /auth/login — Login endpoint",
+      "method": "post",
+      "endpoint": "auth/login",
+      "responses": [
+        {
+          "uuid": "16100000-0000-4000-a000-000000000001",
+          "body": "{\"success\":true,\"data\":{\"token\":\"mock-jwt-token-{{now}}\",\"refreshToken\":\"mock-refresh-token\",\"user\":{\"id\":\"ADM-001\",\"employee_id\":\"ADM-001\",\"name\":\"Admin User\",\"email\":\"admin@company.com\",\"role\":\"Admin\",\"status\":\"active\"}}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 — Admin login success",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "email",
+              "value": "admin@company.com",
+              "invert": false,
+              "operator": "equals",
+              "regex": {}
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "none",
+          "callbacks": []
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "folders": [
+    {
+      "uuid": "f0010000-0000-4000-a000-000000000001",
+      "name": "Leads",
+      "children": [
+        {
+          "type": "route",
+          "uuid": "10000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "20000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "30000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "40000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "50000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "60000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "70000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "80000000-0000-4000-a000-000000000001"
+        }
+      ]
+    },
+    {
+      "uuid": "f0020000-0000-4000-a000-000000000002",
+      "name": "Users & Auth",
+      "children": [
+        {
+          "type": "route",
+          "uuid": "90000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "16000000-0000-4000-a000-000000000001"
+        }
+      ]
+    },
+    {
+      "uuid": "f0030000-0000-4000-a000-000000000003",
+      "name": "Notifications",
+      "children": [
+        {
+          "type": "route",
+          "uuid": "11000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "12000000-0000-4000-a000-000000000001"
+        }
+      ]
+    },
+    {
+      "uuid": "f0040000-0000-4000-a000-000000000004",
+      "name": "Categories & Create Lead",
+      "children": [
+        {
+          "type": "route",
+          "uuid": "10000000-0000-4000-a000-00000000000a"
+        },
+        {
+          "type": "route",
+          "uuid": "13000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "14000000-0000-4000-a000-000000000001"
+        },
+        {
+          "type": "route",
+          "uuid": "15000000-0000-4000-a000-000000000001"
+        }
+      ]
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "folder",
+      "uuid": "f0010000-0000-4000-a000-000000000001"
+    },
+    {
+      "type": "folder",
+      "uuid": "f0020000-0000-4000-a000-000000000002"
+    },
+    {
+      "type": "folder",
+      "uuid": "f0030000-0000-4000-a000-000000000003"
+    },
+    {
+      "type": "folder",
+      "uuid": "f0040000-0000-4000-a000-000000000004"
+    }
+  ],
+  "headers": [
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Authorization"
+    }
+  ],
+  "port": 3001,
+  "endpointPrefix": "",
+  "latency": 0,
+  "cors": true,
+  "https": false,
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "rules": [],
+  "rulesOperator": "OR",
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "hostname": "0.0.0.0",
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "callbacks": [],
+  "lastMigration": 28
+}

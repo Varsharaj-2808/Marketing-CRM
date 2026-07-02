@@ -97,6 +97,7 @@ function getCurrentUserId() {
 function applyLeadFilters(leads, url) {
   const search = url.searchParams.get('search')?.toLowerCase() || '';
   const status = url.searchParams.get('status') || '';
+  const stage = url.searchParams.get('stage') || '';
   const assignedTo = url.searchParams.get('assignedTo') || '';
   const sortField = url.searchParams.get('sortField') || 'createdAt';
   const sortOrder = url.searchParams.get('sortOrder') || 'desc';
@@ -117,6 +118,10 @@ function applyLeadFilters(leads, url) {
 
   if (status) {
     filtered = filtered.filter((l) => l.status === status);
+  }
+
+  if (stage) {
+    filtered = filtered.filter((l) => l.stage === stage);
   }
 
   if (assignedTo) {
@@ -582,6 +587,7 @@ export const handlers = [
     const limit = parseInt(url.searchParams.get('limit')) || 25;
     const search = url.searchParams.get('search')?.toLowerCase() || '';
     const status = url.searchParams.get('status') || '';
+    const stage = url.searchParams.get('stage') || '';
     const sortBy = url.searchParams.get('sortBy') || 'createdAt';
     const sortOrder = url.searchParams.get('sortOrder') || 'desc';
 
@@ -599,6 +605,10 @@ export const handlers = [
 
     if (status) {
       filtered = filtered.filter((l) => l.status === status);
+    }
+
+    if (stage) {
+      filtered = filtered.filter((l) => l.stage === stage);
     }
 
     filtered.sort((a, b) => {

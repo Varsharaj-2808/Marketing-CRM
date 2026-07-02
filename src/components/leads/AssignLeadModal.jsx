@@ -49,7 +49,9 @@ export default function AssignLeadModal({ isOpen, onClose, lead, onAssign, assig
 
   function handleConfirm() {
     if (!validate() || assigning) return;
-    onAssign(assignedTo, reason?.trim() || '');
+    const selectedUser = users.find((u) => (u.employee_id || u.id) === assignedTo);
+    const userName = selectedUser?.name || assignedTo;
+    onAssign(assignedTo, reason?.trim() || '', userName);
   }
 
   function handleClose() {
@@ -68,6 +70,11 @@ export default function AssignLeadModal({ isOpen, onClose, lead, onAssign, assig
         <div className="flex items-center justify-center py-4">
           <span className="material-symbols-outlined animate-spin text-primary text-[24px]">progress_activity</span>
           <span className="ml-2 font-body-md text-body-md text-on-surface-variant">Loading users...</span>
+        </div>
+      ) : users.length === 0 ? (
+        <div className="py-6 text-center">
+          <span className="material-symbols-outlined text-[32px] text-on-surface-variant/30 mb-2">person_off</span>
+          <p className="font-body-md text-body-md text-on-surface-variant">No active Marketing Executives available.</p>
         </div>
       ) : (
         <div className="space-y-4">

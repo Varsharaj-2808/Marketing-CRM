@@ -1,6 +1,6 @@
 const FILTER_OPTIONS = {
-  status: ['New', 'Open', 'Contacted', 'Qualified', 'Converted', 'Lost'],
-  stage: ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Closed'],
+  status: ['Won', 'Lost'],
+  stage: ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Follow-up', 'Negotiation', 'Demo Scheduled', 'Closed'],
   source: ['Website', 'Referral', 'Social Media', 'Email Campaign', 'Cold Call', 'Event'],
   category: ['IT Services', 'Digital Marketing', 'Consulting', 'Real Estate', 'Healthcare'],
   priority: ['High', 'Medium', 'Low', 'Hot', 'Warm', 'Cold'],

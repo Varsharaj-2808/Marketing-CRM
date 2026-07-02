@@ -79,7 +79,8 @@ export function createMockLead(data, createdByName) {
     id: `lead-${String(leadCounter).padStart(5, '0')}`,
     leadId: generateLeadId(),
     ...data,
-    status: 'New',
+    status: data.status || '',
+    stage: data.stage || 'New',
     createdAt: now,
     updatedAt: now,
     createdBy: { id: userId, name: userName },
@@ -118,6 +119,7 @@ export function resetMockLeads() {
       priority: 'Hot',
       estimatedValue: '500000',
       assignedTo: 'EMP-00001',
+      stage: 'New',
     }),
     createMockLead({
       leadId: generateLeadId(),
@@ -134,6 +136,7 @@ export function resetMockLeads() {
       priority: 'Warm',
       estimatedValue: '250000',
       assignedTo: 'EMP-00002',
+      stage: 'Contacted',
     }),
     createMockLead({
       leadId: generateLeadId(),
@@ -150,6 +153,7 @@ export function resetMockLeads() {
       priority: 'Cold',
       estimatedValue: '1000000',
       assignedTo: 'EMP-00003',
+      stage: 'Negotiation',
     }),
   ];
 }
