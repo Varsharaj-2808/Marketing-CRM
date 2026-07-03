@@ -288,7 +288,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
     ]);
     const app = createTestApp();
     const res = await request(app)
-      .get('/api/marketing/categories/d3b07384-d113-4a00-a541-b8448fb8b801/subcategories')
+      .get('/api/marketing/categories/d3b07384-d113-4a00-a541-b8448fb8b801/sub-categories')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);

@@ -6,6 +6,7 @@ const leadController = require('../controllers/leadController');
 const adminController = require('../controllers/adminController');
 const assignController = require('../controllers/assignController');
 const notificationController = require('../controllers/notificationController');
+const categoryController = require('../controllers/categoryController');
 
 router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.createLead);
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
@@ -18,8 +19,10 @@ router.put('/leads/:id/close', protectStageManagement, authorizeStageManagement(
 router.get('/leads/:id', protect, authorize('Admin', 'Marketing Executive'), leadController.getLead);
 
 router.get('/lead-sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
+router.get('/categories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveCategories);
 router.get('/categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessCategories);
-router.get('/categories/:categoryId/subcategories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessSubCategories);
+router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessSubCategories);
+router.get('/subcategories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveSubCategories);
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 
 router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), assignController.getTimeline);
