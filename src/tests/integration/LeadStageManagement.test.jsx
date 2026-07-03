@@ -199,7 +199,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
         data: {
           id: 'lead-204', leadId: 'LD-204', companyName: 'TestCorp',
           contactPerson: 'Eve', mobileNumber: '9000000104',
-          status: '', stage: 'Contacted', priority: 'Medium',
+          status: '', stage: 'Negotiation', priority: 'Medium',
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -449,7 +449,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
         data: {
           id: 'lead-211', leadId: 'LD-211', companyName: 'TestCorp',
           contactPerson: 'Leo', mobileNumber: '9000000111',
-          status: '', stage: 'Contacted', priority: 'Medium',
+          status: '', stage: 'Negotiation', priority: 'Medium',
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -465,7 +465,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     await waitFor(() => {
       expect(screen.queryByText('Close as Lost')).not.toBeInTheDocument();
     });
-    expect(screen.getByLabelText('Stage')).toHaveValue('Contacted');
+    expect(screen.getByLabelText('Stage')).toHaveValue('Negotiation');
   });
 
   it('test-ep-2.4.1-022: Cancel button in Won modal does not submit', async () => {
@@ -534,7 +534,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
         data: {
           id: 'lead-214', leadId: 'LD-214', companyName: 'TestCorp',
           contactPerson: 'Oscar', mobileNumber: '9000000114',
-          status: '', stage: 'Contacted', priority: 'Medium',
+          status: '', stage: 'Negotiation', priority: 'Medium',
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -602,7 +602,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
         data: {
           id: 'lead-216', leadId: 'LD-216', companyName: 'TestCorp',
           contactPerson: 'Quinn', mobileNumber: '9000000116',
-          status: '', stage: 'Contacted', priority: 'Medium',
+          status: '', stage: 'Negotiation', priority: 'Medium',
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -766,7 +766,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transitions', () => {
     vi.restoreAllMocks();
   });
 
-  it('test-ep-2.4.1-030: New stage shows only valid transitions (Contacted, Hold, Lost)', async () => {
+  it('test-ep-2.4.1-030: New stage shows only valid transition (Contacted)', async () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
@@ -788,8 +788,8 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transitions', () => {
 
     const allOptions = Array.from(stageSelect.options).map(o => o.value).filter(v => v);
     expect(allOptions).toContain('Contacted');
-    expect(allOptions).toContain('Hold');
-    expect(allOptions).toContain('Lost');
+    expect(allOptions).not.toContain('Hold');
+    expect(allOptions).not.toContain('Lost');
     expect(allOptions).not.toContain('Meeting Scheduled');
     expect(allOptions).not.toContain('Proposal Sent');
     expect(allOptions).not.toContain('Negotiation');
@@ -837,7 +837,7 @@ describe('STORY-2.4.1 Lead Stage Management — Access Control', () => {
     vi.restoreAllMocks();
   });
 
-  it('test-ep-2.4.1-032: Admin sees all stage options for open lead', async () => {
+  it('test-ep-2.4.1-032: Admin sees valid stage options for open lead', async () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
@@ -860,8 +860,8 @@ describe('STORY-2.4.1 Lead Stage Management — Access Control', () => {
 
     const allOptions = Array.from(stageSelect.options).map(o => o.value).filter(v => v);
     expect(allOptions).toContain('Contacted');
-    expect(allOptions).toContain('Hold');
-    expect(allOptions).toContain('Lost');
+    expect(allOptions).not.toContain('Hold');
+    expect(allOptions).not.toContain('Lost');
   });
 
   it('test-ep-2.4.1-039: Admin can reopen Lost closed lead', async () => {

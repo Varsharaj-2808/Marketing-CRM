@@ -86,8 +86,8 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     const stageSelect = await screen.findByLabelText('Stage');
     expect(stageSelect).toHaveValue('New');
     expect(screen.getByRole('option', { name: 'Contacted' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Hold' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Lost' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Hold' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Lost' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Meeting Scheduled' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Proposal Sent' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Close as Won/i })).not.toBeInTheDocument();
@@ -122,8 +122,8 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     const stageSelect = await screen.findByLabelText('Stage');
     expect(stageSelect).toHaveValue('Contacted');
     expect(screen.getByRole('option', { name: 'Meeting Scheduled' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Hold' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Lost' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Hold' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Lost' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'New (current)' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Close as Won/i })).not.toBeInTheDocument();
   });
@@ -365,7 +365,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
           contactPerson: 'John McClane',
           mobileNumber: '9000000008',
           status: '',
-          stage: 'Contacted',
+          stage: 'Negotiation',
           priority: 'Low',
           createdAt: '2026-06-09T10:00:00.000Z',
           createdBy: { name: 'Admin User' },
@@ -391,6 +391,23 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
       if (url.includes('/close')) {
         return mockRes({ success: true, data: { status: 'Lost' } });
       }
+      if (url.includes('?_')) {
+        return mockRes({
+          success: true,
+          data: {
+            id: 'lead-110',
+            leadId: 'LD-110',
+            companyName: 'Oceanic',
+            contactPerson: 'Kate Austen',
+            mobileNumber: '9000000009',
+            status: 'Lost',
+            stage: 'Closed',
+            priority: 'Medium',
+            createdAt: '2026-06-10T10:00:00.000Z',
+            createdBy: { name: 'Admin User' },
+          },
+        });
+      }
       return mockRes({
         success: true,
         data: {
@@ -399,8 +416,8 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
           companyName: 'Oceanic',
           contactPerson: 'Kate Austen',
           mobileNumber: '9000000009',
-          status: 'Lost',
-          stage: 'Closed',
+          status: '',
+          stage: 'Negotiation',
           priority: 'Medium',
           createdAt: '2026-06-10T10:00:00.000Z',
           createdBy: { name: 'Admin User' },
@@ -437,7 +454,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
           contactPerson: 'Dexter Morgan',
           mobileNumber: '9000000010',
           status: '',
-          stage: 'Contacted',
+          stage: 'Negotiation',
           priority: 'Low',
           createdAt: '2026-06-11T10:00:00.000Z',
           createdBy: { name: 'Admin User' },

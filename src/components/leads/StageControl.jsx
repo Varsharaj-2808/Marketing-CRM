@@ -1,13 +1,17 @@
 import SelectField from '../common/SelectField';
 
+// Per TASK-2.4.1-01: New → Contacted → Meeting Scheduled → Requirement Gathering → Proposal Sent → Negotiation → Won/Lost/Hold
+// 'Closed' has no transitions — admin must use Reopen Lead button instead.
+// Unknown stages fall back to empty options.
 const STAGE_TRANSITIONS = {
-  New: ['Contacted', 'Hold', 'Lost'],
-  Contacted: ['Meeting Scheduled', 'Hold', 'Lost'],
-  'Meeting Scheduled': ['Requirement Gathering', 'Hold', 'Lost'],
-  'Requirement Gathering': ['Proposal Sent', 'Hold', 'Lost'],
-  'Proposal Sent': ['Negotiation', 'Hold', 'Lost'],
-  Negotiation: ['Hold', 'Lost'],
-  Hold: ['Contacted', 'Lost'],
+  New: ['Contacted'],
+  Contacted: ['Meeting Scheduled'],
+  'Meeting Scheduled': ['Requirement Gathering'],
+  'Requirement Gathering': ['Proposal Sent'],
+  'Proposal Sent': ['Negotiation'],
+  Negotiation: ['Lost', 'Hold'],
+  Hold: ['Contacted'],
+  Closed: [],
 };
 
 const CLOSED_STATUSES = ['Won', 'Lost'];
@@ -22,7 +26,7 @@ export default function StageControl({
   disabled,
   loading,
 }) {
-  const nextStages = STAGE_TRANSITIONS[currentStage] || ['Hold', 'Lost'];
+  const nextStages = STAGE_TRANSITIONS[currentStage] || [];
   const isClosed = CLOSED_STATUSES.includes(currentStatus) || currentStage === 'Closed';
 
   const options = [

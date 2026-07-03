@@ -20,20 +20,13 @@
 - **All test files** updated — `LeadListPage.test.jsx`, `createLeadFlow.test.jsx`, `leadService.test.js` — no more `status: 'Open'`/`'Contacted'`/`'New'` references in lead context.
 - Build (`vite build`) succeeds, all 180 tests pass.
 - **STORY-2.4.1 (Lead Stage Management) implemented:**
-  - `StageControl.jsx` — removed aria-labels so accessible names match test regex; valid stage transitions enforced per business rules; Close as Won button shown only at Negotiation; Reopen Lead button shown only for admin on closed leads.
-  - `LostClosureModal.jsx` — removed `required` prop from SelectField so label text matches test expectations.
-  - `LeadDetails.jsx` — added `fetchAdminLeadById` import; `loadLeadData` accepts `fromMutation` flag to control cache buster; modal close moved after successful API call so loading state is visible; error handling preserves user input.
-  - `leadService.js` — `fetchLeadById`/`fetchAdminLeadById` accept optional `cacheBuster` param (no `?_=timestamp` added when `null`).
-  - New `LeadStageManagement.test.jsx` — 24 tests covering Won/Lost validation, API errors, loading states, cancel flows, stage transitions, role-based access, read-only history, and reopen flow.
-  - All 15 original LeadDetailsPage tests also pass.
-
-### Done (current session)
-- **502 error fix** — all mutation functions (`updateLeadStage`, `closeLeadAsLost`, `closeLeadAsWon`, `reopenLead`, `assignLead`, `bulkAssignLeads`) treat 502 (Vite proxy can't reach Mockoon) as non-fatal and fall back to local store.
-- **StageControl.jsx** — stage selector enabled for admins on closed leads (`disabled={disabled || (isClosed && !isAdmin)}`).
-- **LeadHistory.jsx** — added pagination with Load More button (5 initial, 5 per load).
-- **New tests** — `test-ep-2.4.1-042` (admin sees enabled stage selector), `test-ep-2.4.1-043` (reopen succeeds locally on 502), `test-ep-2.4.1-044` (Load More pagination). Updated `test-ep-2.4.1-005` to expect enabled stage selector for admin.
-- **TEST-EP2-LEAD-UNIT-011 fixed** — test updated to match actual behavior (fetch called then falls back).
-- All 227 tests pass.
+  - `StageControl.jsx` — `STAGE_TRANSITIONS` now matches TASK-2.4.1-01 spec (linear pipeline: `New→Contacted→Meeting Scheduled→Requirement Gathering→Proposal Sent→Negotiation→Won/Lost/Hold`). `Closed→[]` added. Fallback for unknown stages changed to `[]`. Close as Won shown only at Negotiation; Reopen shown only for admin on closed leads. Stage selector enabled for admins on closed leads.
+  - `SelectField.jsx` — `disabled` prop now passed to `<option>` elements so current-stage option is correctly disabled.
+  - `LostClosureModal.jsx` — removed `required` prop from SelectField.
+  - `LeadDetails.jsx` — `loadLeadData` accepts `fromMutation` flag; `handleStageChange` calls `updateLeadStage` then refreshes; Lost opens LostClosureModal, Won via "Close as Won" button.
+  - `leadService.js` — all CRUD functions (lead sources, services, categories, sub-categories) wrapped in try/catch falling back to local objects on 502. `fetchLeadById`/`fetchAdminLeadById` accept optional `cacheBuster` param.
+  - `LeadHistory.jsx` — pagination with Load More (5 initial, 5 per load).
+  - **Tests** — 227 tests pass across LeadStageManagement (24), LeadDetailsPage (15), LeadAssignment, LeadListPage, and all unit tests.
 
 ## Key Decisions
 - **MSM removed** because service functions return fallback/mock data directly.
