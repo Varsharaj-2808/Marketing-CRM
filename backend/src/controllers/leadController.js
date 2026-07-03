@@ -123,7 +123,7 @@ exports.getLead = async (req, res, next) => {
 
 exports.getLeads = async (req, res, next) => {
   try {
-    const { search, priority, stage, sortBy, sortOrder, page, limit } = req.query;
+    const { search, priority, stage, category, sub_category, sortBy, sortOrder, page, limit } = req.query;
     const isAdmin = req.user.role === 'Admin';
 
     const result = await Lead.findAll({
@@ -132,6 +132,8 @@ exports.getLeads = async (req, res, next) => {
       search,
       priority,
       stage,
+      category,
+      sub_category,
       sortBy,
       sortOrder,
       page: parseInt(page) || 1,

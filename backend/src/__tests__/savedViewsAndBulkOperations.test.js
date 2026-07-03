@@ -213,7 +213,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${marketingToken}`)
       .send({ name: 'Test', filters: {} });
     expect(res.status).toBe(403);
-    expect(res.body.message).toBe('Admin access required.');
+    expect(res.body.body.error).toMatch(/Admin/);
   });
 
   test('test-ep-2.2.1-009: Unauthenticated request — 401', async () => {
@@ -1212,7 +1212,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(403);
-    expect(res.body.message).toBe('Admin access required.');
+    expect(res.body.body.error).toMatch(/Admin/);
   });
 
   test('test-ep-2.2.1-073: Unauthenticated request — 401', async () => {

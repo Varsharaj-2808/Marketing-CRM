@@ -68,7 +68,7 @@ const Lead = {
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, priority, stage, category, sub_category, sortBy, sortOrder, page = 1, limit = 20 } = filters;
 
     const conditions = [];
     const values = [];
@@ -101,6 +101,16 @@ const Lead = {
     if (stage) {
       conditions.push(`l.stage = $${idx++}`);
       values.push(stage);
+    }
+
+    if (category) {
+      conditions.push(`l.category = $${idx++}`);
+      values.push(category);
+    }
+
+    if (sub_category) {
+      conditions.push(`l.sub_category = $${idx++}`);
+      values.push(sub_category);
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
