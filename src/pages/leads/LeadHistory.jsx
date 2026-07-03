@@ -35,6 +35,9 @@ function getTimelineMeta(action) {
   return { icon: 'history', bg: 'bg-primary/5', color: 'text-primary' };
 }
 
+const INITIAL_LOAD_COUNT = 5;
+const LOAD_MORE_COUNT = 5;
+
 export default function LeadHistory() {
   const { leadId } = useParams();
   const navigate = useNavigate();
@@ -45,11 +48,13 @@ export default function LeadHistory() {
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
+      setVisibleCount(INITIAL_LOAD_COUNT);
       try {
         const leadRes = await fetchLeadById(leadId);
         const leadData = leadRes?.data || leadRes?.lead || leadRes || null;
@@ -79,11 +84,17 @@ export default function LeadHistory() {
     if (leadId) load();
   }, [leadId]);
 
+  function handleLoadMore() {
+    setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
+  }
+
   const sortedTimeline = [...timeline].sort((a, b) => {
     const dateA = new Date(a.timestamp || a.createdAt || 0).getTime();
     const dateB = new Date(b.timestamp || b.createdAt || 0).getTime();
     return dateB - dateA;
   });
+  const visibleTimeline = sortedTimeline.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedTimeline.length;
   const leadStatus = getLeadField(lead, ['status'], '');
 
   return (
@@ -123,9 +134,9 @@ export default function LeadHistory() {
             )}
           </div>
 
-          {sortedTimeline.length > 0 ? (
+          {visibleTimeline.length > 0 ? (
             <div className="space-y-3">
-              {sortedTimeline.map((entry, idx) => {
+              {visibleTimeline.map((entry, idx) => {
                 const entryAction = toDisplayText(entry.action || entry.message || entry.description, 'Lead Updated');
                 const entryUser = toDisplayText(entry.user || entry.createdBy, '');
                 const entryTime = toDisplayText(entry.timestamp || entry.createdAt, '');
@@ -156,6 +167,16 @@ export default function LeadHistory() {
                   </div>
                 );
               })}
+              {hasMore && (
+                <div className="text-center pt-2">
+                  <button
+                    onClick={handleLoadMore}
+                    className="px-4 py-2 rounded-xl text-label-sm font-label-sm text-primary hover:bg-primary/5 border border-primary/20 transition-all"
+                  >
+                    Load More
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-12">

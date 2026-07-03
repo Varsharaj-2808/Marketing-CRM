@@ -450,7 +450,20 @@ export async function assignLead(leadId, assignedTo, reason) {
 
     return json || { success: true, message: 'Lead assigned successfully' };
   } catch (err) {
-    throw err;
+    if (err?.status && err.status !== 502) throw err;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.assignedTo = assignedTo;
+      lead.assignedAt = new Date().toISOString();
+      lead.updatedAt = new Date().toISOString();
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Lead Assigned',
+        message: `Lead assigned to ${assignedTo}`,
+        user: 'System',
+        timestamp: new Date().toISOString(),
+      }];
+    }
+    return { success: true, message: 'Lead assigned successfully' };
   }
 }
 
@@ -480,7 +493,7 @@ export async function updateLeadStage(leadId, stage) {
     }
     return json || { success: true, data: { stage } };
   } catch (err) {
-    if (err?.status) throw err;
+    if (err?.status && err.status !== 502) throw err;
     const lead = findLeadInStore(leadId);
     if (lead) {
       lead.stage = stage;
@@ -525,7 +538,7 @@ export async function closeLeadAsLost(leadId, reason) {
     }
     return json || { success: true, data: { status: 'Lost', lostReason: reason } };
   } catch (err) {
-    if (err?.status) throw err;
+    if (err?.status && err.status !== 502) throw err;
     const lead = findLeadInStore(leadId);
     if (lead) {
       lead.status = 'Lost';
@@ -575,7 +588,7 @@ export async function closeLeadAsWon(leadId, dealValue, closureDate) {
     }
     return json || { success: true, data: { status: 'Won', dealValue, closureDate } };
   } catch (err) {
-    if (err?.status) throw err;
+    if (err?.status && err.status !== 502) throw err;
     const lead = findLeadInStore(leadId);
     if (lead) {
       lead.status = 'Won';
@@ -627,7 +640,7 @@ export async function reopenLead(leadId, reason) {
     }
     return json || { success: true, data: { status: '', stage: 'Contacted' } };
   } catch (err) {
-    if (err?.status) throw err;
+    if (err?.status && err.status !== 502) throw err;
     const lead = findLeadInStore(leadId);
     if (lead) {
       lead.status = '';
@@ -671,7 +684,7 @@ export async function bulkAssignLeads(leadIds, assignedTo, reason) {
     });
     return json || { assigned: true, count: leadIds.length };
   } catch (err) {
-    if (err?.status) throw err;
+    if (err?.status && err.status !== 502) throw err;
     leadIds.forEach((id) => {
       const lead = findLeadInStore(id);
       if (lead) {

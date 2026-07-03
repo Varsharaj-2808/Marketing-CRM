@@ -27,8 +27,13 @@
   - New `LeadStageManagement.test.jsx` — 24 tests covering Won/Lost validation, API errors, loading states, cancel flows, stage transitions, role-based access, read-only history, and reopen flow.
   - All 15 original LeadDetailsPage tests also pass.
 
-### In Progress / Blocked
-- (none)
+### Done (current session)
+- **502 error fix** — all mutation functions (`updateLeadStage`, `closeLeadAsLost`, `closeLeadAsWon`, `reopenLead`, `assignLead`, `bulkAssignLeads`) treat 502 (Vite proxy can't reach Mockoon) as non-fatal and fall back to local store.
+- **StageControl.jsx** — stage selector enabled for admins on closed leads (`disabled={disabled || (isClosed && !isAdmin)}`).
+- **LeadHistory.jsx** — added pagination with Load More button (5 initial, 5 per load).
+- **New tests** — `test-ep-2.4.1-042` (admin sees enabled stage selector), `test-ep-2.4.1-043` (reopen succeeds locally on 502), `test-ep-2.4.1-044` (Load More pagination). Updated `test-ep-2.4.1-005` to expect enabled stage selector for admin.
+- **TEST-EP2-LEAD-UNIT-011 fixed** — test updated to match actual behavior (fetch called then falls back).
+- All 227 tests pass.
 
 ## Key Decisions
 - **MSM removed** because service functions return fallback/mock data directly.

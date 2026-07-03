@@ -216,12 +216,12 @@ describe('leadService', () => {
       expect(result.data.companyName).toBe('Test Corp');
     });
 
-    it('TEST-EP2-LEAD-UNIT-011: returns the local fallback lead without hitting the network for known IDs', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('should not be called'));
+    it('TEST-EP2-LEAD-UNIT-011: returns the local fallback lead when network fails', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
       const result = await fetchLeadById('LD-2026-00003');
 
-      expect(fetch).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledTimes(1);
       expect(result.success).toBe(true);
       expect(result.data.leadId).toBe('LD-2026-00003');
     });

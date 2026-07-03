@@ -1010,3 +1010,203 @@ describe('STORY-2.4.1 Timeline Loading and Full History', () => {
     expect(screen.getAllByText(/By: Admin User/)).toHaveLength(3);
   });
 });
+
+describe('STORY-2.4.1 Additional — Admin Reopen & Stage Selector', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('test-ep-2.4.1-005: Admin sees reopen button for closed leads', async () => {
+    setUser(adminUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-005', leadId: 'LD-005', companyName: 'ClosedCorp',
+          contactPerson: 'AdminOnly', mobileNumber: '9000000005',
+          status: 'Lost', stage: 'Closed', priority: 'High',
+          createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
+        },
+      });
+    });
+
+    renderLeadDetails('/admin/leads/lead-005');
+
+    expect(await screen.findByRole('button', { name: /Reopen Lead/i })).toBeInTheDocument();
+  });
+
+  it('test-ep-2.4.1-042: Admin sees enabled stage selector even on closed leads', async () => {
+    setUser(adminUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-042', leadId: 'LD-042', companyName: 'ClosedCorp',
+          contactPerson: 'AdminView', mobileNumber: '9000000042',
+          status: 'Won', stage: 'Closed', priority: 'High',
+          createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
+        },
+      });
+    });
+
+    renderLeadDetails('/admin/leads/lead-042');
+
+    const stageSelect = await screen.findByLabelText('Stage');
+    expect(stageSelect).not.toBeDisabled();
+  });
+
+  it('test-ep-2.4.1-038: ME cannot modify Lost closed lead (general)', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-038', leadId: 'LD-038', companyName: 'LockedCorp',
+          contactPerson: 'MELocked', mobileNumber: '9000000038',
+          status: 'Lost', stage: 'Closed', priority: 'Low',
+          createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
+        },
+      });
+    });
+
+    renderLeadDetails('/marketing/leads/lead-038');
+
+    const stageSelect = await screen.findByLabelText('Stage');
+    expect(stageSelect).toBeDisabled();
+    expect(screen.getByText(/This lead is closed\. Contact Admin to reopen\./i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reopen Lead/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Close as Won/i })).not.toBeInTheDocument();
+  });
+
+  it('test-ep-2.4.1-043: Admin reopen succeeds locally despite 502 API error', async () => {
+    setUser(adminUser);
+    const fetchMock = vi.fn((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/admin/leads/lead-043') && url.includes('?_')) {
+        return mockRes({
+          success: true,
+          data: {
+            id: 'lead-043', leadId: 'LD-043', companyName: 'FailCorp',
+            contactPerson: 'ReopenFail', mobileNumber: '9000000043',
+            status: '', stage: 'Contacted', priority: 'Medium',
+            createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
+          },
+        });
+      }
+      if (url.includes('/reopen')) return mockRes({ message: 'Bad Gateway' }, 502);
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-043', leadId: 'LD-043', companyName: 'FailCorp',
+          contactPerson: 'ReopenFail', mobileNumber: '9000000043',
+          status: 'Lost', stage: 'Closed', priority: 'Medium',
+          createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
+        },
+      });
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/admin/leads/lead-043');
+
+    expect(await screen.findByRole('button', { name: /Reopen Lead/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Reopen Lead/i }));
+    await screen.findByRole('heading', { name: /Reopen Lead/i });
+    fireEvent.change(screen.getByLabelText(/Reopen reason/i), { target: { value: 'Trying to reopen' } });
+    fireEvent.click(screen.getByRole('button', { name: /Confirm Reopen/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Lead reopened successfully/i)).toBeInTheDocument();
+    });
+  });
+});
+
+describe('STORY-2.4.1 Lead History — Load More Pagination', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  function renderLeadHistoryWithMore(path = '/marketing/leads/lead-more/lead-history') {
+    return render(
+      <MemoryRouter initialEntries={[path]}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/marketing/leads/:leadId/lead-history" element={<LeadHistory />} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+  }
+
+  it('test-ep-2.4.1-044: Load More button loads older history entries', async () => {
+    setUser(marketingUser);
+    const manyEntries = Array.from({ length: 12 }, (_, i) => ({
+      action: i === 0 ? 'Lead Created' : 'Stage Updated',
+      message: i === 0 ? 'Lead Created' : `Entry ${i}`,
+      user: 'Admin User',
+      timestamp: new Date(2026, 5, 20 + i, 10, 0, 0).toISOString(),
+    }));
+
+    global.fetch = vi.fn((input) => {
+      const url = String(input);
+      if (url.includes('/lead-history')) {
+        return mockRes({ success: true, data: manyEntries });
+      }
+      return mockRes({
+        success: true,
+        data: {
+          id: 'lead-more', leadId: 'LD-MORE', companyName: 'LoadMore Corp',
+          contactPerson: 'Pagination', mobileNumber: '9000000099',
+          status: '', stage: 'New', priority: 'Medium',
+          createdAt: '2026-06-20T10:00:00.000Z', createdBy: { name: 'Admin User' },
+        },
+      });
+    });
+
+    renderLeadHistoryWithMore('/marketing/leads/lead-more/lead-history');
+
+    await waitFor(() => {
+      expect(screen.getByText('Lead History')).toBeInTheDocument();
+    });
+
+    const initialEntries = screen.getAllByText(/Stage Updated|Lead Created/);
+    expect(initialEntries.length).toBe(5);
+
+    expect(screen.getByRole('button', { name: /Load More/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Load More/i }));
+
+    await waitFor(() => {
+      const entriesAfterFirstLoad = screen.getAllByText(/Stage Updated|Lead Created/);
+      expect(entriesAfterFirstLoad.length).toBe(10);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Load More/i }));
+
+    await waitFor(() => {
+      const entriesAfterSecondLoad = screen.getAllByText(/Stage Updated|Lead Created/);
+      expect(entriesAfterSecondLoad.length).toBe(12);
+    });
+
+    expect(screen.queryByRole('button', { name: /Load More/i })).not.toBeInTheDocument();
+  });
+});

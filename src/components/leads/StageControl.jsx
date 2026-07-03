@@ -39,7 +39,7 @@ export default function StageControl({
             name="lead-stage"
             value={currentStage || 'Unknown'}
             onChange={onStageChange}
-            disabled={disabled || isClosed}
+            disabled={disabled || (isClosed && !isAdmin)}
             options={options}
             placeholder="Select Stage"
           />

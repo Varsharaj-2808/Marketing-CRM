@@ -193,7 +193,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     expect(screen.queryByRole('button', { name: /Reopen Lead/i })).not.toBeInTheDocument();
   });
 
-  it('test-ep-2.4.1-005: admin sees reopen button for closed leads', async () => {
+  it('test-ep-2.4.1-005: admin sees reopen button and enabled stage selector for closed leads', async () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
@@ -221,7 +221,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
 
     const reopenButton = await screen.findByRole('button', { name: /Reopen Lead/i });
     expect(reopenButton).toBeInTheDocument();
-    expect(screen.getByLabelText('Stage')).toBeDisabled();
+    expect(screen.getByLabelText('Stage')).not.toBeDisabled();
   });
 
   it('test-ep-2.4.1-006: shows loading skeleton while lead data loads', async () => {
