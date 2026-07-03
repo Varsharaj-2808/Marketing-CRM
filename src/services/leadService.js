@@ -206,7 +206,7 @@ export async function fetchLeadById(id, cacheBuster) {
       : `${API_BASE_URL}/marketing/leads/${id}`;
     return await requestJson(url);
   } catch (err) {
-    if (err?.status && err.status !== 404) throw err;
+    if (err?.status && err.status !== 404 && err.status !== 502) throw err;
     if (fallback) {
       return { success: true, data: fallback };
     }
@@ -401,7 +401,7 @@ export async function fetchAdminLeadById(id, cacheBuster) {
       : `${API_BASE_URL}/admin/leads/${id}`;
     return await requestJson(url);
   } catch (err) {
-    if (err?.status && err.status !== 404) throw err;
+    if (err?.status && err.status !== 404 && err.status !== 502) throw err;
     if (fallback) {
       return { success: true, data: fallback };
     }
