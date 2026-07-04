@@ -1090,6 +1090,223 @@
       "responseMode": null,
       "streamingMode": "disabled",
       "streamingInterval": 0
+    },
+    {
+      "uuid": "ae3a24c7-ad63-439d-af51-380640a68c12",
+      "type": "http",
+      "documentation": "GET admin leads list",
+      "method": "get",
+      "endpoint": "admin/leads",
+      "responses": [
+        {
+          "uuid": "36930bc3-1047-4116-b40a-99397aa5ae55",
+          "body": "{\n  \"page\": 1,\n  \"totalPages\": 1,\n  \"totalCount\": 3,\n  \"limit\": 25,\n  \"data\": [\n    {\n      \"id\": \"lead-00001\",\n      \"leadId\": \"LD-2026-00001\",\n      \"company_name\": \"TechCorp Solutions\",\n      \"website\": \"https://techcorp.com\",\n      \"category\": \"cat-001\",\n      \"sub_category\": \"sub-001\",\n      \"contact_person\": \"Alice Johnson\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"alice@techcorp.com\",\n      \"city\": \"Mumbai\",\n      \"lead_source\": \"Website\",\n      \"servicesInterested\": [\n        \"Web Development\",\n        \"Cloud Solutions\"\n      ],\n      \"priority\": \"Hot\",\n      \"estimated_value\": \"500000\",\n      \"assigned_to\": \"EMP-00001\",\n      \"stage\": \"New\"\n    },\n    {\n      \"id\": \"lead-00002\",\n      \"leadId\": \"LD-2026-00002\",\n      \"company_name\": \"GrowthMark Agency\",\n      \"website\": \"https://growthmark.com\",\n      \"category\": \"cat-002\",\n      \"sub_category\": \"sub-005\",\n      \"contact_person\": \"Bob Smith\",\n      \"mobile_number\": \"8765432109\",\n      \"email\": \"bob@growthmark.com\",\n      \"city\": \"Delhi\",\n      \"lead_source\": \"Referral\",\n      \"servicesInterested\": [\n        \"SEO Services\",\n        \"Digital Marketing\"\n      ],\n      \"priority\": \"Warm\",\n      \"estimated_value\": \"250000\",\n      \"assigned_to\": \"EMP-00002\",\n      \"stage\": \"Contacted\"\n    },\n    {\n      \"id\": \"lead-00003\",\n      \"leadId\": \"LD-2026-00003\",\n      \"company_name\": \"MediCare Group\",\n      \"website\": \"\",\n      \"category\": \"cat-005\",\n      \"sub_category\": \"sub-015\",\n      \"contact_person\": \"Dr. Raj Patel\",\n      \"mobile_number\": \"7654321098\",\n      \"email\": \"raj@medicare.com\",\n      \"city\": \"Bangalore\",\n      \"lead_source\": \"Phone Inquiry\",\n      \"servicesInterested\": [\n        \"Consulting\"\n      ],\n      \"priority\": \"Cold\",\n      \"estimated_value\": \"1000000\",\n      \"assigned_to\": \"EMP-00003\",\n      \"stage\": \"Negotiation\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "683e60f9-e403-46a9-a4e9-99b1a968e262",
+      "type": "http",
+      "documentation": "GET marketing leads list",
+      "method": "get",
+      "endpoint": "marketing/leads",
+      "responses": [
+        {
+          "uuid": "b634dba7-98c5-4f13-b6b6-4d2badf827d9",
+          "body": "{\n  \"page\": 1,\n  \"totalPages\": 1,\n  \"totalCount\": 3,\n  \"limit\": 25,\n  \"data\": [\n    {\n      \"id\": \"lead-00001\",\n      \"leadId\": \"LD-2026-00001\",\n      \"company_name\": \"TechCorp Solutions\",\n      \"website\": \"https://techcorp.com\",\n      \"category\": \"cat-001\",\n      \"sub_category\": \"sub-001\",\n      \"contact_person\": \"Alice Johnson\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"alice@techcorp.com\",\n      \"city\": \"Mumbai\",\n      \"lead_source\": \"Website\",\n      \"servicesInterested\": [\n        \"Web Development\",\n        \"Cloud Solutions\"\n      ],\n      \"priority\": \"Hot\",\n      \"estimated_value\": \"500000\",\n      \"assigned_to\": \"EMP-00001\",\n      \"stage\": \"New\"\n    },\n    {\n      \"id\": \"lead-00002\",\n      \"leadId\": \"LD-2026-00002\",\n      \"company_name\": \"GrowthMark Agency\",\n      \"website\": \"https://growthmark.com\",\n      \"category\": \"cat-002\",\n      \"sub_category\": \"sub-005\",\n      \"contact_person\": \"Bob Smith\",\n      \"mobile_number\": \"8765432109\",\n      \"email\": \"bob@growthmark.com\",\n      \"city\": \"Delhi\",\n      \"lead_source\": \"Referral\",\n      \"servicesInterested\": [\n        \"SEO Services\",\n        \"Digital Marketing\"\n      ],\n      \"priority\": \"Warm\",\n      \"estimated_value\": \"250000\",\n      \"assigned_to\": \"EMP-00002\",\n      \"stage\": \"Contacted\"\n    },\n    {\n      \"id\": \"lead-00003\",\n      \"leadId\": \"LD-2026-00003\",\n      \"company_name\": \"MediCare Group\",\n      \"website\": \"\",\n      \"category\": \"cat-005\",\n      \"sub_category\": \"sub-015\",\n      \"contact_person\": \"Dr. Raj Patel\",\n      \"mobile_number\": \"7654321098\",\n      \"email\": \"raj@medicare.com\",\n      \"city\": \"Bangalore\",\n      \"lead_source\": \"Phone Inquiry\",\n      \"servicesInterested\": [\n        \"Consulting\"\n      ],\n      \"priority\": \"Cold\",\n      \"estimated_value\": \"1000000\",\n      \"assigned_to\": \"EMP-00003\",\n      \"stage\": \"Negotiation\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "d683b259-325e-4a7e-9f03-bb546c0e6dc3",
+      "type": "http",
+      "documentation": "GET marketing dashboard metrics",
+      "method": "get",
+      "endpoint": "marketing/dashboard",
+      "responses": [
+        {
+          "uuid": "6977e7d9-d83e-46fe-a210-b8c80b93fd23",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"stats\": {\n      \"total_leads\": \"8\",\n      \"active_leads\": \"6\",\n      \"won_leads\": \"1\",\n      \"lost_leads\": \"1\",\n      \"total_estimated_value\": \"292000.00\"\n    },\n    \"stage_breakdown\": [\n      {\n        \"stage\": \"Contacted\",\n        \"count\": 2\n      },\n      {\n        \"stage\": \"New Lead\",\n        \"count\": 2\n      },\n      {\n        \"stage\": \"Lost\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Meeting Scheduled\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Negotiation\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Won\",\n        \"count\": 1\n      }\n    ],\n    \"recent_leads\": [],\n    \"unread_notifications\": 3\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "c654e44e-b870-4e1a-8989-ffda399e67f0",
+      "type": "http",
+      "documentation": "GET subcategories nested path",
+      "method": "get",
+      "endpoint": "admin/categories/:categoryId/sub-categories",
+      "responses": [
+        {
+          "uuid": "dd643849-4964-4979-8a74-bd4e9efd61f6",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"sub-001\",\n      \"sub_category_name\": \"Web Development\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-002\",\n      \"sub_category_name\": \"Mobile App Development\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-003\",\n      \"sub_category_name\": \"Cloud Solutions\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-004\",\n      \"sub_category_name\": \"IT Support\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-005\",\n      \"sub_category_name\": \"SEO Services\",\n      \"status\": \"Active\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "2ce6f10b-1a07-4f16-aa01-d811197c00f4",
+      "type": "http",
+      "documentation": "Export admin leads as CSV",
+      "method": "get",
+      "endpoint": "admin/leads/export",
+      "responses": [
+        {
+          "uuid": "62b485cc-51f6-4030-b344-022664aa93ad",
+          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "3cc7b2ad-4f84-4626-9ec4-da266bb7ca6a",
+      "type": "http",
+      "documentation": "Export marketing leads as CSV",
+      "method": "get",
+      "endpoint": "marketing/leads/export",
+      "responses": [
+        {
+          "uuid": "8bbae2fb-f005-4417-8acd-24bed4d5ca07",
+          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "3121496e-c664-42d0-9b33-8ffb1880742b",
+      "type": "http",
+      "documentation": "Export reports as CSV",
+      "method": "get",
+      "endpoint": "admin/reports/export",
+      "responses": [
+        {
+          "uuid": "9082a94d-09fb-4442-a24d-3fc362d51be7",
+          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
     }
   ],
   "rootChildren": [
