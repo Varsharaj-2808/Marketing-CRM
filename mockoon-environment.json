@@ -412,7 +412,7 @@
       "responses": [
         {
           "uuid": "56444a5c-af07-4b6b-879e-37756fa1244e",
-          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Sub-Category created successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"name\": \"Web Development\",\n    \"parentCategoryId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"parentCategoryName\": \"IT Services\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T10:10:00Z\"\n  }\n}",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Sub-Category created successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T10:10:00Z\",\n    \"sub_category_name\": \"Web Development\",\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"category_name\": \"IT Services\"\n  }\n}",
           "latency": 0,
           "statusCode": 201,
           "label": "Positive - Sub-Category Created",
@@ -500,7 +500,7 @@
       "responses": [
         {
           "uuid": "366f6720-f795-4fa7-b767-b854cf47d6a5",
-          "body": "",
+          "body": "{\r\n  \"status\": \"success\",\r\n  \"status_code\": 200,\r\n  \"message\": \"Sub-Categories fetched successfully\",\r\n  \"body\": {\r\n    \"page\": 1,\r\n    \"totalPages\": 1,\r\n    \"totalCount\": 28,\r\n    \"limit\": 20,\r\n    \"data\": [\r\n      {\r\n        \"id\": \"ecfaea99-30f2-493b-aa3c-dcc7ea77c40b\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"AI / Machine Learning\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"8a32d47c-5b82-468b-9cb0-de46d61fede7\",\r\n        \"category_id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\r\n        \"sub_category_name\": \"Automation\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Manufacturing\"\r\n      },\r\n      {\r\n        \"id\": \"3d4962c8-076d-4617-9ba8-a5f5f0441cce\",\r\n        \"category_id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\r\n        \"sub_category_name\": \"Business Process Outsourcing\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Consulting\"\r\n      },\r\n      {\r\n        \"id\": \"8ac7d886-8609-4d16-ace4-a2ea60245023\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Cloud Solutions\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"d3132586-38b6-4368-96c0-9c981a2b01c6\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"Content Marketing\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"c90456e7-ccb3-49fe-8e12-98c311abb8d4\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Cybersecurity\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"17d2912d-35fb-4d84-8d8e-14b858eba27b\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"DevOps\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"db94b04a-9e9e-47ca-8747-05673ff54f49\",\r\n        \"category_id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\r\n        \"sub_category_name\": \"E-learning Content\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Education & Training\"\r\n      },\r\n      {\r\n        \"id\": \"4a4f6e86-9353-48d4-a26c-d9c65220903d\",\r\n        \"category_id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\r\n        \"sub_category_name\": \"EHR Solutions\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Healthcare\"\r\n      },\r\n      {\r\n        \"id\": \"5d1a2c31-ca47-4d8f-b817-345b8f601bb8\",\r\n        \"category_id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\r\n        \"sub_category_name\": \"Health Analytics\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Healthcare\"\r\n      },\r\n      {\r\n        \"id\": \"341af2a0-25a1-4576-8584-b1a2c507a691\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-07-03T02:17:39.864Z\",\r\n        \"updated_at\": \"2026-07-03T02:17:39.864Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"54f70577-8254-4ec0-bedb-32cb7e9183ca\",\r\n        \"category_id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Consulting\"\r\n      },\r\n      {\r\n        \"id\": \"f5a587a0-0151-4f98-9ff1-07edcfd004dc\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-07-03T02:21:08.230Z\",\r\n        \"updated_at\": \"2026-07-03T02:21:08.230Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"b934a922-ddf4-4777-8e15-4d5007f57866\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-07-03T02:20:07.647Z\",\r\n        \"updated_at\": \"2026-07-03T02:20:07.647Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"9a7df011-50a8-4ea0-9c09-67a1b6b3528d\",\r\n        \"category_id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\r\n        \"sub_category_name\": \"LMS Development\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Education & Training\"\r\n      },\r\n      {\r\n        \"id\": \"c80371ef-316d-4b84-8c15-a8634534bffb\",\r\n        \"category_id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\r\n        \"sub_category_name\": \"Management Consulting\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Consulting\"\r\n      },\r\n      {\r\n        \"id\": \"893b9297-42b6-45da-b48b-8b4dad5046e8\",\r\n        \"category_id\": \"a7b8c9d0-e1f2-3456-abcd-567890123456\",\r\n        \"sub_category_name\": \"Marketplace Integration\",\r\n        \"status\": \"Inactive\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"E-commerce\"\r\n      },\r\n      {\r\n        \"id\": \"e84a902a-02e1-4c85-88ff-00580aa732ac\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Mobile App Development\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"2a3546ed-f21a-421c-aeba-73d114ccf817\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"PPC Advertising\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"4ec7b426-8dd5-4b60-b64c-d608cc1ef762\",\r\n        \"category_id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\r\n        \"sub_category_name\": \"Property Management\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Real Estate\"\r\n      },\r\n      {\r\n        \"id\": \"f42ceef9-fa8a-4094-b843-1274ea6e3ddb\",\r\n        \"category_id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\r\n        \"sub_category_name\": \"Quality Assurance\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Manufacturing\"\r\n      },\r\n      {\r\n        \"id\": \"4f07f894-8bfa-4f12-89db-6fa779a5c896\",\r\n        \"category_id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\r\n        \"sub_category_name\": \"Real Estate CRM\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Real Estate\"\r\n      },\r\n      {\r\n        \"id\": \"966acd4d-8fec-416c-aaa3-5537603cc596\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"SEO\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"8332894d-2115-47c6-971e-7fdf377a4aa6\",\r\n        \"category_id\": \"a7b8c9d0-e1f2-3456-abcd-567890123456\",\r\n        \"sub_category_name\": \"Shopify Development\",\r\n        \"status\": \"Inactive\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"E-commerce\"\r\n      },\r\n      {\r\n        \"id\": \"f62d6770-075f-4b88-b3b6-06d8f59f7b68\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"Social Media Management\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"2a0080af-45c0-40d4-acb9-3e05684324df\",\r\n        \"category_id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\r\n        \"sub_category_name\": \"Supply Chain\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Manufacturing\"\r\n      },\r\n      {\r\n        \"id\": \"264a91b9-5f58-495c-8ea2-75cb69ed6578\",\r\n        \"category_id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\r\n        \"sub_category_name\": \"Telemedicine\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Healthcare\"\r\n      },\r\n      {\r\n        \"id\": \"885ba1d3-1c78-4112-8825-c5fda3ee3c83\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Web Development\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      }\r\n    ]\r\n  }\r\n}",
           "latency": 0,
           "statusCode": 200,
           "label": "Positive - List Filtered By Parent",
@@ -600,7 +600,7 @@
       "responses": [
         {
           "uuid": "538736f1-7772-4847-80b7-c4ba2dc3fc44",
-          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category updated successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"name\": \"Web & E-commerce Development\",\n    \"status\": \"Active\",\n    \"updated_at\": \"2026-07-03T10:15:00Z\"\n  }\n}",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category updated successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"status\": \"Active\",\n    \"updated_at\": \"2026-07-03T10:15:00Z\",\n    \"sub_category_name\": \"Web & E-commerce Development\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
           "label": "Positive - Sub-Category Updated",
@@ -819,7 +819,7 @@
       "responses": [
         {
           "uuid": "f74473c3-6706-4369-98f4-e671df510929",
-          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active sub-categories fetched successfully\",\n  \"body\": {\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"data\": [\n      {\n        \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n        \"name\": \"Web & E-commerce Development\"\n      }\n    ],\n    \"count\": 1\n  }\n}",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active sub-categories fetched successfully\",\n  \"body\": {\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"data\": [\n      {\n        \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n        \"sub_category_name\": \"Web & E-commerce Development\"\n      }\n    ],\n    \"count\": 1\n  }\n}",
           "latency": 0,
           "statusCode": 200,
           "label": "Positive - Active Sub-Categories for Selected Category",
@@ -857,7 +857,7 @@
         },
         {
           "uuid": "59f2df2a-f537-4943-a1c7-489cf65e0883",
-          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"errors\": {\n      \"categoryId\": \"A valid categoryId is required\"\n    }\n  }\n}",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"errors\": {\n      \"category_id\": \"A valid categoryId is required\"\n    }\n  }\n}",
           "latency": 0,
           "statusCode": 400,
           "label": "Failed - Missing/Invalid categoryId",
@@ -938,7 +938,7 @@
       "responses": [
         {
           "uuid": "850a6a47-08d1-472d-ab07-e1195fecd4ca",
-          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Audit log fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 2,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"h7i51828-h558-8e44-f985-g2882ifc2f35\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT Services\",\n        \"action\": \"CREATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"timestamp\": \"2026-07-03T10:00:00Z\"\n      },\n      {\n        \"id\": \"i8j62939-i669-9f55-g096-h3993jgd3g46\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT & Technology Services\",\n        \"action\": \"UPDATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"changes\": {\n          \"name\": {\n            \"old\": \"IT Services\",\n            \"new\": \"IT & Technology Services\"\n          }\n        },\n        \"timestamp\": \"2026-07-03T10:05:00Z\"\n      }\n    ]\n  }\n}",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Audit log fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 2,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"h7i51828-h558-8e44-f985-g2882ifc2f35\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT Services\",\n        \"action\": \"CREATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"timestamp\": \"2026-07-03T10:00:00Z\"\n      },\n      {\n        \"id\": \"i8j62939-i669-9f55-g096-h3993jgd3g46\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT & Technology Services\",\n        \"action\": \"UPDATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"changes\": {\n          \"category_name\": {\n            \"old\": \"IT Services\",\n            \"new\": \"IT & Technology Services\"\n          }\n        },\n        \"timestamp\": \"2026-07-03T10:05:00Z\"\n      }\n    ]\n  }\n}",
           "latency": 0,
           "statusCode": 200,
           "label": "Positive - Audit Trail Retrieved",
@@ -996,6 +996,99 @@
       ],
       "responseMode": null,
       "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "abadb9b3-b441-4518-8192-5773460c6b61",
+      "type": "http",
+      "documentation": "EPIC-3 Story-2: GET admin/dashboard/kpis",
+      "method": "get",
+      "endpoint": "admin/dashboard/kpis",
+      "responses": [
+        {
+          "uuid": "991b94a4-8ea4-47b2-bbaf-ee1f7f90adc7",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_leads\": 150,\n    \"new\": 30,\n    \"contacted\": 40,\n    \"qualified\": 25,\n    \"meeting\": 20,\n    \"proposal\": 15,\n    \"negotiation\": 10,\n    \"won\": 8,\n    \"lost\": 2,\n    \"conversion_rate\": \"5.33%\",\n    \"hot_leads\": 50,\n    \"warm_leads\": 70,\n    \"cold_leads\": 30,\n    \"category_id\": null,\n    \"sub_category_id\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "7601101a-b6ad-4e08-9f6b-7839f5a028ae",
+      "type": "http",
+      "documentation": "EPIC-3 Story-2: GET admin/dashboard/category/won-rate",
+      "method": "get",
+      "endpoint": "admin/dashboard/category/won-rate",
+      "responses": [
+        {
+          "uuid": "ade6d653-71b9-4d6b-b4ad-11cb9bb5996d",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n      \"category_name\": \"IT Services\",\n      \"total_closed\": \"2\",\n      \"won\": \"1\",\n      \"lost\": \"1\",\n      \"win_rate\": \"50.00%\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "eec5849c-d22e-4ac3-a94b-0731811cc1db",
+      "type": "http",
+      "documentation": "EPIC-3 Story-2: GET admin/dashboard/category/lead-volume",
+      "method": "get",
+      "endpoint": "admin/dashboard/category/lead-volume",
+      "responses": [
+        {
+          "uuid": "a364a6b2-1a9a-4003-b78f-f6c5dce2a06b",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n      \"category_name\": \"IT Services\",\n      \"lead_count\": \"9\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
       "streamingInterval": 0
     }
   ],

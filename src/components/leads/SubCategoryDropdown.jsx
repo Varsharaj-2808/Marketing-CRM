@@ -52,10 +52,10 @@ export default function SubCategoryDropdown({
     );
   }
 
-  const activeSubCategories = (subCategories || []).filter((sub) => sub.isActive !== false);
+  const activeSubCategories = (subCategories || []).filter((sub) => sub.status !== 'Inactive' && sub.isActive !== false);
   const options = activeSubCategories.map((sub) => ({
     value: sub.id || sub._id,
-    label: sub.name,
+    label: sub.sub_category_name || sub.name,
   }));
 
   return (
@@ -67,8 +67,8 @@ export default function SubCategoryDropdown({
       error={error}
       required
       disabled={disabled}
-        placeholder="Select Sub Category"
-        icon="folder_open"
+      placeholder="Select Sub Category"
+      icon="folder_open"
       options={options}
     />
   );

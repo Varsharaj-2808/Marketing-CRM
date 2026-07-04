@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView } from '../../services/leadService';
+import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView, exportLeads } from '../../services/leadService';
 import EmptyState from '../../components/common/EmptyState';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import SkeletonTable from '../../components/common/SkeletonTable';
@@ -21,6 +21,7 @@ const EMPTY_FILTERS = {
   stage: '',
   source: '',
   category: '',
+  subCategory: '',
   priority: '',
   assignedTo: '',
   dateFrom: '',
@@ -308,6 +309,37 @@ export default function LeadList() {
     handleClearSelection();
   };
 
+  const handleExportFiltered = async (format) => {
+    try {
+      const q = buildQuery({ page: 1, search: activeSearch, filters, sort });
+      const exportParams = {
+        format: format || (isAdmin ? 'csv' : 'excel'),
+        category_id: q.category || '',
+        sub_category_id: q.subCategory || '',
+        status: q.status || '',
+        quality: q.priority || '',
+        from: q.dateFrom || '',
+        to: q.dateTo || '',
+      };
+      
+      const blob = await exportLeads(exportParams, isAdmin);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leads-export-${Date.now()}.${format === 'excel' ? 'xlsx' : 'csv'}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      setToastMessage('Leads exported successfully.');
+      setToastType('success');
+      setToastShow(true);
+    } catch (err) {
+      setToastMessage(err?.message || 'Failed to export leads.');
+      setToastType('error');
+      setToastShow(true);
+    }
+  };
+
   const handleOpenLead = (leadId) => {
     navigate(`${isAdmin ? '/admin' : '/marketing'}/leads/${leadId}`);
   };
@@ -338,13 +370,23 @@ export default function LeadList() {
               <SearchBar value={searchInput} onChange={setSearchInput} />
             </div>
             {(isAdmin || isMarketingExecutive) && (
-              <button
-                type="button"
-                onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/create`)}
-                className="btn-gradient h-10 rounded-lg px-4 text-label-md font-label-md text-white whitespace-nowrap"
-              >
-                Create Lead
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  id="export-filtered-btn"
+                  onClick={() => handleExportFiltered(isAdmin ? 'csv' : 'excel')}
+                  className="h-10 rounded-lg border border-outline-variant bg-white/70 px-4 text-label-md font-label-md text-on-surface hover:bg-white transition-all whitespace-nowrap"
+                >
+                  Export {isAdmin ? 'CSV' : 'Excel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/create`)}
+                  className="btn-gradient h-10 rounded-lg px-4 text-label-md font-label-md text-white whitespace-nowrap"
+                >
+                  Create Lead
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -1,4 +1,6 @@
 const READABLE_KEYS = [
+  'category_name',
+  'sub_category_name',
   'name',
   'title',
   'label',

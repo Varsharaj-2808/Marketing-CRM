@@ -94,15 +94,18 @@ function getCurrentUserId() {
   return user?.id || user?._id || user?.employee_id || user?.employeeId || null;
 }
 
-function applyLeadFilters(leads, url) {
+function getFilteredLeads(leads, url) {
   const search = url.searchParams.get('search')?.toLowerCase() || '';
   const status = url.searchParams.get('status') || '';
   const stage = url.searchParams.get('stage') || '';
   const assignedTo = url.searchParams.get('assignedTo') || '';
-  const sortField = url.searchParams.get('sortField') || 'createdAt';
+  const category_id = url.searchParams.get('category_id') || '';
+  const sub_category_id = url.searchParams.get('sub_category_id') || '';
+  const quality = url.searchParams.get('quality') || url.searchParams.get('priority') || '';
+  const dateFrom = url.searchParams.get('dateFrom') || url.searchParams.get('from') || '';
+  const dateTo = url.searchParams.get('dateTo') || url.searchParams.get('to') || '';
+  const sortBy = url.searchParams.get('sortBy') || url.searchParams.get('sortField') || 'createdAt';
   const sortOrder = url.searchParams.get('sortOrder') || 'desc';
-  const page = parseInt(url.searchParams.get('page')) || 1;
-  const limit = parseInt(url.searchParams.get('limit')) || 25;
 
   let filtered = [...leads];
 
@@ -125,17 +128,56 @@ function applyLeadFilters(leads, url) {
   }
 
   if (assignedTo) {
-    filtered = filtered.filter((l) => l.assignedTo === assignedTo);
+    filtered = filtered.filter((l) => {
+      const assignedId = typeof l.assignedTo === 'object' && l.assignedTo
+        ? (l.assignedTo.employee_id || l.assignedTo.id)
+        : l.assignedTo || '';
+      return assignedId === assignedTo;
+    });
   }
 
+  if (category_id) {
+    filtered = filtered.filter((l) => l.businessCategory === category_id || l.category === category_id);
+  }
+
+  if (sub_category_id) {
+    filtered = filtered.filter((l) => l.businessSubCategory === sub_category_id || l.sub_category === sub_category_id);
+  }
+
+  if (quality) {
+    filtered = filtered.filter((l) => l.priority === quality);
+  }
+
+  if (dateFrom) {
+    const fromTime = new Date(dateFrom).getTime();
+    filtered = filtered.filter((l) => l.createdAt && new Date(l.createdAt).getTime() >= fromTime);
+  }
+
+  if (dateTo) {
+    const toTime = new Date(dateTo).getTime();
+    filtered = filtered.filter((l) => l.createdAt && new Date(l.createdAt).getTime() <= toTime);
+  }
+
+  // Sort
   filtered.sort((a, b) => {
-    const aVal = a[sortField];
-    const bVal = b[sortField];
+    let aVal = a[sortBy];
+    let bVal = b[sortBy];
+    if (sortBy === 'estimatedValue') {
+      aVal = a.estimatedValue || a.estimated_value;
+      bVal = b.estimatedValue || b.estimated_value;
+    }
     if (!aVal || !bVal) return 0;
     const cmp = typeof aVal === 'string' ? aVal.localeCompare(bVal) : aVal - bVal;
     return sortOrder === 'asc' ? cmp : -cmp;
   });
 
+  return filtered;
+}
+
+function applyLeadFilters(leads, url) {
+  const limit = parseInt(url.searchParams.get('limit')) || 25;
+  const page = parseInt(url.searchParams.get('page')) || 1;
+  const filtered = getFilteredLeads(leads, url);
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const start = (page - 1) * limit;
@@ -725,42 +767,9 @@ export const handlers = [
 
   http.get(`${BASE}/admin/leads`, ({ request }) => {
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page')) || 1;
     const limit = parseInt(url.searchParams.get('limit')) || 25;
-    const search = url.searchParams.get('search')?.toLowerCase() || '';
-    const status = url.searchParams.get('status') || '';
-    const stage = url.searchParams.get('stage') || '';
-    const sortBy = url.searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
-
-    let filtered = [...mockLeadsStore];
-
-    if (search) {
-      filtered = filtered.filter((l) =>
-        l.companyName?.toLowerCase().includes(search) ||
-        l.contactPerson?.toLowerCase().includes(search) ||
-        l.mobileNumber?.includes(search) ||
-        l.email?.toLowerCase().includes(search) ||
-        l.leadId?.toLowerCase().includes(search)
-      );
-    }
-
-    if (status) {
-      filtered = filtered.filter((l) => l.status === status);
-    }
-
-    if (stage) {
-      filtered = filtered.filter((l) => l.stage === stage);
-    }
-
-    filtered.sort((a, b) => {
-      const aVal = a[sortBy];
-      const bVal = b[sortBy];
-      if (!aVal || !bVal) return 0;
-      const cmp = typeof aVal === 'string' ? aVal.localeCompare(bVal) : aVal - bVal;
-      return sortOrder === 'asc' ? cmp : -cmp;
-    });
-
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const filtered = getFilteredLeads(mockLeadsStore, url);
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const start = (page - 1) * limit;
@@ -792,13 +801,13 @@ export const handlers = [
 
   http.get(`${BASE}/marketing/leads`, ({ request }) => {
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page')) || 1;
     const limit = parseInt(url.searchParams.get('limit')) || 25;
-
-    const total = mockLeadsStore.length;
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const filtered = getFilteredLeads(mockLeadsStore, url);
+    const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const start = (page - 1) * limit;
-    const data = mockLeadsStore.slice(start, start + limit);
+    const data = filtered.slice(start, start + limit);
 
     return HttpResponse.json({
       success: true,
@@ -1063,5 +1072,175 @@ export const handlers = [
       { success: false, status: 401, message: 'Invalid email or password' },
       { status: 401 }
     );
+  }),
+
+  // Story-2 endpoints
+  http.get(`${BASE}/admin/dashboard/kpis`, ({ request }) => {
+    const url = new URL(request.url);
+    const filtered = getFilteredLeads(mockLeadsStore, url);
+    const total_leads = filtered.length;
+    const won = filtered.filter(l => l.stage === 'Won').length;
+    const lost = filtered.filter(l => l.stage === 'Lost').length;
+    
+    const from = url.searchParams.get('from');
+    if (from) {
+      const active_leads = filtered.filter(l => l.stage !== 'Won' && l.stage !== 'Lost').length;
+      const total_estimated_value = filtered.reduce((sum, l) => sum + Number(l.estimatedValue || 0), 0).toFixed(2);
+      return HttpResponse.json({
+        success: true,
+        data: {
+          total_leads: String(total_leads),
+          won_leads: String(won),
+          lost_leads: String(lost),
+          active_leads: String(active_leads),
+          total_estimated_value
+        }
+      });
+    }
+    
+    const newCount = filtered.filter(l => l.stage === 'New' || l.stage === 'New Lead').length;
+    const contacted = filtered.filter(l => l.stage === 'Contacted').length;
+    const qualified = filtered.filter(l => l.stage === 'Qualified').length;
+    const meeting = filtered.filter(l => l.stage === 'Meeting Scheduled').length;
+    const proposal = filtered.filter(l => l.stage === 'Proposal Sent').length;
+    const negotiation = filtered.filter(l => l.stage === 'Negotiation').length;
+    
+    const totalClosed = won + lost;
+    const conversion_rate = totalClosed > 0 ? `${((won / totalClosed) * 100).toFixed(2)}%` : '0.00%';
+    
+    return HttpResponse.json({
+      success: true,
+      data: {
+        total_leads,
+        new: newCount,
+        contacted,
+        qualified,
+        meeting,
+        proposal,
+        negotiation,
+        won,
+        lost,
+        conversion_rate,
+        hot_leads: filtered.filter(l => l.priority === 'Hot' || l.priority === 'High').length,
+        warm_leads: filtered.filter(l => l.priority === 'Warm' || l.priority === 'Medium').length,
+        cold_leads: filtered.filter(l => l.priority === 'Cold' || l.priority === 'Low').length,
+        category_id: url.searchParams.get('category_id') || null,
+        sub_category_id: url.searchParams.get('sub_category_id') || null
+      }
+    });
+  }),
+
+  http.get(`${BASE}/marketing/dashboard`, ({ request }) => {
+    const url = new URL(request.url);
+    const filtered = getFilteredLeads(mockLeadsStore, url);
+    
+    const total = filtered.length;
+    const won = filtered.filter(l => l.stage === 'Won').length;
+    const lost = filtered.filter(l => l.stage === 'Lost').length;
+    const active = total - (won + lost);
+    const totalValue = filtered.reduce((sum, l) => sum + Number(l.estimatedValue || 0), 0).toFixed(2);
+    
+    const stages = {};
+    filtered.forEach(l => {
+      stages[l.stage] = (stages[l.stage] || 0) + 1;
+    });
+    const stage_breakdown = Object.entries(stages).map(([stage, count]) => ({ stage, count }));
+    
+    return HttpResponse.json({
+      success: true,
+      data: {
+        stats: {
+          total_leads: String(total),
+          active_leads: String(active),
+          won_leads: String(won),
+          lost_leads: String(lost),
+          total_estimated_value: totalValue
+        },
+        stage_breakdown,
+        recent_leads: filtered.slice(0, 5).map(l => ({
+          id: l.id,
+          lead_id: l.leadId,
+          company_name: l.companyName,
+          contact_person: l.contactPerson,
+          stage: l.stage,
+          priority: l.priority,
+          estimated_value: l.estimatedValue,
+          created_at: l.createdAt
+        })),
+        unread_notifications: 3
+      }
+    });
+  }),
+
+  http.get(`${BASE}/admin/dashboard/category/won-rate`, ({ request }) => {
+    const url = new URL(request.url);
+    const category_id = url.searchParams.get('category_id');
+    let leads = [...mockLeadsStore];
+    if (category_id) {
+      leads = leads.filter(l => l.businessCategory === category_id || l.category === category_id);
+    }
+    
+    const groups = {};
+    leads.forEach(l => {
+      const catId = l.businessCategory || l.category || 'unknown';
+      const catName = categoriesStore.find(c => c.id === catId)?.name || 'IT Services';
+      if (!groups[catId]) {
+        groups[catId] = { category_id: catId, category_name: catName, total_closed: 0, won: 0, lost: 0 };
+      }
+      if (l.stage === 'Won') {
+        groups[catId].won++;
+        groups[catId].total_closed++;
+      } else if (l.stage === 'Lost') {
+        groups[catId].lost++;
+        groups[catId].total_closed++;
+      }
+    });
+    
+    const data = Object.values(groups).map(g => {
+      const win_rate = g.total_closed > 0 ? `${((g.won / g.total_closed) * 100).toFixed(2)}%` : '0.00%';
+      return { ...g, total_closed: String(g.total_closed), won: String(g.won), lost: String(g.lost), win_rate };
+    });
+    
+    return HttpResponse.json({
+      success: true,
+      data
+    });
+  }),
+
+  http.get(`${BASE}/admin/dashboard/category/lead-volume`, ({ request }) => {
+    const url = new URL(request.url);
+    const filtered = getFilteredLeads(mockLeadsStore, url);
+    
+    const groups = {};
+    filtered.forEach(l => {
+      const catId = l.businessCategory || l.category || 'unknown';
+      const catName = categoriesStore.find(c => c.id === catId)?.name || 'IT Services';
+      if (!groups[catId]) {
+        groups[catId] = { category_id: catId, category_name: catName, lead_count: 0 };
+      }
+      groups[catId].lead_count++;
+    });
+    
+    const data = Object.values(groups).map(g => ({
+      ...g,
+      lead_count: String(g.lead_count)
+    }));
+    
+    return HttpResponse.json({
+      success: true,
+      data
+    });
+  }),
+
+  http.get(`${BASE}/admin/leads/export`, () => {
+    return HttpResponse.text('lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-86808,Acme Corp,John Smith,9999999901,john@acme.com,Mumbai,Website,IT Services,EHR Solutions,Hot,New Lead,50000.00');
+  }),
+
+  http.get(`${BASE}/marketing/leads/export`, () => {
+    return HttpResponse.text('Binary file stream representation');
+  }),
+
+  http.get(`${BASE}/admin/reports/export`, () => {
+    return HttpResponse.text('Binary report file stream');
   }),
 ];
