@@ -44,7 +44,9 @@ router.get('/leads/export', protect, authorize('Admin'), adminController.exportA
 // Dashboard routes
 router.get('/dashboard/kpis', protect, authorize('Admin'), adminController.getDashboardKpis);
 router.get('/dashboard/won-rate-by-category', protect, authorize('Admin'), adminController.getWonRateByCategory);
+router.get('/dashboard/category/won-rate', protect, authorize('Admin'), adminController.getWonRateByCategory);
 router.get('/dashboard/lead-volume-by-category', protect, authorize('Admin'), adminController.getLeadVolumeByCategory);
+router.get('/dashboard/category/lead-volume', protect, authorize('Admin'), adminController.getLeadVolumeByCategory);
 
 // Report export routes
 router.get('/reports/export', protect, authorize('Admin'), adminController.exportReport);

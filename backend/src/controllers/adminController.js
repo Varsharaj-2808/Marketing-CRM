@@ -8,6 +8,7 @@ const BusinessSubCategory = require('../models/BusinessSubCategory');
 const Service = require('../models/Service');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
+const PDFDocument = require('pdfkit');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -221,10 +222,41 @@ exports.reopenLead = async (req, res, next) => {
   }
 };
 
+const buildAdminFilter = (req, alias) => {
+  const { category_id, sub_category_id, from, to } = req.query;
+  const conditions = [`${alias}deleted_at IS NULL`];
+  const values = [];
+  let idx = 1;
+  const p = (v) => { values.push(v); return `$${idx++}`; };
+
+  if (category_id) {
+    conditions.push(`${alias}category = ${p(category_id)}`);
+  }
+  if (sub_category_id) {
+    conditions.push(`${alias}sub_category = ${p(sub_category_id)}`);
+  }
+  if (from) {
+    conditions.push(`${alias}created_at >= ${p(from)}`);
+  }
+  if (to) {
+    conditions.push(`${alias}created_at <= ${p(to + 'T23:59:59.999Z')}`);
+  }
+
+  return { where: conditions.join(' AND '), values };
+};
+
 exports.getDashboardKpis = async (req, res, next) => {
   try {
-    const { category } = req.query;
-    let sql = `
+    const { category, category_id, sub_category_id, from, to } = req.query;
+    const filter = buildAdminFilter(req, '');
+
+    // support legacy ?category= param as alias for category_id
+    if (category && !category_id) {
+      filter.values.unshift(category);
+      filter.where = `category = $1 AND ${filter.where}`;
+    }
+
+    const result = await query(`
       SELECT
         COUNT(*) AS total_leads,
         COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
@@ -232,14 +264,8 @@ exports.getDashboardKpis = async (req, res, next) => {
         COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
         COALESCE(SUM(estimated_value), 0) AS total_estimated_value
       FROM leads
-      WHERE deleted_at IS NULL
-    `;
-    const values = [];
-    if (category) {
-      sql += ` AND category = $1`;
-      values.push(category);
-    }
-    const result = await query(sql, values);
+      WHERE ${filter.where}
+    `, filter.values);
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     next(error);
@@ -248,10 +274,11 @@ exports.getDashboardKpis = async (req, res, next) => {
 
 exports.getWonRateByCategory = async (req, res, next) => {
   try {
+    const filter = buildAdminFilter(req, 'l.');
     const result = await query(`
       SELECT
         l.category AS category_id,
-        c.name AS category_name,
+        c.category_name,
         COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) AS total_closed,
         COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
         COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
@@ -262,10 +289,10 @@ exports.getWonRateByCategory = async (req, res, next) => {
         END AS win_rate
       FROM leads l
       LEFT JOIN business_categories c ON l.category = c.id
-      WHERE l.deleted_at IS NULL AND l.stage IN ('Won', 'Lost')
-      GROUP BY l.category, c.name
+      WHERE ${filter.where} AND l.stage IN ('Won', 'Lost')
+      GROUP BY l.category, c.category_name
       ORDER BY win_rate DESC
-    `);
+    `, filter.values);
     res.json({ success: true, data: result.rows });
   } catch (error) {
     next(error);
@@ -274,17 +301,18 @@ exports.getWonRateByCategory = async (req, res, next) => {
 
 exports.getLeadVolumeByCategory = async (req, res, next) => {
   try {
+    const filter = buildAdminFilter(req, 'l.');
     const result = await query(`
       SELECT
         l.category AS category_id,
-        c.name AS category_name,
+        c.category_name,
         COUNT(*) AS lead_count
       FROM leads l
       LEFT JOIN business_categories c ON l.category = c.id
-      WHERE l.deleted_at IS NULL
-      GROUP BY l.category, c.name
+      WHERE ${filter.where}
+      GROUP BY l.category, c.category_name
       ORDER BY lead_count DESC
-    `);
+    `, filter.values);
     res.json({ success: true, data: result.rows });
   } catch (error) {
     next(error);
@@ -293,10 +321,19 @@ exports.getLeadVolumeByCategory = async (req, res, next) => {
 
 exports.exportAdminLeads = async (req, res, next) => {
   try {
-    const { format, category } = req.query;
+    const { format, category_id, sub_category_id, status, quality, from, to } = req.query;
     const filters = { page: 1, limit: 10000 };
-    if (category) filters.category = category;
+    if (category_id) filters.category = category_id;
+    if (sub_category_id) filters.sub_category = sub_category_id;
+    if (status) filters.status = status;
+    if (quality) filters.priority = quality;
+    if (from) filters.from_date = from;
+    if (to) filters.to_date = to;
     const result = await Lead.findAllAdmin(filters);
+
+    if (result.data.length === 0) {
+      return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
+    }
 
     if (format === 'csv') {
       const headers = [
@@ -319,7 +356,61 @@ exports.exportAdminLeads = async (req, res, next) => {
     }
 
     if (format === 'excel') {
-      return res.json({ success: true, data: result.data });
+      const XLSX = require('xlsx');
+      const headers = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'city', 'lead_source', 'category', 'sub_category', 'priority', 'stage', 'estimated_value'];
+      const rows = result.data.map(lead => headers.map(h => lead[h] != null ? String(lead[h]) : ''));
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=leads.xlsx');
+      return res.send(buf);
+    }
+
+    if (format === 'pdf') {
+      const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=leads.pdf');
+      doc.pipe(res);
+
+      const headers = ['Lead ID', 'Company', 'Contact', 'Mobile', 'Email', 'Source', 'Priority', 'Stage', 'Value'];
+      const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'priority', 'stage', 'estimated_value'];
+      const colWidths = [90, 110, 90, 85, 130, 70, 60, 75, 65];
+      const tableTop = 50;
+      let y = tableTop;
+
+      doc.fontSize(14).font('Helvetica-Bold').text('Leads Export', 40, 15);
+      doc.fontSize(8).font('Helvetica').text(`Generated: ${new Date().toISOString()}`, 40, 32);
+      y = 48;
+      doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
+
+      doc.font('Helvetica-Bold').fontSize(7);
+      let x = 40;
+      headers.forEach((h, i) => {
+        doc.text(h, x + 2, y + 3, { width: colWidths[i] - 4, align: 'left' });
+        x += colWidths[i];
+      });
+      y += 16;
+      doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
+
+      doc.font('Helvetica').fontSize(6);
+      for (const lead of result.data) {
+        if (y > 540) {
+          doc.addPage();
+          y = 40;
+        }
+        x = 40;
+        cols.forEach((c, i) => {
+          const val = lead[c] != null ? String(lead[c]) : '';
+          doc.text(val, x + 2, y + 2, { width: colWidths[i] - 4, align: 'left' });
+          x += colWidths[i];
+        });
+        y += 14;
+      }
+
+      doc.end();
+      return;
     }
 
     res.json({ success: true, data: result.data });
@@ -332,10 +423,11 @@ exports.exportReport = async (req, res, next) => {
   try {
     const { report, format } = req.query;
 
-    if (report === 'lead-conversion-by-category') {
+    if (report === 'lead-conversion-by-category' || report === 'lead-conversion') {
+      const filter = buildAdminFilter(req, 'l.');
       const dbResult = await query(`
         SELECT
-          c.name AS category_name,
+          c.category_name,
           COUNT(*) AS total_leads,
           COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
           COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
@@ -345,14 +437,82 @@ exports.exportReport = async (req, res, next) => {
           END AS conversion_rate
         FROM leads l
         LEFT JOIN business_categories c ON l.category = c.id
-        WHERE l.deleted_at IS NULL
-        GROUP BY c.name
-        ORDER BY category_name
-      `);
+        WHERE ${filter.where}
+        GROUP BY c.category_name
+        ORDER BY c.category_name
+      `, filter.values);
+
+      if (dbResult.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'No data found for the given filters' });
+      }
+
+      const headers = ['category_name', 'total_leads', 'won', 'lost', 'conversion_rate'];
+      const rows = dbResult.rows.map(r => headers.map(h => r[h] != null ? String(r[h]) : ''));
+
+      if (format === 'csv') {
+        const csvRows = [headers.join(',')];
+        csvRows.push(...rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')));
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=lead-conversion.csv');
+        return res.send(csvRows.join('\n'));
+      }
 
       if (format === 'excel') {
-        return res.json({ success: true, data: dbResult.rows });
+        const XLSX = require('xlsx');
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'LeadConversion');
+        const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=lead-conversion.xlsx');
+        return res.send(buf);
       }
+
+      return res.json({ success: true, data: dbResult.rows });
+    }
+
+    if (report === 'category-breakdown') {
+      const filter = buildAdminFilter(req, 'l.');
+      const dbResult = await query(`
+        SELECT
+          c.category_name,
+          COUNT(*) AS lead_count,
+          COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
+          COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
+          COUNT(*) FILTER (WHERE l.stage NOT IN ('Won', 'Lost')) AS active
+        FROM leads l
+        LEFT JOIN business_categories c ON l.category = c.id
+        WHERE ${filter.where}
+        GROUP BY c.category_name
+        ORDER BY lead_count DESC
+      `, filter.values);
+
+      if (dbResult.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'No data found for the given filters' });
+      }
+
+      const headers = ['category_name', 'lead_count', 'won', 'lost', 'active'];
+      const rows = dbResult.rows.map(r => headers.map(h => r[h] != null ? String(r[h]) : ''));
+
+      if (format === 'csv') {
+        const csvRows = [headers.join(',')];
+        csvRows.push(...rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')));
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=category-breakdown.csv');
+        return res.send(csvRows.join('\n'));
+      }
+
+      if (format === 'excel') {
+        const XLSX = require('xlsx');
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'CategoryBreakdown');
+        const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=category-breakdown.xlsx');
+        return res.send(buf);
+      }
+
       return res.json({ success: true, data: dbResult.rows });
     }
 
