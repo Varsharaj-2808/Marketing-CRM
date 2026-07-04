@@ -27,6 +27,13 @@ router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin',
 router.get('/subcategories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveSubCategories);
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 
+// Dashboard routes for Marketing
+router.get('/dashboard/kpis', protect, authorize('Admin', 'Marketing Executive'), adminController.getDashboardKpisMarketing);
+router.get('/dashboard/won-rate-by-category', protect, authorize('Admin', 'Marketing Executive'), adminController.getWonRateByCategoryMarketing);
+router.get('/dashboard/category/won-rate', protect, authorize('Admin', 'Marketing Executive'), adminController.getWonRateByCategoryMarketing);
+router.get('/dashboard/lead-volume-by-category', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadVolumeByCategoryMarketing);
+router.get('/dashboard/category/lead-volume', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadVolumeByCategoryMarketing);
+
 router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), assignController.getTimeline);
 router.get('/dashboard', protect, authorize('Admin', 'Marketing Executive'), dashboardController.getDashboard);
 

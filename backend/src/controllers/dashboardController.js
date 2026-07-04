@@ -2,10 +2,15 @@ const { query } = require('../config/db');
 const Notification = require('../models/Notification');
 
 const buildFilterClause = (params) => {
-  const { userId, categoryId, subCategoryId, from, to } = params;
-  const conditions = ['assigned_to = $1', 'deleted_at IS NULL'];
-  const values = [userId];
-  let idx = 2;
+  const { userId, isAdmin, categoryId, subCategoryId, from, to } = params;
+  const conditions = ['deleted_at IS NULL'];
+  const values = [];
+  let idx = 1;
+
+  if (!isAdmin && userId) {
+    conditions.push(`assigned_to = $${idx++}`);
+    values.push(userId);
+  }
 
   if (categoryId) {
     conditions.push(`category = $${idx++}`);
@@ -30,9 +35,10 @@ const buildFilterClause = (params) => {
 exports.getDashboard = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'Admin';
     const { category_id, sub_category_id, from, to } = req.query;
 
-    const { clause, values } = buildFilterClause({ userId, categoryId: category_id, subCategoryId: sub_category_id, from, to });
+    const { clause, values } = buildFilterClause({ userId, isAdmin, categoryId: category_id, subCategoryId: sub_category_id, from, to });
 
     const [leadStats, recentLeads, notificationCount] = await Promise.all([
       query(`
