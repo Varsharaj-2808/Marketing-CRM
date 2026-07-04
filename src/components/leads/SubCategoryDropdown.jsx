@@ -52,7 +52,8 @@ export default function SubCategoryDropdown({
     );
   }
 
-  const options = (subCategories || []).map((sub) => ({
+  const activeSubCategories = (subCategories || []).filter((sub) => sub.isActive !== false);
+  const options = activeSubCategories.map((sub) => ({
     value: sub.id || sub._id,
     label: sub.name,
   }));

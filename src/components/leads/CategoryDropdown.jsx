@@ -1,7 +1,8 @@
 import SelectField from '../common/SelectField';
 
 export default function CategoryDropdown({ value, onChange, error, categories, loading }) {
-  const options = (categories || []).map((cat) => ({
+  const activeCategories = (categories || []).filter((cat) => cat.isActive !== false);
+  const options = activeCategories.map((cat) => ({
     value: cat.id || cat._id,
     label: cat.name,
   }));

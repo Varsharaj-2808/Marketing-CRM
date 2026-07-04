@@ -38,6 +38,27 @@ const STATS = [
 
 const SHORTCUTS = [
   {
+    icon: 'category',
+    title: 'Categories',
+    desc: 'Manage business categories',
+    path: '/admin/categories',
+    hoverBg: 'hover:bg-primary',
+  },
+  {
+    icon: 'handyman',
+    title: 'Services',
+    desc: 'Manage service offerings',
+    path: '/admin/services',
+    hoverBg: 'hover:bg-secondary',
+  },
+  {
+    icon: 'source',
+    title: 'Lead Sources',
+    desc: 'Manage lead source channels',
+    path: '/admin/lead-sources',
+    hoverBg: 'hover:bg-on-tertiary-fixed-variant',
+  },
+  {
     icon: 'manage_accounts',
     title: 'User Management',
     desc: 'Configure permissions',

@@ -233,9 +233,22 @@ export const handlers = [
     if (!name?.trim()) {
       return HttpResponse.json({ success: false, message: 'Name is required.' }, { status: 400 });
     }
-    const newCategory = { id: `cat-${String(nextCategoryId++).padStart(3, '0')}`, name: name.trim() };
+    const newCategory = { id: `cat-${String(nextCategoryId++).padStart(3, '0')}`, name: name.trim(), isActive: true };
     categoriesStore.push(newCategory);
     subCategoriesStore[newCategory.id] = [];
+    auditLogs.push({
+      id: crypto.randomUUID(),
+      user_id: getCurrentUserId() || 'system',
+      action: 'CATEGORY_CREATED',
+      resource: 'Category',
+      resourceId: newCategory.id,
+      details: `Category "${newCategory.name}" created`,
+      ipAddress: '127.0.0.1',
+      userAgent: 'Admin',
+      result: 'Success',
+      createdAt: new Date().toISOString(),
+      email: 'admin@company.com',
+    });
     return HttpResponse.json({ success: true, data: newCategory, message: 'Category created successfully.' }, { status: 201 });
   }),
 
@@ -244,8 +257,39 @@ export const handlers = [
     const body = await request.json();
     const idx = categoriesStore.findIndex(c => c.id === id);
     if (idx === -1) return HttpResponse.json({ success: false, message: 'Category not found.' }, { status: 404 });
-    if (!body.name?.trim()) return HttpResponse.json({ success: false, message: 'Name is required.' }, { status: 400 });
-    categoriesStore[idx] = { ...categoriesStore[idx], name: body.name.trim() };
+    if (body.name !== undefined && !body.name?.trim()) return HttpResponse.json({ success: false, message: 'Name is required.' }, { status: 400 });
+    const oldCat = { ...categoriesStore[idx] };
+    categoriesStore[idx] = { ...categoriesStore[idx], ...body };
+    if (body.name !== undefined) categoriesStore[idx].name = body.name.trim();
+    if (body.isActive !== undefined) {
+      auditLogs.push({
+        id: crypto.randomUUID(),
+        user_id: getCurrentUserId() || 'system',
+        action: body.isActive ? 'CATEGORY_ACTIVATED' : 'CATEGORY_DEACTIVATED',
+        resource: 'Category',
+        resourceId: id,
+        details: `Category "${categoriesStore[idx].name}" ${body.isActive ? 'activated' : 'deactivated'}`,
+        ipAddress: '127.0.0.1',
+        userAgent: 'Admin',
+        result: 'Success',
+        createdAt: new Date().toISOString(),
+        email: 'admin@company.com',
+      });
+    } else {
+      auditLogs.push({
+        id: crypto.randomUUID(),
+        user_id: getCurrentUserId() || 'system',
+        action: 'CATEGORY_UPDATED',
+        resource: 'Category',
+        resourceId: id,
+        details: `Category "${oldCat.name}" renamed to "${categoriesStore[idx].name}"`,
+        ipAddress: '127.0.0.1',
+        userAgent: 'Admin',
+        result: 'Success',
+        createdAt: new Date().toISOString(),
+        email: 'admin@company.com',
+      });
+    }
     return HttpResponse.json({ success: true, data: categoriesStore[idx], message: 'Category updated successfully.' });
   }),
 
@@ -253,9 +297,45 @@ export const handlers = [
     const { id } = params;
     const idx = categoriesStore.findIndex(c => c.id === id);
     if (idx === -1) return HttpResponse.json({ success: false, message: 'Category not found.' }, { status: 404 });
-    categoriesStore.splice(idx, 1);
+    const inUse = mockLeadsStore.some(lead => lead.businessCategory === id);
+    if (inUse) {
+      return HttpResponse.json({ success: false, message: 'Cannot delete. Category is in use by one or more leads.' }, { status: 409 });
+    }
+    const deleted = categoriesStore.splice(idx, 1)[0];
     delete subCategoriesStore[id];
+    auditLogs.push({
+      id: crypto.randomUUID(),
+      user_id: getCurrentUserId() || 'system',
+      action: 'CATEGORY_DELETED',
+      resource: 'Category',
+      resourceId: id,
+      details: `Category "${deleted.name}" deleted`,
+      ipAddress: '127.0.0.1',
+      userAgent: 'Admin',
+      result: 'Success',
+      createdAt: new Date().toISOString(),
+      email: 'admin@company.com',
+    });
     return HttpResponse.json({ success: true, message: 'Category deleted successfully.' });
+  }),
+
+  http.get(`${BASE}/admin/categories/active`, () => {
+    return HttpResponse.json({
+      success: true,
+      data: categoriesStore.filter(c => c.isActive !== false),
+    });
+  }),
+
+  http.get(`${BASE}/admin/categories/:id/in-use`, ({ params }) => {
+    const { id } = params;
+    const leads = mockLeadsStore.filter(lead => lead.businessCategory === id);
+    return HttpResponse.json({ inUse: leads.length > 0, leads });
+  }),
+
+  http.get(`${BASE}/admin/categories/:id/audit-log`, ({ params }) => {
+    const { id } = params;
+    const log = auditLogs.filter(e => e.resource === 'Category' && e.resourceId === id);
+    return HttpResponse.json({ success: true, data: log });
   }),
 
   http.post(`${BASE}/admin/categories/:categoryId/sub-categories`, async ({ params, request }) => {
@@ -270,8 +350,21 @@ export const handlers = [
     if (!subCategoriesStore[categoryId]) subCategoriesStore[categoryId] = [];
     const existingIds = subCategoriesStore[categoryId].map(s => s.id).filter(id => id.startsWith('sub-'));
     const maxNum = existingIds.reduce((max, id) => Math.max(max, parseInt(id.replace('sub-', '')) || 0), 0);
-    const newSub = { id: `sub-${String(maxNum + 1).padStart(3, '0')}`, name: body.name.trim(), categoryId };
+    const newSub = { id: `sub-${String(maxNum + 1).padStart(3, '0')}`, name: body.name.trim(), categoryId, isActive: true };
     subCategoriesStore[categoryId].push(newSub);
+    auditLogs.push({
+      id: crypto.randomUUID(),
+      user_id: getCurrentUserId() || 'system',
+      action: 'SUB_CATEGORY_CREATED',
+      resource: 'SubCategory',
+      resourceId: newSub.id,
+      details: `Sub-category "${newSub.name}" created under ${categoryId}`,
+      ipAddress: '127.0.0.1',
+      userAgent: 'Admin',
+      result: 'Success',
+      createdAt: new Date().toISOString(),
+      email: 'admin@company.com',
+    });
     return HttpResponse.json({ success: true, data: newSub, message: 'Sub-category created successfully.' }, { status: 201 });
   }),
 
@@ -282,8 +375,25 @@ export const handlers = [
     if (!subs) return HttpResponse.json({ success: false, message: 'Category not found.' }, { status: 404 });
     const idx = subs.findIndex(s => s.id === subId);
     if (idx === -1) return HttpResponse.json({ success: false, message: 'Sub-category not found.' }, { status: 404 });
-    if (!body.name?.trim()) return HttpResponse.json({ success: false, message: 'Name is required.' }, { status: 400 });
-    subs[idx] = { ...subs[idx], name: body.name.trim() };
+    if (body.name !== undefined && !body.name?.trim()) return HttpResponse.json({ success: false, message: 'Name is required.' }, { status: 400 });
+    const oldSub = { ...subs[idx] };
+    subs[idx] = { ...subs[idx], ...body };
+    if (body.name !== undefined) subs[idx].name = body.name.trim();
+    if (body.isActive !== undefined) {
+      auditLogs.push({
+        id: crypto.randomUUID(),
+        user_id: getCurrentUserId() || 'system',
+        action: body.isActive ? 'SUB_CATEGORY_ACTIVATED' : 'SUB_CATEGORY_DEACTIVATED',
+        resource: 'SubCategory',
+        resourceId: subId,
+        details: `Sub-category "${subs[idx].name}" ${body.isActive ? 'activated' : 'deactivated'}`,
+        ipAddress: '127.0.0.1',
+        userAgent: 'Admin',
+        result: 'Success',
+        createdAt: new Date().toISOString(),
+        email: 'admin@company.com',
+      });
+    }
     return HttpResponse.json({ success: true, data: subs[idx], message: 'Sub-category updated successfully.' });
   }),
 
@@ -293,8 +403,40 @@ export const handlers = [
     if (!subs) return HttpResponse.json({ success: false, message: 'Category not found.' }, { status: 404 });
     const idx = subs.findIndex(s => s.id === subId);
     if (idx === -1) return HttpResponse.json({ success: false, message: 'Sub-category not found.' }, { status: 404 });
-    subs.splice(idx, 1);
+    const inUse = mockLeadsStore.some(lead => lead.businessSubCategory === subId);
+    if (inUse) {
+      return HttpResponse.json({ success: false, message: 'Cannot delete. Sub-category is in use by one or more leads.' }, { status: 409 });
+    }
+    const deleted = subs.splice(idx, 1)[0];
+    auditLogs.push({
+      id: crypto.randomUUID(),
+      user_id: getCurrentUserId() || 'system',
+      action: 'SUB_CATEGORY_DELETED',
+      resource: 'SubCategory',
+      resourceId: subId,
+      details: `Sub-category "${deleted.name}" deleted from ${categoryId}`,
+      ipAddress: '127.0.0.1',
+      userAgent: 'Admin',
+      result: 'Success',
+      createdAt: new Date().toISOString(),
+      email: 'admin@company.com',
+    });
     return HttpResponse.json({ success: true, message: 'Sub-category deleted successfully.' });
+  }),
+
+  http.get(`${BASE}/admin/categories/:categoryId/sub-categories/active`, ({ params }) => {
+    const { categoryId } = params;
+    const subs = subCategoriesStore[categoryId] || [];
+    return HttpResponse.json({
+      success: true,
+      data: subs.filter(s => s.isActive !== false),
+    });
+  }),
+
+  http.get(`${BASE}/admin/categories/:categoryId/sub-categories/:subId/in-use`, ({ params }) => {
+    const { categoryId, subId } = params;
+    const leads = mockLeadsStore.filter(lead => lead.businessSubCategory === subId);
+    return HttpResponse.json({ inUse: leads.length > 0, leads });
   }),
 
   http.get(`${BASE}/admin/users/deactivated`, () => {

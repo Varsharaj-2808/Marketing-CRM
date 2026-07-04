@@ -2,19 +2,19 @@ import { API_BASE_URL } from '../constants';
 import { addNotification } from './notificationService';
 
 const FALLBACK_CATEGORIES = [
-  { id: 'cat-001', name: 'IT Services' },
-  { id: 'cat-002', name: 'Digital Marketing' },
-  { id: 'cat-003', name: 'Consulting' },
-  { id: 'cat-004', name: 'Real Estate' },
-  { id: 'cat-005', name: 'Healthcare' },
+  { id: 'cat-001', name: 'IT Services', isActive: true },
+  { id: 'cat-002', name: 'Digital Marketing', isActive: true },
+  { id: 'cat-003', name: 'Consulting', isActive: true },
+  { id: 'cat-004', name: 'Real Estate', isActive: true },
+  { id: 'cat-005', name: 'Healthcare', isActive: true },
 ];
 
 const FALLBACK_SUB_CATEGORIES = {
-  'cat-001': [{ id: 'sub-001', name: 'Web Development' }, { id: 'sub-002', name: 'Mobile App Development' }, { id: 'sub-003', name: 'Cloud Solutions' }],
-  'cat-002': [{ id: 'sub-004', name: 'SEO Services' }, { id: 'sub-005', name: 'Social Media Management' }, { id: 'sub-006', name: 'Email Marketing' }],
-  'cat-003': [{ id: 'sub-007', name: 'Business Strategy' }, { id: 'sub-008', name: 'Management Consulting' }],
-  'cat-004': [{ id: 'sub-009', name: 'Residential' }, { id: 'sub-010', name: 'Commercial' }],
-  'cat-005': [{ id: 'sub-011', name: 'Medical Equipment' }, { id: 'sub-012', name: 'Pharmaceuticals' }],
+  'cat-001': [{ id: 'sub-001', name: 'Web Development', isActive: true }, { id: 'sub-002', name: 'Mobile App Development', isActive: true }, { id: 'sub-003', name: 'Cloud Solutions', isActive: true }],
+  'cat-002': [{ id: 'sub-004', name: 'SEO Services', isActive: true }, { id: 'sub-005', name: 'Social Media Management', isActive: true }, { id: 'sub-006', name: 'Email Marketing', isActive: true }],
+  'cat-003': [{ id: 'sub-007', name: 'Business Strategy', isActive: true }, { id: 'sub-008', name: 'Management Consulting', isActive: true }],
+  'cat-004': [{ id: 'sub-009', name: 'Residential', isActive: true }, { id: 'sub-010', name: 'Commercial', isActive: true }],
+  'cat-005': [{ id: 'sub-011', name: 'Medical Equipment', isActive: true }, { id: 'sub-012', name: 'Pharmaceuticals', isActive: true }],
 };
 
 function getAuthHeaders() {
@@ -386,6 +386,89 @@ export async function deleteSubCategory(categoryId, subId) {
   } catch {
     return { success: true, message: 'Deleted offline.' };
   }
+}
+
+export async function toggleCategoryStatus(id, isActive) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ isActive }),
+    });
+    return await safeJson(res) || { success: false, message: 'Failed to update category status.' };
+  } catch {
+    return { success: true, data: { id, isActive }, message: isActive ? 'Category activated.' : 'Category deactivated.' };
+  }
+}
+
+export async function toggleSubCategoryStatus(categoryId, subId, isActive) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ isActive }),
+    });
+    return await safeJson(res) || { success: false, message: 'Failed to update sub-category status.' };
+  } catch {
+    return { success: true, data: { id: subId, isActive }, message: isActive ? 'Sub-category activated.' : 'Sub-category deactivated.' };
+  }
+}
+
+export async function checkCategoryInUse(id) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${id}/in-use`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json) return json;
+  } catch {}
+  return { inUse: false, leads: [] };
+}
+
+export async function checkSubCategoryInUse(categoryId, subId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}/in-use`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json) return json;
+  } catch {}
+  return { inUse: false, leads: [] };
+}
+
+export async function fetchActiveCategories() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/active?_=${Date.now()}`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json?.data) return json;
+  } catch {}
+  return { success: true, data: FALLBACK_CATEGORIES.filter(c => c.isActive !== false) };
+}
+
+export async function fetchActiveSubCategories(categoryId) {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/active?_=${Date.now()}`,
+      { headers: getAuthHeaders() }
+    );
+    const json = await safeJson(res);
+    if (json?.data) return json;
+  } catch {}
+  const allSubs = FALLBACK_SUB_CATEGORIES[categoryId] || [];
+  return { success: true, data: allSubs.filter(s => s.isActive !== false) };
+}
+
+export async function fetchCategoryAuditLog(id) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${id}/audit-log?_=${Date.now()}`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json?.data) return json;
+  } catch {}
+  return { success: true, data: [] };
 }
 
 export async function fetchSavedViews() {

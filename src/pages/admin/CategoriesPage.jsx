@@ -10,8 +10,14 @@ import {
   createSubCategory,
   updateSubCategory,
   deleteSubCategory,
+  toggleCategoryStatus,
+  toggleSubCategoryStatus,
+  checkCategoryInUse,
+  checkSubCategoryInUse,
+  fetchCategoryAuditLog,
 } from '../../services/leadService';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
+import Toast from '../../components/common/Toast';
 import Skeleton from '../../components/common/Skeleton';
 import SkeletonTable from '../../components/common/SkeletonTable';
 
@@ -53,11 +59,18 @@ export default function CategoriesPage() {
   const [subFormName, setSubFormName] = useState('');
   const [subFormError, setSubFormError] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, target: null, type: '' });
-  const [notification, setNotification] = useState(null);
+  const [errorDialog, setErrorDialog] = useState({ isOpen: false, message: '' });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [auditTarget, setAuditTarget] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
-  const showNotification = (message, type = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+  };
+
+  const handleToastClose = () => {
+    setToast({ show: false, message: '', type: 'success' });
   };
 
   const loadCategories = useCallback(async () => {
@@ -78,11 +91,23 @@ export default function CategoriesPage() {
       return;
     }
     const load = async () => {
-      await loadCategories();
+      const catRes = await fetchCategories();
+      if (catRes.success) {
+        setCategories(catRes.data);
+        const subResults = await Promise.all(
+          catRes.data.map(async (cat) => {
+            const subRes = await fetchSubCategories(cat.id);
+            return { id: cat.id, data: subRes.success ? subRes.data : [] };
+          })
+        );
+        const initialSubMap = {};
+        subResults.forEach(({ id, data }) => { initialSubMap[id] = data; });
+        setSubMap(initialSubMap);
+      }
       setLoading(false);
     };
     load();
-  }, [isAuthenticated, navigate, loadCategories]);
+  }, [isAuthenticated, navigate]);
 
   const toggleExpand = async (categoryId) => {
     if (expandedId === categoryId) {
@@ -112,28 +137,27 @@ export default function CategoriesPage() {
       setCatFormError('Name is required');
       return;
     }
+    let res;
     if (editingCat) {
-      const res = await updateCategory(editingCat.id, { name: catFormName.trim() });
-      if (res.success) {
-        await loadCategories();
-        showNotification(res.message);
-        setShowCatForm(false);
-      } else {
-        showNotification(res.message, 'error');
-      }
+      res = await updateCategory(editingCat.id, { name: catFormName.trim() });
     } else {
-      const res = await createCategory({ name: catFormName.trim() });
-      if (res.success) {
-        await loadCategories();
-        showNotification(res.message);
-        setShowCatForm(false);
-      } else {
-        showNotification(res.message, 'error');
-      }
+      res = await createCategory({ name: catFormName.trim() });
+    }
+    if (res.success) {
+      await loadCategories();
+      showToast(res.message);
+      setShowCatForm(false);
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
-  const handleDeleteCat = (cat) => {
+  const handleDeleteCat = async (cat) => {
+    const inUseRes = await checkCategoryInUse(cat.id);
+    if (inUseRes.inUse) {
+      setErrorDialog({ isOpen: true, message: `Cannot delete "${cat.name}". It is currently in use by ${inUseRes.leads.length} lead(s). Deactivate it instead.` });
+      return;
+    }
     setConfirmDialog({ isOpen: true, target: cat, type: 'category' });
   };
 
@@ -141,11 +165,22 @@ export default function CategoriesPage() {
     const res = await deleteCategory(confirmDialog.target.id);
     if (res.success) {
       await loadCategories();
-      showNotification(res.message);
+      showToast(res.message);
     } else {
-      showNotification(res.message, 'error');
+      showToast(res.message, 'error');
     }
     setConfirmDialog({ isOpen: false, target: null, type: '' });
+  };
+
+  const handleToggleCatStatus = async (cat) => {
+    const newStatus = !(cat.isActive !== false);
+    const res = await toggleCategoryStatus(cat.id, newStatus);
+    if (res.success) {
+      await loadCategories();
+      showToast(res.message);
+    } else {
+      showToast(res.message, 'error');
+    }
   };
 
   const openCreateSub = (categoryId) => {
@@ -169,28 +204,27 @@ export default function CategoriesPage() {
       setSubFormError('Name is required');
       return;
     }
+    let res;
     if (editingSub) {
-      const res = await updateSubCategory(subFormCategoryId, editingSub.id, { name: subFormName.trim() });
-      if (res.success) {
-        await loadSubs(subFormCategoryId);
-        showNotification(res.message);
-        setShowSubForm(false);
-      } else {
-        showNotification(res.message, 'error');
-      }
+      res = await updateSubCategory(subFormCategoryId, editingSub.id, { name: subFormName.trim() });
     } else {
-      const res = await createSubCategory(subFormCategoryId, { name: subFormName.trim() });
-      if (res.success) {
-        await loadSubs(subFormCategoryId);
-        showNotification(res.message);
-        setShowSubForm(false);
-      } else {
-        showNotification(res.message, 'error');
-      }
+      res = await createSubCategory(subFormCategoryId, { name: subFormName.trim() });
+    }
+    if (res.success) {
+      await loadSubs(subFormCategoryId);
+      showToast(res.message);
+      setShowSubForm(false);
+    } else {
+      showToast(res.message, 'error');
     }
   };
 
-  const handleDeleteSub = (categoryId, sub) => {
+  const handleDeleteSub = async (categoryId, sub) => {
+    const inUseRes = await checkSubCategoryInUse(categoryId, sub.id);
+    if (inUseRes.inUse) {
+      setErrorDialog({ isOpen: true, message: `Cannot delete "${sub.name}". It is currently in use by ${inUseRes.leads.length} lead(s). Deactivate it instead.` });
+      return;
+    }
     setConfirmDialog({ isOpen: true, target: { ...sub, categoryId }, type: 'subcategory' });
   };
 
@@ -199,11 +233,34 @@ export default function CategoriesPage() {
     const res = await deleteSubCategory(categoryId, id);
     if (res.success) {
       await loadSubs(categoryId);
-      showNotification(res.message);
+      showToast(res.message);
     } else {
-      showNotification(res.message, 'error');
+      showToast(res.message, 'error');
     }
     setConfirmDialog({ isOpen: false, target: null, type: '' });
+  };
+
+  const handleToggleSubStatus = async (categoryId, sub) => {
+    const newStatus = !(sub.isActive !== false);
+    const res = await toggleSubCategoryStatus(categoryId, sub.id, newStatus);
+    if (res.success) {
+      await loadSubs(categoryId);
+      showToast(res.message);
+    } else {
+      showToast(res.message, 'error');
+    }
+  };
+
+  const openAuditLog = async (cat) => {
+    setAuditLoading(true);
+    setAuditTarget(cat);
+    const res = await fetchCategoryAuditLog(cat.id);
+    if (res.success) {
+      setAuditLogs(res.data);
+    } else {
+      setAuditLogs([]);
+    }
+    setAuditLoading(false);
   };
 
   const confirmAction = () => {
@@ -216,6 +273,13 @@ export default function CategoriesPage() {
 
   return (
     <div className="mt-4">
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={handleToastClose}
+      />
+
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
         <div>
           <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">
@@ -235,15 +299,6 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      {notification && (
-        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-sm ${
-          notification.type === 'error' ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-700'
-        }`} style={{ animation: 'slide-up 0.3s ease' }}>
-          <span className="material-symbols-outlined text-[18px]">{notification.type === 'error' ? 'error' : 'check_circle'}</span>
-          <span className="font-label-md">{notification.message}</span>
-        </div>
-      )}
-
       <div className="glass-card overflow-hidden mb-6">
         <div className="p-5 border-b border-outline-variant/10">
           <h4 className="font-headline-md text-headline-md text-on-surface">All Categories</h4>
@@ -254,105 +309,148 @@ export default function CategoriesPage() {
               <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
                 <th className="py-2.5 px-3 font-semibold w-16">#</th>
                 <th className="py-2.5 px-3 font-semibold">Category Name</th>
+                <th className="py-2.5 px-3 font-semibold">Status</th>
                 <th className="py-2.5 px-3 font-semibold w-32">Sub-Categories</th>
-                <th className="py-2.5 px-3 font-semibold w-56">Actions</th>
+                <th className="py-2.5 px-3 font-semibold w-72">Actions</th>
               </tr>
             </thead>
             <tbody className="text-body-md text-on-surface">
               {categories.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-on-surface-variant">
+                  <td colSpan={5} className="py-12 text-center text-on-surface-variant">
                     <span className="material-symbols-outlined text-4xl block mb-2 opacity-40">category</span>
                     No categories found. Click "Add Category" to create one.
                   </td>
                 </tr>
               ) : (
-                categories.map((cat, index) => (
-                  <Fragment key={cat.id}>
-                    <tr className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors">
-                      <td className="py-3 px-3 text-on-surface-variant">{index + 1}</td>
-                      <td className="py-3 px-3 font-medium text-on-surface">{cat.name}</td>
-                      <td className="py-3 px-3">
-                        <button
-                          onClick={() => toggleExpand(cat.id)}
-                          className="inline-flex items-center gap-1 text-label-sm font-medium text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
-                        >
-                          <span className={`material-symbols-outlined text-[16px] transition-transform ${expandedId === cat.id ? 'rotate-90' : ''}`}>
-                            chevron_right
+                categories.map((cat, index) => {
+                  const isInactive = cat.isActive === false;
+                  return (
+                    <Fragment key={cat.id}>
+                      <tr className={`border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors ${isInactive ? 'opacity-50' : ''}`}>
+                        <td className="py-3 px-3 text-on-surface-variant">{index + 1}</td>
+                        <td className="py-3 px-3 font-medium text-on-surface">
+                          {cat.name}
+                          {isInactive && <span className="ml-2 text-label-sm text-error">(Inactive)</span>}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold ${isInactive ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isInactive ? 'bg-error' : 'bg-emerald-500'}`} />
+                            {isInactive ? 'Inactive' : 'Active'}
                           </span>
-                          {subMap[cat.id]?.length ?? 0}
-                        </button>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-1">
+                        </td>
+                        <td className="py-3 px-3">
                           <button
-                            onClick={() => openCreateSub(cat.id)}
-                            className="px-2.5 py-1 text-label-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            onClick={() => toggleExpand(cat.id)}
+                            className="inline-flex items-center gap-1 text-label-sm font-medium text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
                           >
-                            Add Sub
+                            <span className={`material-symbols-outlined text-[16px] transition-transform ${expandedId === cat.id ? 'rotate-90' : ''}`}>
+                              chevron_right
+                            </span>
+                            {subMap[cat.id]?.length ?? 0}
                           </button>
-                          <button
-                            onClick={() => openEditCat(cat)}
-                            className="px-2.5 py-1 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCat(cat)}
-                            className="px-2.5 py-1 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedId === cat.id && (
-                      <tr>
-                        <td colSpan={4} className="p-0">
-                          <div className="bg-surface-container-low/40 border-b border-outline-variant/10">
-                            {(!subMap[cat.id] || subMap[cat.id].length === 0) ? (
-                              <p className="px-10 py-4 text-label-sm text-on-surface-variant italic">No sub-categories yet.</p>
-                            ) : (
-                              <table className="w-full text-left">
-                                <thead>
-                                  <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider">
-                                    <th className="py-2 px-10 font-semibold w-16">#</th>
-                                    <th className="py-2 px-3 font-semibold">Sub-Category Name</th>
-                                    <th className="py-2 px-3 font-semibold w-56">Actions</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {subMap[cat.id].map((sub, subIdx) => (
-                                    <tr key={sub.id} className="border-t border-outline-variant/5 hover:bg-primary/[0.02] transition-colors">
-                                      <td className="py-2 px-10 text-on-surface-variant">{subIdx + 1}</td>
-                                      <td className="py-2 px-3 text-on-surface">{sub.name}</td>
-                                      <td className="py-2 px-3">
-                                        <div className="flex items-center gap-1">
-                                          <button
-                                            onClick={() => openEditSub(cat.id, sub)}
-                                            className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                          >
-                                            Edit
-                                          </button>
-                                          <button
-                                            onClick={() => handleDeleteSub(cat.id, sub)}
-                                            className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
-                                          >
-                                            Delete
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => openCreateSub(cat.id)}
+                              className="px-2.5 py-1 text-label-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            >
+                              Add Sub
+                            </button>
+                            <button
+                              onClick={() => openEditCat(cat)}
+                              className="px-2.5 py-1 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleToggleCatStatus(cat)}
+                              className={`px-2.5 py-1 text-label-sm font-medium rounded-lg transition-colors ${isInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                            >
+                              {isInactive ? 'Activate' : 'Deactivate'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCat(cat)}
+                              className="px-2.5 py-1 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              onClick={() => openAuditLog(cat)}
+                              className="px-2.5 py-1 text-label-sm font-medium text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors"
+                            >
+                              Audit
+                            </button>
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                ))
+                      {expandedId === cat.id && (
+                        <tr>
+                          <td colSpan={5} className="p-0">
+                            <div className="bg-surface-container-low/40 border-b border-outline-variant/10">
+                              {(!subMap[cat.id] || subMap[cat.id].length === 0) ? (
+                                <p className="px-10 py-4 text-label-sm text-on-surface-variant italic">No sub-categories yet.</p>
+                              ) : (
+                                <table className="w-full text-left">
+                                  <thead>
+                                    <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider">
+                                      <th className="py-2 px-10 font-semibold w-16">#</th>
+                                      <th className="py-2 px-3 font-semibold">Sub-Category Name</th>
+                                      <th className="py-2 px-3 font-semibold w-24">Status</th>
+                                      <th className="py-2 px-3 font-semibold w-72">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {subMap[cat.id].map((sub, subIdx) => {
+                                      const subInactive = sub.isActive === false;
+                                      return (
+                                        <tr key={sub.id} className={`border-t border-outline-variant/5 hover:bg-primary/[0.02] transition-colors ${subInactive ? 'opacity-50' : ''}`}>
+                                          <td className="py-2 px-10 text-on-surface-variant">{subIdx + 1}</td>
+                                          <td className="py-2 px-3 text-on-surface">
+                                            {sub.name}
+                                            {subInactive && <span className="ml-2 text-label-sm text-error">(Inactive)</span>}
+                                          </td>
+                                          <td className="py-2 px-3">
+                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold ${subInactive ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                              {subInactive ? 'Inactive' : 'Active'}
+                                            </span>
+                                          </td>
+                                          <td className="py-2 px-3">
+                                            <div className="flex items-center gap-1">
+                                              <button
+                                                onClick={() => openEditSub(cat.id, sub)}
+                                                className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                              >
+                                                Edit
+                                              </button>
+                                              <button
+                                                onClick={() => handleToggleSubStatus(cat.id, sub)}
+                                                className={`px-2 py-0.5 text-label-sm font-medium rounded-lg transition-colors ${subInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                                              >
+                                                {subInactive ? 'Activate' : 'Deactivate'}
+                                              </button>
+                                              <button
+                                                onClick={() => handleDeleteSub(cat.id, sub)}
+                                                className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                                              >
+                                                Delete
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -448,10 +546,81 @@ export default function CategoriesPage() {
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.type === 'category' ? 'Delete Category' : 'Delete Sub-Category'}
-        message={`Are you sure you want to delete "${confirmDialog.target?.name}"?`}
+        message={`Are you sure you want to delete "${confirmDialog.target?.name}"? This action cannot be undone.`}
         onConfirm={confirmAction}
         onCancel={() => setConfirmDialog({ isOpen: false, target: null, type: '' })}
       />
+
+      {errorDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 p-6" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-error">block</span>
+              </div>
+              <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Cannot Delete</h3>
+              <p className="text-body-md text-on-surface-variant">{errorDialog.message}</p>
+            </div>
+            <button
+              onClick={() => setErrorDialog({ isOpen: false, message: '' })}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {auditTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 p-6" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-headline-md text-headline-md text-on-surface">
+                Audit Log: {auditTarget.name}
+              </h3>
+              <button onClick={() => setAuditTarget(null)} className="p-1.5 hover:bg-surface-container-high rounded-xl transition-colors">
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            </div>
+            {auditLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+                <span className="ml-2 text-on-surface-variant">Loading audit log...</span>
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="text-center py-8 text-on-surface-variant">
+                <span className="material-symbols-outlined text-3xl mb-2 block">receipt_long</span>
+                <p className="font-label-md">No audit entries yet for this category.</p>
+              </div>
+            ) : (
+              <div className="max-h-80 overflow-y-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/10">
+                      <th className="py-2 px-2 font-semibold">Action</th>
+                      <th className="py-2 px-2 font-semibold">Details</th>
+                      <th className="py-2 px-2 font-semibold">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.map((entry) => (
+                      <tr key={entry.id} className="border-b border-outline-variant/5">
+                        <td className="py-2 px-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold bg-primary/10 text-primary">
+                            {entry.action}
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 text-body-sm text-on-surface-variant">{entry.details}</td>
+                        <td className="py-2 px-2 text-body-sm text-on-surface-variant">{new Date(entry.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

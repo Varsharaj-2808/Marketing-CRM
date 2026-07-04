@@ -1,10 +1,10 @@
 ## Goal
-- Implement STORY-2.3.1 (Lead Assignment & Reassignment) frontend only, then separate Status (Won/Lost) from Stage (progress stages) in lead filters.
+- Implement STORY-2.3.1 (Lead Assignment & Reassignment) frontend only, then separate Status (Won/Lost) from Stage (progress stages) in lead filters, then implement EPIC-3-Story-1 (Category/Sub-Category Master CRUD).
 
 ## Constraints & Preferences
 - React (Vite), JSX, Tailwind CSS, React Router, raw `fetch`.
 - No backend, no database — Mockoon on `localhost:3001`, Vite proxy rewrites `/api` → `3001` stripping `/api`.
-- All existing features must remain intact; 138 existing tests must pass.
+- All existing features must remain intact; 244 existing tests must pass.
 
 ## Progress
 ### Done
@@ -27,6 +27,13 @@
   - `leadService.js` — all CRUD functions (lead sources, services, categories, sub-categories) wrapped in try/catch falling back to local objects on 502. `fetchLeadById`/`fetchAdminLeadById` accept optional `cacheBuster` param.
   - `LeadHistory.jsx` — pagination with Load More (5 initial, 5 per load).
   - **Tests** — 227 tests pass across LeadStageManagement (24), LeadDetailsPage (15), LeadAssignment, LeadListPage, and all unit tests.
+- **EPIC-3-Story-1 (Category/Sub-Category Master CRUD) implemented:**
+  - `mockData.js` — `isActive: true` added to all 5 categories and 17 sub-categories.
+  - `handlers.js` — Category/sub-category CRUD handlers support `isActive`; new GET endpoints for active-only fetch (`/categories/active`, `/sub-categories/active`), in-use check (`/categories/:id/in-use`), audit log (`/categories/:id/audit-log`); 409 conflict on in-use delete; audit log entries for CREATE/UPDATE/DEACTIVATE/ACTIVATE/DELETE.
+  - `leadService.js` — 7 new functions: `toggleCategoryStatus`, `toggleSubCategoryStatus`, `checkCategoryInUse`, `checkSubCategoryInUse`, `fetchActiveCategories`, `fetchActiveSubCategories`, `fetchCategoryAuditLog`.
+  - `CategoriesPage.jsx` — Full rewrite: table with Active/Inactive badges, Add/Edit/Deactivate/Activate/Delete/Audit buttons, expandable sub-category rows with same actions, modal forms with validation, ConfirmDialog for delete, in-use error dialog, audit log modal with loading/empty/data states, Toast notifications, skeleton loading.
+  - `CategoryDropdown.jsx`, `SubCategoryDropdown.jsx` — Filter to only `isActive !== false` items.
+  - **Tests** — 244 tests pass (16 files), including 15 integration tests (`CategoriesPage.test.jsx`) and 2 E2E tests (`categoryMasterFlow.test.jsx`).
 
 ## Key Decisions
 - **MSM removed** because service functions return fallback/mock data directly.
@@ -58,3 +65,9 @@
 - `src/components/leads/LeadTable.jsx`: updated STATUS_VARIANTS
 - `src/components/leads/SavedViewsPanel.jsx`: cleaned up saved views
 - `src/pages/leads/LeadDetails.jsx`, `src/pages/leads/LeadHistory.jsx`: updated STATUS_MAP
+- `src/pages/admin/CategoriesPage.jsx`: rewritten — full Category/Sub-Category CRUD
+- `src/components/leads/CategoryDropdown.jsx`: filters inactive items
+- `src/components/leads/SubCategoryDropdown.jsx`: filters inactive items
+- `src/tests/integration/CategoriesPage.test.jsx`: 15 new integration tests
+- `src/tests/e2e/categoryMasterFlow.test.jsx`: 2 new E2E tests
+- `implementation-summary.md`: complete implementation requirements mapping

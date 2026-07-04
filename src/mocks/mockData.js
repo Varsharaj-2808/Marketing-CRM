@@ -1,38 +1,38 @@
 export const MOCK_CATEGORIES = [
-  { id: 'cat-001', name: 'IT Services' },
-  { id: 'cat-002', name: 'Digital Marketing' },
-  { id: 'cat-003', name: 'Consulting' },
-  { id: 'cat-004', name: 'Real Estate' },
-  { id: 'cat-005', name: 'Healthcare' },
+  { id: 'cat-001', name: 'IT Services', isActive: true },
+  { id: 'cat-002', name: 'Digital Marketing', isActive: true },
+  { id: 'cat-003', name: 'Consulting', isActive: true },
+  { id: 'cat-004', name: 'Real Estate', isActive: true },
+  { id: 'cat-005', name: 'Healthcare', isActive: true },
 ];
 
 export const MOCK_SUB_CATEGORIES = {
   'cat-001': [
-    { id: 'sub-001', name: 'Web Development' },
-    { id: 'sub-002', name: 'Mobile App Development' },
-    { id: 'sub-003', name: 'Cloud Solutions' },
-    { id: 'sub-004', name: 'IT Support' },
+    { id: 'sub-001', name: 'Web Development', isActive: true },
+    { id: 'sub-002', name: 'Mobile App Development', isActive: true },
+    { id: 'sub-003', name: 'Cloud Solutions', isActive: true },
+    { id: 'sub-004', name: 'IT Support', isActive: true },
   ],
   'cat-002': [
-    { id: 'sub-005', name: 'SEO Services' },
-    { id: 'sub-006', name: 'Social Media Management' },
-    { id: 'sub-007', name: 'Email Marketing' },
-    { id: 'sub-008', name: 'Content Marketing' },
+    { id: 'sub-005', name: 'SEO Services', isActive: true },
+    { id: 'sub-006', name: 'Social Media Management', isActive: true },
+    { id: 'sub-007', name: 'Email Marketing', isActive: true },
+    { id: 'sub-008', name: 'Content Marketing', isActive: true },
   ],
   'cat-003': [
-    { id: 'sub-009', name: 'Business Strategy' },
-    { id: 'sub-010', name: 'Management Consulting' },
-    { id: 'sub-011', name: 'Financial Advisory' },
+    { id: 'sub-009', name: 'Business Strategy', isActive: true },
+    { id: 'sub-010', name: 'Management Consulting', isActive: true },
+    { id: 'sub-011', name: 'Financial Advisory', isActive: true },
   ],
   'cat-004': [
-    { id: 'sub-012', name: 'Residential' },
-    { id: 'sub-013', name: 'Commercial' },
-    { id: 'sub-014', name: 'Industrial' },
+    { id: 'sub-012', name: 'Residential', isActive: true },
+    { id: 'sub-013', name: 'Commercial', isActive: true },
+    { id: 'sub-014', name: 'Industrial', isActive: true },
   ],
   'cat-005': [
-    { id: 'sub-015', name: 'Medical Equipment' },
-    { id: 'sub-016', name: 'Pharmaceuticals' },
-    { id: 'sub-017', name: 'Healthcare Consulting' },
+    { id: 'sub-015', name: 'Medical Equipment', isActive: true },
+    { id: 'sub-016', name: 'Pharmaceuticals', isActive: true },
+    { id: 'sub-017', name: 'Healthcare Consulting', isActive: true },
   ],
 };
 

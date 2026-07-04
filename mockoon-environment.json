@@ -1,718 +1,27 @@
 {
-  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "name": "Marketing CRM API (STORY-2.3.1)",
-  "description": "Mockoon environment for Lead Assignment & Reassignment. All routes strip /api via Vite proxy → localhost:3001.",
-  "data": [],
+  "uuid": "b9fc4c9e-b13d-42bd-9b9a-e1edb6540b5a",
+  "lastMigration": 33,
+  "name": "Marketing CRM API v3.1",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3001,
+  "hostname": "",
+  "folders": [],
   "routes": [
     {
-      "uuid": "10000000-0000-4000-a000-000000000001",
+      "uuid": "09e70af3-b0a0-40a6-9a94-aef865ec52cd",
       "type": "http",
-      "documentation": "GET /admin/leads — Paginated list with search, status, stage, sort, date filters",
-      "method": "get",
-      "endpoint": "admin/leads",
-      "responses": [
-        {
-          "uuid": "20000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\"},{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"status\":\"\",\"stage\":\"Contacted\",\"priority\":\"Warm\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\"},{\"id\":\"lead-003\",\"leadId\":\"LD-2026-00003\",\"companyName\":\"MediCare Group\",\"contactPerson\":\"Dr. Raj Patel\",\"mobileNumber\":\"7654321098\",\"email\":\"raj@medicare.com\",\"status\":\"\",\"stage\":\"Negotiation\",\"priority\":\"Cold\",\"assignedTo\":\"EMP-00003\",\"assignedAt\":\"2026-06-13T08:00:00.000Z\",\"createdAt\":\"2026-06-13T08:00:00.000Z\",\"updatedAt\":\"2026-06-13T08:00:00.000Z\"},{\"id\":\"lead-004\",\"leadId\":\"LD-2026-00004\",\"companyName\":\"Acme Corp\",\"contactPerson\":\"John Smith\",\"mobileNumber\":\"9876543211\",\"email\":\"john@acme.com\",\"status\":\"\",\"stage\":\"Qualified\",\"priority\":\"High\",\"assignedTo\":null,\"assignedAt\":null,\"createdAt\":\"2026-06-12T07:00:00.000Z\",\"updatedAt\":\"2026-06-12T07:00:00.000Z\"},{\"id\":\"lead-005\",\"leadId\":\"LD-2026-00005\",\"companyName\":\"Globex Inc\",\"contactPerson\":\"Jane Doe\",\"mobileNumber\":\"9876543212\",\"email\":\"jane@globex.com\",\"status\":\"\",\"stage\":\"Proposal Sent\",\"priority\":\"Medium\",\"assignedTo\":null,\"assignedAt\":null,\"createdAt\":\"2026-06-11T06:00:00.000Z\",\"updatedAt\":\"2026-06-11T06:00:00.000Z\"}],\"pagination\":{\"page\":1,\"limit\":25,\"total\":5,\"totalPages\":1}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Lead list",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "20000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /admin/leads/:leadId — Single lead detail",
-      "method": "get",
-      "endpoint": "admin/leads/:leadId",
-      "responses": [
-        {
-          "uuid": "21000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"website\":\"https://techcorp.com\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"city\":\"Mumbai\",\"businessCategory\":\"IT Services\",\"businessSubCategory\":\"Web Development\",\"leadSource\":\"Website\",\"servicesInterested\":[\"Web Development\",\"Cloud Solutions\"],\"priority\":\"Hot\",\"estimatedValue\":500000,\"status\":\"\",\"stage\":\"New\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Lead detail",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "22000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
-          "latency": 0,
-          "statusCode": 404,
-          "label": "404 — Lead not found",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "23000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"website\":\"https://growthmark.com\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"city\":\"Delhi\",\"businessCategory\":\"Digital Marketing\",\"businessSubCategory\":\"SEO Services\",\"leadSource\":\"Referral\",\"servicesInterested\":[\"SEO Services\",\"Social Media Management\"],\"priority\":\"Warm\",\"estimatedValue\":200000,\"status\":\"\",\"stage\":\"New\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00002\",\"name\":\"John Executive\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"John Executive\",\"createdBy\":{\"id\":\"EMP-00002\",\"name\":\"John Executive\"},\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"timestamp\":\"2026-06-14T09:00:00.000Z\"}]}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Lead detail (lead-002)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "params",
-              "modifier": "leadId",
-              "value": "lead-002",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "30000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "PATCH /leads/:leadId/assign — Assign or reassign a lead to a user",
-      "method": "patch",
-      "endpoint": "leads/:leadId/assign",
-      "responses": [
-        {
-          "uuid": "31000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"message\":\"Lead assigned successfully\",\"data\":{\"assignedTo\":\"{{body 'assignedTo'}}\",\"assignedAt\":\"{{nowIso}}\",\"updatedAt\":\"{{nowIso}}\"}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Assign success (new assignment)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "32000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"message\":\"Lead reassigned successfully\",\"data\":{\"assignedTo\":\"{{body 'assignedTo'}}\",\"assignedAt\":\"{{nowIso}}\",\"updatedAt\":\"{{nowIso}}\"}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Reassign success (lead had owner)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "33000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
-          "latency": 0,
-          "statusCode": 404,
-          "label": "404 — Lead not found",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "34000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"AssignedTo field is required.\"}",
-          "latency": 0,
-          "statusCode": 400,
-          "label": "400 — Missing assignedTo",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "body",
-              "modifier": "assignedTo",
-              "value": "",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "40000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "POST /admin/leads/bulk-assign — Assign multiple leads to a user",
+      "documentation": "API-1 POST /admin/categories",
       "method": "post",
-      "endpoint": "admin/leads/bulk-assign",
+      "endpoint": "/admin/categories",
       "responses": [
         {
-          "uuid": "41000000-0000-4000-a000-000000000001",
-          "body": "{\"assigned\":true,\"count\":\"{{body 'leadIds' length}}\",\"message\":\"{{body 'leadIds' length}} lead(s) assigned successfully\"}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Bulk assign success",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "42000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"leadIds array is required.\"}",
-          "latency": 0,
-          "statusCode": 400,
-          "label": "400 — Missing leadIds",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "body",
-              "modifier": "leadIds",
-              "value": "",
-              "invert": false,
-              "operator": "null",
-              "regex": {}
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "50000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /marketing/leads/:leadId/lead-history — Paginated lead timeline (access-controlled)",
-      "method": "get",
-      "endpoint": "marketing/leads/:leadId/lead-history",
-      "responses": [
-        {
-          "uuid": "51000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"description\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — History (lead with no assignment events)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "52000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"action\":\"Lead Reassigned\",\"message\":\"Lead Reassigned\",\"description\":\"Lead reassigned from Alice Johnson to Bob Smith\",\"previousOwner\":\"Alice Johnson\",\"newOwner\":\"Bob Smith\",\"reason\":\"Workload rebalancing\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-07-01T12:00:00.000Z\",\"timestamp\":\"2026-07-01T12:00:00.000Z\"},{\"action\":\"Lead Assigned\",\"message\":\"Lead Assigned\",\"description\":\"Lead assigned to Alice Johnson\",\"previousOwner\":null,\"newOwner\":\"Alice Johnson\",\"reason\":\"\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"},{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — History with assignment events",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "53000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Access Denied\"}",
-          "latency": 0,
-          "statusCode": 403,
-          "label": "403 — Access Denied (non-admin, not assigned)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "54000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
-          "latency": 0,
-          "statusCode": 404,
-          "label": "404 — Lead not found",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "60000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /lead-history/:leadId — Alternative lead-history endpoint",
-      "method": "get",
-      "endpoint": "lead-history/:leadId",
-      "responses": [
-        {
-          "uuid": "61000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — History",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "62000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Lead not found.\"}",
-          "latency": 0,
-          "statusCode": 404,
-          "label": "404 — Lead not found",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "70000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /marketing/leads — Marketing executive lead list",
-      "method": "get",
-      "endpoint": "marketing/leads",
-      "responses": [
-        {
-          "uuid": "71000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\"},{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Warm\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\"}],\"pagination\":{\"page\":1,\"limit\":25,\"total\":2,\"totalPages\":1}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — My Leads list",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "80000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /marketing/leads/:leadId — Single lead for marketing executive",
-      "method": "get",
-      "endpoint": "marketing/leads/:leadId",
-      "responses": [
-        {
-          "uuid": "81000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"id\":\"lead-001\",\"leadId\":\"LD-2026-00001\",\"companyName\":\"TechCorp Solutions\",\"contactPerson\":\"Alice Johnson\",\"mobileNumber\":\"9876543210\",\"email\":\"alice@techcorp.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Hot\",\"assignedTo\":\"EMP-00001\",\"assignedAt\":\"2026-06-15T10:00:00.000Z\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"updatedAt\":\"2026-06-15T10:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdAt\":\"2026-06-15T10:00:00.000Z\",\"timestamp\":\"2026-06-15T10:00:00.000Z\"}]}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Lead detail",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "82000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Access Denied\"}",
-          "latency": 0,
-          "statusCode": 403,
-          "label": "403 — Access Denied",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "83000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"id\":\"lead-002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"status\":\"\",\"stage\":\"New\",\"priority\":\"Warm\",\"assignedTo\":\"EMP-00002\",\"assignedAt\":\"2026-06-14T09:00:00.000Z\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"updatedAt\":\"2026-06-14T09:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00002\",\"name\":\"John Executive\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"John Executive\",\"createdAt\":\"2026-06-14T09:00:00.000Z\",\"timestamp\":\"2026-06-14T09:00:00.000Z\"}]}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Lead detail (lead-002)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "params",
-              "modifier": "leadId",
-              "value": "lead-002",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "90000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /admin/users — List users for assign modal",
-      "method": "get",
-      "endpoint": "admin/users",
-      "responses": [
-        {
-          "uuid": "91000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"EMP-00001\",\"employee_id\":\"EMP-00001\",\"name\":\"Admin User\",\"email\":\"admin@company.com\",\"role\":\"Admin\",\"status\":\"active\"},{\"id\":\"EMP-00002\",\"employee_id\":\"EMP-00002\",\"name\":\"John Executive\",\"email\":\"john@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00003\",\"employee_id\":\"EMP-00003\",\"name\":\"Sarah Manager\",\"email\":\"sarah@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00004\",\"employee_id\":\"EMP-00004\",\"name\":\"Ravi Executive\",\"email\":\"ravi@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00005\",\"employee_id\":\"EMP-00005\",\"name\":\"Maya Executive\",\"email\":\"maya@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"}]}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — All users",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "92000000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"EMP-00002\",\"employee_id\":\"EMP-00002\",\"name\":\"John Executive\",\"email\":\"john@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00003\",\"employee_id\":\"EMP-00003\",\"name\":\"Sarah Manager\",\"email\":\"sarah@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00004\",\"employee_id\":\"EMP-00004\",\"name\":\"Ravi Executive\",\"email\":\"ravi@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"},{\"id\":\"EMP-00005\",\"employee_id\":\"EMP-00005\",\"name\":\"Maya Executive\",\"email\":\"maya@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"}]}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Marketing Executives only (?role=Marketing Executive)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "query",
-              "modifier": "role",
-              "value": "Marketing Executive",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "10000000-0000-4000-a000-00000000000a",
-      "type": "http",
-      "documentation": "POST /marketing/leads — Create a new lead",
-      "method": "post",
-      "endpoint": "marketing/leads",
-      "responses": [
-        {
-          "uuid": "10100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"id\":\"lead-{{now}}\",\"leadId\":\"LD-2026-{{now}}\",\"stage\":\"New\",\"status\":\"\",\"createdAt\":\"{{nowIso}}\",\"updatedAt\":\"{{nowIso}}\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"timeline\":[{\"action\":\"Lead Created\",\"message\":\"Lead Created\",\"user\":\"Admin User\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"},\"createdAt\":\"{{nowIso}}\",\"timestamp\":\"{{nowIso}}\"}]},\"message\":\"Lead created successfully.\"}",
+          "uuid": "bad8fece-c781-45c1-8a3c-3318da0715e6",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Category created successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"category_name\": \"carpentry\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T01:18:07.613Z\",\n    \"updated_at\": \"2026-07-03T01:18:07.613Z\"\n  }\n}",
           "latency": 0,
           "statusCode": 201,
-          "label": "201 — Created",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - Category Created",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -722,34 +31,66 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8207665a-491b-4b03-a5c6-ec8666b7f63e",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Category name already exists\",\n  \"body\": {\n    \"error\": \"A category named 'IT Services' already exists\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Category Name",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1d1c6bae-d39c-49e4-8524-83b8e790e29f",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Only Admin can create categories\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Failed - Unauthorized (Non-Admin)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "11000000-0000-4000-a000-000000000001",
+      "uuid": "d8ee0755-a057-4b76-973a-fb43f01404fb",
       "type": "http",
-      "documentation": "GET /notifications — Notification list including assignment notifications",
+      "documentation": "API-2 GET /admin/categories",
       "method": "get",
-      "endpoint": "notifications",
+      "endpoint": "/admin/categories",
       "responses": [
         {
-          "uuid": "11100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"notif-001\",\"type\":\"assignment\",\"message\":\"Lead LD-2026-00001 has been assigned to John Executive\",\"leadId\":\"lead-001\",\"read\":false,\"role\":\"Admin\",\"createdAt\":\"2026-07-01T11:00:00.000Z\",\"timestamp\":\"2026-07-01T11:00:00.000Z\"},{\"id\":\"notif-002\",\"type\":\"assignment\",\"message\":\"Lead LD-2026-00002 has been reassigned to Sarah Manager\",\"leadId\":\"lead-002\",\"read\":false,\"role\":\"Admin\",\"createdAt\":\"2026-07-01T10:00:00.000Z\",\"timestamp\":\"2026-07-01T10:00:00.000Z\"},{\"id\":\"notif-003\",\"type\":\"assignment\",\"message\":\"Lead LD-2026-00003 has been assigned to John Executive\",\"leadId\":\"lead-003\",\"read\":true,\"role\":\"Admin\",\"createdAt\":\"2026-06-30T10:00:00.000Z\",\"timestamp\":\"2026-06-30T10:00:00.000Z\"}]}",
+          "uuid": "0bd5b6c7-763e-45f5-8289-e6727d14212a",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Categories fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 9,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n        \"category_name\": \"carpentry\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 0\n      },\n      {\n        \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n        \"category_name\": \"Consulting\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 3\n      },\n      {\n        \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n        \"category_name\": \"Digital Marketing\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 4\n      },\n      {\n        \"id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\n        \"category_name\": \"Education & Training\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 2\n      },\n      {\n        \"id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\n        \"category_name\": \"Healthcare\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 3\n      },\n      {\n        \"id\": \"1239b5ff-5995-4563-b173-3f68e16f0971\",\n        \"category_name\": \"IT Servi\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 0\n      },\n      {\n        \"id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"category_name\": \"IT Services\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 6\n      },\n      {\n        \"id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n        \"category_name\": \"Manufacturing\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 3\n      },\n      {\n        \"id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\n        \"category_name\": \"Real Estate\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 2\n      }\n    ]\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Notifications with assignment entries",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - List All Categories",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -759,34 +100,185 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "9e4444bf-2afc-4a10-96b3-921c825552d8",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Categories fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 1,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n        \"category_name\": \"carpentry\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 0\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Search by Name",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "add0d8e1-1a32-4ef7-9d53-ca3e3e449ef5",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Required role(s): Admin\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Failed - Unauthenticated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "12000000-0000-4000-a000-000000000001",
+      "uuid": "19b0b042-d4da-486f-891a-33fc2a3fa491",
       "type": "http",
-      "documentation": "PATCH /notifications/:id/read — Mark a notification as read",
+      "documentation": "API-3 GET /admin/categories/:id",
+      "method": "get",
+      "endpoint": "/admin/categories/:id",
+      "responses": [
+        {
+          "uuid": "10585128-e83c-4609-8feb-7a3eb614ad53",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category fetched successfully\",\n  \"body\": {\n    \"id\": \"1239b5ff-5995-4563-b173-3f68e16f0971\",\n    \"category_name\": \"IT Servi\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T00:53:17.938Z\",\n    \"updated_at\": \"2026-07-03T00:53:17.938Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Category Retrieved",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ae9baf7c-4926-42d3-8160-14192d0f9b5b",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "e906e363-4a10-478c-8079-6bd232aac17d",
+      "type": "http",
+      "documentation": "API-4 PUT /admin/categories/:id",
+      "method": "put",
+      "endpoint": "/admin/categories/:id",
+      "responses": [
+        {
+          "uuid": "fc3f8981-ddcb-4945-a2bd-35a8ef8afe43",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category updated successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"category_name\": \"carpenter\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T01:18:07.613Z\",\n    \"updated_at\": \"2026-07-03T01:49:34.940Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Category Updated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "129ceb13-994e-4559-a49e-693a29c04a2e",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f0e469e6-f159-4e00-ba28-c97db48d6158",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Category name already exists\",\n  \"body\": {\n    \"error\": \"A category named 'IT Services' already exists\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Name on Update",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "872c8a9b-9e9b-4043-9845-44c2c35d4812",
+      "type": "http",
+      "documentation": "API-5 PATCH /admin/categories/:id/status",
       "method": "patch",
-      "endpoint": "notifications/:id/read",
+      "endpoint": "/admin/categories/:id/status",
       "responses": [
         {
-          "uuid": "12100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"message\":\"Notification marked as read.\"}",
+          "uuid": "808e9f8d-9313-41ea-81a7-0e5634916067",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category deactivated successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"category_name\": \"carpenter\",\n    \"status\": \"Inactive\",\n    \"created_at\": \"2026-07-03T01:18:07.613Z\",\n    \"updated_at\": \"2026-07-03T01:56:07.552Z\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Marked as read",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - Category Deactivated",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -796,34 +288,66 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e662c93e-4c2e-4332-9866-239f5a8316bd",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e2d258d2-c756-42f8-aa3b-f149566bdda4",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Category is already Active\",\n  \"body\": {\n    \"error\": \"Requested status matches current status\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Failed - Status Unchanged",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "13000000-0000-4000-a000-000000000001",
+      "uuid": "c3a38d16-4203-4ab2-8e8b-6e7f9cc922c5",
       "type": "http",
-      "documentation": "GET /admin/categories — List business categories",
-      "method": "get",
-      "endpoint": "admin/categories",
+      "documentation": "API-6 DELETE /admin/categories/:id",
+      "method": "delete",
+      "endpoint": "/admin/categories/:id",
       "responses": [
         {
-          "uuid": "13100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"cat-001\",\"name\":\"IT Services\"},{\"id\":\"cat-002\",\"name\":\"Digital Marketing\"},{\"id\":\"cat-003\",\"name\":\"Consulting\"},{\"id\":\"cat-004\",\"name\":\"Real Estate\"},{\"id\":\"cat-005\",\"name\":\"Healthcare\"}]}",
+          "uuid": "12c1a99d-068c-40de-8cf0-32525acd26a4",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category deleted successfully\",\n  \"body\": {\n    \"id\": \"b2c96173-c002-3f9f-9430-a7337ea7a790\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Categories",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - Category Deleted (Unused)",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -833,34 +357,16 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
           "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "14000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "GET /admin/categories/:categoryId/sub-categories",
-      "method": "get",
-      "endpoint": "admin/categories/:categoryId/sub-categories",
-      "responses": [
+        },
         {
-          "uuid": "14100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":[{\"id\":\"sub-001\",\"name\":\"Web Development\"},{\"id\":\"sub-002\",\"name\":\"Mobile App Development\"},{\"id\":\"sub-003\",\"name\":\"Cloud Solutions\"}]}",
+          "uuid": "827d63c3-f544-452a-8161-90929f4da93a",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Category is in use and cannot be deleted\",\n  \"body\": {\n    \"error\": \"Category is linked to 3 Sub-Categories / active leads. Deactivate instead.\",\n    \"inUse\": true\n  }\n}",
           "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Sub-categories (default: IT Services)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "statusCode": 409,
+          "label": "Failed - Category In Use (Blocked)",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -869,35 +375,48 @@
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ed00ab0d-45df-4f11-b739-fce7e76c0aef",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "15000000-0000-4000-a000-000000000001",
+      "uuid": "72296c13-3a48-4b93-89c4-2040c99feb30",
       "type": "http",
-      "documentation": "POST /marketing/leads/check-duplicate",
+      "documentation": "API-7 POST /admin/subcategories",
       "method": "post",
-      "endpoint": "marketing/leads/check-duplicate",
+      "endpoint": "/admin/subcategories",
       "responses": [
         {
-          "uuid": "15100000-0000-4000-a000-000000000001",
-          "body": "{\"duplicate\":false,\"exists\":false}",
+          "uuid": "56444a5c-af07-4b6b-879e-37756fa1244e",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Sub-Category created successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"name\": \"Web Development\",\n    \"parentCategoryId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"parentCategoryName\": \"IT Services\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T10:10:00Z\"\n  }\n}",
           "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Mobile is unique",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "statusCode": 201,
+          "label": "Positive - Sub-Category Created",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -907,194 +426,104 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
           "callbacks": []
         },
         {
-          "uuid": "15200000-0000-4000-a000-000000000001",
-          "body": "{\"duplicate\":true,\"exists\":true,\"leadId\":\"LD-2026-00001\",\"data\":{\"duplicate\":true,\"leadId\":\"LD-2026-00001\",\"id\":\"lead-001\"},\"message\":\"A lead with this mobile number already exists.\"}",
+          "uuid": "8b204d43-77ec-4ad8-8afa-b35063e465a9",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Parent Category not found\",\n  \"body\": {\n    \"error\": \"Parent Category not found or inactive\"\n  }\n}",
           "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Duplicate found (mobile: 9876543210)",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "statusCode": 404,
+          "label": "Failed - Parent Category Not Found",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
           "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "body",
-              "modifier": "mobileNumber",
-              "value": "9876543210",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
+          "rules": [],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b2a10787-359d-4050-b13f-d0e34c4bbb22",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Sub-Category already exists under this Category\",\n  \"body\": {\n    \"error\": \"'Web Development' already exists under 'IT Services'\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Name Under Same Parent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "eb0cad40-097c-4041-97e5-cc36dc51745e",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Parent Category is required\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Failed - Missing Mandatory Fields",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "16000000-0000-4000-a000-000000000001",
+      "uuid": "de416213-f4cb-420a-887f-d1ff6f16f336",
       "type": "http",
-      "documentation": "POST /auth/login — Login endpoint",
-      "method": "post",
-      "endpoint": "auth/login",
+      "documentation": "API-8 GET /admin/subcategories",
+      "method": "get",
+      "endpoint": "/admin/subcategories",
       "responses": [
         {
-          "uuid": "16100000-0000-4000-a000-000000000002",
-          "body": "{\"success\":true,\"data\":{\"token\":\"mock-jwt-token-{{now}}\",\"refreshToken\":\"mock-refresh-token\",\"user\":{\"id\":\"EMP-00002\",\"employee_id\":\"EMP-00002\",\"name\":\"John Executive\",\"email\":\"executive@company.com\",\"role\":\"Marketing Executive\",\"status\":\"active\"}}}",
+          "uuid": "366f6720-f795-4fa7-b767-b854cf47d6a5",
+          "body": "",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Executive login success",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - List Filtered By Parent",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
           "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "body",
-              "modifier": "email",
-              "value": "executive@company.com",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
+          "rules": [],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
+          "default": true,
+          "crudKey": "id",
           "callbacks": []
         },
         {
-          "uuid": "16100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"token\":\"mock-jwt-token-{{now}}\",\"refreshToken\":\"mock-refresh-token\",\"user\":{\"id\":\"ADM-001\",\"employee_id\":\"ADM-001\",\"name\":\"Admin User\",\"email\":\"admin@company.com\",\"role\":\"Admin\",\"status\":\"active\"}}}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Admin login success",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "body",
-              "modifier": "email",
-              "value": "admin@company.com",
-              "invert": false,
-              "operator": "equals",
-              "regex": {}
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "16300000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Invalid credentials.\"}",
+          "uuid": "bc509bab-560a-4d51-93f2-09d0db604737",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 401,\n  \"message\": \"Authentication required\",\n  \"body\": {\n    \"error\": \"Invalid token\"\n  }\n}",
           "latency": 0,
           "statusCode": 401,
-          "label": "401 — Invalid credentials",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        }
-      ],
-      "enabled": true,
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
-    },
-    {
-      "uuid": "17000000-0000-4000-a000-000000000001",
-      "type": "http",
-      "documentation": "PUT /marketing/leads/:id/status — Update lead stage",
-      "method": "put",
-      "endpoint": "marketing/leads/:id/status",
-      "responses": [
-        {
-          "uuid": "17100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"stage\":\"{{body 'stage'}}\",\"updatedAt\":\"{{nowIso}}\"},\"message\":\"Stage updated successfully.\"}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "200 — Stage updated",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "none",
-          "callbacks": []
-        },
-        {
-          "uuid": "17200000-0000-4000-a000-000000000001",
-          "body": "{\"success\":false,\"message\":\"Invalid stage transition. Allowed transitions from [current stage]: [list]\"}",
-          "latency": 0,
-          "statusCode": 422,
-          "label": "422 — Invalid transition",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Failed - Unauthenticated",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -1104,34 +533,28 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
-          "crudKey": "none",
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "18000000-0000-4000-a000-000000000001",
+      "uuid": "27d931b8-6e5b-4ae3-9098-be611763815b",
       "type": "http",
-      "documentation": "POST /marketing/leads/:id/close — Close lead as Won or Lost",
-      "method": "post",
-      "endpoint": "marketing/leads/:id/close",
+      "documentation": "API-9 GET /admin/subcategories/:id",
+      "method": "get",
+      "endpoint": "/admin/subcategories/:id",
       "responses": [
         {
-          "uuid": "18100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"status\":\"{{body 'status'}}\",\"stage\":\"Closed\",\"updatedAt\":\"{{nowIso}}\"},\"message\":\"Lead closed successfully.\"}",
+          "uuid": "90007341-51d8-47c5-aaae-69cd062ff4b1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category fetched successfully\",\n  \"body\": {\n    \"id\": \"17d2912d-35fb-4d84-8d8e-14b858eba27b\",\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category_name\": \"DevOps\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-06-30T03:34:04.213Z\",\n    \"updated_at\": \"2026-06-30T03:34:04.213Z\",\n    \"category_name\": \"IT Services\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Lead closed",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - Sub-Category Retrieved",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -1141,34 +564,47 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1e8e68ae-21a3-4c18-8fbe-c0325824e775",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "19000000-0000-4000-a000-000000000001",
+      "uuid": "34febf83-02f9-4da8-88e1-a45a4af33bea",
       "type": "http",
-      "documentation": "POST /admin/leads/:id/reopen — Admin reopen a closed lead",
-      "method": "post",
-      "endpoint": "admin/leads/:id/reopen",
+      "documentation": "API-10 PUT /admin/subcategories/:id",
+      "method": "put",
+      "endpoint": "/admin/subcategories/:id",
       "responses": [
         {
-          "uuid": "19100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"data\":{\"status\":\"\",\"stage\":\"Contacted\",\"updatedAt\":\"{{nowIso}}\"},\"message\":\"Lead reopened successfully.\"}",
+          "uuid": "538736f1-7772-4847-80b7-c4ba2dc3fc44",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category updated successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"name\": \"Web & E-commerce Development\",\n    \"status\": \"Active\",\n    \"updated_at\": \"2026-07-03T10:15:00Z\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Lead reopened",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - Sub-Category Updated",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -1178,34 +614,66 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "567922e2-8ccc-402a-833f-a90e9a2f2254",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e52f2a42-1562-4be3-88b9-ba27848555d3",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Duplicate Sub-Category name under same parent\",\n  \"body\": {\n    \"error\": \"A sub-category named 'IT Strategy' already exists under this parent category\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Name Within Same Parent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
     },
     {
-      "uuid": "1a000000-0000-4000-a000-000000000001",
+      "uuid": "c843a715-8640-40a3-9fe3-315545e34c98",
       "type": "http",
-      "documentation": "PATCH /leads/:leadId/assign — Assign/reassign a lead to a user",
+      "documentation": "API-11 PATCH /admin/subcategories/:id/status",
       "method": "patch",
-      "endpoint": "leads/:leadId/assign",
+      "endpoint": "/admin/subcategories/:id/status",
       "responses": [
         {
-          "uuid": "1a100000-0000-4000-a000-000000000001",
-          "body": "{\"success\":true,\"message\":\"Lead assigned successfully\"}",
+          "uuid": "302def78-dccc-4301-a0b9-9457b1f7fc4a",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category deactivated successfully\",\n  \"body\": {\n    \"id\": \"f5a587a0-0151-4f98-9ff1-07edcfd004dc\",\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category_name\": \"IT Strategy\",\n    \"status\": \"Inactive\",\n    \"created_at\": \"2026-07-03T02:21:08.230Z\",\n    \"updated_at\": \"2026-07-03T02:43:21.326Z\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "200 — Assigned",
-          "headers": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
+          "label": "Positive - Sub-Category Deactivated",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
@@ -1215,164 +683,391 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
-          "crudKey": "none",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "462110ce-6d4f-4c40-af53-701ace230f39",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
           "callbacks": []
         }
       ],
-      "enabled": true,
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
-    }
-  ],
-  "folders": [
-    {
-      "uuid": "f0010000-0000-4000-a000-000000000001",
-      "name": "Leads",
-      "children": [
-        {
-          "type": "route",
-          "uuid": "10000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "20000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "30000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "40000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "50000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "60000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "70000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "80000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "17000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "18000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "19000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "1a000000-0000-4000-a000-000000000001"
-        }
-      ]
     },
     {
-      "uuid": "f0020000-0000-4000-a000-000000000002",
-      "name": "Users & Auth",
-      "children": [
+      "uuid": "e2db3300-c690-4a33-9efb-113ec27d1c10",
+      "type": "http",
+      "documentation": "API-12 DELETE /admin/subcategories/:id",
+      "method": "delete",
+      "endpoint": "/admin/subcategories/:id",
+      "responses": [
         {
-          "type": "route",
-          "uuid": "90000000-0000-4000-a000-000000000001"
+          "uuid": "737c0397-75a3-4b60-8a96-013faa30969b",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category deleted successfully\",\n  \"body\": {\n    \"id\": \"c3d07284-d113-4a00-a541-b8448fb8b802\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Sub-Category Deleted (Unused)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         },
         {
-          "type": "route",
-          "uuid": "16000000-0000-4000-a000-000000000001"
+          "uuid": "ba39ecbf-4aa6-4514-a363-c0ef94386c33",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Sub-Category is in use and cannot be deleted\",\n  \"body\": {\n    \"error\": \"Sub-Category is linked to active leads. Deactivate instead.\",\n    \"inUse\": true\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Sub-Category In Use (Blocked)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "be9892bc-4845-4a6a-bccd-8b99c93a9eb6",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
         }
-      ]
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     },
     {
-      "uuid": "f0030000-0000-4000-a000-000000000003",
-      "name": "Notifications",
-      "children": [
+      "uuid": "c8aedac7-2ca7-4d33-80db-d61ed82adaa7",
+      "type": "http",
+      "documentation": "API-13 GET /admin/categories/active",
+      "method": "get",
+      "endpoint": "/admin/categories/active",
+      "responses": [
         {
-          "type": "route",
-          "uuid": "11000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "12000000-0000-4000-a000-000000000001"
+          "uuid": "f822e855-dd79-4c81-ac02-a26a4b925351",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active categories fetched successfully\",\n  \"body\": {\n    \"data\": [\n      {\n        \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n        \"category_name\": \"Consulting\"\n      },\n      {\n        \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n        \"category_name\": \"Digital Marketing\"\n      },\n      {\n        \"id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\n        \"category_name\": \"Education & Training\"\n      },\n      {\n        \"id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\n        \"category_name\": \"Healthcare\"\n      },\n      {\n        \"id\": \"1239b5ff-5995-4563-b173-3f68e16f0971\",\n        \"category_name\": \"IT Servi\"\n      },\n      {\n        \"id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"category_name\": \"IT Services\"\n      },\n      {\n        \"id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n        \"category_name\": \"Manufacturing\"\n      },\n      {\n        \"id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\n        \"category_name\": \"Real Estate\"\n      }\n    ],\n    \"count\": 8\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Active Categories for Dropdown",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
-      ]
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     },
     {
-      "uuid": "f0040000-0000-4000-a000-000000000004",
-      "name": "Categories & Create Lead",
-      "children": [
+      "uuid": "cfded449-5e62-4cab-bbf0-84323e04fc43",
+      "type": "http",
+      "documentation": "API-14 GET /subcategories/active",
+      "method": "get",
+      "endpoint": "/subcategories/active",
+      "responses": [
         {
-          "type": "route",
-          "uuid": "10000000-0000-4000-a000-00000000000a"
+          "uuid": "f74473c3-6706-4369-98f4-e671df510929",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active sub-categories fetched successfully\",\n  \"body\": {\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"data\": [\n      {\n        \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n        \"name\": \"Web & E-commerce Development\"\n      }\n    ],\n    \"count\": 1\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Active Sub-Categories for Selected Category",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         },
         {
-          "type": "route",
-          "uuid": "13000000-0000-4000-a000-000000000001"
+          "uuid": "8740a793-9468-472d-916d-f882f98d5a57",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active sub-categories fetched successfully\",\n  \"body\": {\n    \"category_id\": \"b2c96173-c002-3f9f-9430-a7337ea7a790\",\n    \"data\": [],\n    \"count\": 0\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - No Sub-Categories for Category",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
         },
         {
-          "type": "route",
-          "uuid": "14000000-0000-4000-a000-000000000001"
-        },
-        {
-          "type": "route",
-          "uuid": "15000000-0000-4000-a000-000000000001"
+          "uuid": "59f2df2a-f537-4943-a1c7-489cf65e0883",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"errors\": {\n      \"categoryId\": \"A valid categoryId is required\"\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Failed - Missing/Invalid categoryId",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
         }
-      ]
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "42c934cc-60e5-457e-8c79-5e7fbdd1a3b4",
+      "type": "http",
+      "documentation": "API-15 POST /admin/categories/seed-defaults",
+      "method": "post",
+      "endpoint": "/admin/categories/seed-defaults",
+      "responses": [
+        {
+          "uuid": "d371fbb1-6172-4a32-a9a2-31ad1b0819c1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Default taxonomy seeded\",\n  \"body\": {\n    \"categoriesCreated\": 8,\n    \"subCategoriesCreated\": 34,\n    \"skippedExisting\": 2\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Default Taxonomy Seeded",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8066c2d9-c8aa-4f7f-b0ca-de99ba181b31",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Default taxonomy already seeded\",\n  \"body\": {\n    \"error\": \"System default categories have already been loaded\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Already Seeded",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "fe13cf6d-bd8c-4606-984d-9295f6703346",
+      "type": "http",
+      "documentation": "API-16 GET /admin/categories/audit-log",
+      "method": "get",
+      "endpoint": "/admin/categories/audit-log",
+      "responses": [
+        {
+          "uuid": "850a6a47-08d1-472d-ab07-e1195fecd4ca",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Audit log fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 2,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"h7i51828-h558-8e44-f985-g2882ifc2f35\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT Services\",\n        \"action\": \"CREATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"timestamp\": \"2026-07-03T10:00:00Z\"\n      },\n      {\n        \"id\": \"i8j62939-i669-9f55-g096-h3993jgd3g46\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT & Technology Services\",\n        \"action\": \"UPDATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"changes\": {\n          \"name\": {\n            \"old\": \"IT Services\",\n            \"new\": \"IT & Technology Services\"\n          }\n        },\n        \"timestamp\": \"2026-07-03T10:05:00Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Audit Trail Retrieved",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "29f1fb84-cea8-40b9-9336-935096e63ed1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Audit log fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 0,\n    \"limit\": 20,\n    \"data\": []\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - No Entries For Filter",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b15b0e86-f747-4665-8427-b486501d106c",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Only Admin can view the audit log\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Failed - Unauthorized (Non-Admin)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
   "rootChildren": [
     {
-      "type": "folder",
-      "uuid": "f0010000-0000-4000-a000-000000000001"
+      "type": "route",
+      "uuid": "09e70af3-b0a0-40a6-9a94-aef865ec52cd"
     },
     {
-      "type": "folder",
-      "uuid": "f0020000-0000-4000-a000-000000000002"
+      "type": "route",
+      "uuid": "d8ee0755-a057-4b76-973a-fb43f01404fb"
     },
     {
-      "type": "folder",
-      "uuid": "f0030000-0000-4000-a000-000000000003"
+      "type": "route",
+      "uuid": "19b0b042-d4da-486f-891a-33fc2a3fa491"
     },
     {
-      "type": "folder",
-      "uuid": "f0040000-0000-4000-a000-000000000004"
+      "type": "route",
+      "uuid": "e906e363-4a10-478c-8079-6bd232aac17d"
+    },
+    {
+      "type": "route",
+      "uuid": "872c8a9b-9e9b-4043-9845-44c2c35d4812"
+    },
+    {
+      "type": "route",
+      "uuid": "c3a38d16-4203-4ab2-8e8b-6e7f9cc922c5"
+    },
+    {
+      "type": "route",
+      "uuid": "72296c13-3a48-4b93-89c4-2040c99feb30"
+    },
+    {
+      "type": "route",
+      "uuid": "de416213-f4cb-420a-887f-d1ff6f16f336"
+    },
+    {
+      "type": "route",
+      "uuid": "27d931b8-6e5b-4ae3-9098-be611763815b"
+    },
+    {
+      "type": "route",
+      "uuid": "34febf83-02f9-4da8-88e1-a45a4af33bea"
+    },
+    {
+      "type": "route",
+      "uuid": "c843a715-8640-40a3-9fe3-315545e34c98"
+    },
+    {
+      "type": "route",
+      "uuid": "e2db3300-c690-4a33-9efb-113ec27d1c10"
+    },
+    {
+      "type": "route",
+      "uuid": "c8aedac7-2ca7-4d33-80db-d61ed82adaa7"
+    },
+    {
+      "type": "route",
+      "uuid": "cfded449-5e62-4cab-bbf0-84323e04fc43"
+    },
+    {
+      "type": "route",
+      "uuid": "42c934cc-60e5-457e-8c79-5e7fbdd1a3b4"
+    },
+    {
+      "type": "route",
+      "uuid": "fe13cf6d-bd8c-4606-984d-9295f6703346"
     }
   ],
-  "headers": [
-    {
-      "key": "Access-Control-Allow-Origin",
-      "value": "*"
-    },
-    {
-      "key": "Access-Control-Allow-Methods",
-      "value": "GET, POST, PATCH, PUT, DELETE, OPTIONS"
-    },
-    {
-      "key": "Access-Control-Allow-Headers",
-      "value": "Content-Type, Authorization"
-    }
-  ],
-  "port": 3001,
-  "endpointPrefix": "",
-  "latency": 0,
-  "cors": true,
-  "https": false,
   "proxyMode": false,
   "proxyHost": "",
   "proxyRemovePrefix": false,
-  "rules": [],
-  "rulesOperator": "OR",
   "tlsOptions": {
     "enabled": false,
     "type": "CERT",
@@ -1382,9 +1077,37 @@
     "caPath": "",
     "passphrase": ""
   },
-  "hostname": "0.0.0.0",
-  "proxyReqHeaders": [],
-  "proxyResHeaders": [],
-  "callbacks": [],
-  "lastMigration": 28
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "callbacks": []
 }
