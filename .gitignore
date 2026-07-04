@@ -29,6 +29,9 @@ build/
 backend/src/uploads/*
 !backend/src/uploads/.gitkeep
 
+# Exports
+backend/exports/
+
 # OS
 .DS_Store
 Thumbs.db

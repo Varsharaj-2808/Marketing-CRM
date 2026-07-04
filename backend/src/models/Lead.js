@@ -68,7 +68,7 @@ const Lead = {
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, category, sub_category, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, priority, stage, category, sub_category, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
 
     const conditions = [];
     const values = [];
@@ -94,7 +94,7 @@ const Lead = {
     }
 
     if (priority) {
-      conditions.push(`l.priority = $${idx++}`);
+      conditions.push(`l.priority ILIKE $${idx++}`);
       values.push(priority);
     }
 
@@ -111,6 +111,16 @@ const Lead = {
     if (sub_category) {
       conditions.push(`l.sub_category = $${idx++}`);
       values.push(sub_category);
+    }
+
+    if (from_date) {
+      conditions.push(`l.created_at >= $${idx++}`);
+      values.push(from_date);
+    }
+
+    if (to_date) {
+      conditions.push(`l.created_at <= $${idx++}`);
+      values.push(to_date);
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -158,7 +168,7 @@ const Lead = {
   },
   async findAllAdmin(filters = {}) {
     const {
-      search, status, priority, stage, source, category, assigned_to, sortBy, sortOrder,
+      search, status, priority, stage, source, category, sub_category, assigned_to, sortBy, sortOrder,
       page = 1, limit = 25, from_date, to_date,
     } = filters;
 
@@ -186,7 +196,7 @@ const Lead = {
     }
 
     if (priority) {
-      conditions.push(`l.priority = $${idx++}`);
+      conditions.push(`l.priority ILIKE $${idx++}`);
       values.push(priority);
     }
 
@@ -203,6 +213,11 @@ const Lead = {
     if (category) {
       conditions.push(`l.category = $${idx++}`);
       values.push(category);
+    }
+
+    if (sub_category) {
+      conditions.push(`l.sub_category = $${idx++}`);
+      values.push(sub_category);
     }
 
     if (assigned_to) {

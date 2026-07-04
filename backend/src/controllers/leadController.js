@@ -1,6 +1,8 @@
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const AuditLog = require('../models/AuditLog');
+const { query } = require('../config/db');
+const PDFDocument = require('pdfkit');
 
 const VALID_PRIORITIES = ['Hot', 'Warm', 'Cold'];
 
@@ -123,19 +125,36 @@ exports.getLead = async (req, res, next) => {
 
 exports.getLeads = async (req, res, next) => {
   try {
-    const { search, priority, stage, category, sub_category, sortBy, sortOrder, page, limit } = req.query;
+    const {
+      search, priority, stage, category, sub_category,
+      category_id, sub_category_id, quality, status,
+      from, to, from_date, to_date,
+      sortBy, sort_by, sortOrder, sort_order, page, limit,
+    } = req.query;
     const isAdmin = req.user.role === 'Admin';
+
+    const resolvedSearch = (search || '').trim() || undefined;
+    const resolvedPriority = (priority || quality || '').trim() || undefined;
+    const resolvedCategory = (category || category_id || '').trim() || undefined;
+    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
+    const resolvedStage = (stage || status || '').trim() || undefined;
+    const resolvedFromDate = (from_date || from || '').trim() || undefined;
+    const resolvedToDate = (to_date || to || '').trim() || undefined;
+    const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
 
     const result = await Lead.findAll({
       userId: req.user.id,
       isAdmin,
-      search,
-      priority,
-      stage,
-      category,
-      sub_category,
-      sortBy,
-      sortOrder,
+      search: resolvedSearch,
+      priority: resolvedPriority,
+      stage: resolvedStage,
+      category: resolvedCategory,
+      sub_category: resolvedSubCategory,
+      from_date: resolvedFromDate,
+      to_date: resolvedToDate,
+      sortBy: resolvedSortBy,
+      sortOrder: resolvedSortOrder,
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
     });
@@ -155,9 +174,28 @@ exports.getLeads = async (req, res, next) => {
 exports.getAdminLeads = async (req, res, next) => {
   try {
     const {
-      search, status, priority, stage, source, category, assigned_to,
-      sortBy, sortOrder, page, limit, from_date, to_date,
+      search, status, priority, stage, source,
+      category, category_id,
+      sub_category, sub_category_id,
+      quality,
+      assigned_to,
+      sortBy, sort_by,
+      sortOrder, sort_order,
+      page, limit, from_date, to_date,
     } = req.query;
+
+    const resolvedSearch = (search || '').trim() || undefined;
+    const resolvedStatus = (status || '').trim() || undefined;
+    const resolvedPriority = (priority || quality || '').trim() || undefined;
+    const resolvedStage = (stage || '').trim() || undefined;
+    const resolvedSource = (source || '').trim() || undefined;
+    const resolvedCategory = (category || category_id || '').trim() || undefined;
+    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
+    const resolvedAssignedTo = (assigned_to || '').trim() || undefined;
+    const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
+    const resolvedFromDate = (from_date || '').trim() || undefined;
+    const resolvedToDate = (to_date || '').trim() || undefined;
 
     const pageNum = page !== undefined ? parseInt(page) : 1;
     const limitNum = limit !== undefined ? parseInt(limit) : 25;
@@ -166,36 +204,37 @@ exports.getAdminLeads = async (req, res, next) => {
       return res.status(400).json({ page: 'Page must be a positive integer' });
     }
 
-    if (sortBy) {
+    if (resolvedSortBy) {
       const validSortFields = [
         'company_name', 'contact_person', 'priority', 'status', 'stage',
         'estimated_value', 'created_at',
       ];
-      if (!validSortFields.includes(sortBy)) {
+      if (!validSortFields.includes(resolvedSortBy)) {
         return res.status(400).json({
           sortBy: `Invalid sort field. Must be one of: ${validSortFields.join(', ')}`,
         });
       }
     }
 
-    if (from_date && to_date && new Date(from_date) > new Date(to_date)) {
+    if (resolvedFromDate && resolvedToDate && new Date(resolvedFromDate) > new Date(resolvedToDate)) {
       return res.status(400).json({ from_date: 'from_date cannot be greater than to_date' });
     }
 
     const result = await Lead.findAllAdmin({
-      search,
-      status,
-      priority,
-      stage,
-      source,
-      category,
-      assigned_to,
-      sortBy,
-      sortOrder,
+      search: resolvedSearch,
+      status: resolvedStatus,
+      priority: resolvedPriority,
+      stage: resolvedStage,
+      source: resolvedSource,
+      category: resolvedCategory,
+      sub_category: resolvedSubCategory,
+      assigned_to: resolvedAssignedTo,
+      sortBy: resolvedSortBy,
+      sortOrder: resolvedSortOrder,
       page: pageNum,
       limit: limitNum,
-      from_date,
-      to_date,
+      from_date: resolvedFromDate,
+      to_date: resolvedToDate,
     });
 
     res.json({
@@ -557,6 +596,90 @@ exports.closeLeadWon = async (req, res, next) => {
 
     const responseLead = { ...updatedLead, status: updatedLead.lead_status };
     return res.status(200).json({ success: true, data: responseLead });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.exportLeads = async (req, res, next) => {
+  try {
+    const { format, category_id, sub_category_id, status, quality, from, to } = req.query;
+    const userId = req.user.id;
+    const conditions = ['assigned_to = $1', 'deleted_at IS NULL'];
+    const values = [userId];
+    let idx = 2;
+
+    if (category_id) { conditions.push(`category = $${idx++}`); values.push(category_id); }
+    if (sub_category_id) { conditions.push(`sub_category = $${idx++}`); values.push(sub_category_id); }
+    if (status) { conditions.push(`stage = $${idx++}`); values.push(status); }
+    if (quality) { conditions.push(`priority = $${idx++}`); values.push(quality); }
+    if (from) { conditions.push(`created_at >= $${idx++}`); values.push(from); }
+    if (to) { conditions.push(`created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
+
+    const where = conditions.join(' AND ');
+    const sql = `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE ${where} ORDER BY l.created_at DESC`;
+    const result = await query(sql, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
+    }
+
+    if (format === 'csv') {
+      const headers = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'city', 'lead_source', 'category', 'sub_category', 'priority', 'stage', 'estimated_value'];
+      const csvRows = [headers.join(',')];
+      for (const lead of result.rows) {
+        csvRows.push(headers.map(h => { const v = lead[h] != null ? String(lead[h]) : ''; return `"${v.replace(/"/g, '""')}"`; }).join(','));
+      }
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=leads.csv');
+      return res.send(csvRows.join('\n'));
+    }
+
+    if (format === 'excel') {
+      const XLSX = require('xlsx');
+      const headers = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'city', 'lead_source', 'category', 'sub_category', 'priority', 'stage', 'estimated_value'];
+      const rows = result.rows.map(lead => headers.map(h => lead[h] != null ? String(lead[h]) : ''));
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=leads.xlsx');
+      return res.send(buf);
+    }
+
+    if (format === 'pdf') {
+      const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=leads.pdf');
+      doc.pipe(res);
+
+      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Mobile', 'Email', 'Source', 'Priority', 'Stage', 'Value'];
+      const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'priority', 'stage', 'estimated_value'];
+      const colWidths = [90, 110, 90, 85, 130, 70, 60, 75, 65];
+      let y = 50;
+
+      doc.fontSize(14).font('Helvetica-Bold').text('My Leads Export', 40, 15);
+      doc.fontSize(8).font('Helvetica').text(`Generated: ${new Date().toISOString()}`, 40, 32);
+      y = 48;
+      doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
+      doc.font('Helvetica-Bold').fontSize(7);
+      let x = 40;
+      pdfHeaders.forEach((h, i) => { doc.text(h, x + 2, y + 3, { width: colWidths[i] - 4, align: 'left' }); x += colWidths[i]; });
+      y += 16;
+      doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
+      doc.font('Helvetica').fontSize(6);
+      for (const lead of result.rows) {
+        if (y > 540) { doc.addPage(); y = 40; }
+        x = 40;
+        cols.forEach((c, i) => { const v = lead[c] != null ? String(lead[c]) : ''; doc.text(v, x + 2, y + 2, { width: colWidths[i] - 4, align: 'left' }); x += colWidths[i]; });
+        y += 14;
+      }
+      doc.end();
+      return;
+    }
+
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     next(error);
   }

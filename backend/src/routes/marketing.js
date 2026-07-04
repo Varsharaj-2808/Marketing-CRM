@@ -7,6 +7,7 @@ const adminController = require('../controllers/adminController');
 const assignController = require('../controllers/assignController');
 const notificationController = require('../controllers/notificationController');
 const categoryController = require('../controllers/categoryController');
+const dashboardController = require('../controllers/dashboardController');
 
 router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.createLead);
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
@@ -16,6 +17,7 @@ router.get('/leads/:id/lead-history', protectStageManagement, authorizeStageMana
 router.put('/leads/:id/status', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.updateLeadStage);
 router.post('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLeadLost);
 router.put('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLeadWon);
+router.get('/leads/export', protect, authorize('Admin', 'Marketing Executive'), leadController.exportLeads);
 router.get('/leads/:id', protect, authorize('Admin', 'Marketing Executive'), leadController.getLead);
 
 router.get('/lead-sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
@@ -26,6 +28,8 @@ router.get('/subcategories/active', protect, authorize('Admin', 'Marketing Execu
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 
 router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), assignController.getTimeline);
+router.get('/dashboard', protect, authorize('Admin', 'Marketing Executive'), dashboardController.getDashboard);
+
 router.get('/notifications/count', protect, authorize('Admin', 'Marketing Executive'), notificationController.getNotificationCount);
 
 module.exports = router;
