@@ -68,7 +68,7 @@ const Lead = {
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, category, sub_category, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, priority, stage, status, category, sub_category, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
 
     const conditions = [];
     const values = [];
@@ -103,6 +103,11 @@ const Lead = {
       values.push(stage);
     }
 
+    if (status) {
+      conditions.push(`l.lead_status = $${idx++}`);
+      values.push(status);
+    }
+
     if (category) {
       conditions.push(`l.category = $${idx++}`);
       values.push(category);
@@ -120,7 +125,7 @@ const Lead = {
 
     if (to_date) {
       conditions.push(`l.created_at <= $${idx++}`);
-      values.push(to_date);
+      values.push(to_date.includes('T') ? to_date : `${to_date}T23:59:59.999Z`);
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -191,7 +196,7 @@ const Lead = {
     }
 
     if (status) {
-      conditions.push(`l.stage = $${idx++}`);
+      conditions.push(`l.lead_status = $${idx++}`);
       values.push(status);
     }
 
@@ -232,7 +237,7 @@ const Lead = {
 
     if (to_date) {
       conditions.push(`l.created_at <= $${idx++}`);
-      values.push(to_date);
+      values.push(to_date.includes('T') ? to_date : `${to_date}T23:59:59.999Z`);
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

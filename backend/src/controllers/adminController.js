@@ -319,9 +319,102 @@ exports.getLeadVolumeByCategory = async (req, res, next) => {
   }
 };
 
+exports.getDashboardKpisMarketing = async (req, res, next) => {
+  try {
+    const { category, category_id, sub_category, sub_category_id, from, to } = req.query;
+    const resolvedCategoryId = category_id || category;
+    const resolvedSubCategoryId = sub_category_id || sub_category;
+    const isAdmin = req.user.role === 'Admin';
+    let sql = `
+      SELECT
+        COUNT(*) AS total_leads,
+        COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
+        COUNT(*) FILTER (WHERE stage = 'Lost') AS lost_leads,
+        COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
+        COALESCE(SUM(estimated_value), 0) AS total_estimated_value
+      FROM leads
+      WHERE deleted_at IS NULL
+    `;
+    const values = [];
+    let idx = 0;
+    if (!isAdmin) { idx++; sql += ` AND assigned_to = $${idx}`; values.push(req.user.id); }
+    if (resolvedCategoryId) { idx++; sql += ` AND category = $${idx}`; values.push(resolvedCategoryId); }
+    if (resolvedSubCategoryId) { idx++; sql += ` AND sub_category = $${idx}`; values.push(resolvedSubCategoryId); }
+    if (from) { idx++; sql += ` AND created_at::date >= $${idx}::date`; values.push(from); }
+    if (to) { idx++; sql += ` AND created_at::date <= $${idx}::date`; values.push(to); }
+    const result = await query(sql, values);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getWonRateByCategoryMarketing = async (req, res, next) => {
+  try {
+    const { category, category_id, sub_category, sub_category_id, from, to } = req.query;
+    const resolvedCategoryId = category_id || category;
+    const resolvedSubCategoryId = sub_category_id || sub_category;
+    const isAdmin = req.user.role === 'Admin';
+    let sql = `
+      SELECT
+        l.category AS category_id,
+        c.category_name AS category_name,
+        COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) AS total_closed,
+        COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
+        COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
+        CASE
+          WHEN COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) > 0
+            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')), 2) || '%'
+          ELSE '0.00%'
+        END AS win_rate
+      FROM leads l
+      LEFT JOIN business_categories c ON l.category = c.id
+      WHERE l.deleted_at IS NULL AND l.stage IN ('Won', 'Lost')
+    `;
+    const values = [];
+    let idx = 0;
+    if (!isAdmin) { idx++; sql += ` AND l.assigned_to = $${idx}`; values.push(req.user.id); }
+    if (resolvedCategoryId) { idx++; sql += ` AND l.category = $${idx}`; values.push(resolvedCategoryId); }
+    if (resolvedSubCategoryId) { idx++; sql += ` AND l.sub_category = $${idx}`; values.push(resolvedSubCategoryId); }
+    if (from) { idx++; sql += ` AND l.created_at::date >= $${idx}::date`; values.push(from); }
+    if (to) { idx++; sql += ` AND l.created_at::date <= $${idx}::date`; values.push(to); }
+    sql += ` GROUP BY l.category, c.category_name ORDER BY win_rate DESC`;
+    const result = await query(sql, values);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getLeadVolumeByCategoryMarketing = async (req, res, next) => {
+  try {
+    const filter = buildAdminFilter(req, 'l.');
+    const result = await query(`
+      SELECT
+        l.category AS category_id,
+        c.category_name,
+        COUNT(*) AS lead_count
+      FROM leads l
+      LEFT JOIN business_categories c ON l.category = c.id
+      WHERE ${filter.where}
+      GROUP BY l.category, c.category_name
+      ORDER BY lead_count DESC
+    `, filter.values);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.exportAdminLeads = async (req, res, next) => {
   try {
     const { format, category_id, sub_category_id, status, quality, from, to } = req.query;
+
+    const validFormats = ['csv', 'excel', 'pdf'];
+    if (!validFormats.includes(format)) {
+      return res.status(400).json({ success: false, message: 'Format must be csv, excel, or pdf' });
+    }
+
     const filters = { page: 1, limit: 10000 };
     if (category_id) filters.category = category_id;
     if (sub_category_id) filters.sub_category = sub_category_id;
@@ -334,7 +427,6 @@ exports.exportAdminLeads = async (req, res, next) => {
     if (result.data.length === 0) {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
-
     if (format === 'csv') {
       const headers = [
         'lead_id', 'company_name', 'contact_person', 'mobile_number',

@@ -137,7 +137,8 @@ exports.getLeads = async (req, res, next) => {
     const resolvedPriority = (priority || quality || '').trim() || undefined;
     const resolvedCategory = (category || category_id || '').trim() || undefined;
     const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
-    const resolvedStage = (stage || status || '').trim() || undefined;
+    const resolvedStage = (stage || '').trim() || undefined;
+    const resolvedStatus = (status || '').trim() || undefined;
     const resolvedFromDate = (from_date || from || '').trim() || undefined;
     const resolvedToDate = (to_date || to || '').trim() || undefined;
     const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
@@ -149,6 +150,7 @@ exports.getLeads = async (req, res, next) => {
       search: resolvedSearch,
       priority: resolvedPriority,
       stage: resolvedStage,
+      status: resolvedStatus,
       category: resolvedCategory,
       sub_category: resolvedSubCategory,
       from_date: resolvedFromDate,
@@ -181,7 +183,7 @@ exports.getAdminLeads = async (req, res, next) => {
       assigned_to,
       sortBy, sort_by,
       sortOrder, sort_order,
-      page, limit, from_date, to_date,
+      page, limit, from_date, to_date, from, to,
     } = req.query;
 
     const resolvedSearch = (search || '').trim() || undefined;
@@ -194,8 +196,8 @@ exports.getAdminLeads = async (req, res, next) => {
     const resolvedAssignedTo = (assigned_to || '').trim() || undefined;
     const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
-    const resolvedFromDate = (from_date || '').trim() || undefined;
-    const resolvedToDate = (to_date || '').trim() || undefined;
+    const resolvedFromDate = (from_date || from || '').trim() || undefined;
+    const resolvedToDate = (to_date || to || '').trim() || undefined;
 
     const pageNum = page !== undefined ? parseInt(page) : 1;
     const limitNum = limit !== undefined ? parseInt(limit) : 25;
@@ -603,15 +605,28 @@ exports.closeLeadWon = async (req, res, next) => {
 
 exports.exportLeads = async (req, res, next) => {
   try {
-    const { format, category_id, sub_category_id, status, quality, from, to } = req.query;
+    const { format, category_id, sub_category_id, status, stage, quality, from, to } = req.query;
+
+    const validFormats = ['csv', 'excel', 'pdf'];
+    if (!validFormats.includes(format)) {
+      return res.status(400).json({ success: false, message: 'Format must be csv, excel, or pdf' });
+    }
+
     const userId = req.user.id;
-    const conditions = ['assigned_to = $1', 'deleted_at IS NULL'];
-    const values = [userId];
-    let idx = 2;
+    const isAdmin = req.user.role === 'Admin';
+    const conditions = ['deleted_at IS NULL'];
+    const values = [];
+    let idx = 1;
+
+    if (!isAdmin) {
+      conditions.push(`assigned_to = $${idx++}`);
+      values.push(userId);
+    }
 
     if (category_id) { conditions.push(`category = $${idx++}`); values.push(category_id); }
     if (sub_category_id) { conditions.push(`sub_category = $${idx++}`); values.push(sub_category_id); }
-    if (status) { conditions.push(`stage = $${idx++}`); values.push(status); }
+    if (status) { conditions.push(`lead_status = $${idx++}`); values.push(status); }
+    if (stage) { conditions.push(`stage = $${idx++}`); values.push(stage); }
     if (quality) { conditions.push(`priority = $${idx++}`); values.push(quality); }
     if (from) { conditions.push(`created_at >= $${idx++}`); values.push(from); }
     if (to) { conditions.push(`created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
