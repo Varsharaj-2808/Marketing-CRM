@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const { sendDailyReminderEmail } = require('../utils/emailService');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const algolia = require('../utils/algoliaService');
@@ -700,8 +701,9 @@ exports.sendDailyReminders = async (req, res, next) => {
 
     // Find active leads due on date that are NOT yet notified today (idempotency)
     const leadsResult = await query(
-      `SELECT l.id AS lead_id, l.company_name, l.priority, l.assigned_to AS user_id
+      `SELECT l.id AS lead_id, l.company_name, l.priority, l.assigned_to AS user_id, u.email, u.name
        FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
        WHERE DATE(l.next_followup_date) = $1
          AND l.stage NOT IN ('Won', 'Lost')
          AND l.deleted_at IS NULL
@@ -727,6 +729,7 @@ exports.sendDailyReminders = async (req, res, next) => {
 
     const map = {};
     for (const lead of due) {
+      // 1. In-App Notification
       await query(
         `INSERT INTO notifications (user_id, notification_type, lead_id, message)
          VALUES ($1, 'lead_reminder', $2, $3)`,
@@ -736,6 +739,14 @@ exports.sendDailyReminders = async (req, res, next) => {
           `Reminder: Follow-up is due today for ${lead.company_name} (${lead.priority}).`,
         ]
       );
+      
+      // 2. Email Notification (fire-and-forget to avoid blocking)
+      if (lead.email) {
+        sendDailyReminderEmail(lead.email, lead.name, lead.company_name, lead.priority).catch(err => {
+          console.error(`Failed to send daily reminder email to ${lead.email}:`, err);
+        });
+      }
+
       if (!map[lead.user_id]) map[lead.user_id] = { user_id: lead.user_id, leads_reminded: 0 };
       map[lead.user_id].leads_reminded += 1;
     }
