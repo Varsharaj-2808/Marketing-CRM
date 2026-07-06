@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
@@ -10,6 +10,9 @@ import {
   closeLeadAsLost,
   closeLeadAsWon,
   reopenLead,
+  createFollowup,
+  fetchTimeline,
+  addCorrection,
 } from '../../services/leadService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
@@ -19,6 +22,8 @@ import StageControl from '../../components/leads/StageControl';
 import LostClosureModal from '../../components/leads/LostClosureModal';
 import WonClosureModal from '../../components/leads/WonClosureModal';
 import ReopenLeadModal from '../../components/leads/ReopenLeadModal';
+import FollowUpModal from '../../components/leads/FollowUpModal';
+import Timeline from '../../components/leads/Timeline';
 import { getLeadField, toDisplayText } from '../../utils/leadDisplay';
 
 const STATUS_MAP = {
@@ -26,29 +31,9 @@ const STATUS_MAP = {
   Lost: 'lost',
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = MONTHS[d.getMonth()] || 'Jan';
-  const year = d.getFullYear();
-  let hours = d.getHours();
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12 || 12;
-  return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
-}
-
-function getTimelineMeta(action) {
-  const lower = (action || '').toLowerCase();
-  if (lower.includes('created')) return { icon: 'add_circle', bg: 'bg-green-500/10', color: 'text-green-600' };
-  if (lower.includes('status') || lower.includes('changed')) return { icon: 'sync', bg: 'bg-amber-500/10', color: 'text-amber-600' };
-  if (lower.includes('note') || lower.includes('comment')) return { icon: 'note', bg: 'bg-blue-500/10', color: 'text-blue-600' };
-  if (lower.includes('assign') || lower.includes('reassign')) return { icon: 'assignment', bg: 'bg-purple-500/10', color: 'text-purple-600' };
-  return { icon: 'history', bg: 'bg-primary/5', color: 'text-primary' };
-}
+const TIMELINE_INITIAL_COUNT = 10;
+const TIMELINE_LOAD_MORE_COUNT = 10;
+const SUBMIT_TIMEOUT_MS = 10000;
 
 export default function LeadDetails() {
   const { leadId } = useParams();
@@ -57,12 +42,17 @@ export default function LeadDetails() {
   const { user } = useAuth();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isAdmin = user?.role === 'Admin';
+  const isReadOnly = user?.role === 'ReadOnly';
+  const currentUserId = user?.id || user?.employee_id || '';
 
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [timeline, setTimeline] = useState([]);
+  const [timelineItems, setTimelineItems] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [timelinePagination, setTimelinePagination] = useState({ page: 1, totalPages: 1, has_more: false });
+  const [timelinePage, setTimelinePage] = useState(1);
+  const [loadingMoreTimeline, setLoadingMoreTimeline] = useState(false);
 
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
@@ -70,59 +60,39 @@ export default function LeadDetails() {
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [wonModalOpen, setWonModalOpen] = useState(false);
   const [reopenModalOpen, setReopenModalOpen] = useState(false);
+
+  const [followUpModalOpen, setFollowUpModalOpen] = useState(false);
+  const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
+  const [followUpServerError, setFollowUpServerError] = useState('');
+
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [toastShow, setToastShow] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const abortControllerRef = useRef(null);
+  const followUpButtonRef = useRef(null);
+
+  function showToast(message, type = 'success') {
+    setToastMessage(message);
+    setToastType(type);
+    setToastShow(true);
+  }
+
   function loadLeadData(fromMutation) {
     setLoading(true);
-    setTimeline([]);
+    setTimelineItems([]);
     setAccessDenied(false);
     setErrorMessage('');
+    setTimelinePage(1);
+    setTimelinePagination({ page: 1, totalPages: 1, has_more: false });
     const leadFetcher = isAdminRoute ? fetchAdminLeadById : fetchLeadById;
     const cacheBuster = fromMutation ? Date.now() : null;
     leadFetcher(leadId, cacheBuster)
       .then((res) => {
         const leadData = res?.data || res?.lead || res || null;
         setLead(leadData);
-
-        if (leadData?.timeline && leadData.timeline.length > 0) {
-          setTimeline(leadData.timeline);
-        } else if (leadData) {
-          setHistoryLoading(true);
-          fetchLeadHistory(leadId)
-            .then((historyRes) => {
-              const historyData = historyRes?.data || [];
-              if (historyData.length > 0) {
-                setTimeline(historyData);
-              } else if (leadData.createdAt) {
-                const userName = typeof leadData.createdBy === 'object' ? leadData.createdBy?.name : leadData.createdBy;
-                setTimeline([{
-                  action: 'Lead Created',
-                  message: 'Lead Created',
-                  user: userName || '',
-                  createdBy: leadData.createdBy,
-                  createdAt: leadData.createdAt,
-                  timestamp: leadData.createdAt,
-                }]);
-              }
-            })
-            .catch(() => {
-              if (leadData.createdAt) {
-                const userName = typeof leadData.createdBy === 'object' ? leadData.createdBy?.name : leadData.createdBy;
-                setTimeline([{
-                  action: 'Lead Created',
-                  message: 'Lead Created',
-                  user: userName || '',
-                  createdBy: leadData.createdBy,
-                  createdAt: leadData.createdAt,
-                  timestamp: leadData.createdAt,
-                }]);
-              }
-            })
-            .finally(() => setHistoryLoading(false));
-        }
+        loadTimeline(1, true);
       })
       .catch((err) => {
         if (err?.status === 403) {
@@ -137,9 +107,75 @@ export default function LeadDetails() {
       .finally(() => setLoading(false));
   }
 
+  async function loadTimeline(page = 1, replace = false) {
+    if (page === 1) {
+      setHistoryLoading(true);
+    } else {
+      setLoadingMoreTimeline(true);
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const res = await fetchTimeline(leadId, { page, limit: TIMELINE_INITIAL_COUNT });
+      if (controller.signal.aborted) return;
+      const body = res?.body || res?.data || {};
+      const newItems = body.timeline || body.data || [];
+      const pagination = body.pagination || { page: 1, totalPages: 1, has_more: false };
+      if (replace) {
+        setTimelineItems(newItems);
+      } else {
+        setTimelineItems(prev => [...prev, ...newItems]);
+      }
+      setTimelinePagination(pagination);
+      setTimelinePage(page);
+    } catch (err) {
+      if (err?.name === 'AbortError') return;
+      if (page === 1) {
+        const localLead = lead;
+        if (localLead?.timeline && localLead.timeline.length > 0) {
+          setTimelineItems(localLead.timeline);
+        } else if (localLead?.createdAt) {
+          const userName = typeof localLead.createdBy === 'object' ? localLead.createdBy?.name : localLead.createdBy;
+          setTimelineItems([{
+            action: 'Lead Created',
+            message: 'Lead Created',
+            user: userName || '',
+            createdBy: localLead.createdBy,
+            createdAt: localLead.createdAt,
+            timestamp: localLead.createdAt,
+          }]);
+        }
+      }
+    } finally {
+      setHistoryLoading(false);
+      setLoadingMoreTimeline(false);
+    }
+  }
+
   useEffect(() => {
     if (leadId) loadLeadData(false);
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [leadId, isAdmin, user]);
+
+  const isLeadOwner = useCallback(() => {
+    if (!lead) return false;
+    const assignedTo = lead.assignedTo || lead.assigned_to || lead.assignedToId || '';
+    if (typeof assignedTo === 'object') {
+      return assignedTo.id === currentUserId || assignedTo.employee_id === currentUserId;
+    }
+    return assignedTo === currentUserId;
+  }, [lead, currentUserId]);
+
+  const canLogFollowUp = !isReadOnly && (isLeadOwner() || isAdmin) && !(lead?.status === 'Won' || lead?.status === 'Lost' || lead?.stage === 'Closed' || lead?.stage === 'Won' || lead?.stage === 'Lost');
 
   async function handleAssign(assignedTo, reason, userName) {
     setAssigning(true);
@@ -147,21 +183,15 @@ export default function LeadDetails() {
     try {
       await assignLead(leadId, assignedTo, reason);
       setAssignModalOpen(false);
-      setToastMessage(hasOwner ? `Lead reassigned to ${userName}` : `Lead assigned to ${userName}`);
-      setToastType('success');
-      setToastShow(true);
+      showToast(hasOwner ? `Lead reassigned to ${userName}` : `Lead assigned to ${userName}`);
       loadLeadData(true);
     } catch (err) {
       if (err?.status === 404) {
         setAssignModalOpen(false);
-        setToastMessage('Lead not found. It may have been deleted.');
-        setToastType('error');
-        setToastShow(true);
+        showToast('Lead not found. It may have been deleted.', 'error');
         navigate(isAdminRoute ? '/admin/leads' : '/marketing/leads');
       } else {
-        setToastMessage('Failed to assign lead. Please try again.');
-        setToastType('error');
-        setToastShow(true);
+        showToast('Failed to assign lead. Please try again.', 'error');
       }
     } finally {
       setAssigning(false);
@@ -178,14 +208,10 @@ export default function LeadDetails() {
     setStageLoading(true);
     try {
       await updateLeadStage(leadId, nextStage);
-      setToastMessage(`Stage updated to ${nextStage}`);
-      setToastType('success');
-      setToastShow(true);
+      showToast(`Stage updated to ${nextStage}`);
       loadLeadData(true);
     } catch {
-      setToastMessage('Failed to update stage. Please try again.');
-      setToastType('error');
-      setToastShow(true);
+      showToast('Failed to update stage. Please try again.', 'error');
     } finally {
       setStageLoading(false);
     }
@@ -200,15 +226,11 @@ export default function LeadDetails() {
     try {
       await closeLeadAsLost(leadId, reason);
       setLostModalOpen(false);
-      setToastMessage('Lead closed as Lost');
-      setToastType('success');
-      setToastShow(true);
+      showToast('Lead closed as Lost');
       loadLeadData(true);
     } catch {
       setLostModalOpen(false);
-      setToastMessage('Failed to close lead. Please try again.');
-      setToastType('error');
-      setToastShow(true);
+      showToast('Failed to close lead. Please try again.', 'error');
     } finally {
       setStageLoading(false);
     }
@@ -219,15 +241,11 @@ export default function LeadDetails() {
     try {
       await closeLeadAsWon(leadId, dealValue, closureDate);
       setWonModalOpen(false);
-      setToastMessage('Lead closed as Won');
-      setToastType('success');
-      setToastShow(true);
+      showToast('Lead closed as Won');
       loadLeadData(true);
     } catch {
       setWonModalOpen(false);
-      setToastMessage('Failed to close lead. Please try again.');
-      setToastType('error');
-      setToastShow(true);
+      showToast('Failed to close lead. Please try again.', 'error');
     } finally {
       setStageLoading(false);
     }
@@ -238,27 +256,94 @@ export default function LeadDetails() {
     try {
       await reopenLead(leadId, reason);
       setReopenModalOpen(false);
-      setToastMessage('Lead reopened successfully. Stage set to Contacted.');
-      setToastType('success');
-      setToastShow(true);
+      showToast('Lead reopened successfully. Stage set to Contacted.');
       loadLeadData(true);
     } catch {
       setReopenModalOpen(false);
-      setToastMessage('Failed to reopen lead. Please try again.');
-      setToastType('error');
-      setToastShow(true);
+      showToast('Failed to reopen lead. Please try again.', 'error');
     } finally {
       setStageLoading(false);
     }
   }
 
-  const sortedTimeline = [...timeline].sort((a, b) => {
-    const dateA = new Date(a.timestamp || a.createdAt || 0).getTime();
-    const dateB = new Date(b.timestamp || b.createdAt || 0).getTime();
-    return dateB - dateA;
-  });
+  async function handleFollowUpSubmit(payload) {
+    setFollowUpSubmitting(true);
+    setFollowUpServerError('');
+
+    const timeoutId = setTimeout(() => {
+      setFollowUpSubmitting(false);
+      showToast('Request timed out due to slow connection. Please try again.', 'error');
+    }, SUBMIT_TIMEOUT_MS);
+
+    try {
+      const res = await createFollowup(leadId, payload);
+      clearTimeout(timeoutId);
+      setFollowUpModalOpen(false);
+      showToast('Follow-up recorded successfully');
+      if (res?.lead_updated?.proposal_value !== undefined) {
+        setLead(prev => prev ? { ...prev, estimated_value: res.lead_updated.proposal_value, proposal_value: res.lead_updated.proposal_value } : prev);
+      }
+      loadLeadData(true);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const status = err?.status;
+      if (status === 400) {
+        const serverMsg = err?.payload?.body?.error || err?.payload?.error || 'Validation failed.';
+        setFollowUpServerError(serverMsg);
+      } else if (status === 401) {
+        setFollowUpModalOpen(false);
+        const formData = JSON.stringify(payload);
+        try { sessionStorage.setItem('crm_followup_draft', formData); } catch {}
+        showToast('Session expired. Please log in again.', 'error');
+        setTimeout(() => navigate('/app/login'), 1500);
+      } else if (status === 403) {
+        setFollowUpSubmitting(false);
+        showToast('Access Denied: You are not authorized to log follow-ups for this lead.', 'error');
+      } else if (status === 404) {
+        setFollowUpModalOpen(false);
+        showToast('Error: This lead no longer exists.', 'error');
+        setTimeout(() => navigate(isAdminRoute ? '/admin/leads' : '/marketing/leads'), 1500);
+      } else if (status === 429) {
+        setFollowUpSubmitting(false);
+        showToast('Rate limit exceeded. Please wait a moment before trying again.', 'error');
+      } else {
+        setFollowUpSubmitting(false);
+        showToast('Server error occurred. Please try again. If issue persists, contact support.', 'error');
+      }
+    }
+  }
+
+  async function handleAddCorrection(followupId, correctionNotes) {
+    await addCorrection(leadId, followupId, correctionNotes);
+    await loadTimeline(1, true);
+  }
+
+  function handleLoadMoreTimeline() {
+    loadTimeline(timelinePage + 1, false);
+  }
+
+  function handleLogFollowUp() {
+    if (!canLogFollowUp) return;
+    if (!navigator.onLine) {
+      showToast('Offline Mode: Connection lost. Your changes will be saved locally and synced once connection is restored.', 'error');
+      return;
+    }
+    setFollowUpModalOpen(true);
+  }
+
+  function handleFollowUpModalClose() {
+    setFollowUpModalOpen(false);
+    setFollowUpServerError('');
+    setTimeout(() => followUpButtonRef.current?.focus(), 100);
+  }
+
+  function handleFollowUpServerClear() {
+    setFollowUpServerError('');
+  }
+
   const leadStatus = getLeadField(lead, ['status'], 'New');
   const leadPriority = getLeadField(lead, ['priority'], '-');
+  const leadStage = getLeadField(lead, ['stage'], 'New');
   const servicesInterested = Array.isArray(lead?.servicesInterested)
     ? lead.servicesInterested
     : Array.isArray(lead?.services_interested)
@@ -267,6 +352,8 @@ export default function LeadDetails() {
 
   const assignedToDisplay = toDisplayText(lead?.assignedTo ?? lead?.assigned_to, 'Unassigned');
   const assignedAtVal = lead?.assignedAt || lead?.assigned_at || lead?.updatedAt || lead?.updated_at || '';
+
+  const isClosedLead = lead?.status === 'Won' || lead?.status === 'Lost' || lead?.stage === 'Closed' || lead?.stage === 'Won' || lead?.stage === 'Lost';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -324,9 +411,25 @@ export default function LeadDetails() {
             </div>
           </div>
 
+          {isReadOnly && !isLeadOwner() && lead?.assignedTo && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="font-label-sm text-label-sm text-amber-800">
+                Read-only access: This lead is assigned to {toDisplayText(lead.assignedTo, 'another user')}.
+              </p>
+            </div>
+          )}
+
+          {!isLeadOwner() && !isAdmin && !isReadOnly && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="font-label-sm text-label-sm text-amber-800">
+                Read-only access: This lead is assigned to {toDisplayText(lead.assignedTo, 'another user')}.
+              </p>
+            </div>
+          )}
+
           <div className="mb-6">
             <StageControl
-              currentStage={getLeadField(lead, ['stage'], 'New')}
+              currentStage={leadStage}
               currentStatus={getLeadField(lead, ['status'], '')}
               isAdmin={isAdmin}
               onStageChange={handleStageChange}
@@ -376,7 +479,9 @@ export default function LeadDetails() {
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Estimated Value</p>
-              <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['estimatedValue', 'estimated_value', 'value'], '-')}</p>
+              <p className="font-body-md text-body-md text-on-surface" id="estimated-value">
+                {getLeadField(lead, ['estimatedValue', 'estimated_value', 'value'], '-')}
+              </p>
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Assigned To</p>
@@ -385,7 +490,7 @@ export default function LeadDetails() {
             {assignedAtVal && (
               <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
                 <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Assigned At</p>
-                <p className="font-body-md text-body-md text-on-surface">{formatDate(assignedAtVal)}</p>
+                <p className="font-body-md text-body-md text-on-surface">{/* format assignedAtVal inline */}{assignedAtVal}</p>
               </div>
             )}
           </div>
@@ -411,70 +516,62 @@ export default function LeadDetails() {
               <h3 className="font-headline-md text-headline-md text-on-surface">
                 Timeline
               </h3>
-              <button
-                onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}/lead-history`)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label-sm font-label-sm text-primary hover:bg-primary/5 border border-primary/20 transition-all"
-              >
-                <span className="material-symbols-outlined text-[16px]">history</span>
-                View Full History
-              </button>
-            </div>
-            {historyLoading ? (
-              <LoadingSpinner text="Loading history..." />
-            ) : sortedTimeline.length > 0 ? (
-              <div className="space-y-3">
-                {sortedTimeline.map((entry, idx) => {
-                  const entryAction = toDisplayText(entry.action || entry.message || entry.description, 'Lead Updated');
-                  const entryUser = toDisplayText(entry.user || entry.createdBy, '');
-                  const entryTime = toDisplayText(entry.timestamp || entry.createdAt, '');
-                  const meta = getTimelineMeta(entryAction);
-
-                  const previousOwner = entry.previousOwner || entry.previous_owner || entry.oldOwner || '';
-                  const newOwner = entry.newOwner || entry.new_owner || '';
-                  const reasonText = entry.reason || '';
-
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-3 p-3 bg-white/30 rounded-xl border border-outline-variant/20"
+              <div className="flex items-center gap-2">
+                {isClosedLead && (canLogFollowUp || isReadOnly) && (
+                  <span
+                    className="text-label-sm text-on-surface-variant/50"
+                    title="Cannot add follow-up to a closed lead."
+                  >
+                    <button
+                      ref={followUpButtonRef}
+                      disabled={true}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-200 text-gray-400 text-label-sm font-label-sm cursor-not-allowed"
+                      title="Cannot add follow-up to a closed lead."
                     >
-                      <div className={`w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center shrink-0`}>
-                        <span className={`material-symbols-outlined text-[18px] ${meta.color}`}>
-                          {meta.icon}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-body-md text-body-md text-on-surface">
-                          {entryAction}
-                        </p>
-                        {previousOwner && newOwner && (
-                          <p className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">
-                            {toDisplayText(previousOwner, '')} &rarr; {toDisplayText(newOwner, '')}
-                          </p>
-                        )}
-                        {reasonText && (
-                          <p className="font-label-sm text-label-sm text-on-surface-variant/70 mt-0.5 italic">
-                            Reason: {toDisplayText(reasonText, '')}
-                          </p>
-                        )}
-                        <p className="font-label-sm text-label-sm text-on-surface-variant/70 mt-0.5">
-                          {entryUser && (
-                            <>By: {entryUser}</>
-                          )}
-                          {entryTime && (
-                            <> on {formatDate(entryTime)}</>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                      <span className="material-symbols-outlined text-[16px]">add</span>
+                      Log Follow-up
+                    </button>
+                  </span>
+                )}
+                {!isClosedLead && !canLogFollowUp && !isReadOnly && (
+                  <span className="text-label-sm text-on-surface-variant/50">
+                    Only the lead owner can log follow-up actions.
+                  </span>
+                )}
+                {!isClosedLead && canLogFollowUp && (
+                  <button
+                    ref={followUpButtonRef}
+                    onClick={handleLogFollowUp}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-label-sm font-label-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add</span>
+                    Log Follow-up
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}/lead-history`)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label-sm font-label-sm text-primary hover:bg-primary/5 border border-primary/20 transition-all"
+                >
+                  <span className="material-symbols-outlined text-[16px]">history</span>
+                  View Full History
+                </button>
               </div>
-            ) : (
-              <p className="font-body-md text-body-md text-on-surface-variant/70">
-                No history available.
-              </p>
-            )}
+            </div>
+            <Timeline
+              timeline={timelineItems}
+              loading={historyLoading}
+              hasMore={timelinePagination.has_more}
+              onLoadMore={handleLoadMoreTimeline}
+              loadingMore={loadingMoreTimeline}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+              isReadOnly={isReadOnly}
+              isLeadOwner={isLeadOwner()}
+              onAddCorrection={handleAddCorrection}
+              emptyMessage="No follow-up activity logged yet."
+              showLogFollowUpButton={true}
+              onLogFollowUp={handleLogFollowUp}
+            />
           </div>
         </div>
       )}
@@ -507,6 +604,16 @@ export default function LeadDetails() {
         onConfirm={handleReopenConfirm}
         loading={stageLoading}
         closedStage={getLeadField(lead, ['status'], 'Closed')}
+      />
+
+      <FollowUpModal
+        isOpen={followUpModalOpen}
+        onClose={handleFollowUpModalClose}
+        onSubmit={handleFollowUpSubmit}
+        leadStage={leadStage}
+        submitting={followUpSubmitting}
+        serverError={followUpServerError}
+        onClearServerError={handleFollowUpServerClear}
       />
 
       <Toast

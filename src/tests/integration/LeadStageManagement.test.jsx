@@ -926,7 +926,7 @@ describe('STORY-2.4.1 Timeline Loading and Full History', () => {
     let resolveHistory;
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead-history')) {
+      if (url.includes('/timeline')) {
         return new Promise((resolve) => { resolveHistory = resolve; });
       }
       return mockRes({
@@ -945,12 +945,12 @@ describe('STORY-2.4.1 Timeline Loading and Full History', () => {
 
     await screen.findByText('Lead Details');
 
-    expect(screen.getByText(/Loading history\.\.\./i)).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
 
-    resolveHistory(mockRes({ success: true, data: [{ action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-25T10:00:00.000Z' }] }));
+    resolveHistory(mockRes({ success: true, body: { timeline: [{ action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-25T10:00:00.000Z' }], pagination: { page: 1, totalPages: 1, has_more: false } } }));
 
     await waitFor(() => {
-      expect(screen.queryByText(/Loading history\.\.\./i)).not.toBeInTheDocument();
+      expect(screen.queryByTestId('timeline-loading')).not.toBeInTheDocument();
     });
     expect(screen.getByText('Lead Created')).toBeInTheDocument();
   });

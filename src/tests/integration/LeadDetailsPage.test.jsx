@@ -230,7 +230,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     let resolveHistory;
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead-history')) {
+      if (url.includes('/timeline')) {
         return new Promise((resolve) => { resolveHistory = resolve; });
       }
       return new Promise((resolve) => { resolveLead = resolve; });
@@ -256,7 +256,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     }));
 
     await waitFor(() => expect(typeof resolveHistory).toBe('function'));
-    resolveHistory(mockRes({ success: true, data: [] }));
+    resolveHistory(mockRes({ success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } }));
 
     await waitFor(() => expect(screen.queryByText(/Loading lead details\.{3}/i)).not.toBeInTheDocument());
     expect(screen.getByLabelText('Stage')).toBeInTheDocument();

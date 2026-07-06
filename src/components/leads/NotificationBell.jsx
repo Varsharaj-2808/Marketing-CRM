@@ -23,6 +23,7 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const bellRef = useRef(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -45,11 +46,24 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownOpen]);
 
+  useEffect(() => {
+    if (dropdownOpen) {
+      // Focus the first notification button in dropdown
+      setTimeout(() => {
+        const firstBtn = dropdownRef.current?.querySelector('button.notification-item');
+        if (firstBtn) {
+          firstBtn.focus();
+        }
+      }, 50);
+    }
+  }, [dropdownOpen]);
+
   async function handleNotificationClick(notification) {
-    const leadId = notification.leadId || notification.lead_id || notification.resourceId;
+    const leadId = notification.leadId || notification.lead_id || notification.resourceId || notification.reference_id;
     if (leadId) {
-      const isAdmin = notification.role === 'Admin' || false;
-      navigate(`${isAdmin ? '/admin' : '/marketing'}/leads/${leadId}`);
+      // Let's decide admin path based on window location or notification role
+      const isAdminRoute = window.location.pathname.startsWith('/admin') || notification.role === 'Admin';
+      navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}`);
     }
     if (!notification.read) {
       await markNotificationRead(notification.id);
@@ -60,16 +74,35 @@ export default function NotificationBell() {
     setDropdownOpen(false);
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setDropdownOpen(false);
+      bellRef.current?.focus();
+    }
+  };
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} onKeyDown={handleKeyDown}>
       <button
+        ref={bellRef}
         onClick={() => setDropdownOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setDropdownOpen((prev) => !prev);
+          }
+        }}
         className="p-1.5 rounded-full hover:bg-primary/5 transition-colors relative"
+        aria-haspopup="true"
+        aria-expanded={dropdownOpen}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-error text-white text-[10px] font-bold rounded-full px-1 leading-none">
+          <span 
+            aria-label={`${unreadCount} unread notifications`}
+            className="absolute top-0.5 right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-error text-white text-[10px] font-bold rounded-full px-1 leading-none"
+          >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -93,7 +126,7 @@ export default function NotificationBell() {
                   <button
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`w-full text-left px-4 py-3 transition-colors hover:bg-primary/5 ${
+                    className={`w-full text-left px-4 py-3 transition-colors hover:bg-primary/5 notification-item ${
                       !n.read ? 'bg-primary/[0.03]' : ''
                     }`}
                   >

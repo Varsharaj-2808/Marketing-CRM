@@ -37,11 +37,47 @@ function formatCurrency(value) {
   }).format(amount);
 }
 
+function formatFollowupDate(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  
+  const today = new Date();
+  const isToday = d.getDate() === today.getDate() &&
+                  d.getMonth() === today.getMonth() &&
+                  d.getFullYear() === today.getFullYear();
+                  
+  if (isToday) {
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `Today, ${hours}:${minutes} ${ampm}`;
+  }
+  
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(d);
+}
+
+function getDaysOverdue(dateStr) {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr);
+  const now = new Date();
+  const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffTime = nowDate - dDate;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : 0;
+}
+
 export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, selectedIds, onToggleSelect, onSelectAll }) {
   const allVisibleSelected = leads.length > 0 && leads.every((l) => selectedIds.has(l.id));
   return (
     <div className="overflow-x-auto rounded-lg border border-outline-variant/40 bg-white/30">
-      <table className="min-w-[1400px] w-full table-fixed">
+      <table className="min-w-[1550px] w-full table-fixed">
         <thead className="bg-white/55">
           <tr className="border-b border-outline-variant/40">
             {isAdmin && (
@@ -66,17 +102,23 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
             <SortableTableHeader label="Priority" sortKey="priority" currentSort={sort} onSort={onSort} className="w-[110px]" />
             {isAdmin && <th className="w-[150px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Assigned To</th>}
             <SortableTableHeader label="Created Date" sortKey="createdAt" currentSort={sort} onSort={onSort} className="w-[130px]" />
+            <th className="w-[165px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Next Follow-up</th>
             <SortableTableHeader label="Estimated Value" sortKey="estimatedValue" currentSort={sort} onSort={onSort} align="right" className="w-[140px]" />
           </tr>
         </thead>
         <tbody>
           {leads.map((lead) => {
             const isSelected = selectedIds.has(lead.id);
+            const isClosed = lead.status === 'Won' || lead.status === 'Lost' || lead.stage === 'Won' || lead.stage === 'Lost';
+            const isOverdue = !isClosed && lead.isOverdue;
+            
             return (<tr
               key={lead.id}
               data-testid="lead-row"
               onClick={() => onOpenLead(lead.id)}
-              className={`cursor-pointer border-b border-outline-variant/20 transition-colors hover:bg-white/55 ${isSelected ? 'bg-primary/5' : ''}`}
+              className={`cursor-pointer border-b border-outline-variant/20 transition-colors hover:bg-white/55 ${
+                isSelected ? 'bg-primary/5' : ''
+              } ${isClosed ? 'opacity-60 text-on-surface-variant/80' : ''}`}
             >
               {isAdmin && (
                 <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -108,6 +150,21 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
                 </td>
               )}
               <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant whitespace-nowrap" title={formatDate(lead.createdAt)}>{formatDate(lead.createdAt)}</td>
+              <td className="px-3 py-3 text-left text-body-sm whitespace-nowrap">
+                {isOverdue ? (
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                      <span className="sr-only">Warning: Lead is overdue</span>
+                      Overdue {getDaysOverdue(lead.nextFollowupDate) > 0 ? `(${getDaysOverdue(lead.nextFollowupDate)}d)` : ''}
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant font-medium">{formatFollowupDate(lead.nextFollowupDate)}</span>
+                  </div>
+                ) : (
+                  <span className={isClosed ? "text-on-surface-variant/40" : "text-on-surface-variant"}>
+                    {formatFollowupDate(lead.nextFollowupDate)}
+                  </span>
+                )}
+              </td>
               <td className="truncate px-3 py-3 text-right text-body-sm font-semibold text-on-surface whitespace-nowrap" title={formatCurrency(lead.estimatedValue)}>{formatCurrency(lead.estimatedValue)}</td>
             </tr>);
           })}

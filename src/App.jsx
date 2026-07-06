@@ -8,6 +8,7 @@ import LeadList from './pages/leads/LeadList';
 import CreateLead from './pages/leads/CreateLead';
 import LeadDetails from './pages/leads/LeadDetails';
 import LeadHistory from './pages/leads/LeadHistory';
+import FollowUpsPage from './pages/marketing/FollowUpsPage';
 import AdminLayout from './components/layout/AdminLayout';
 import MarketingLayout from './components/layout/MarketingLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/marketing/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'followups', element: <FollowUpsPage /> },
       { path: 'leads', element: <LeadList /> },
       { path: 'leads/create', element: <CreateLead /> },
       { path: 'leads/:leadId', element: <LeadDetails /> },

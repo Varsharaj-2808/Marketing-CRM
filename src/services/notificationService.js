@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../constants';
 const STORAGE_KEY = 'crm_notifications';
 
 function readStoredNotifications() {
@@ -53,15 +54,41 @@ function getSeedNotifications(now) {
 }
 
 export async function fetchNotifications() {
-  const now = new Date();
-  const stored = readStoredNotifications();
-  if (stored) {
-    return { success: true, data: stored };
+  try {
+    const rawToken = localStorage.getItem('crm_access_token') || sessionStorage.getItem('crm_access_token');
+    let token = null;
+    if (rawToken) {
+      try { token = JSON.parse(rawToken); } catch { token = rawToken; }
+    }
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    
+    const res = await fetch(`${API_BASE_URL}/notifications?_=${Date.now()}`, {
+      headers
+    });
+    
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.data) {
+        writeStoredNotifications(json.data);
+        return json;
+      }
+    }
+  } catch (err) {
+    console.error('Fetch notifications failed:', err);
   }
 
+  const stored = readStoredNotifications();
+  if (stored) {
+    return { success: true, data: stored, unread_count: stored.filter(n => !n.read).length };
+  }
+
+  const now = new Date();
   const notifications = getSeedNotifications(now);
   writeStoredNotifications(notifications);
-  return { success: true, data: notifications };
+  return { success: true, data: notifications, unread_count: notifications.filter(n => !n.read).length };
 }
 
 export async function markNotificationRead(notificationId) {

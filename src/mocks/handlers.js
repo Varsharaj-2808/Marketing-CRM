@@ -951,43 +951,38 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/notifications`, () => {
-    const now = new Date();
-    const notifications = [
-      {
-        id: 'notif-001',
-        type: 'assignment',
-        message: 'Lead LD-2026-00001 has been assigned to John Executive',
-        leadId: 'lead-001',
-        read: false,
-        role: 'Admin',
-        createdAt: new Date(now - 3600000).toISOString(),
-        timestamp: new Date(now - 3600000).toISOString(),
-      },
-      {
-        id: 'notif-002',
-        type: 'assignment',
-        message: 'Lead LD-2026-00002 has been reassigned to Sarah Manager',
-        leadId: 'lead-002',
-        read: false,
-        role: 'Admin',
-        createdAt: new Date(now - 7200000).toISOString(),
-        timestamp: new Date(now - 7200000).toISOString(),
-      },
-      {
-        id: 'notif-003',
-        type: 'assignment',
-        message: 'Lead LD-2026-00003 has been assigned to John Executive',
-        leadId: 'lead-003',
-        read: true,
-        role: 'Admin',
-        createdAt: new Date(now - 86400000).toISOString(),
-        timestamp: new Date(now - 86400000).toISOString(),
-      },
-    ];
+    http.get(`${BASE}/notifications`, () => {
     return HttpResponse.json({
       success: true,
-      data: notifications,
+      status_code: 200,
+      message: "Notifications fetched successfully",
+      unread_count: 3,
+      data: [
+        {
+          id: 'notif-001',
+          type: 'lead_reminder',
+          message: 'Reminder: Follow-up is due today for TechCorp Solutions.',
+          reference_id: 'lead-00001',
+          read: false,
+          created_at: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: 'notif-002',
+          type: 'lead_reminder',
+          message: 'Reminder: Follow-up is overdue for GrowthMark Agency.',
+          reference_id: 'lead-00002',
+          read: false,
+          created_at: new Date(Date.now() - 7200000).toISOString()
+        },
+        {
+          id: 'notif-003',
+          type: 'lead_reminder',
+          message: 'Reminder: Follow-up is due today for MediCare Group.',
+          reference_id: 'lead-00003',
+          read: false,
+          created_at: new Date(Date.now() - 86400000).toISOString()
+        }
+      ]
     });
   }),
 
@@ -1242,5 +1237,219 @@ export const handlers = [
 
   http.get(`${BASE}/admin/reports/export`, () => {
     return HttpResponse.text('Binary report file stream');
+  }),
+
+  http.get(`${BASE}/marketing/followups/today`, ({ request }) => {
+    const url = new URL(request.url);
+    const assignedTo = url.searchParams.get('assigned_to');
+    
+    // Simulate auth token check - return 401 if missing Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({
+        success: false,
+        status_code: 401,
+        message: "Authentication required. Invalid or missing token",
+        data: null
+      }, { status: 401 });
+    }
+    
+    // ME cannot access another user's today's follow-ups
+    if (authHeader.includes('me-002-token') && assignedTo === 'me-001') {
+      return HttpResponse.json({
+        success: false,
+        status_code: 403,
+        message: "Access denied. Cannot fetch today's follow-ups for another user",
+        data: null
+      }, { status: 403 });
+    }
+
+    // Default response returning 3 leads
+    return HttpResponse.json({
+      success: true,
+      status_code: 200,
+      message: "Today's follow-ups retrieved successfully",
+      data: [
+        {
+          id: "lead-uuid-101",
+          company_name: "Hot Industries",
+          contact_person: "Alice Cooper",
+          lead_quality: "Hot",
+          next_followup_date: "2026-07-06T10:00:00Z",
+          stage: "Contacted"
+        },
+        {
+          id: "lead-uuid-102",
+          company_name: "Warm Dynamics",
+          contact_person: "Bob Marley",
+          lead_quality: "Warm",
+          next_followup_date: "2026-07-06T14:30:00Z",
+          stage: "Meeting Scheduled"
+        },
+        {
+          id: "lead-uuid-103",
+          company_name: "Cold Services",
+          contact_person: "Charlie Puth",
+          lead_quality: "Cold",
+          next_followup_date: "2026-07-06T16:00:00Z",
+          stage: "New Lead"
+        }
+      ]
+    });
+  }),
+
+  http.get(`${BASE}/marketing/followups/overdue`, ({ request }) => {
+    const url = new URL(request.url);
+    const assignedTo = url.searchParams.get('assigned_to');
+    
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({
+        success: false,
+        status_code: 401,
+        message: "Authentication required. Invalid or missing token",
+        data: null
+      }, { status: 401 });
+    }
+    
+    // ME cannot access another user's overdue queue
+    if (authHeader.includes('me-002-token') && assignedTo === 'me-001') {
+      return HttpResponse.json({
+        success: false,
+        status_code: 403,
+        message: "Access denied. Cannot fetch overdue follow-ups for another user",
+        data: null
+      }, { status: 403 });
+    }
+
+    return HttpResponse.json({
+      success: true,
+      status_code: 200,
+      message: "Overdue follow-ups retrieved successfully",
+      data: [
+        {
+          id: "lead-uuid-201",
+          company_name: "Ancient Corp",
+          contact_person: "Elvis Presley",
+          next_followup_date: "2026-07-01T10:00:00Z",
+          days_overdue: 5,
+          stage: "New Lead",
+          lead_quality: "Hot"
+        },
+        {
+          id: "lead-uuid-202",
+          company_name: "Recent Ltd",
+          contact_person: "Madonna",
+          next_followup_date: "2026-07-05T12:00:00Z",
+          days_overdue: 1,
+          stage: "Contacted",
+          lead_quality: "Warm"
+        }
+      ]
+    });
+  }),
+
+  http.get(`${BASE}/admin/dashboard/at-risk`, ({ request }) => {
+    const url = new URL(request.url);
+    const overdueDays = parseInt(url.searchParams.get('overdue_days')) || 3;
+    
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.includes('me-001-token')) {
+      // ME role is forbidden from calling Admin At-Risk escalation API
+      return HttpResponse.json({
+        success: false,
+        status_code: 403,
+        message: "Access denied. Admin role required.",
+        data: null
+      }, { status: 403 });
+    }
+
+    if (overdueDays >= 5) {
+      return HttpResponse.json({
+        success: true,
+        status_code: 200,
+        message: "At-risk leads fetched successfully",
+        data: {
+          total_at_risk: 1,
+          breakdown: [
+            { user_id: "me-001", at_risk_count: 1, oldest_overdue_days: 5 }
+          ],
+          leads: [
+            {
+              id: "lead-uuid-201",
+              lead_id: "LD-2026-00085",
+              company_name: "Ancient Corp",
+              assigned_to: "John Doe",
+              days_overdue: 5
+            }
+          ]
+        }
+      });
+    }
+
+    return HttpResponse.json({
+      success: true,
+      status_code: 200,
+      message: "At-risk leads fetched successfully",
+      data: {
+        total_at_risk: 2,
+        breakdown: [
+          { user_id: "me-001", user_name: "John Doe", at_risk_count: 1, oldest_overdue_days: 5 },
+          { user_id: "me-002", user_name: "Jane Smith", at_risk_count: 1, oldest_overdue_days: 3 }
+        ],
+        leads: [
+          {
+            id: "lead-uuid-201",
+            lead_id: "LD-2026-00085",
+            company_name: "Ancient Corp",
+            assigned_to: "John Doe",
+            days_overdue: 5
+          },
+          {
+            id: "lead-uuid-203",
+            lead_id: "LD-2026-00099",
+            company_name: "Risk Inc",
+            assigned_to: "Jane Smith",
+            days_overdue: 3
+          }
+        ]
+      }
+    });
+  }),
+
+  http.post(`${BASE}/reminders/send-daily`, async ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.includes('me-001-token')) {
+      // ME role is forbidden from running daily reminders cron
+      return HttpResponse.json({
+        success: false,
+        status_code: 403,
+        message: "Access denied. Admin role required.",
+        data: null
+      }, { status: 403 });
+    }
+
+    const { date } = await request.json();
+    if (date === 'not-a-date') {
+      return HttpResponse.json({
+        success: false,
+        status_code: 400,
+        message: "Validation failed",
+        body: {
+          error: "Invalid date format. Use YYYY-MM-DD"
+        }
+      }, { status: 400 });
+    }
+
+    return HttpResponse.json({
+      success: true,
+      status_code: 200,
+      message: "Daily reminders processed successfully",
+      reminders_sent: 2,
+      breakdown: [
+        { user_id: "me-001", leads_reminded: 1 },
+        { user_id: "me-002", leads_reminded: 1 }
+      ]
+    });
   }),
 ];

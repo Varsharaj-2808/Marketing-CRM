@@ -45,6 +45,8 @@ function normalizeLead(lead) {
     assignedToName: toDisplayText(lead.assignedTo ?? lead.assigned_to, 'Unassigned'),
     createdAt: getLeadField(lead, ['createdAt', 'created_at', 'createdDate', 'created_date'], ''),
     estimatedValue: getLeadField(lead, ['estimatedValue', 'estimated_value', 'value'], ''),
+    nextFollowupDate: lead.next_followup_date || lead.nextFollowupDate || '',
+    isOverdue: lead.is_overdue ?? lead.isOverdue ?? false,
   };
 }
 

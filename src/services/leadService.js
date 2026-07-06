@@ -987,3 +987,239 @@ export async function exportReport(params = {}) {
   return blob;
 }
 
+let FOLLOWUP_STORE = [];
+
+export async function createFollowup(leadId, data) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/followups`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    const json = await safeJson(res);
+    if (!res.ok) {
+      const error = new Error(json?.body?.error || json?.message || 'Failed to create follow-up.');
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    const followup = json?.body || json?.data || json;
+    FOLLOWUP_STORE.push(followup);
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.proposal_value = data.proposal_amount ?? lead.proposal_value;
+      lead.estimated_value = data.proposal_amount ?? lead.estimated_value;
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Follow-up Logged',
+        message: `${data.followup_type} - ${data.outcome}`,
+        user: 'System',
+        followup_type: data.followup_type,
+        outcome: data.outcome,
+        notes: data.notes,
+        proposal_amount: data.proposal_amount,
+        createdBy: { name: 'Current User' },
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }];
+    }
+    return json || { success: true, data: followup, message: 'Follow-up recorded successfully' };
+  } catch (err) {
+    if (err?.status && err.status !== 502) throw err;
+    const followup = {
+      id: `fup-${crypto.randomUUID?.() || Date.now()}`,
+      lead_id: leadId,
+      ...data,
+      stage_at_log: findLeadInStore(leadId)?.stage || 'New',
+      created_by: { id: 'user-local', name: 'Current User' },
+      created_at: new Date().toISOString(),
+      correction_notes: null,
+    };
+    FOLLOWUP_STORE.push(followup);
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.proposal_value = data.proposal_amount ?? lead.proposal_value;
+      lead.estimated_value = data.proposal_amount ?? lead.estimated_value;
+      lead.timeline = [...(lead.timeline || []), {
+        action: 'Follow-up Logged',
+        message: `${data.followup_type} - ${data.outcome}`,
+        user: 'Current User',
+        followup_type: data.followup_type,
+        outcome: data.outcome,
+        notes: data.notes,
+        proposal_amount: data.proposal_amount,
+        createdBy: { name: 'Current User' },
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }];
+    }
+    return {
+      status: 'success',
+      status_code: 201,
+      message: 'Follow-up recorded successfully',
+      body: followup,
+      lead_updated: { proposal_value: data.proposal_amount || 0 },
+    };
+  }
+}
+
+export async function fetchTimeline(leadId, params = {}) {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        query.set(key, value);
+      }
+    });
+    query.set('_', Date.now());
+    const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/timeline?${query.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (!res.ok) {
+      const error = new Error(json?.body?.error || json?.message || 'Failed to fetch timeline.');
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    return json || { success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } };
+  } catch (err) {
+    if (err?.status && err.status !== 502) throw err;
+    const localLead = findLeadInStore(leadId);
+    const localFollowups = FOLLOWUP_STORE.filter(f => f.lead_id === leadId);
+    const timeline = [
+      ...(localLead?.timeline || []).map(t => ({
+        type: t.followup_type ? 'followup' : (t.action?.toLowerCase().includes('created') ? 'created' : (t.action?.toLowerCase().includes('status') || t.action?.toLowerCase().includes('stage') ? 'status_change' : 'assigned')),
+        action: t.action,
+        message: t.message,
+        followup_type: t.followup_type,
+        outcome: t.outcome,
+        notes: t.notes,
+        proposal_amount: t.proposal_amount,
+        created_by: typeof t.createdBy === 'object' ? t.createdBy : (t.user ? { name: t.user } : null),
+        created_at: t.createdAt || t.timestamp,
+        timestamp: t.timestamp || t.createdAt,
+        correction_notes: t.correction_notes,
+        correction_by: t.correction_by,
+        correction_at: t.correction_at,
+        user: t.user,
+      })),
+      ...localFollowups.map(f => ({
+        type: 'followup',
+        id: f.id,
+        followup_type: f.followup_type,
+        outcome: f.outcome,
+        notes: f.notes,
+        proposal_amount: f.proposal_amount,
+        stage_at_log: f.stage_at_log,
+        created_by: f.created_by,
+        created_at: f.created_at,
+        correction_notes: f.correction_notes || null,
+        correction_by: f.correction_by || null,
+        correction_at: f.correction_at || null,
+      })),
+    ];
+    timeline.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    return {
+      status: 'success',
+      status_code: 200,
+      message: 'Timeline fetched successfully',
+      body: {
+        lead_id: leadId,
+        company_name: localLead?.companyName || '',
+        total_events: timeline.length,
+        filtered_count: timeline.length,
+        timeline,
+        pagination: { page: 1, totalPages: 1, has_more: false },
+      },
+    };
+  }
+}
+
+export async function fetchTodayFollowups() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/marketing/followups/today?_=${Date.now()}`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json?.body?.data) return json;
+    if (json?.data) return json;
+    return json || { status: 'success', body: { data: [] } };
+  } catch {
+    return { status: 'success', body: { data: [] } };
+  }
+}
+
+export async function fetchOverdueFollowups() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/marketing/followups/overdue?_=${Date.now()}`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json?.body?.data) return json;
+    if (json?.data) return json;
+    return json || { status: 'success', body: { data: [] } };
+  } catch {
+    return { status: 'success', body: { data: [] } };
+  }
+}
+
+export async function addCorrection(leadId, followupId, correctionNotes) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/followups/${followupId}/correction`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ correction_notes: correctionNotes }),
+    });
+    const json = await safeJson(res);
+    if (!res.ok) {
+      const error = new Error(json?.body?.error || json?.message || 'Failed to save correction.');
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    const idx = FOLLOWUP_STORE.findIndex(f => f.id === followupId);
+    if (idx >= 0) {
+      FOLLOWUP_STORE[idx].correction_notes = correctionNotes;
+      FOLLOWUP_STORE[idx].correction_by = { id: 'user-local', name: 'Current User' };
+      FOLLOWUP_STORE[idx].correction_at = new Date().toISOString();
+    }
+    const lead = findLeadInStore(leadId);
+    if (lead?.timeline) {
+      const tIdx = lead.timeline.findIndex(t => t.followup_type && t.createdAt === json?.body?.created_at);
+      if (tIdx >= 0) {
+        lead.timeline[tIdx].correction_notes = correctionNotes;
+        lead.timeline[tIdx].correction_by = { name: 'Current User' };
+        lead.timeline[tIdx].correction_at = new Date().toISOString();
+      }
+    }
+    return json || { success: true, message: 'Correction saved successfully' };
+  } catch (err) {
+    if (err?.status && err.status !== 502) throw err;
+    const lead = findLeadInStore(leadId);
+    if (lead?.timeline) {
+      const entry = lead.timeline.find(t => t.followup_type && !t.correction_at);
+      if (entry) {
+        entry.correction_notes = correctionNotes;
+        entry.correction_by = { name: 'Current User' };
+        entry.correction_at = new Date().toISOString();
+      }
+    }
+    return { success: true, message: 'Correction saved successfully' };
+  }
+}
+
+export async function fetchAtRiskLeads(overdueDays = 3) {
+  try {
+    const query = appendCacheBuster({ overdue_days: overdueDays });
+    const res = await fetch(`${API_BASE_URL}/admin/dashboard/at-risk?${query}`, {
+      headers: getAuthHeaders(),
+    });
+    const json = await safeJson(res);
+    if (json?.data) return json;
+    return json || { success: true, data: { total_at_risk: 0, breakdown: [], leads: [] } };
+  } catch {
+    return { success: true, data: { total_at_risk: 0, breakdown: [], leads: [] } };
+  }
+}
+
+

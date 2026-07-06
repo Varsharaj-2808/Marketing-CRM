@@ -8,7 +8,8 @@ import {
   fetchDashboardKpis,
   fetchWonRateByCategory,
   fetchLeadVolumeByCategory,
-  exportReport
+  exportReport,
+  fetchAtRiskLeads
 } from '../../services/leadService';
 
 function AdminDashboardSkeleton() {
@@ -52,7 +53,7 @@ function AdminDashboardSkeleton() {
       </div>
 
       {/* Widgets Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-card p-6 h-[380px] flex flex-col space-y-6">
           <div className="flex justify-between items-center pb-3 border-b border-outline-variant/10">
             <div className="h-6 w-56 bg-surface-container-highest rounded"></div>
@@ -95,6 +96,36 @@ export default function AdminDashboardPage() {
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
 
+  // Story-4.2.1 state
+  const [atRiskLeads, setAtRiskLeads] = useState([]);
+  const [atRiskTotal, setAtRiskTotal] = useState(0);
+  const [atRiskLoading, setAtRiskLoading] = useState(false);
+  const [atRiskError, setAtRiskError] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    async function loadAtRisk() {
+      setAtRiskLoading(true);
+      setAtRiskError(false);
+      try {
+        const res = await fetchAtRiskLeads(3);
+        if (res.success) {
+          setAtRiskLeads(res.data?.leads || []);
+          setAtRiskTotal(res.data?.total_at_risk ?? 0);
+        } else {
+          setAtRiskError(true);
+        }
+      } catch (err) {
+        console.error('Error fetching at-risk leads:', err);
+        setAtRiskError(true);
+      } finally {
+        setAtRiskLoading(false);
+      }
+    }
+    loadAtRisk();
+  }, [isAuthenticated]);
+
+
   // Story-2 state
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -111,7 +142,8 @@ export default function AdminDashboardPage() {
       navigate('/app/login', { replace: true });
       return;
     }
-    const timer = setTimeout(() => setLoading(false), 600);
+    const delay = typeof process !== 'undefined' && process.env.NODE_ENV === 'test' ? 0 : 600;
+    const timer = setTimeout(() => setLoading(false), delay);
     return () => clearTimeout(timer);
   }, [isAuthenticated, navigate]);
 
@@ -446,6 +478,62 @@ export default function AdminDashboardPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* At Risk Widget */}
+        <div className="glass-card p-6 relative min-h-[380px] flex flex-col shadow-sm border border-outline-variant/20 bg-white/40">
+          {atRiskLoading && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+              <span className="material-symbols-outlined animate-spin text-[36px] text-primary">progress_activity</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center mb-5 border-b border-outline-variant/10 pb-3">
+            <div>
+              <h3 className="font-headline-sm text-headline-sm text-on-surface font-semibold flex items-center gap-2">
+                At Risk Follow-ups
+                <span className="px-2 py-0.5 bg-red-100 text-red-800 font-bold text-xs rounded-full">
+                  {atRiskTotal}
+                </span>
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">Leads overdue by 3 or more calendar days</p>
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            {atRiskError ? (
+              <div className="h-full flex flex-col items-center justify-center text-error p-4">
+                <span className="material-symbols-outlined text-3xl mb-1">error</span>
+                <p className="text-body-sm font-semibold">Failed to load at-risk leads</p>
+              </div>
+            ) : atRiskLeads.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-on-surface-variant py-10 opacity-70">
+                <span className="material-symbols-outlined text-[48px] mb-2 text-emerald-600 font-bold">check_circle</span>
+                <p className="text-body-md font-medium text-center">No leads are currently at risk. All follow-ups are on track.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {atRiskLeads.map((lead) => (
+                  <div 
+                    key={lead.id}
+                    onClick={() => navigate(`/admin/leads/${lead.id || lead.lead_id}`)}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-white/60 hover:bg-white transition-all cursor-pointer border border-transparent hover:border-outline-variant/30 shadow-sm"
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-on-surface font-semibold text-label-md truncate">
+                        {lead.company_name}
+                      </span>
+                      <span className="text-on-surface-variant text-label-sm">
+                        Owner: {lead.assigned_to || 'Unassigned'}
+                      </span>
+                    </div>
+                    <span className="text-red-800 bg-red-100 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap">
+                      {lead.days_overdue} days overdue
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>

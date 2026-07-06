@@ -1022,11 +1022,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1053,11 +1058,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1084,11 +1094,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1115,11 +1130,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1130,27 +1150,54 @@
       "endpoint": "marketing/leads",
       "responses": [
         {
-          "uuid": "b634dba7-98c5-4f13-b6b6-4d2badf827d9",
-          "body": "{\n  \"page\": 1,\n  \"totalPages\": 1,\n  \"totalCount\": 3,\n  \"limit\": 25,\n  \"data\": [\n    {\n      \"id\": \"lead-00001\",\n      \"leadId\": \"LD-2026-00001\",\n      \"company_name\": \"TechCorp Solutions\",\n      \"website\": \"https://techcorp.com\",\n      \"category\": \"cat-001\",\n      \"sub_category\": \"sub-001\",\n      \"contact_person\": \"Alice Johnson\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"alice@techcorp.com\",\n      \"city\": \"Mumbai\",\n      \"lead_source\": \"Website\",\n      \"servicesInterested\": [\n        \"Web Development\",\n        \"Cloud Solutions\"\n      ],\n      \"priority\": \"Hot\",\n      \"estimated_value\": \"500000\",\n      \"assigned_to\": \"EMP-00001\",\n      \"stage\": \"New\"\n    },\n    {\n      \"id\": \"lead-00002\",\n      \"leadId\": \"LD-2026-00002\",\n      \"company_name\": \"GrowthMark Agency\",\n      \"website\": \"https://growthmark.com\",\n      \"category\": \"cat-002\",\n      \"sub_category\": \"sub-005\",\n      \"contact_person\": \"Bob Smith\",\n      \"mobile_number\": \"8765432109\",\n      \"email\": \"bob@growthmark.com\",\n      \"city\": \"Delhi\",\n      \"lead_source\": \"Referral\",\n      \"servicesInterested\": [\n        \"SEO Services\",\n        \"Digital Marketing\"\n      ],\n      \"priority\": \"Warm\",\n      \"estimated_value\": \"250000\",\n      \"assigned_to\": \"EMP-00002\",\n      \"stage\": \"Contacted\"\n    },\n    {\n      \"id\": \"lead-00003\",\n      \"leadId\": \"LD-2026-00003\",\n      \"company_name\": \"MediCare Group\",\n      \"website\": \"\",\n      \"category\": \"cat-005\",\n      \"sub_category\": \"sub-015\",\n      \"contact_person\": \"Dr. Raj Patel\",\n      \"mobile_number\": \"7654321098\",\n      \"email\": \"raj@medicare.com\",\n      \"city\": \"Bangalore\",\n      \"lead_source\": \"Phone Inquiry\",\n      \"servicesInterested\": [\n        \"Consulting\"\n      ],\n      \"priority\": \"Cold\",\n      \"estimated_value\": \"1000000\",\n      \"assigned_to\": \"EMP-00003\",\n      \"stage\": \"Negotiation\"\n    }\n  ]\n}",
+          "uuid": "aed22b66-1d11-4cf7-8def-82ecdab8aeef",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Leads list retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-205\",\n      \"lead_id\": \"LD-2026-00021\",\n      \"company_name\": \"Closed Corp\",\n      \"status\": \"Won\",\n      \"quality\": \"Hot\",\n      \"assigned_to\": \"John Doe\",\n      \"next_followup_date\": \"2026-07-01T10:00:00Z\",\n      \"is_overdue\": false\n    }\n  ]\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "Success Response",
-          "headers": [
+          "label": "TEST-EP4-FUP2-027 - Edge - Closed leads Won/Lost always return is_over",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
             {
-              "key": "Content-Type",
-              "value": "application/json"
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
             }
           ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a96c39f8-3c2a-4dd2-accd-076f1c086aed",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Leads list retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-201\",\n      \"lead_id\": \"LD-2026-00085\",\n      \"company_name\": \"Ancient Corp\",\n      \"status\": \"Contacted\",\n      \"quality\": \"Hot\",\n      \"assigned_to\": \"John Doe\",\n      \"next_followup_date\": \"2026-07-01T10:00:00Z\",\n      \"is_overdue\": true\n    },\n    {\n      \"id\": \"lead-uuid-301\",\n      \"lead_id\": \"LD-2026-00112\",\n      \"company_name\": \"Future Corp\",\n      \"status\": \"Contacted\",\n      \"quality\": \"Hot\",\n      \"assigned_to\": \"John Doe\",\n      \"next_followup_date\": \"2026-07-15T12:00:00Z\",\n      \"is_overdue\": false\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 1,\n    \"total_records\": 2\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-026 - Positive - Leads list includes next_followup_date ",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1161,27 +1208,81 @@
       "endpoint": "marketing/dashboard",
       "responses": [
         {
-          "uuid": "6977e7d9-d83e-46fe-a210-b8c80b93fd23",
-          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"stats\": {\n      \"total_leads\": \"8\",\n      \"active_leads\": \"6\",\n      \"won_leads\": \"1\",\n      \"lost_leads\": \"1\",\n      \"total_estimated_value\": \"292000.00\"\n    },\n    \"stage_breakdown\": [\n      {\n        \"stage\": \"Contacted\",\n        \"count\": 2\n      },\n      {\n        \"stage\": \"New Lead\",\n        \"count\": 2\n      },\n      {\n        \"stage\": \"Lost\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Meeting Scheduled\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Negotiation\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Won\",\n        \"count\": 1\n      }\n    ],\n    \"recent_leads\": [],\n    \"unread_notifications\": 3\n  }\n}",
+          "uuid": "9ad86848-56f7-4b63-80c5-0cef7fd34eb8",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
           "latency": 0,
-          "statusCode": 200,
-          "label": "Success Response",
-          "headers": [
+          "statusCode": 401,
+          "label": "TEST-EP4-FUP2-015 - Security - Missing or invalid token returns 401",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
             {
-              "key": "Content-Type",
-              "value": "application/json"
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "^Bearer ",
+              "operator": "regex",
+              "invert": true
             }
           ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "feb834e2-5c67-4238-b087-6229be2c8853",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Dashboard KPIs retrieved successfully\",\n  \"data\": {\n    \"my_total_leads\": 50,\n    \"my_won\": 5,\n    \"my_lost\": 2,\n    \"my_conversion_rate\": \"10%\",\n    \"todays_followups\": 3,\n    \"overdue_followups\": 2,\n    \"hot_leads\": 12,\n    \"warm_leads\": 20,\n    \"cold_leads\": 18\n  },\n  \"meta\": {\n    \"execution_time_ms\": 220\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-030 - Edge - Dashboard loading performs aggregate calcul",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1e890c1b-5d04-4f05-8b22-ab4c560ce00b",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Dashboard KPIs retrieved successfully\",\n  \"data\": {\n    \"my_total_leads\": 50,\n    \"my_won\": 5,\n    \"my_lost\": 2,\n    \"my_conversion_rate\": \"10%\",\n    \"todays_followups\": 3,\n    \"overdue_followups\": 2,\n    \"hot_leads\": 12,\n    \"warm_leads\": 20,\n    \"cold_leads\": 18\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-014 - Positive - Returns valid KPI counts including toda",
+          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1208,11 +1309,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1239,11 +1345,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1270,11 +1381,16 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
       "streamingInterval": 0
     },
     {
@@ -1301,11 +1417,1004 @@
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR"
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "responseMode": null,
-      "streamingMode": "disabled",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "257e0fa5-2042-4078-80be-e684a48ae863",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "get",
+      "endpoint": "marketing/followups/today",
+      "responses": [
+        {
+          "uuid": "dff7b67a-5e17-4aaf-8056-b0696b518106",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-002 - Positive - Returns empty array when no follow-ups ",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "04491270-fca6-497e-8074-a7eaf1a18489",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-003 - Edge - Exclude Won/Lost (closed) leads from today'",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-003-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "35b76215-3088-4e7d-a1db-eea118e6fb7e",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-104\",\n      \"company_name\": \"Midnight Ltd\",\n      \"contact_person\": \"David Coverdale\",\n      \"lead_quality\": \"Hot\",\n      \"next_followup_date\": \"2026-07-06T00:00:00.000Z\",\n      \"stage\": \"Contacted\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-004 - Edge - Lead next_followup_date set to exactly 12:0",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-004-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b566dd8f-2870-49ce-a4d6-804f278ff315",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 403,\n  \"message\": \"Access denied. Cannot fetch today's follow-ups for another user\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP2-005 - Security - ME cannot access another user's today's",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "user_id",
+              "value": "me-001",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "3e23ca31-9967-4eff-83df-83991d0e9f28",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "TEST-EP4-FUP2-006 - Security - Unauthenticated request returns 401",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "^Bearer ",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "45385ccc-bad7-467d-97fc-4e5fd1850e16",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-101\",\n      \"company_name\": \"Hot Industries\",\n      \"contact_person\": \"Alice Cooper\",\n      \"lead_quality\": \"Hot\",\n      \"next_followup_date\": \"2026-07-06T10:00:00Z\",\n      \"stage\": \"Contacted\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-007 - Positive - Admin can view today's follow-ups for a",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "assigned_to",
+              "value": "me-001",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "44443f55-ec68-4182-898b-375156f360a6",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-028 - Security - SQL injection attempt on today's filter",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "assigned_to",
+              "value": "DROP|--|'",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "152944d0-2541-4d14-b541-48165c1d57b3",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-031 - Edge - Past date in next_followup_date is excluded",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-005-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "be0f0a25-a136-4cbc-874b-f8fe9ecddd1a",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Today's follow-ups retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-101\",\n      \"company_name\": \"Hot Industries\",\n      \"contact_person\": \"Alice Cooper\",\n      \"lead_quality\": \"Hot\",\n      \"next_followup_date\": \"2026-07-06T10:00:00Z\",\n      \"stage\": \"Contacted\"\n    },\n    {\n      \"id\": \"lead-uuid-102\",\n      \"company_name\": \"Warm Dynamics\",\n      \"contact_person\": \"Bob Marley\",\n      \"lead_quality\": \"Warm\",\n      \"next_followup_date\": \"2026-07-06T14:30:00Z\",\n      \"stage\": \"Meeting Scheduled\"\n    },\n    {\n      \"id\": \"lead-uuid-103\",\n      \"company_name\": \"Cold Services\",\n      \"contact_person\": \"Charlie Puth\",\n      \"lead_quality\": \"Cold\",\n      \"next_followup_date\": \"2026-07-06T16:00:00Z\",\n      \"stage\": \"New Lead\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-001 - Positive - Retrieve today's follow-ups for authent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "eb26b97a-a63b-434c-af58-a85192cd18b7",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "get",
+      "endpoint": "marketing/followups/overdue",
+      "responses": [
+        {
+          "uuid": "e4c6d6b4-8573-465b-a794-ebc52f7cbf6e",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Overdue follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-009 - Positive - Returns empty array when no overdue fol",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b04ad9dc-68ef-499c-9b5a-5df8ed77b068",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Overdue follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-010 - Edge - Exclude Won/Lost (closed) leads from overdu",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-003-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "48bd8b53-ed1f-4346-92a4-96e9e78ae912",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Overdue follow-ups retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-201\",\n      \"company_name\": \"Ancient Corp\",\n      \"contact_person\": \"Elvis Presley\",\n      \"next_followup_date\": \"2026-07-03T23:00:00.000Z\",\n      \"days_overdue\": 3,\n      \"stage\": \"New Lead\",\n      \"lead_quality\": \"Hot\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-011 - Edge - Precision check of days_overdue calculation",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-004-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "52bc5ecc-caec-4eaa-b20b-a0fc0e45de13",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 403,\n  \"message\": \"Access denied. Cannot fetch overdue follow-ups for another user\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP2-012 - Security - ME cannot access another user's overdue",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "user_id",
+              "value": "me-001",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8c987b59-3084-43bb-a135-cb80730f4af0",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Overdue follow-ups retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-201\",\n      \"company_name\": \"Ancient Corp\",\n      \"contact_person\": \"Elvis Presley\",\n      \"next_followup_date\": \"2026-07-01T10:00:00Z\",\n      \"days_overdue\": 5,\n      \"stage\": \"New Lead\",\n      \"lead_quality\": \"Hot\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-013 - Positive - Admin can view overdue follow-ups for a",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "assigned_to",
+              "value": "me-001",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "80c7a7fc-7160-4772-b722-a66d9143cd9f",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Overdue follow-ups retrieved successfully\",\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-032 - Edge - Future date in next_followup_date is exclud",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-005-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "14ca0334-2932-473f-a6bd-4874faa1f80c",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "TEST-EP4-FUP2-OVERDUE-401 - Security - Unauthenticated request returns 401",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "^Bearer ",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "90649892-bd23-4e79-9657-a7f8e1dd3c8c",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Overdue follow-ups retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": \"lead-uuid-201\",\n      \"company_name\": \"Ancient Corp\",\n      \"contact_person\": \"Elvis Presley\",\n      \"next_followup_date\": \"2026-07-01T10:00:00Z\",\n      \"days_overdue\": 5,\n      \"stage\": \"New Lead\",\n      \"lead_quality\": \"Hot\"\n    },\n    {\n      \"id\": \"lead-uuid-202\",\n      \"company_name\": \"Recent Ltd\",\n      \"contact_person\": \"Madonna\",\n      \"next_followup_date\": \"2026-07-05T12:00:00Z\",\n      \"days_overdue\": 1,\n      \"stage\": \"Contacted\",\n      \"lead_quality\": \"Warm\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-008 - Positive - Retrieve overdue follow-ups for authent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "4d25601f-186e-4d4c-84bb-3fac8324f54a",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "post",
+      "endpoint": "reminders/send-daily",
+      "responses": [
+        {
+          "uuid": "d96b61b6-08a0-49da-97a1-b52e97bdda15",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Daily reminders processed successfully\",\n  \"reminders_sent\": 0,\n  \"breakdown\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-017 - Edge - Daily reminders ignore closed leads (Won/Lo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "body",
+              "modifier": "date",
+              "value": "2026-07-07",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e63fd50c-c9dc-4cf8-85bd-4af67278cfb8",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 403,\n  \"message\": \"Access denied. Admin role required.\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP2-018 - Security - ME (Marketing role) is forbidden from r",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-001-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "65720692-9996-4996-8131-dd50a118ea1f",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid date format. Use YYYY-MM-DD\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP2-019 - Negative - Scheduler rejects invalid date strings",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "date",
+              "value": "not-a-date",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8f875df9-0d67-45c3-873a-fb9fe89ec768",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Daily reminders processed successfully\",\n  \"reminders_sent\": 0,\n  \"breakdown\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-020 - Edge - Running the scheduler multiple times on sam",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "body",
+              "modifier": "date",
+              "value": "2026-07-08",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "65d51d74-5931-4a59-b4f7-49940e102aa9",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Daily reminders processed successfully\",\n  \"reminders_sent\": 2,\n  \"breakdown\": [\n    {\n      \"user_id\": \"me-001\",\n      \"leads_reminded\": 1\n    },\n    {\n      \"user_id\": \"me-002\",\n      \"leads_reminded\": 1\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-016 - Positive - Running daily reminder cron scheduler s",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "041983fa-0805-4e45-8786-8e81da34562a",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "get",
+      "endpoint": "notifications",
+      "responses": [
+        {
+          "uuid": "1ce7cdd8-470b-4350-98b1-f6904e8b54c1",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Notifications fetched successfully\",\n  \"data\": [\n    {\n      \"id\": \"notif-1\",\n      \"type\": \"lead_reminder\",\n      \"message\": \"Reminder: Follow-up is due today for Hot Industries.\",\n      \"reference_id\": \"lead-uuid-101\",\n      \"read\": false,\n      \"created_at\": \"2026-07-06T00:00:00Z\"\n    }\n  ],\n  \"unread_count\": 1\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-021 - Positive - User retrieves unread follow-up notific",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "2ef73a4f-a100-425a-a921-2c518e4e9def",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "get",
+      "endpoint": "admin/dashboard/at-risk",
+      "responses": [
+        {
+          "uuid": "e7fe0f10-0c90-49fa-9987-5e830c56e8ae",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 403,\n  \"message\": \"Access denied. Admin role required.\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP2-023 - Security - ME (Marketing role) is forbidden from c",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-001-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c8d07914-9421-42df-ba48-64b2949ba242",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 1,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-024 - Edge - Custom overdue_days query filters leads pro",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "overdue_days",
+              "value": "5",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "3f595868-5bda-45b2-a6a4-4b114fd589eb",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 2,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"user_name\": \"John Doe\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      },\n      {\n        \"user_id\": \"me-002\",\n        \"user_name\": \"Jane Smith\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 3\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      },\n      {\n        \"id\": \"lead-uuid-203\",\n        \"lead_id\": \"LD-2026-00099\",\n        \"company_name\": \"Risk Inc\",\n        \"assigned_to\": \"Jane Smith\",\n        \"days_overdue\": 3\n      }\n    ]\n  },\n  \"meta\": {\n    \"execution_time_ms\": 180\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-025 - Edge - At-risk queries are optimized to load under",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token-perf",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "fac1328d-2dfe-44a2-9b76-44c7f471c564",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 2,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"user_name\": \"John Doe\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      },\n      {\n        \"user_id\": \"me-002\",\n        \"user_name\": \"Jane Smith\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 3\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      },\n      {\n        \"id\": \"lead-uuid-203\",\n        \"lead_id\": \"LD-2026-00099\",\n        \"company_name\": \"Risk Inc\",\n        \"assigned_to\": \"Jane Smith\",\n        \"days_overdue\": 3\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-029 - Security - SQL injection attempt on At-Risk parame",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "overdue_days",
+              "value": "DROP|--|'",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "7be401f7-9535-497f-aada-4136f483a18c",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 2,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"user_name\": \"John Doe\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      },\n      {\n        \"user_id\": \"me-002\",\n        \"user_name\": \"Jane Smith\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 3\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      },\n      {\n        \"id\": \"lead-uuid-203\",\n        \"lead_id\": \"LD-2026-00099\",\n        \"company_name\": \"Risk Inc\",\n        \"assigned_to\": \"Jane Smith\",\n        \"days_overdue\": 3\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP2-022 - Positive - Fetch active leads overdue by 3+ days (",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "23870bde-d3d2-4b82-933a-ae6dfc6857ab",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "post",
+      "endpoint": "marketing/followups/:leadId/schedule",
+      "responses": [
+        {
+          "uuid": "c5a7bfe4-a299-47d9-b2de-afaa6451f7cd",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 422,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    {\n      \"field\": \"next_followup_date\",\n      \"message\": \"Date is required\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 422,
+          "label": "Schedule follow-up - 422 validation error",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "next_followup_date",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8b07ab3f-62f6-4a96-ab27-986020abb380",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Schedule follow-up - 401 unauthorized",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "^Bearer ",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "4b50dfb0-2077-4bcf-b120-f1a1874efe3f",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 201,\n  \"message\": \"Follow-up scheduled successfully\",\n  \"data\": {\n    \"lead_id\": \"lead-uuid-001\",\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\",\n    \"followup_type\": \"call\",\n    \"notes\": \"Call client\",\n    \"scheduled_by\": \"me-001\",\n    \"scheduled_at\": \"2026-07-06T10:00:00Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "Schedule follow-up - 201 success (default)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "5a3ad2d0-77cc-44ca-a361-de67d21fccfe",
+      "type": "http",
+      "documentation": "Story-4.2.1 API Route",
+      "method": "put",
+      "endpoint": "marketing/followups/:leadId/complete",
+      "responses": [
+        {
+          "uuid": "c7f8399f-74a9-4a37-85be-2795bfb7d2ea",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 404,\n  \"message\": \"Lead not found\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Complete follow-up - 404 lead not found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "leadId",
+              "value": "lead-uuid-999",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "15163537-fd65-4b07-ba17-fdbedb7ac6f2",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Complete follow-up - 401 unauthorized",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "^Bearer ",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "16a0cb39-a5c8-4a8a-bd8c-8c7443eae331",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Follow-up marked as completed\",\n  \"data\": {\n    \"lead_id\": \"lead-uuid-001\",\n    \"outcome\": \"positive\",\n    \"notes\": \"Done\",\n    \"completed_at\": \"2026-07-06T10:00:00Z\",\n    \"completed_by\": \"me-001\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Complete follow-up - 200 success (default)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
       "streamingInterval": 0
     }
   ],
@@ -1373,6 +2482,74 @@
     {
       "type": "route",
       "uuid": "fe13cf6d-bd8c-4606-984d-9295f6703346"
+    },
+    {
+      "type": "route",
+      "uuid": "257e0fa5-2042-4078-80be-e684a48ae863"
+    },
+    {
+      "type": "route",
+      "uuid": "eb26b97a-a63b-434c-af58-a85192cd18b7"
+    },
+    {
+      "type": "route",
+      "uuid": "4d25601f-186e-4d4c-84bb-3fac8324f54a"
+    },
+    {
+      "type": "route",
+      "uuid": "041983fa-0805-4e45-8786-8e81da34562a"
+    },
+    {
+      "type": "route",
+      "uuid": "2ef73a4f-a100-425a-a921-2c518e4e9def"
+    },
+    {
+      "type": "route",
+      "uuid": "23870bde-d3d2-4b82-933a-ae6dfc6857ab"
+    },
+    {
+      "type": "route",
+      "uuid": "5a3ad2d0-77cc-44ca-a361-de67d21fccfe"
+    },
+    {
+      "type": "route",
+      "uuid": "abadb9b3-b441-4518-8192-5773460c6b61"
+    },
+    {
+      "type": "route",
+      "uuid": "7601101a-b6ad-4e08-9f6b-7839f5a028ae"
+    },
+    {
+      "type": "route",
+      "uuid": "eec5849c-d22e-4ac3-a94b-0731811cc1db"
+    },
+    {
+      "type": "route",
+      "uuid": "ae3a24c7-ad63-439d-af51-380640a68c12"
+    },
+    {
+      "type": "route",
+      "uuid": "683e60f9-e403-46a9-a4e9-99b1a968e262"
+    },
+    {
+      "type": "route",
+      "uuid": "d683b259-325e-4a7e-9f03-bb546c0e6dc3"
+    },
+    {
+      "type": "route",
+      "uuid": "c654e44e-b870-4e1a-8989-ffda399e67f0"
+    },
+    {
+      "type": "route",
+      "uuid": "2ce6f10b-1a07-4f16-aa01-d811197c00f4"
+    },
+    {
+      "type": "route",
+      "uuid": "3cc7b2ad-4f84-4626-9ec4-da266bb7ca6a"
+    },
+    {
+      "type": "route",
+      "uuid": "3121496e-c664-42d0-9b33-8ffb1880742b"
     }
   ],
   "proxyMode": false,

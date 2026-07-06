@@ -7,7 +7,7 @@ import NotificationBell from '../leads/NotificationBell';
 const NAV_ITEMS = [
   { path: '/marketing/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/marketing/leads', label: 'My Leads', icon: 'group' },
-  { path: '/marketing/follow-ups', label: 'Follow-ups', icon: 'event_note' },
+  { path: '/marketing/followups', label: 'Follow-ups', icon: 'event_note' },
   { path: '/marketing/reports', label: 'Reports', icon: 'assessment' },
 ];
 

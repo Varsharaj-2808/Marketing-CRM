@@ -6,7 +6,7 @@ import { toDisplayText } from '../../utils/leadDisplay';
 const NAV_ITEMS = [
   { path: '/app/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/app/leads', label: 'My Leads', icon: 'group' },
-  { path: '/app/follow-ups', label: 'Follow-ups', icon: 'event_note' },
+  { path: '/app/followups', label: 'Follow-ups', icon: 'event_note' },
   { path: '/app/reports', label: 'Reports', icon: 'assessment' },
 ];
 

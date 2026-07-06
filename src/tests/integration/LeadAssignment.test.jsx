@@ -1069,7 +1069,7 @@ describe('STORY-2.3.1 Timeline — Assignment Event Display', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead-history')) return mockRes({ success: true, data: [assignmentEntry] });
+      if (url.includes('/timeline')) return mockRes({ success: true, body: { timeline: [assignmentEntry], pagination: { page: 1, totalPages: 1, has_more: false } } });
       return mockRes({ success: true, data: leadWithAssignment });
     });
 
@@ -1077,7 +1077,7 @@ describe('STORY-2.3.1 Timeline — Assignment Event Display', () => {
 
     await screen.findByText('Lead Details');
 
-    expect(await screen.findByText(/Lead Assigned/i)).toBeInTheDocument();
+    expect(await screen.findByText('Lead Assigned')).toBeInTheDocument();
     expect(screen.getByText(/Ravi Executive/)).toBeInTheDocument();
   });
 
