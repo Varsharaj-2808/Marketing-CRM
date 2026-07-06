@@ -8,6 +8,7 @@ const assignController = require('../controllers/assignController');
 const notificationController = require('../controllers/notificationController');
 const categoryController = require('../controllers/categoryController');
 const dashboardController = require('../controllers/dashboardController');
+const followupController = require('../controllers/followupController');
 
 router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.createLead);
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
@@ -34,9 +35,25 @@ router.get('/dashboard/category/won-rate', protect, authorize('Admin', 'Marketin
 router.get('/dashboard/lead-volume-by-category', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadVolumeByCategoryMarketing);
 router.get('/dashboard/category/lead-volume', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadVolumeByCategoryMarketing);
 
-router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), assignController.getTimeline);
+// Follow-up list views (must be before /:id wildcard routes)
+router.get('/followups/today', protect, authorize('Admin', 'Marketing Executive'), followupController.getTodayFollowups);
+router.get('/followups/overdue', protect, authorize('Admin', 'Marketing Executive'), followupController.getOverdueFollowups);
+
+// Enhanced timeline (replaces assignController.getTimeline)
+router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), followupController.getTimeline);
+
+// Follow-up CRUD on a lead
+router.post('/leads/:id/followups', protect, authorize('Admin', 'Marketing Executive'), followupController.createFollowup);
+router.post('/leads/:id/followups/:fid/correction', protect, authorize('Admin', 'Marketing Executive'), followupController.addCorrection);
+
+// Immutability guards — reject PUT/PATCH/DELETE on follow-up records
+router.put('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectMutation);
+router.patch('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectMutation);
+router.delete('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectMutation);
+
 router.get('/dashboard', protect, authorize('Admin', 'Marketing Executive'), dashboardController.getDashboard);
 
 router.get('/notifications/count', protect, authorize('Admin', 'Marketing Executive'), notificationController.getNotificationCount);
 
 module.exports = router;
+

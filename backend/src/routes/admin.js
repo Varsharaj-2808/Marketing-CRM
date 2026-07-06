@@ -75,4 +75,10 @@ router.put('/subcategories/:id', protect, authorize('Admin'), categoryController
 router.delete('/subcategories/:id', protect, authorize('Admin'), categoryController.deleteSubCategory);
 router.patch('/subcategories/:id/status', protect, authorize('Admin'), categoryController.patchSubCategoryStatus);
 
+// ── STORY-4.2.1 | API-6 ─────────────────────────────────────
+router.get('/dashboard/at-risk', protect, authorize('Admin'), adminController.getAtRiskLeads);
+
+// ── STORY-4.2.1 | API-4 ─────────────────────────────────────
+router.post('/reminders/send-daily', protect, authorize('Admin'), adminController.sendDailyReminders);
+
 module.exports = router;

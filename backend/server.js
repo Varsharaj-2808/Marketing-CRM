@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, 'src', '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -19,6 +19,19 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── Catch malformed JSON bodies (body-parser SyntaxError) ────
+// body-parser sets err.type = 'entity.parse.failed' on bad JSON.
+// This MUST be here (before routes) to intercept the error early.
+app.use((err, req, res, next) => {
+  if (
+    err.type === 'entity.parse.failed' ||
+    (err instanceof SyntaxError && (err.status === 400 || err.statusCode === 400))
+  ) {
+    return res.status(400).json({ error: 'Invalid JSON in request body' });
+  }
+  next(err);
+});
 
 app.use('/exports', express.static(path.join(__dirname, 'exports'), {
   setHeaders: (res, filePath) => {
@@ -41,6 +54,16 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/marketing', marketingRoutes);
 
 app.use(errorHandler);
+
+// ── Process-level safety nets ─────────────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException] Server kept alive:', err.message);
+  console.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection] Server kept alive:', reason);
+});
 
 testConnection().then((dbConnected) => {
   if (!dbConnected) {

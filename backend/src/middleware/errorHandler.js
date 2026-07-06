@@ -1,4 +1,12 @@
 const errorHandler = (err, req, res, next) => {
+  // ── body-parser malformed JSON ────────────────────────────────
+  if (
+    err.type === 'entity.parse.failed' ||
+    (err instanceof SyntaxError && (err.status === 400 || err.statusCode === 400))
+  ) {
+    return res.status(400).json({ error: 'Invalid JSON in request body' });
+  }
+
   console.error(`Error: ${err.message}`);
   console.error(err.stack);
 
@@ -26,6 +34,9 @@ const errorHandler = (err, req, res, next) => {
   if (err.name === 'CastError') {
     return res.status(400).json({ success: false, message: 'Invalid ID format' });
   }
+
+  // ── Ensure response is always sent (never let an error go unhandled) ──
+  if (res.headersSent) return next(err);
 
   res.status(err.statusCode || 500).json({
     success: false,
