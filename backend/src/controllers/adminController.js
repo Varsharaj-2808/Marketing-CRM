@@ -613,3 +613,140 @@ exports.exportReport = async (req, res, next) => {
     next(error);
   }
 };
+
+
+// ─────────────────────────────────────────────────────────────
+// STORY-4.2.1 | API-6
+// GET /admin/dashboard/at-risk
+// Returns leads overdue >= overdue_days (default 3) calendar days.
+// Admin-only. Sorted descending by days_overdue.
+// ─────────────────────────────────────────────────────────────
+exports.getAtRiskLeads = async (req, res, next) => {
+  try {
+    const raw = parseInt(req.query.overdue_days, 10);
+    const threshold = Number.isInteger(raw) && raw > 0 ? raw : 3;
+
+    const leadsResult = await query(
+      `SELECT
+         l.id,
+         l.lead_id,
+         l.company_name,
+         l.contact_person,
+         u.name                                                  AS assigned_to,
+         (CURRENT_DATE - DATE(l.next_followup_date))::int        AS days_overdue
+       FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
+       WHERE l.next_followup_date IS NOT NULL
+         AND DATE(l.next_followup_date) < CURRENT_DATE
+         AND l.stage NOT IN ('Won', 'Lost')
+         AND (CURRENT_DATE - DATE(l.next_followup_date)) >= $1
+         AND l.deleted_at IS NULL
+       ORDER BY days_overdue DESC`,
+      [threshold]
+    );
+
+    const breakdownResult = await query(
+      `SELECT
+         u.id                                                         AS user_id,
+         u.name                                                       AS user_name,
+         COUNT(l.id)::int                                             AS at_risk_count,
+         MAX((CURRENT_DATE - DATE(l.next_followup_date))::int)        AS oldest_overdue_days
+       FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
+       WHERE l.next_followup_date IS NOT NULL
+         AND DATE(l.next_followup_date) < CURRENT_DATE
+         AND l.stage NOT IN ('Won', 'Lost')
+         AND (CURRENT_DATE - DATE(l.next_followup_date)) >= $1
+         AND l.deleted_at IS NULL
+       GROUP BY u.id, u.name
+       ORDER BY oldest_overdue_days DESC`,
+      [threshold]
+    );
+
+    return res.json({
+      success: true,
+      message: 'At-risk leads fetched successfully',
+      data: {
+        total_at_risk: leadsResult.rows.length,
+        breakdown:     breakdownResult.rows,
+        leads:         leadsResult.rows,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// STORY-4.2.1 | API-4
+// POST /admin/reminders/send-daily
+// Idempotent cron trigger: creates in-app notifications for leads
+// due on the given date that have not been notified yet.
+// Admin-only.
+// ─────────────────────────────────────────────────────────────
+const YYYYMMDD = /^\d{4}-\d{2}-\d{2}$/;
+
+exports.sendDailyReminders = async (req, res, next) => {
+  try {
+    const { date } = req.body;
+
+    if (!date || !YYYYMMDD.test(date) || isNaN(new Date(date).getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        body: { error: 'Invalid date format. Use YYYY-MM-DD' },
+      });
+    }
+
+    // Find active leads due on date that are NOT yet notified today (idempotency)
+    const leadsResult = await query(
+      `SELECT l.id AS lead_id, l.company_name, l.priority, l.assigned_to AS user_id
+       FROM leads l
+       WHERE DATE(l.next_followup_date) = $1
+         AND l.stage NOT IN ('Won', 'Lost')
+         AND l.deleted_at IS NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM notifications n
+           WHERE n.lead_id = l.id
+             AND n.notification_type = 'lead_reminder'
+             AND DATE(n.created_at) = $1
+         )`,
+      [date]
+    );
+
+    const due = leadsResult.rows;
+
+    if (due.length === 0) {
+      return res.json({
+        success:        true,
+        message:        'Daily reminders processed successfully',
+        reminders_sent: 0,
+        breakdown:      [],
+      });
+    }
+
+    const map = {};
+    for (const lead of due) {
+      await query(
+        `INSERT INTO notifications (user_id, notification_type, lead_id, message)
+         VALUES ($1, 'lead_reminder', $2, $3)`,
+        [
+          lead.user_id,
+          lead.lead_id,
+          `Reminder: Follow-up is due today for ${lead.company_name} (${lead.priority}).`,
+        ]
+      );
+      if (!map[lead.user_id]) map[lead.user_id] = { user_id: lead.user_id, leads_reminded: 0 };
+      map[lead.user_id].leads_reminded += 1;
+    }
+
+    return res.json({
+      success:        true,
+      message:        'Daily reminders processed successfully',
+      reminders_sent: due.length,
+      breakdown:      Object.values(map),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
