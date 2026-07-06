@@ -57,4 +57,13 @@ const sendWelcomeEmail = async (to, name, employeeId, tempPassword) => {
   await sendEmail({ to, subject, text, html });
 };
 
-module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail };
+const sendDailyReminderEmail = async (to, name, companyName, priority) => {
+  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const subject = `Reminder: Follow-up Due Today - ${companyName}`;
+  const text = `Hello ${name},\n\nThis is a reminder that a follow-up is due today for ${companyName} (Priority: ${priority}).\n\nPlease log in to your CRM dashboard to view and manage this lead: ${appUrl}\n\nBest regards,\nCRM System`;
+  const html = `<p>Hello ${name},</p><p>This is a reminder that a follow-up is due <strong>today</strong> for <strong>${companyName}</strong> (Priority: ${priority}).</p><p>Please <a href="${appUrl}">log in to your CRM dashboard</a> to view and manage this lead.</p><br><p>Best regards,<br>CRM System</p>`;
+
+  await sendEmail({ to, subject, text, html });
+};
+
+module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail };
