@@ -1,5 +1,39 @@
 import { useState, useMemo } from 'react';
 
+const SVG_PATHS = {
+  phone: 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z',
+  chat: 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z',
+  mail: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',
+  videocam: 'M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z',
+  groups: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
+  smart_display: 'M20 3H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v2h8v-2h4c1.1 0 1.99-.9 1.99-2L22 5c0-1.1-.9-2-2-2zm0 14H4V5h16v12z',
+  description: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  note: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z',
+  add_circle: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z',
+  sync: 'M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z',
+  assignment: 'M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z',
+  history: 'M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
+  timeline: 'M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
+  add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+};
+
+const ICON_TITLES = {
+  phone: 'Call Icon',
+  chat: 'WhatsApp Icon',
+  mail: 'Email Icon',
+  videocam: 'Online Meeting Icon',
+  groups: 'Client Meeting Icon',
+  smart_display: 'Demo Icon',
+  description: 'Proposal Discussion Icon',
+  note: 'Note Icon',
+  add_circle: 'Created Icon',
+  sync: 'Status Changed Icon',
+  assignment: 'Assignment Icon',
+  history: 'History Icon',
+  timeline: 'Timeline Icon',
+  add: 'Add Icon',
+};
+
 const FOLLOWUP_TYPE_ICONS = {
   'Call': 'phone',
   'WhatsApp': 'chat',
@@ -141,9 +175,10 @@ function TimelineCard({ entry, idx, currentUserId, isReadOnly, isAdmin, onAddCor
       className="flex items-start gap-3 p-3 bg-white/30 rounded-xl border border-outline-variant/20"
     >
       <div className={`w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center shrink-0`}>
-        <span className={`material-symbols-outlined text-[18px] ${meta.color}`} aria-hidden="true">
-          {meta.icon}
-        </span>
+        <svg viewBox="0 0 24 24" width="18" height="18" className={meta.color} aria-hidden="true">
+          <title>{ICON_TITLES[meta.icon] || meta.icon + ' Icon'}</title>
+          <path d={SVG_PATHS[meta.icon] || SVG_PATHS.note} fill="currentColor" />
+        </svg>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -213,7 +248,7 @@ function TimelineCard({ entry, idx, currentUserId, isReadOnly, isAdmin, onAddCor
           <p className="font-label-sm text-label-sm text-on-surface-variant/70">
             {userName && <span>by {userName}</span>}
             {timestamp && (
-              <span title={formatDate(timestamp)} className="cursor-help">
+              <span title={formatDate(timestamp)}>
                 {' '}{getRelativeTime(timestamp)}
               </span>
             )}
@@ -321,9 +356,10 @@ export default function Timeline({
   if (!sortedTimeline || sortedTimeline.length === 0) {
     return (
       <div className="text-center py-12">
-        <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 mb-3">
-          timeline
-        </span>
+        <svg viewBox="0 0 24 24" width="48" height="48" className="text-on-surface-variant/30 mb-3 inline-block" aria-hidden="true">
+          <title>Timeline Icon</title>
+          <path d={SVG_PATHS.timeline} fill="currentColor" />
+        </svg>
         <p className="font-body-md text-body-md text-on-surface-variant/70">
           {emptyMessage}
         </p>
@@ -335,7 +371,10 @@ export default function Timeline({
             onClick={onLogFollowUp}
             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white font-label-sm text-label-sm hover:bg-primary/90 transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">add</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <title>Add Icon</title>
+              <path d={SVG_PATHS.add} fill="currentColor" />
+            </svg>
             Log Follow-up
           </button>
         )}

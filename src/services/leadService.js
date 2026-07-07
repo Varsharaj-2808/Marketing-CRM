@@ -989,12 +989,75 @@ export async function exportReport(params = {}) {
 
 let FOLLOWUP_STORE = [];
 
-export async function createFollowup(leadId, data) {
+function openOfflineQueueDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('crm_offline_queue', 1);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('followups')) {
+        db.createObjectStore('followups', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    request.onsuccess = (event) => resolve(event.target.result);
+    request.onerror = (event) => reject(event.target.error);
+  });
+}
+
+export async function queueOfflineFollowup(leadId, data) {
+  try {
+    const db = await openOfflineQueueDB();
+    const tx = db.transaction('followups', 'readwrite');
+    const store = tx.objectStore('followups');
+    store.add({ leadId, data, createdAt: new Date().toISOString() });
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = (e) => reject(e.target.error);
+    });
+    db.close();
+    return { success: true, message: 'Follow-up queued for sync.' };
+  } catch {
+    return { success: false, message: 'Failed to queue follow-up.' };
+  }
+}
+
+export async function processOfflineQueue() {
+  try {
+    const db = await openOfflineQueueDB();
+    const tx = db.transaction('followups', 'readonly');
+    const store = tx.objectStore('followups');
+    const items = await new Promise((resolve, reject) => {
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+    if (!items || items.length === 0) { db.close(); return; }
+    for (const item of items) {
+      try {
+        await createFollowup(item.leadId, item.data);
+        const delTx = db.transaction('followups', 'readwrite');
+        const delStore = delTx.objectStore('followups');
+        delStore.delete(item.id);
+        await new Promise((resolve, reject) => {
+          delTx.oncomplete = resolve;
+          delTx.onerror = (e) => reject(e.target.error);
+        });
+      } catch {
+        break;
+      }
+    }
+    db.close();
+  } catch {
+    // silently fail
+  }
+}
+
+export async function createFollowup(leadId, data, signal) {
   try {
     const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/followups`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
+      signal,
     });
     const json = await safeJson(res);
     if (!res.ok) {
@@ -1024,6 +1087,7 @@ export async function createFollowup(leadId, data) {
     }
     return json || { success: true, data: followup, message: 'Follow-up recorded successfully' };
   } catch (err) {
+    if (err.name === 'AbortError') throw err;
     if (err?.status && err.status !== 502) throw err;
     const followup = {
       id: `fup-${crypto.randomUUID?.() || Date.now()}`,
@@ -1064,8 +1128,9 @@ export async function createFollowup(leadId, data) {
 
 export async function fetchTimeline(leadId, params = {}) {
   try {
+    const { signal, ...restParams } = params;
     const query = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
+    Object.entries(restParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         query.set(key, value);
       }
@@ -1073,6 +1138,7 @@ export async function fetchTimeline(leadId, params = {}) {
     query.set('_', Date.now());
     const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/timeline?${query.toString()}`, {
       headers: getAuthHeaders(),
+      signal,
     });
     const json = await safeJson(res);
     if (!res.ok) {

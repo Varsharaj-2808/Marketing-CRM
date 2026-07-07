@@ -13,6 +13,8 @@ import {
   createFollowup,
   fetchTimeline,
   addCorrection,
+  queueOfflineFollowup,
+  processOfflineQueue,
 } from '../../services/leadService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
@@ -121,7 +123,7 @@ export default function LeadDetails() {
     abortControllerRef.current = controller;
 
     try {
-      const res = await fetchTimeline(leadId, { page, limit: TIMELINE_INITIAL_COUNT });
+      const res = await fetchTimeline(leadId, { page, limit: TIMELINE_INITIAL_COUNT, signal: controller.signal });
       if (controller.signal.aborted) return;
       const body = res?.body || res?.data || {};
       const newItems = body.timeline || body.data || [];
@@ -164,7 +166,15 @@ export default function LeadDetails() {
         abortControllerRef.current.abort();
       }
     };
-  }, [leadId, isAdmin, user]);
+  }, [leadId, isAdmin, user, location.key]);
+
+  useEffect(() => {
+    function handleOnline() {
+      processOfflineQueue();
+    }
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
 
   const isLeadOwner = useCallback(() => {
     if (!lead) return false;
@@ -270,15 +280,40 @@ export default function LeadDetails() {
     setFollowUpSubmitting(true);
     setFollowUpServerError('');
 
-    const timeoutId = setTimeout(() => {
+    const tempId = `optimistic-${Date.now()}`;
+    const optimisticEntry = {
+      id: tempId,
+      action: 'Follow-up Logged',
+      message: `${payload.followup_type} - ${payload.outcome}`,
+      followup_type: payload.followup_type,
+      outcome: payload.outcome,
+      notes: payload.notes,
+      proposal_amount: payload.proposal_amount,
+      createdBy: { name: 'Current User' },
+      createdAt: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
+      isOptimistic: true,
+    };
+    setTimelineItems(prev => [optimisticEntry, ...prev]);
+
+    if (!navigator.onLine) {
+      await queueOfflineFollowup(leadId, payload);
+      setFollowUpModalOpen(false);
       setFollowUpSubmitting(false);
-      showToast('Request timed out due to slow connection. Please try again.', 'error');
+      showToast('Offline Mode: Connection lost. Your changes will be saved locally and synced once connection is restored.', 'error');
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
     }, SUBMIT_TIMEOUT_MS);
 
     try {
-      const res = await createFollowup(leadId, payload);
+      const res = await createFollowup(leadId, payload, controller.signal);
       clearTimeout(timeoutId);
       setFollowUpModalOpen(false);
+      setFollowUpSubmitting(false);
       showToast('Follow-up recorded successfully');
       if (res?.lead_updated?.proposal_value !== undefined) {
         setLead(prev => prev ? { ...prev, estimated_value: res.lead_updated.proposal_value, proposal_value: res.lead_updated.proposal_value } : prev);
@@ -286,10 +321,17 @@ export default function LeadDetails() {
       loadLeadData(true);
     } catch (err) {
       clearTimeout(timeoutId);
+      setTimelineItems(prev => prev.filter(item => item.id !== tempId));
+      setFollowUpSubmitting(false);
+      if (err.name === 'AbortError') {
+        showToast('Request timed out due to slow connection. Please try again.', 'error');
+        return;
+      }
       const status = err?.status;
       if (status === 400) {
         const serverMsg = err?.payload?.body?.error || err?.payload?.error || 'Validation failed.';
         setFollowUpServerError(serverMsg);
+        setFollowUpSubmitting(false);
       } else if (status === 401) {
         setFollowUpModalOpen(false);
         const formData = JSON.stringify(payload);
@@ -324,10 +366,6 @@ export default function LeadDetails() {
 
   function handleLogFollowUp() {
     if (!canLogFollowUp) return;
-    if (!navigator.onLine) {
-      showToast('Offline Mode: Connection lost. Your changes will be saved locally and synced once connection is restored.', 'error');
-      return;
-    }
     setFollowUpModalOpen(true);
   }
 
@@ -517,7 +555,7 @@ export default function LeadDetails() {
                 Timeline
               </h3>
               <div className="flex items-center gap-2">
-                {isClosedLead && (canLogFollowUp || isReadOnly) && (
+                {isClosedLead && !isReadOnly && (isLeadOwner() || isAdmin) && (
                   <span
                     className="text-label-sm text-on-surface-variant/50"
                     title="Cannot add follow-up to a closed lead."

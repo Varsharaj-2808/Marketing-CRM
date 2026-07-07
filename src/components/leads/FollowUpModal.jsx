@@ -316,10 +316,6 @@ export default function FollowUpModal({
   function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
-    if (!navigator.onLine) {
-      setErrors(prev => ({ ...prev, server: 'Offline Mode: Connection lost. Your changes will be saved locally and synced once connection is restored.' }));
-      return;
-    }
     if (!validate()) return;
     const parsedAmount = parseProposalAmount(proposalAmount);
     const payload = {
@@ -376,6 +372,7 @@ export default function FollowUpModal({
             </h3>
             <button
               onClick={handleCancel}
+              tabIndex={-1}
               className="text-outline hover:text-on-surface transition-colors p-1"
               aria-label="Close modal"
             >
@@ -407,8 +404,9 @@ export default function FollowUpModal({
                     className={`w-full bg-white/50 border rounded-xl py-3 pl-4 pr-10 font-body-md text-left text-on-surface transition-all focus:outline-none input-focus-effect ${
                       errors.followupType ? 'border-error' : 'border-outline-variant'
                     } ${submitting ? 'opacity-50 cursor-not-allowed bg-gray-100/50' : 'cursor-pointer'}`}
+                    role="combobox"
                     aria-expanded={typeOpen}
-                    aria-haspopup="listbox"
+                    aria-controls="followupTypeListbox"
                     aria-label="Follow-up Type"
                     aria-required="true"
                   >
@@ -435,7 +433,7 @@ export default function FollowUpModal({
                           className="w-full px-3 py-2 bg-white/50 border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface focus:outline-none input-focus-effect"
                         />
                       </div>
-                      <ul role="listbox" className="overflow-y-auto max-h-48" aria-label="Follow-up Type">
+                      <ul role="listbox" id="followupTypeListbox" className="overflow-y-auto max-h-48" aria-label="Follow-up Type">
                         {filteredTypes.map((t) => (
                           <li
                             key={t.value}
@@ -585,14 +583,6 @@ export default function FollowUpModal({
 
             <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-outline-variant/30">
               <button
-                type="button"
-                onClick={handleCancel}
-                disabled={submitting}
-                className="px-4 py-2.5 rounded-xl border border-outline-variant text-label-md font-label-md text-on-surface hover:bg-white/50 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
                 type="submit"
                 disabled={submitting}
                 className="px-6 py-2.5 rounded-xl bg-primary text-white font-label-md text-label-md hover:bg-primary/90 transition-colors disabled:opacity-70 flex items-center gap-2"
@@ -606,6 +596,14 @@ export default function FollowUpModal({
                     Saving...
                   </>
                 ) : 'Submit'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={submitting}
+                className="px-4 py-2.5 rounded-xl border border-outline-variant text-label-md font-label-md text-on-surface hover:bg-white/50 transition-colors disabled:opacity-50"
+              >
+                Cancel
               </button>
             </div>
           </form>
