@@ -206,8 +206,24 @@ const VALID_TIMELINE_TYPES = ['created', 'status_change', 'followup', 'assigned'
 exports.getTimeline = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+
+    // Validate lead UUID
+    if (!UUID_REGEX.test(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid lead ID format' });
+    }
+
+    let page = parseInt(req.query.page);
+    let limit = parseInt(req.query.limit);
+
+    if (req.query.page !== undefined && (!/^\d+$/.test(req.query.page) || Number.isNaN(page) || page < 1 || !Number.isInteger(page))) {
+      return res.status(400).json({ success: false, message: 'Invalid page or limit parameter. Must be positive integers.' });
+    }
+    if (req.query.limit !== undefined && (!/^\d+$/.test(req.query.limit) || Number.isNaN(limit) || limit < 1 || !Number.isInteger(limit))) {
+      return res.status(400).json({ success: false, message: 'Invalid page or limit parameter. Must be positive integers.' });
+    }
+
+    page = (page && page > 0) ? page : 1;
+    limit = (limit && limit > 0) ? limit : 20;
 
     // Legacy filter param (from assignController)
     const legacyFilter = req.query.filter;
@@ -219,19 +235,20 @@ exports.getTimeline = async (req, res, next) => {
       const invalid = types.filter((t) => !VALID_TIMELINE_TYPES.includes(t));
       if (invalid.length > 0) {
         return res.status(400).json({
-          type: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}`,
+          success: false,
+          message: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}`,
         });
       }
     }
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     const isAdmin = req.user.role === 'Admin';
     if (!isAdmin && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+      return res.status(403).json({ success: false, message: 'Not authorized to view this timeline' });
     }
 
     // ── Legacy format: filter=Assignment ──────
@@ -307,6 +324,7 @@ exports.getTimeline = async (req, res, next) => {
     const followupEvents = followupRows.map((f) => ({
       type: 'followup',
       id: f.id,
+      description: f.notes || null,
       followup_type: f.followup_type,
       outcome: f.outcome,
       notes: f.notes || null,
@@ -538,4 +556,8 @@ exports.rejectMutation = (req, res) => {
     return res.status(405).json({ error: 'Follow-up records cannot be deleted' });
   }
   return res.status(405).json({ error: 'Follow-up records are immutable. Use correction endpoint instead.' });
+};
+
+exports.rejectTimelineMutation = (req, res) => {
+  return res.status(405).json({ success: false, message: 'Timeline events are read-only and strictly append-only.' });
 };
