@@ -31,15 +31,15 @@ jest.mock("../config/db", () => ({
 }));
 
 // ── Mock models ───────────────────────────────────────────────
-jest.mock("../models/Lead", () => ({ findById: jest.fn() }), { virtual: true });
-jest.mock("../models/Followup", () => ({ findByLeadId: jest.fn() }), { virtual: true });
-jest.mock("../models/LeadHistory", () => ({ findByLeadId: jest.fn() }), { virtual: true });
-jest.mock("../models/AuditLog", () => ({ create: jest.fn() }), { virtual: true });
-jest.mock("../models/User", () => ({ findByIdOrEmployeeId: jest.fn(), findById: jest.fn(), findByEmail: jest.fn(), updateAccountStatus: jest.fn() }), { virtual: true });
-jest.mock("../models/LeadSource", () => ({ findAll: jest.fn() }), { virtual: true });
-jest.mock("../models/BusinessCategory", () => ({ findAll: jest.fn() }), { virtual: true });
-jest.mock("../models/BusinessSubCategory", () => ({ findAll: jest.fn() }), { virtual: true });
-jest.mock("../models/Service", () => ({ findAll: jest.fn() }), { virtual: true });
+jest.mock("../models/Lead", () => ({ findById: jest.fn() }));
+jest.mock("../models/Followup", () => ({ findByLeadId: jest.fn() }));
+jest.mock("../models/LeadHistory", () => ({ findByLeadId: jest.fn() }));
+jest.mock("../models/AuditLog", () => ({ create: jest.fn() }));
+jest.mock("../models/User", () => ({ findByIdOrEmployeeId: jest.fn(), findById: jest.fn(), findByEmail: jest.fn(), updateAccountStatus: jest.fn() }));
+jest.mock("../models/LeadSource", () => ({ findAll: jest.fn() }));
+jest.mock("../models/BusinessCategory", () => ({ findAll: jest.fn() }));
+jest.mock("../models/BusinessSubCategory", () => ({ findAll: jest.fn() }));
+jest.mock("../models/Service", () => ({ findAll: jest.fn() }));
 
 // ── Mock email & algolia ───────────────────────────────────────
 jest.mock("../utils/emailService",  () => ({ sendWelcomeEmail: jest.fn().mockResolvedValue(), sendDailyReminderEmail: jest.fn().mockResolvedValue() }));
@@ -280,10 +280,10 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(20);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalPages).toBe(2);
-    expect(res.body.totalCount).toBe(25);
-    expect(res.body.hasMore).toBe(true);
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination.total_pages).toBe(2);
+    expect(res.body.pagination.total_count).toBe(25);
+    expect(res.body.pagination.has_more).toBe(true);
   });
 
   /**
@@ -313,10 +313,10 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(5);
-    expect(res.body.page).toBe(2);
-    expect(res.body.totalPages).toBe(2);
-    expect(res.body.totalCount).toBe(25);
-    expect(res.body.hasMore).toBe(false);
+    expect(res.body.pagination.page).toBe(2);
+    expect(res.body.pagination.total_pages).toBe(2);
+    expect(res.body.pagination.total_count).toBe(25);
+    expect(res.body.pagination.has_more).toBe(false);
   });
 
   /**
@@ -471,7 +471,7 @@ describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", ()
 
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(20);
-    expect(res.body.hasMore).toBe(true);
+    expect(res.body.pagination.has_more).toBe(true);
   });
 
 });
@@ -584,9 +584,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
     expect(res.status).toBe(200);
     const timeline = res.body.data.timeline;
-    const xssItem = timeline.find(e => e.notes && e.notes.includes("<script>"));
+    const xssItem = timeline.find(e => e.description && e.description.includes("<script>"));
     expect(xssItem).toBeDefined();
-    expect(xssItem.notes).toBe("<script>alert('XSS')</script>");
+    expect(xssItem.description).toBe("<script>alert('XSS')</script>");
   });
 
   /**

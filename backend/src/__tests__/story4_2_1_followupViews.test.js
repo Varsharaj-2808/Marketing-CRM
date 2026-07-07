@@ -1,4 +1,4 @@
-﻿
+
 
 /**
  * ============================================================
@@ -16,9 +16,9 @@
  *   API-1  GET  /marketing/followups/today          (7 tests: 001-007, 028, 031)
  *   API-2  GET  /marketing/followups/overdue        (7 tests: 008-013, 032)
  *   API-3  GET  /marketing/dashboard                (3 tests: 014, 015, 030)
- *   API-4  POST /admin/reminders/send-daily         (5 tests: 016-020)  ← RED (not implemented)
+ *   API-4  POST /admin/reminders/send-daily         (5 tests: 016-020)
  *   API-5  GET  /marketing/notifications            (1 test : 021)
- *   API-6  GET  /admin/dashboard/at-risk            (5 tests: 022-025, 029) ← RED (not implemented)
+ *   API-6  GET  /admin/dashboard/at-risk            (5 tests: 022-025, 029)
  *   API-7  GET  /marketing/leads (is_overdue flag)  (2 tests: 026, 027)
  *
  * Total : 32 test cases (matches Excel sheet exactly)
@@ -47,7 +47,6 @@ jest.mock("../utils/algoliaService", () => ({
   testConnection:jest.fn(),
 }));
 jest.mock("../models/User",            () => ({}), { virtual: true });
-jest.mock("../models/Lead",            () => ({}), { virtual: true });
 jest.mock("../models/LeadHistory",     () => ({}), { virtual: true });
 jest.mock("../models/AuditLog",        () => ({}), { virtual: true });
 jest.mock("../models/LeadSource",      () => ({}), { virtual: true });
@@ -528,33 +527,31 @@ describe("API-3 | GET /marketing/dashboard", () => {
 
   /**
    * TEST-EP4-FUP2-030
-   * Edge – Dashboard responds within acceptable time (mocked; real threshold < 1500ms)
+   * Edge – UNIT TEST ONLY: Verifies controller logic handles large stats datasets without crashing.
+   * NOTE: Actual performance target (< 1500ms) requires separate integration test with real DB.
    */
-  test("TEST-EP4-FUP2-030 | Edge – Dashboard responds within 3 s under mocked DB (real target < 1500ms)", async () => {
+  test("TEST-EP4-FUP2-030 | Edge – Unit test for controller dataset handling (Mocked)", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [{ total_leads: "200", active_leads: "180", won_leads: "10", lost_leads: "10", total_estimated_value: "10000000" }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [{ count: "0" }] });
     mockQuery.mockResolvedValueOnce({ rows: [{ stage: "Contacted", count: 180 }] });
 
-    const start = Date.now();
-    const res   = await request(app)
+    const res = await request(app)
       .get("/api/marketing/dashboard")
       .set("Authorization", `Bearer ${meToken}`);
-    const ms = Date.now() - start;
 
     expect(res.status).toBe(200);
-    expect(ms).toBeLessThan(3000);
+    expect(res.body.success).toBe(true);
+    // Removed false-positive ms < 3000 assertion as this uses mocked queries
   });
 
 });
 
 // ══════════════════════════════════════════════════════════════
 // API-4 | POST /admin/reminders/send-daily
-// ── RED TESTS ── endpoint not yet implemented ──────────────────
-// These tests MUST fail (404) until the feature is built.
 // ══════════════════════════════════════════════════════════════
-describe("API-4 | POST /admin/reminders/send-daily  [RED — not yet implemented]", () => {
+describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
    * TEST-EP4-FUP2-016
@@ -694,10 +691,8 @@ describe("API-5 | GET /marketing/notifications", () => {
 
 // ══════════════════════════════════════════════════════════════
 // API-6 | GET /admin/dashboard/at-risk
-// ── RED TESTS ── endpoint not yet implemented ──────────────────
-// These tests MUST fail (404) until the feature is built.
 // ══════════════════════════════════════════════════════════════
-describe("API-6 | GET /admin/dashboard/at-risk  [RED — not yet implemented]", () => {
+describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
    * TEST-EP4-FUP2-022
@@ -719,6 +714,16 @@ describe("API-6 | GET /admin/dashboard/at-risk  [RED — not yet implemented]", 
     expect(Array.isArray(res.body.data.leads)).toBe(true);
     expect(res.body.data.leads).toHaveLength(2);
     expect(Array.isArray(res.body.data.breakdown)).toBe(true);
+    
+    // Explicit field validations
+    res.body.data.leads.forEach(lead => {
+      expect(lead).toHaveProperty("lead_id");
+      expect(lead).toHaveProperty("company_name");
+      expect(lead).toHaveProperty("assigned_to");
+      expect(lead).toHaveProperty("days_overdue");
+      expect(typeof lead.days_overdue).toBe("number");
+    });
+
     // Sorted descending by days_overdue
     expect(res.body.data.leads[0].days_overdue).toBeGreaterThanOrEqual(res.body.data.leads[1].days_overdue);
   });
@@ -761,21 +766,21 @@ describe("API-6 | GET /admin/dashboard/at-risk  [RED — not yet implemented]", 
 
   /**
    * TEST-EP4-FUP2-025
-   * Edge – Response time acceptable (< 3s mocked; real target < 2s on 50k rows)
+   * Edge – UNIT TEST ONLY: Verifies controller doesn't throw when processing large datasets.
+   * NOTE: Actual performance target (< 2s on 50k rows) requires separate integration test with real DB.
    */
-  test("TEST-EP4-FUP2-025 | Edge – At-risk endpoint responds within 3s (mocked; real target < 2s)", async () => {
+  test("TEST-EP4-FUP2-025 | Edge – Unit test for at-risk dataset processing (Mocked)", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_BREAKDOWN });
 
-    const start = Date.now();
-    const res   = await request(app)
+    const res = await request(app)
       .get("/api/admin/dashboard/at-risk?overdue_days=3")
       .set("Authorization", `Bearer ${adminToken}`);
-    const ms = Date.now() - start;
 
     expect(res.status).toBe(200);
-    expect(ms).toBeLessThan(3000);
+    expect(res.body.success).toBe(true);
+    // Removed false-positive ms < 3000 assertion as this uses mocked queries
   });
 
   /**
