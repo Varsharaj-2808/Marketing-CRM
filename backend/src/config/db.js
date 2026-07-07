@@ -1,29 +1,15 @@
-const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 
-const isSupabase = process.env.DATABASE_URL?.includes('supabase');
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ...(isSupabase ? { ssl: { rejectUnauthorized: false } } : {}),
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected PostgreSQL pool error:', err.message);
-});
-
-const query = (text, params) => pool.query(text, params);
-
-const getClient = () => pool.connect();
-
-const testConnection = async () => {
-  try {
-    const result = await query('SELECT NOW()');
-    console.log('PostgreSQL connected:', result.rows[0].now);
-    return true;
-  } catch (err) {
-    console.error('PostgreSQL connection error:', err.message);
-    return false;
-  }
+const query = async (text, params) => {
+  const { data, error } = await supabase.rpc('exec_sql', { query_text: text, params });
+  if (error) throw error;
+  return { rows: data || [] };
 };
 
-module.exports = { pool, query, getClient, testConnection };
+const getClient = () => supabase;
+
+module.exports = { query, getClient };

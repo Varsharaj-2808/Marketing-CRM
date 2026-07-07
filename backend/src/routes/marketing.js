@@ -53,6 +53,7 @@ router.delete('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketin
 
 router.get('/dashboard', protect, authorize('Admin', 'Marketing Executive'), dashboardController.getDashboard);
 
+router.get('/notifications', protect, authorize('Admin', 'Marketing Executive'), notificationController.getNotifications);
 router.get('/notifications/count', protect, authorize('Admin', 'Marketing Executive'), notificationController.getNotificationCount);
 
 module.exports = router;

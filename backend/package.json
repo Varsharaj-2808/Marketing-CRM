@@ -1,31 +1,16 @@
 {
-  "name": "crm-backend",
+  "name": "marketing-crm-backend",
   "version": "1.0.0",
-  "description": "CRM Backend API - ExpressJS",
-  "main": "server.js",
+  "description": "Marketing CRM Backend API (Supabase)",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "jest --forceExit --detectOpenHandles"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "lint": "eslint src/"
   },
   "dependencies": {
-    "algoliasearch": "^5.55.1",
-    "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-validator": "^7.3.2",
-    "helmet": "^8.2.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.7.3",
-    "nodemailer": "^9.0.1",
-    "pdfkit": "^0.19.1",
-    "pg": "^8.22.0",
-    "xlsx": "^0.18.5"
+    "@supabase/supabase-js": "^2.39.0"
   },
-  "devDependencies": {
-    "jest": "^30.4.2",
-    "supertest": "^7.2.2"
-  }
+  "devDependencies": {}
 }
