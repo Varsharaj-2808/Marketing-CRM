@@ -252,7 +252,11 @@ export default function FollowUpModal({
     setTypeSearch('');
     setDirty(true);
     onClearServerError?.();
-    setTimeout(() => validateField('followupType'), 0);
+    setErrors(prev => {
+      const copy = { ...prev };
+      delete copy.followupType;
+      return copy;
+    });
   }
 
   function handleOutcomeChange(e) {

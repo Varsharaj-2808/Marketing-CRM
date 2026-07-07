@@ -1185,6 +1185,10 @@ export async function fetchTimeline(leadId, params = {}) {
       })),
     ];
     timeline.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const filterType = restParams.type;
+    const filteredTimeline = filterType 
+      ? timeline.filter(t => t.type === filterType) 
+      : timeline;
     return {
       status: 'success',
       status_code: 200,
@@ -1193,8 +1197,8 @@ export async function fetchTimeline(leadId, params = {}) {
         lead_id: leadId,
         company_name: localLead?.companyName || '',
         total_events: timeline.length,
-        filtered_count: timeline.length,
-        timeline,
+        filtered_count: filteredTimeline.length,
+        timeline: filteredTimeline,
         pagination: { page: 1, totalPages: 1, has_more: false },
       },
     };

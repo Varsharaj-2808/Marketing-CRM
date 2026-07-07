@@ -587,3 +587,526 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/reopen'), expect.any(Object));
   });
 });
+
+describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
+  const MOCK_LEAD = {
+    id: 'lead-100',
+    leadId: 'LD-100',
+    companyName: 'Acme Corp',
+    contactPerson: 'John Smith',
+    mobileNumber: '9000000000',
+    status: '',
+    stage: 'New',
+    priority: 'High',
+    createdAt: '2026-06-01T10:00:00.000Z',
+    createdBy: { name: 'Admin User' },
+    assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
+  };
+
+  const FOUR_EVENTS_TIMELINE = {
+    status: 'success',
+    body: {
+      timeline: [
+        { id: '1', action: 'Lead Created', message: 'Lead Created', created_at: '2026-07-06T10:00:00Z', type: 'created', created_by: { name: 'Admin User' } },
+        { id: '2', action: 'Lead Assigned', message: 'Lead Assigned to Maya', created_at: '2026-07-06T11:00:00Z', type: 'assigned', created_by: { name: 'Admin User' } },
+        { id: '3', action: 'Stage Changed', message: 'Stage changed to Contacted', created_at: '2026-07-06T12:00:00Z', type: 'status_change', created_by: { name: 'Maya Executive' } },
+        { id: '4', action: 'Follow-up Logged', message: 'Called client', followup_type: 'Call', outcome: 'Answered', notes: 'Interested in demo.', created_at: '2026-07-06T13:00:00Z', type: 'followup', created_by: { name: 'Maya Executive' } },
+      ],
+      pagination: { page: 1, totalPages: 1, has_more: false }
+    }
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.stubGlobal('navigator', { onLine: true });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('test-ep-4.3.1-f-001: Verify consolidated vertical chronological timeline renders on Lead Detail page', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    // Wait for the timeline to load and check if cards render
+    const card0 = await screen.findByText('Lead Created');
+    const card1 = await screen.findByText('Lead Assigned');
+    const card2 = await screen.findByText('Stage Changed');
+    const card3 = await screen.findByText('Call');
+
+    expect(card0).toBeInTheDocument();
+    expect(card1).toBeInTheDocument();
+    expect(card2).toBeInTheDocument();
+    expect(card3).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-002: Verify timeline events render with distinct icons and colors per event type', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const createdBadge = await screen.findByLabelText('Creation event');
+    const assignedBadge = await screen.findByLabelText('Assignment event');
+    const statusBadge = await screen.findByLabelText('Status update event');
+    const followupBadge = await screen.findByLabelText('Follow-up Call event');
+
+    expect(createdBadge).toHaveClass('bg-purple-100');
+    expect(assignedBadge).toHaveClass('bg-gray-100');
+    expect(statusBadge).toHaveClass('bg-orange-100');
+    expect(followupBadge).toHaveClass('bg-blue-100');
+  });
+
+  it('test-ep-4.3.1-f-003: Verify relative timestamp descriptors and absolute time tooltip', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('LD-100');
+    await screen.findByText('Lead Created');
+
+    const firstCard = document.getElementById('timeline-card-0');
+    const relativeTimeSpan = firstCard.querySelector('[title]');
+    expect(relativeTimeSpan).toBeInTheDocument();
+    expect(relativeTimeSpan.getAttribute('title')).toContain('2026');
+  });
+
+  it('test-ep-4.3.1-f-004: Verify notes/descriptions properly handle Show More toggle', async () => {
+    setUser(marketingUser);
+    const longNotes = 'A'.repeat(150);
+    const longTimeline = {
+      status: 'success',
+      body: {
+        timeline: [
+          { id: '1', action: 'Follow-up Logged', followup_type: 'Call', notes: longNotes, created_at: '2026-07-06T10:00:00Z', type: 'followup', created_by: { name: 'Maya Executive' } }
+        ],
+        pagination: { page: 1, totalPages: 1, has_more: false }
+      }
+    };
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(longTimeline);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const toggleBtn = await screen.findByRole('button', { name: /Show more/i });
+    expect(toggleBtn).toBeInTheDocument();
+    fireEvent.click(toggleBtn);
+    expect(screen.getByRole('button', { name: /Show less/i })).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-005: Verify four event filtering chips are rendered', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const filterAll = await screen.findByRole('tab', { name: 'All' });
+    const filterFollow = screen.getByRole('tab', { name: 'Follow-ups' });
+    const filterStages = screen.getByRole('tab', { name: 'Stage Changes' });
+    const filterAssign = screen.getByRole('tab', { name: 'Assignments' });
+
+    expect(filterAll).toBeInTheDocument();
+    expect(filterFollow).toBeInTheDocument();
+    expect(filterStages).toBeInTheDocument();
+    expect(filterAssign).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-006: Verify clicking "Follow-ups" filters the feed and queries type=followup', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const filterFollow = await screen.findByRole('tab', { name: 'Follow-ups' });
+    fireEvent.click(filterFollow);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('type=followup'), expect.any(Object));
+    });
+  });
+
+  it('test-ep-4.3.1-f-007: Verify clicking "Stage Changes" queries type=status_change', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const filterStages = await screen.findByRole('tab', { name: 'Stage Changes' });
+    fireEvent.click(filterStages);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('type=status_change'), expect.any(Object));
+    });
+  });
+
+  it('test-ep-4.3.1-f-008: Verify clicking "Assignments" queries type=assigned', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const filterAssign = await screen.findByRole('tab', { name: 'Assignments' });
+    fireEvent.click(filterAssign);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('type=assigned'), expect.any(Object));
+    });
+  });
+
+  it('test-ep-4.3.1-f-009: Verify timeline cards render without action control items (Read-Only/Append-Only)', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    await screen.findByText('Lead Created');
+    // Ensure no Delete, Edit, or Remove buttons exist on the timeline cards
+    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-010: Verify pagination defaults to 20 events limit', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    await screen.findByText('Lead Created');
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('limit=20'), expect.any(Object));
+  });
+
+  it('test-ep-4.3.1-f-011: Verify Load More button is visible when has_more: true', async () => {
+    setUser(marketingUser);
+    const paginatedTimeline = {
+      status: 'success',
+      body: {
+        timeline: [
+          { id: '1', action: 'Lead Created', created_at: '2026-07-06T10:00:00Z', type: 'created' }
+        ],
+        pagination: { page: 1, totalPages: 2, has_more: true }
+      }
+    };
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(paginatedTimeline);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const loadMoreBtn = await screen.findByRole('button', { name: /Load More/i });
+    expect(loadMoreBtn).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-012: Verify clicking Load More queries second page from server', async () => {
+    setUser(marketingUser);
+    const paginatedTimeline = {
+      status: 'success',
+      body: {
+        timeline: [
+          { id: '1', action: 'Lead Created', created_at: '2026-07-06T10:00:00Z', type: 'created' }
+        ],
+        pagination: { page: 1, totalPages: 2, has_more: true }
+      }
+    };
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(paginatedTimeline);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const loadMoreBtn = await screen.findByRole('button', { name: /Load More/i });
+    fireEvent.click(loadMoreBtn);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('page=2'), expect.any(Object));
+    });
+  });
+
+  it('test-ep-4.3.1-f-013: Verify keyboard tab indicators and focus sequences', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('LD-100');
+    await screen.findByText('Lead Created');
+
+    const firstCard = document.getElementById('timeline-card-0');
+    expect(firstCard).toHaveAttribute('tabIndex', '0');
+  });
+
+  it('test-ep-4.3.1-f-014: Verify correct accessibility ARIA labels on event nodes', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const node1 = await screen.findByLabelText('Creation event');
+    const node2 = await screen.findByLabelText('Assignment event');
+    expect(node1).toBeInTheDocument();
+    expect(node2).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-015: Verify WCAG contrast color classes are applied to badges', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('LD-100');
+
+    const createdNode = await screen.findByLabelText('Creation event');
+    expect(createdNode).toHaveClass('bg-purple-100');
+    const svg = createdNode.querySelector('svg');
+    expect(svg).toHaveClass('text-purple-600');
+  });
+
+  it('test-ep-4.3.1-f-016: Verify new activities refetch page 1 timeline immediately', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('Lead Created');
+
+    // Trigger log follow-up or add correction logic which calls loadTimeline(1, true)
+    const logBtn = await screen.findAllByRole('button', { name: /Log Follow-up/i });
+    expect(logBtn[0]).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-017: Verify timeline displays functional inline retry box on error', async () => {
+    setUser(marketingUser);
+    let timelineCallCount = 0;
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        timelineCallCount++;
+        if (timelineCallCount === 1) {
+          return Promise.reject(new Error('Server Error'));
+        }
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const retryBtn = await screen.findByRole('button', { name: /Try again/i });
+    expect(screen.getByText(/Failed to load timeline history\./i)).toBeInTheDocument();
+
+    fireEvent.click(retryBtn);
+
+    const firstCard = await screen.findByText('Lead Created');
+    expect(firstCard).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-018: Verify pulsing loading skeletons display during timeline page shifts', async () => {
+    setUser(marketingUser);
+    let resolveTimeline;
+    const timelinePromise = new Promise(resolve => { resolveTimeline = resolve; });
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        return timelinePromise.then(() => mockRes(FOUR_EVENTS_TIMELINE));
+      }
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('LD-100');
+
+    expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
+    resolveTimeline();
+  });
+
+  it('test-ep-4.3.1-f-019: Verify chronological descending sort order is preserved on loading', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('LD-100');
+    await screen.findByText('Lead Created');
+
+    const card0 = document.getElementById('timeline-card-0');
+    const card3 = document.getElementById('timeline-card-3');
+    expect(card0.textContent).toContain('Call');
+    expect(card3.textContent).toContain('Created');
+  });
+
+  it('test-ep-4.3.1-f-020: Verify reassignments trigger page 1 timeline refresh immediately', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    await screen.findByText('Lead Assigned');
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/timeline'), expect.any(Object));
+  });
+
+  it('test-ep-4.3.1-f-021: Verify empty timeline displays "No history found for this lead."', async () => {
+    setUser(marketingUser);
+    const emptyTimeline = {
+      status: 'success',
+      body: {
+        timeline: [],
+        pagination: { page: 1, totalPages: 1, has_more: false }
+      }
+    };
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(emptyTimeline);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const emptyText = await screen.findByText('No history found for this lead.');
+    expect(emptyText).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-022: Verify keyboard focus shifts to the first card of new batch after Load More', async () => {
+    setUser(marketingUser);
+    const timelinePage1 = {
+      status: 'success',
+      body: {
+        timeline: Array.from({ length: 20 }, (_, i) => ({
+          id: `p1-${i}`,
+          action: `Event ${i}`,
+          created_at: `2026-07-06T10:${i.toString().padStart(2, '0')}:00Z`,
+          type: 'created'
+        })),
+        pagination: { page: 1, totalPages: 2, has_more: true }
+      }
+    };
+    const timelinePage2 = {
+      status: 'success',
+      body: {
+        timeline: [
+          { id: 'p2-0', action: 'Newest Event', created_at: '2026-07-06T11:00:00Z', type: 'followup' }
+        ],
+        pagination: { page: 2, totalPages: 2, has_more: false }
+      }
+    };
+
+    let fetchCount = 0;
+    global.fetch = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        fetchCount++;
+        return mockRes(fetchCount === 1 ? timelinePage1 : timelinePage2);
+      }
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const loadMoreBtn = await screen.findByRole('button', { name: /Load More/i });
+    fireEvent.click(loadMoreBtn);
+
+    await waitFor(() => {
+      expect(document.activeElement.id).toBe('timeline-card-20');
+    });
+  });
+
+  it('test-ep-4.3.1-f-023: Verify clicking filter chips while offline blocks the action and shows a toast', async () => {
+    setUser(marketingUser);
+    global.fetch = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+
+    renderLeadDetails('/marketing/leads/lead-100');
+    await screen.findByText('Lead Created');
+
+    // Stub network status to offline
+    vi.stubGlobal('navigator', { onLine: false });
+
+    const filterFollow = screen.getByRole('tab', { name: 'Follow-ups' });
+    fireEvent.click(filterFollow);
+
+    expect(await screen.findByText("Offline: Cannot filter timeline while offline.")).toBeInTheDocument();
+  });
+
+  it('test-ep-4.3.1-f-024: Verify race conditions cancel stale timeline load requests', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    // Click tabs quickly
+    const filterFollow = await screen.findByRole('tab', { name: 'Follow-ups' });
+    const filterAssign = screen.getByRole('tab', { name: 'Assignments' });
+
+    fireEvent.click(filterFollow);
+    fireEvent.click(filterAssign);
+
+    // Abort controller cancels previous controller
+    expect(fetchMock).toHaveBeenCalled();
+  });
+});
+

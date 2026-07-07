@@ -1201,6 +1201,42 @@
       "streamingInterval": 0
     },
     {
+      "uuid": "958c3cd4-8d77-47eb-bbde-41586408e597",
+      "type": "http",
+      "documentation": "TASK-3.2.1-01 | CRM_Story3_2.xlsx | POST /marketing/leads – Auto-generate Lead ID LD-YYYY-NNNNN",
+      "method": "post",
+      "endpoint": "marketing/leads",
+      "responses": [
+        {
+          "uuid": "cedb934a-05f6-4b30-ab2b-68f806b5bb66",
+          "body": "{\n  \"success\": true,\n  \"message\": \"Lead created successfully.\",\n  \"data\": {\n    \"id\": \"a0570b14-f4d9-4ee5-bd63-e510716a6d2f\",\n    \"seq\": \"12\",\n    \"lead_id\": \"LD-2026-86808\",\n    \"company_name\": \"Acme Corp\",\n    \"contact_person\": \"John Smith\",\n    \"mobile_number\": \"9999999901\",\n    \"email\": \"john@acme.com\",\n    \"website\": \"https://acme.com\",\n    \"city\": \"Mumbai\",\n    \"lead_source\": \"Website\",\n    \"category\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category\": \"885ba1d3-1c78-4112-8825-c5fda3ee3c83\",\n    \"service_interested\": [\n      \"CRM\"\n    ],\n    \"priority\": \"Hot\",\n    \"estimated_value\": \"50000.00\",\n    \"assigned_to\": \"b2575f19-b5da-4972-98f1-0edc5e7069bd\",\n    \"stage\": \"New Lead\",\n    \"lead_status\": \"New Lead\",\n    \"created_at\": \"2026-07-03T12:01:35.552Z\",\n    \"updated_at\": \"2026-07-03T12:01:35.552Z\",\n    \"assigned_at\": null,\n    \"lost_reason\": null,\n    \"final_deal_value\": null,\n    \"closure_date\": null,\n    \"deleted_at\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TASK-3.2.1-01 | Success – Lead created with auto-generated LD-YYYY-NNNNN ID",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
       "uuid": "d683b259-325e-4a7e-9f03-bb546c0e6dc3",
       "type": "http",
       "documentation": "GET marketing dashboard metrics",
@@ -1349,6 +1385,70 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f590ae30-1e03-4100-8e4b-5e0d5a59410f",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Format must be csv or excel\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TASK-3.2.1-04 | Invalid format param – 400",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "format",
+              "value": "csv|excel",
+              "invert": true,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e2e09186-5140-4b2e-bf90-48f55d6ac22b",
+          "body": "{\n  \"success\": false,\n  \"message\": \"No leads found for the given filters\"\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "TASK-3.2.1-04 | No leads match filters – 404",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "status",
+              "value": "Nonexistent",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
           "crudKey": "id",
           "callbacks": []
         }
@@ -2248,18 +2348,37 @@
       "streamingInterval": 0
     },
     {
-      "uuid": "23870bde-d3d2-4b82-933a-ae6dfc6857ab",
+      "uuid": "61782a95-5e1c-473d-8cec-7923ce727619",
       "type": "http",
-      "documentation": "Story-4.2.1 API Route",
+      "documentation": "STORY-4.1.1: POST /marketing/leads/:id/followups (API-1, 6, 8)",
       "method": "post",
-      "endpoint": "marketing/followups/:leadId/schedule",
+      "endpoint": "marketing/leads/:id/followups",
       "responses": [
         {
-          "uuid": "c5a7bfe4-a299-47d9-b2de-afaa6451f7cd",
-          "body": "{\n  \"success\": false,\n  \"status_code\": 422,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    {\n      \"field\": \"next_followup_date\",\n      \"message\": \"Date is required\"\n    }\n  ]\n}",
+          "uuid": "7b367337-ce2c-47d1-864d-4ddb7407af6d",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Interested\",\n    \"notes\": \"Customer showed interest in CRM product. Will discuss with team.\",\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Contacted\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:00:00Z\",\n    \"correction_notes\": null\n  }\n}",
           "latency": 0,
-          "statusCode": 422,
-          "label": "Schedule follow-up - 422 validation error",
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-001 - Positive - Follow-up Created (Call, Interested with next_followup_date)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d4b1a506-29fa-4be1-838c-d90ef55347bd",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Not Interested\",\n    \"notes\": \"Customer declined due to budget constraints.\",\n    \"next_followup_date\": null,\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Negotiation\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:10:00Z\",\n    \"correction_notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-002 - Positive - Not Interested (closing outcome, blank next_followup_date allowed)",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -2268,13 +2387,13 @@
           "rules": [
             {
               "target": "body",
-              "modifier": "next_followup_date",
-              "value": "^$",
-              "operator": "regex",
+              "modifier": "outcome",
+              "value": "Not Interested",
+              "operator": "equals",
               "invert": false
             }
           ],
-          "rulesOperator": "OR",
+          "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
@@ -2282,11 +2401,410 @@
           "callbacks": []
         },
         {
-          "uuid": "8b07ab3f-62f6-4a96-ab27-986020abb380",
-          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
+          "uuid": "9e5ae914-8995-489b-90a4-1ac5b15888b5",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Proposal Discussion\",\n    \"outcome\": \"Proposal Requested\",\n    \"notes\": \"Discussed pricing tiers and implementation timeline.\",\n    \"next_followup_date\": \"2026-07-15T10:00:00Z\",\n    \"proposal_amount\": 75000,\n    \"stage_at_log\": \"Proposal Sent\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:05:00Z\",\n    \"correction_notes\": null\n  },\n  \"lead_updated\": {\n    \"proposal_value\": 75000\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-003 - Positive - Proposal Amount updates Lead's Estimated/Proposal Value (AC4)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "75000",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "81fa6a87-a0ee-4a98-9f14-5686928a05dd",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Proposal Discussion\",\n    \"outcome\": \"Budget Discussion\",\n    \"notes\": \"Revised proposal with discount.\",\n    \"next_followup_date\": \"2026-07-20T10:00:00Z\",\n    \"proposal_amount\": 85000,\n    \"stage_at_log\": \"Negotiation\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:15:00Z\",\n    \"correction_notes\": null\n  },\n  \"lead_updated\": {\n    \"proposal_value\": 85000\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-004 - Positive - Newer Proposal Amount overwrites older value on Lead (AC4)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "85000",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "5d1e594c-bab2-4a95-826e-ac4d6bb36987",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"followup_type\": \"WhatsApp\",\n    \"outcome\": \"Interested\",\n    \"created_by\": {\n      \"id\": \"me-001\"\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-005 - Positive - Create follow-up for each valid followup_type (WhatsApp example)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "followup_type",
+              "value": "WhatsApp",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b68e1b3a-1923-40d6-8b8d-3c60f8f6b04c",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Need More Info\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-006 - Positive - Create follow-up for each valid outcome (Need More Info example)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "outcome",
+              "value": "Need More Info",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "574002c9-facb-4b9f-981c-58bd4452ee1c",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Email\",\n    \"outcome\": \"Need More Info\",\n    \"notes\": null,\n    \"next_followup_date\": \"2026-07-12T09:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Contacted\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:20:00Z\",\n    \"correction_notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-007 - Positive - Minimal required fields (followup_type, outcome, next_followup_date)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "followup_type",
+              "value": "Email",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f9e0529a-24cd-4d7a-9659-d2e8c04d3506",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"WhatsApp\",\n    \"outcome\": \"Interested\",\n    \"notes\": \"Admin followed up on behalf of ME.\",\n    \"next_followup_date\": \"2026-07-11T14:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Contacted\",\n    \"created_by\": {\n      \"id\": \"admin-001\",\n      \"name\": \"Admin User\"\n    },\n    \"created_at\": \"2026-07-06T13:00:00Z\",\n    \"correction_notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-008 - Positive - Admin creates follow-up for any lead (bypasses ownership)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "6b63719a-15b6-4279-99d3-79a0d2a5f6b1",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Follow-up type is required\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-009 - Failed - Missing followup_type",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "followup_type",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c59e0d8a-58b1-4219-abf8-b8e13c412af9",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Follow-up type must be one of: Call, WhatsApp, Email, Online Meeting, Client Meeting, Demo, Proposal Discussion\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-010 - Failed - Invalid followup_type enum value",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "followup_type",
+              "value": "SMS",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "98db98d6-1e8a-47ad-a095-55fd21f0902b",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Outcome is required\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-011 - Failed - Missing outcome",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "outcome",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "2e4a5d03-b604-4b68-a920-6385b6852c30",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Outcome must be one of: Interested, Need More Info, Proposal Requested, Budget Discussion, Decision Pending, Not Interested\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-012 - Failed - Invalid outcome enum value",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "outcome",
+              "value": "Maybe",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d86e8392-e5aa-49c9-8bde-14b42496c80d",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Next Follow-up Date is required unless the outcome closes the lead.\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-013 - Failed - Outcome=Decision Pending with blank next_followup_date (AC1)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "outcome",
+              "value": "Decision Pending",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "body",
+              "modifier": "next_followup_date",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "4b87eccc-86da-422c-a000-713a31fd35c2",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Next Follow-up Date is required unless the outcome closes the lead.\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-014 - Failed - Non-closing outcome (Interested) with blank next_followup_date",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "outcome",
+              "value": "Interested",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "body",
+              "modifier": "next_followup_date",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "24751a6d-bf59-4aba-b51a-2521d85d3448",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Lead not found\",\n  \"body\": {\n    \"error\": \"Lead with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "TEST-EP4-FUP-015 - Failed - Lead not found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "non-existent-uuid",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "dad38ca6-1b3e-4410-8bee-f11469d1b97f",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Not authorized to perform action on this lead\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP-016 - Failed - Lead not assigned to the authenticated ME",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a186c541-f485-419e-a71b-f3344b9e94ab",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 401,\n  \"message\": \"Authentication required\",\n  \"body\": {\n    \"error\": \"Invalid or missing token\"\n  }\n}",
           "latency": 0,
           "statusCode": 401,
-          "label": "Schedule follow-up - 401 unauthorized",
+          "label": "TEST-EP4-FUP-017 - Failed - Unauthenticated request",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -2301,7 +2819,7 @@
               "invert": true
             }
           ],
-          "rulesOperator": "OR",
+          "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
@@ -2309,18 +2827,1635 @@
           "callbacks": []
         },
         {
-          "uuid": "4b50dfb0-2077-4bcf-b120-f1a1874efe3f",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 201,\n  \"message\": \"Follow-up scheduled successfully\",\n  \"data\": {\n    \"lead_id\": \"lead-uuid-001\",\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\",\n    \"followup_type\": \"call\",\n    \"notes\": \"Call client\",\n    \"scheduled_by\": \"me-001\",\n    \"scheduled_at\": \"2026-07-06T10:00:00Z\"\n  }\n}",
+          "uuid": "61083f82-7b18-46f1-9be9-ee13598d64d1",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid lead ID format\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-018 - Failed - Invalid leadId format (not a UUID)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "fa936fcc-3da8-473b-9080-6c4db3324b4a",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-019 - Failed - next_followup_date is not a valid date string",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "next_followup_date",
+              "value": "not-a-date",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f30967e6-9950-4de2-aa76-0240436c3f0d",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Proposal amount must be a non-negative number\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-020 - Failed - Negative proposal_amount",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "^-",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1924b0a7-5379-46d0-b16f-b33d14c7057c",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Proposal amount must be a number\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-021 - Failed - Non-numeric proposal_amount",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "abc",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "11ea9853-65bd-4079-b0a8-e32553fd4bd4",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Interested\",\n    \"notes\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, con\",\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Contacted\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:00:00Z\",\n    \"correction_notes\": null\n  }\n}",
           "latency": 0,
           "statusCode": 201,
-          "label": "Schedule follow-up - 201 success (default)",
+          "label": "TEST-EP4-FUP-022 - Edge - Notes at maximum length (1000 chars)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "^notes-1000$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "17f56c6c-e2c6-4811-857d-3ac3f04a94de",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Notes must be 1000 characters or less\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-023 - Edge - Notes exceeding maximum length (1001+ characters)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": ".{1001,}",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f62f288b-df77-402b-ab58-70e68f66bc2c",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"body\": {\n    \"created_at\": \"2026-07-06T12:00:01.005Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-024 - Edge - Multiple follow-ups on same lead - each has unique timestamp",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "sequential-test",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "2e532b0f-c206-4dfd-a65c-a14023453bf9",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Next follow-up date must be today or a future date\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-025 - Edge - next_followup_date is in the past (historical backfill)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "next_followup_date",
+              "value": "^2025-",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "cc3c3f94-0788-4fbe-bd86-8ec5daeaa95f",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"body\": {\n    \"proposal_amount\": 0\n  },\n  \"lead_updated\": {\n    \"proposal_value\": 0\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-026 - Edge - proposal_amount = 0 is explicitly allowed",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "0",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "4f572bd7-84e9-4b5c-87ea-8c2976d0ec50",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"body\": {\n    \"proposal_amount\": 999999999.99\n  },\n  \"lead_updated\": {\n    \"proposal_value\": 999999999.99\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-027 - Edge - Very large proposal amount (999999999.99)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "999999999.99",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "04473a8f-3af3-478d-a021-419f51cc71a8",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Cannot add follow-up to a closed lead. Contact Admin to reopen.\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP-028 - Edge - Create follow-up for a lead that is in Won/Lost stage",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-won-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "9150f912-5e1a-4096-80b3-23ff21eb9a45",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Interested\",\n    \"notes\": null,\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Contacted\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:30:00Z\",\n    \"correction_notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-052 - Positive - created_by is auto-set from JWT, ignored from request body",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "created_by",
+              "value": "hacker-user-id",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c5a09835-14fe-4a30-9043-0ce39cfad2ed",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"a7b8c9d0-e1f2-3456-abcd-567890123456\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Interested\",\n    \"notes\": null,\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Contacted\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:35:00Z\",\n    \"correction_notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-053 - Positive - created_at is auto-set to server timestamp, ignored from request body",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "created_at",
+              "value": "2020-01-01T00:00:00Z",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c19c89d2-e9fd-4f8e-849a-8a259a9549f1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"audit_log\": {\n    \"action\": \"FOLLOWUP_CREATED\",\n    \"resource\": \"Followup\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-059 - Positive - Follow-up creation writes to Audit Log",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "Test History",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f5691fa0-060b-4ac8-9caf-93e0cd59dc2e",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"b8c9d0e1-f2a3-4567-bcde-678901234567\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Interested\",\n    \"notes\": \"<script>alert(\\\"xss\\\")</script>\",\n    \"next_followup_date\": \"2026-07-10T10:00:00Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-060 - Security - XSS attempt in notes field is stored safely",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "<script>",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "edbaa1b5-45a5-47b5-ad83-b7f8ddbec9d6",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Follow-up type must be one of: Call, WhatsApp, Email, Online Meeting, Client Meeting, Demo, Proposal Discussion\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-061 - Security - SQL injection attempt in followup_type field is rejected",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "followup_type",
+              "value": "DROP|--|'",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "843d4fae-76e2-49ba-bedc-616a2115b737",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 413,\n  \"message\": \"Payload Too Large\"\n}",
+          "latency": 0,
+          "statusCode": 413,
+          "label": "TEST-EP4-FUP-062 - Security - Large payload rejection",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Content-Length",
+              "value": "^[1-9]\\d{5,}",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c7e3dd60-519c-4506-b7c7-ac44d45cb2bb",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"5 distinct follow-up records created successfully with unique IDs and timestamps.\",\n  \"body\": {\n    \"records_created\": 5\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-064 - Edge - Concurrent follow-up creation for the same lead",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "concurrent-test",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "184988c6-ff42-4c20-bba1-bd4a3060e55f",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"body\": {\n    \"notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-065 - Edge - Follow-up with whitespace-only notes",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "^\\s+$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d756957e-f2aa-4fa1-a4cf-feb489052b0d",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"body\": {\n    \"proposal_amount\": 12345.68\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-066 - Edge - proposal_amount with more than 2 decimal places is rounded",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "proposal_amount",
+              "value": "12345.6789",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "db17cca8-7aa3-4f0c-bdea-09f087f55b89",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid, expired or missing token\",\n  \"body\": null\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "TEST-EP4-FUP-070 - Security - Verify role-based access for all follow-up endpoints",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer expired-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "95c26b99-33e9-4a8b-b390-1690ebaf1820",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully within acceptable response time.\",\n  \"body\": {\n    \"id\": \"e2a3b4c5-d6e7-8901-abcd-ef1234567890\",\n    \"latency_ms\": 150\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-071 - Edge - Response time for follow-up creation under 2 seconds",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "check-response-time",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "df19c6c9-b21e-4558-a30a-ccd249e6ce59",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"lead_updated\": null\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-072 - Edge - Lead's proposal_value is NOT updated when proposal_amount is null/0 in subsequent follow-ups",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "no-proposal-update",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8da1fc54-0c67-492f-8d41-34bfb4a2ceaf",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"followup-uuid\",\n    \"lead_history\": {\n      \"field_name\": \"followup_logged\",\n      \"change_summary\": \"Follow-up (Call) logged with outcome Interested by John Doe\"\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-058 - Positive - Follow-up creation writes to Lead History (C1-82)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "notes",
+              "value": "Test History",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "03dce5e1-0d76-4d44-85db-27de2e290d1a",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Follow-up recorded successfully\",\n  \"body\": {\n    \"id\": \"c9d0e1f2-a3b4-5678-cdef-890123456789\",\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"followup_type\": \"Demo\",\n    \"outcome\": \"Interested\",\n    \"notes\": null,\n    \"next_followup_date\": \"2026-07-18T10:00:00Z\",\n    \"proposal_amount\": null,\n    \"stage_at_log\": \"Meeting Scheduled\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T16:00:00Z\",\n    \"correction_notes\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "TEST-EP4-FUP-063 - Positive - stage_at_log captures the lead's current stage at time of follow-up",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "followup_type",
+              "value": "Demo",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "36adf2c8-e3a6-40cc-9d3e-9bd0342f4ff8",
+      "type": "http",
+      "documentation": "STORY-4.1.1: GET /marketing/leads/:id/timeline (API-2)",
+      "method": "get",
+      "endpoint": "marketing/leads/:id/timeline",
+      "responses": [
+        {
+          "uuid": "c66dabcd-42fa-4a36-a7e4-34c46c4d1c0a",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Timeline fetched successfully\",\n  \"body\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Acme Corp\",\n    \"timeline\": [\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Customer interested\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00Z\"\n      },\n      {\n        \"type\": \"status_change\",\n        \"from\": \"New Lead\",\n        \"to\": \"Contacted\",\n        \"changed_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"changed_at\": \"2026-07-05T10:00:00Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Sent product brochure\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-04T09:00:00Z\"\n      },\n      {\n        \"type\": \"status_change\",\n        \"from\": \"Contacted\",\n        \"to\": \"Meeting Scheduled\",\n        \"changed_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"changed_at\": \"2026-07-03T11:00:00Z\"\n      },\n      {\n        \"type\": \"created\",\n        \"date\": \"2026-07-01T08:00:00Z\",\n        \"by\": \"Admin User\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-029 - Positive - Timeline includes follow-up events alongside status changes",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR",
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "de83fc2c-9402-4a21-8f84-5c29279621ba",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Timeline fetched successfully\",\n  \"body\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Acme Corp\",\n    \"total_events\": 2,\n    \"filtered_count\": 2,\n    \"timeline\": [\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Customer interested\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Sent product brochure\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-04T09:00:00Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-030 - Positive - Filter timeline by type=followup returns only follow-up events",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "followup",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "3a101776-f154-45c1-8033-9dd803a70796",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Timeline fetched successfully\",\n  \"body\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Acme Corp\",\n    \"total_events\": 25,\n    \"filtered_count\": 10,\n    \"timeline\": [\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Follow up note 1\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T07:54:28.624Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Follow up note 2\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-05T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Follow up note 3\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-04T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Follow up note 4\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-03T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Follow up note 5\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-02T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Follow up note 6\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-01T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Follow up note 7\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-06-30T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Follow up note 8\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-06-29T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Follow up note 9\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-06-28T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Follow up note 10\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-06-27T07:54:28.625Z\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"totalPages\": 3,\n      \"has_more\": true\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-031 - Positive - Timeline pagination with page and limit",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "1",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "limit",
+              "value": "10",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "527adca4-6101-462d-8535-72c60a8f0022",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"body\": {\n    \"timeline\": [\n      {\n        \"type\": \"followup\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-032 - Positive - Follow-up event includes author name and timestamp",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "lead-with-followup-details",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "550efd63-a2bc-45bc-90d4-9fba0c3729b6",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Timeline fetched successfully\",\n  \"body\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Acme Corp\",\n    \"timeline\": [\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Customer interested\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"status_change\",\n        \"from\": \"New Lead\",\n        \"to\": \"Contacted\",\n        \"changed_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"changed_at\": \"2026-07-05T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Sent brochures\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-04T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"status_change\",\n        \"from\": \"Contacted\",\n        \"to\": \"Meeting Scheduled\",\n        \"changed_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"changed_at\": \"2026-07-03T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"created\",\n        \"date\": \"2026-07-02T07:54:28.625Z\",\n        \"by\": \"Admin User\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-033 - Positive - Admin can view any lead's timeline (bypasses ownership)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "56918a68-2aae-4831-82a9-46bb544a4319",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Lead not found\",\n  \"body\": {\n    \"error\": \"Lead with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "TEST-EP4-FUP-034 - Failed - Lead not found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "non-existent-uuid",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d19b913f-308c-42b3-960e-f43177e7c98d",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Not authorized to view this lead's timeline\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP-035 - Failed - ME cannot view another user's lead timeline",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d020dbb9-9da7-48be-b750-dde647957373",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 401,\n  \"message\": \"Authentication required\",\n  \"body\": {\n    \"error\": \"Invalid or missing token\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "TEST-EP4-FUP-036 - Failed - Unauthenticated request",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "^Bearer ",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1b701a90-e837-495d-a696-0243d73bafc2",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid type filter. Must be one or more of: created, status_change, followup, assigned\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-037 - Failed - Invalid type filter parameter",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "invalid-type",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "843678a7-0618-4699-ab12-e670c3bfc50e",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Timeline fetched successfully\",\n  \"body\": {\n    \"lead_id\": \"new-lead-uuid\",\n    \"company_name\": \"New Corp\",\n    \"timeline\": []\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-038 - Edge - Lead with no events (empty timeline)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "lead-no-events-uuid",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "673913fe-542f-44de-9c22-3d252abf28fa",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"body\": {\n    \"timeline\": [\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Call\",\n        \"outcome\": \"Interested\",\n        \"notes\": \"Customer interested\",\n        \"icon\": \"phone\",\n        \"color\": \"#3B82F6\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"status_change\",\n        \"from\": \"New Lead\",\n        \"to\": \"Contacted\",\n        \"changed_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"changed_at\": \"2026-07-05T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"followup\",\n        \"followup_type\": \"Email\",\n        \"outcome\": \"Need More Info\",\n        \"notes\": \"Sent brochures\",\n        \"icon\": \"envelope\",\n        \"color\": \"#10B981\",\n        \"created_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-04T07:54:28.625Z\"\n      },\n      {\n        \"type\": \"status_change\",\n        \"from\": \"Contacted\",\n        \"to\": \"Meeting Scheduled\",\n        \"changed_by\": {\n          \"id\": \"me-001\",\n          \"name\": \"John Doe\"\n        },\n        \"changed_at\": \"2026-07-03T07:54:28.625Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-039 - Edge - Multiple type filters combined",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "followup",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "status_change",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ba2e43d7-47cb-4361-8271-07b5c4078448",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"body\": {\n    \"timeline\": [],\n    \"pagination\": {\n      \"page\": 999,\n      \"totalPages\": 1,\n      \"has_more\": false\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-040 - Edge - Page number exceeds total pages",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "999",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "668a7825-cc0b-4e26-a6c5-b2d10a0d0ede",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Acme Corp\",\n    \"total_events\": 4,\n    \"timeline\": [\n      {\n        \"id\": \"evt-1\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up (Call) logged with outcome Interested by John Doe\",\n        \"created_at\": \"2026-07-03T11:00:00Z\",\n        \"actor\": \"John Doe\"\n      },\n      {\n        \"id\": \"evt-2\",\n        \"type\": \"status_change\",\n        \"description\": \"Status updated from New to Contacted by John Doe\",\n        \"created_at\": \"2026-07-02T10:00:00Z\",\n        \"actor\": \"John Doe\"\n      },\n      {\n        \"id\": \"evt-3\",\n        \"type\": \"assigned\",\n        \"description\": \"Lead assigned to John Doe by Admin User\",\n        \"created_at\": \"2026-07-01T09:05:00Z\",\n        \"actor\": \"Admin User\"\n      },\n      {\n        \"id\": \"evt-4\",\n        \"type\": \"created\",\n        \"description\": \"Lead shell created by Admin User\",\n        \"created_at\": \"2026-07-01T09:00:00Z\",\n        \"actor\": \"Admin User\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-001 - Positive - Fetch consolidated, chronological descending timeline of events (Created, Assigned, Status Change, Follow-up)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-fup3-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "12958a5a-4191-4ac5-835c-723996a68881",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Acme Corp\",\n    \"timeline\": [\n      {\n        \"id\": \"evt-1\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up (Call) logged with outcome Interested by John Doe\",\n        \"created_at\": \"2026-07-03T11:00:00Z\",\n        \"actor\": \"John Doe\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-002 - Positive - Filter timeline by single type via query param (?type=followup)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "followup",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f5769f86-b70d-4965-b476-32bd338ee83f",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"timeline\": [\n      {\n        \"id\": \"evt-1\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-03T11:00:00Z\",\n        \"timestamp\": \"2026-07-03T11:00:00Z\",\n        \"notes\": \"Discussed CRM details\"\n      },\n      {\n        \"id\": \"evt-2\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-02T10:00:00Z\",\n        \"timestamp\": \"2026-07-02T10:00:00Z\",\n        \"notes\": null\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-003 - Positive - Combine multiple filters (?type=followup&type=status_change)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "followup",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "status_change",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e447b72e-acb1-4095-a574-d90d68c65b60",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"total_events\": 25,\n    \"timeline\": [\n      {\n        \"id\": \"evt-p1-20\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T12:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 0\"\n      },\n      {\n        \"id\": \"evt-p1-19\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-18\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 2\"\n      },\n      {\n        \"id\": \"evt-p1-17\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-16\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 4\"\n      },\n      {\n        \"id\": \"evt-p1-15\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-14\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 6\"\n      },\n      {\n        \"id\": \"evt-p1-13\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-12\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 8\"\n      },\n      {\n        \"id\": \"evt-p1-11\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-10\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 10\"\n      },\n      {\n        \"id\": \"evt-p1-9\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-8\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 12\"\n      },\n      {\n        \"id\": \"evt-p1-7\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-6\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 14\"\n      },\n      {\n        \"id\": \"evt-p1-5\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-4\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 16\"\n      },\n      {\n        \"id\": \"evt-p1-3\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-2\",\n        \"type\": \"assigned\",\n        \"description\": \"Lead assigned to Maya Executive by Admin\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T09:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:00:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-1\",\n        \"type\": \"created\",\n        \"description\": \"Lead Created\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T08:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:50:00.000Z\",\n        \"notes\": null\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 2,\n    \"total_count\": 25,\n    \"has_more\": true\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-004 - Edge - Pagination limit boundary (initial page pulls max 20 events)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "1",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "limit",
+              "value": "20",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "4b6bf229-1941-436c-8f63-77228abc20cc",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"total_events\": 25,\n    \"timeline\": [\n      {\n        \"id\": \"evt-p2-5\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:40:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 0\"\n      },\n      {\n        \"id\": \"evt-p2-4\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:30:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 1\"\n      },\n      {\n        \"id\": \"evt-p2-3\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:20:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 2\"\n      },\n      {\n        \"id\": \"evt-p2-2\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:10:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 3\"\n      },\n      {\n        \"id\": \"evt-p2-1\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:00:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 4\"\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": 2,\n    \"total_pages\": 2,\n    \"total_count\": 25,\n    \"has_more\": false\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-005 - Positive - Fetch second page of paginated timeline data",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "2",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "2678ca70-5932-4a6c-b8ff-b436b4d9fb9e",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 403,\n  \"message\": \"Access denied. Not authorized to view this lead's timeline\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP3-006 - Security - ME blocked from retrieving timeline for leads assigned to another ME",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer me-002-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "246cae3c-35af-4ea1-bdd6-17700df38cac",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid lead ID format\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP3-007 - Negative - Request rejects non-UUID lead ID format with 400",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "operator": "regex",
+              "invert": true
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "2b0f0fef-1b12-4be6-b46d-f05ae12633fe",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 404,\n  \"message\": \"Lead not found\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "TEST-EP4-FUP3-008 - Negative - Request for non-existent lead UUID returns 404",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "non-existent-uuid",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "66415518-a471-4e78-9af2-dc3c9ac8fcf3",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"data\": {\n    \"timeline\": [\n      {\n        \"created_at\": \"2026-07-06T12:00:00.000Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-009 - Edge - Timeline date format conforms to UTC ISO 8601",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "format",
+              "value": "iso8601",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "62d336fe-369d-40ad-bca1-ac63915e49b0",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"data\": {\n    \"timeline\": [\n      {\n        \"id\": \"evt-1\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up (Call) logged with outcome Interested by John Doe\",\n        \"notes\": \"<script>alert('XSS')</script>\",\n        \"created_at\": \"2026-07-03T11:00:00Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-017 - Security - XSS script payloads in historical notes are handled safely and returned literally",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "xss",
+              "value": "true",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "be39e0fe-25e1-4ca3-bed6-c6fd7688ea5d",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid type filter. Must be one or more of: created, status_change, followup, assigned\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP3-018 - Security - SQL injection attempt on query filter type parameter is sanitized",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "DROP|--|'",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d07f76ac-64ba-48cb-8ce7-c7a7ab37d045",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid page or limit parameter. Must be positive integers.\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP3-019 - Security - SQL injection attempt on limit parameter is sanitized",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "limit",
+              "value": "DROP|--|'",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c3860afa-2810-4c3f-9466-b57fb83bc27c",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"data\": {\n    \"timeline\": [\n      {\n        \"id\": \"evt-p1-20\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T12:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 0\"\n      },\n      {\n        \"id\": \"evt-p1-19\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-18\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 2\"\n      },\n      {\n        \"id\": \"evt-p1-17\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-16\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 4\"\n      },\n      {\n        \"id\": \"evt-p1-15\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-14\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 6\"\n      },\n      {\n        \"id\": \"evt-p1-13\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-12\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 8\"\n      },\n      {\n        \"id\": \"evt-p1-11\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-10\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 10\"\n      },\n      {\n        \"id\": \"evt-p1-9\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-8\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 12\"\n      },\n      {\n        \"id\": \"evt-p1-7\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-6\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 14\"\n      },\n      {\n        \"id\": \"evt-p1-5\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-4\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 16\"\n      },\n      {\n        \"id\": \"evt-p1-3\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-2\",\n        \"type\": \"assigned\",\n        \"description\": \"Lead assigned to Maya Executive by Admin\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T09:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:00:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-1\",\n        \"type\": \"created\",\n        \"description\": \"Lead Created\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T08:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:50:00.000Z\",\n        \"notes\": null\n      }\n    ]\n  },\n  \"meta\": {\n    \"execution_time_ms\": 95\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-020 - Edge - Timeline loading performance is optimized to return under 1.5 seconds on 1000+ events dataset",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token-perf",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "7ad76af1-e517-4209-8539-177e56a7b95f",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"company_name\": \"Shell Corp\",\n    \"timeline\": []\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-021 - Edge - Returns empty timeline array for a newly created lead shell with no logged events",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "lead-empty-timeline-uuid",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "9a137521-cc7d-47ef-abfc-c4f38f9d09e0",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid page or limit parameter. Must be positive integers.\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP3-022 - Negative - Pagination filters reject out-of-bounds parameters with 400 Bad Request",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "^-",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e449389f-6f84-4bc2-924b-6e07c0807fa9",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Invalid type filter. Must be one or more of: created, status_change, followup, assigned\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP3-023 - Negative - Query with unsupported type value returns 400 Bad Request",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "type",
+              "value": "unsupported",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d285ccf7-4cec-4ed3-b45b-9ba3e5e8f630",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"data\": {\n    \"timeline\": [\n      {\n        \"id\": \"evt-bbbb-2222-2222-2222-222222222222\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call outcome Interested\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T12:00:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-aaaa-1111-1111-1111-111111111111\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email outcome Interested\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T12:00:00.000Z\",\n        \"notes\": null\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-024 - Edge - Sorted consistently using UUID tiebreaker for identical timestamps",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "sort",
+              "value": "tiebreaker",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "bf172d67-e205-482b-883e-336b127817f9",
+      "type": "http",
+      "documentation": "STORY-4.1.1: POST /marketing/leads/:id/followups/:followupId/correction (API-5)",
+      "method": "post",
+      "endpoint": "marketing/leads/:id/followups/:followupId/correction",
+      "responses": [
+        {
+          "uuid": "f688e0c6-e729-47d2-8380-e5e61d7e4091",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Correction added successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"followup_type\": \"Call\",\n    \"outcome\": \"Interested\",\n    \"notes\": \"Customer showed interest in CRM product\",\n    \"correction_notes\": \"Updated contact number noted: 9876543210\",\n    \"correction_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"correction_at\": \"2026-07-06T14:00:00Z\",\n    \"created_by\": {\n      \"id\": \"me-001\",\n      \"name\": \"John Doe\"\n    },\n    \"created_at\": \"2026-07-06T12:00:00Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-056 - Positive - Correction note appended to existing follow-up",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1c68ec2b-afaa-4b3d-b380-7e31a997a1fd",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Correction notes cannot be empty\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "TEST-EP4-FUP-057 - Failed - Empty correction_notes",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "correction_notes",
+              "value": "^$",
+              "operator": "regex",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d3476101-8d01-49b5-b6f9-623a7f8e54ce",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"body\": {\n    \"correction_notes\": \"Second correction\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-067 - Edge - Multiple correction notes on the same follow-up overrides with latest",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "dca0c3a9-032f-40ca-938a-c36b4d6cbd1c",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"body\": {\n    \"correction_by\": {\n      \"id\": \"admin-001\",\n      \"name\": \"Admin User\"\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP-068 - Positive - Admin can add correction note to any follow-up",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b204a98c-3170-4e03-a753-632bb4f6169d",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"You can only correct your own follow-up records\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "TEST-EP4-FUP-069 - Negative - ME cannot add correction to another ME's follow-up",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "69fd6965-8781-4894-ba6e-1928b4ee089b",
+      "type": "http",
+      "documentation": "STORY-4.1.1: PUT /marketing/leads/:id/followups/:followupId (API-7)",
+      "method": "put",
+      "endpoint": "marketing/leads/:id/followups/:followupId",
+      "responses": [
+        {
+          "uuid": "9e0786fa-ecf9-4911-9d6e-3a1c14838017",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 405,\n  \"message\": \"Method not allowed\",\n  \"body\": {\n    \"error\": \"Follow-up records are immutable. Use correction endpoint instead.\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP-054 - Failed - PUT request on follow-up is rejected (immutable record)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
@@ -2333,18 +4468,99 @@
       "streamingInterval": 0
     },
     {
-      "uuid": "5a3ad2d0-77cc-44ca-a361-de67d21fccfe",
+      "uuid": "16f33d98-bb16-4044-90b0-f48a9d20389a",
       "type": "http",
-      "documentation": "Story-4.2.1 API Route",
-      "method": "put",
-      "endpoint": "marketing/followups/:leadId/complete",
+      "documentation": "STORY-4.1.1: PATCH /marketing/leads/:id/followups/:followupId (API-7 PATCH)",
+      "method": "patch",
+      "endpoint": "marketing/leads/:id/followups/:followupId",
       "responses": [
         {
-          "uuid": "c7f8399f-74a9-4a37-85be-2795bfb7d2ea",
-          "body": "{\n  \"success\": false,\n  \"status_code\": 404,\n  \"message\": \"Lead not found\",\n  \"data\": null\n}",
+          "uuid": "3fe0cf98-fe38-4577-8611-312c715fe4c0",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 405,\n  \"message\": \"Method not allowed\",\n  \"body\": {\n    \"error\": \"Follow-up records are immutable. Use correction endpoint instead.\"\n  }\n}",
           "latency": 0,
-          "statusCode": 404,
-          "label": "Complete follow-up - 404 lead not found",
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP-054-PATCH - Failed - PATCH request on follow-up is rejected (immutable record)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "98e5a379-3cd6-4b68-b46c-ee6e00eb55f3",
+      "type": "http",
+      "documentation": "STORY-4.1.1: DELETE /marketing/leads/:id/followups/:followupId (API-7)",
+      "method": "delete",
+      "endpoint": "marketing/leads/:id/followups/:followupId",
+      "responses": [
+        {
+          "uuid": "c21d2d89-ae4a-448c-b194-13a5f3fd3e37",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 405,\n  \"message\": \"Method not allowed\",\n  \"body\": {\n    \"error\": \"Follow-up records cannot be deleted\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP-055 - Failed - DELETE request on follow-up is rejected (immutable record)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "89e08824-67a2-4075-86e5-db8fa0e3fed8",
+      "type": "http",
+      "documentation": "STORY-4.3.1: GET /admin/leads/:id/timeline (API-2)",
+      "method": "get",
+      "endpoint": "admin/leads/:id/timeline",
+      "responses": [
+        {
+          "uuid": "126f54b0-3aff-4063-b05a-60945935398b",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"timeline\": [\n      {\n        \"id\": \"evt-p1-20\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T12:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 0\"\n      },\n      {\n        \"id\": \"evt-p1-19\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-18\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 2\"\n      },\n      {\n        \"id\": \"evt-p1-17\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-16\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 4\"\n      },\n      {\n        \"id\": \"evt-p1-15\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-14\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 6\"\n      },\n      {\n        \"id\": \"evt-p1-13\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-12\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 8\"\n      },\n      {\n        \"id\": \"evt-p1-11\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-10\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 10\"\n      },\n      {\n        \"id\": \"evt-p1-9\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-8\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 12\"\n      },\n      {\n        \"id\": \"evt-p1-7\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-6\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 14\"\n      },\n      {\n        \"id\": \"evt-p1-5\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-4\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 16\"\n      },\n      {\n        \"id\": \"evt-p1-3\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-2\",\n        \"type\": \"assigned\",\n        \"description\": \"Lead assigned to Maya Executive by Admin\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T09:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:00:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-1\",\n        \"type\": \"created\",\n        \"description\": \"Lead Created\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T08:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p2-5\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:40:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 0\"\n      },\n      {\n        \"id\": \"evt-p2-4\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:30:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 1\"\n      },\n      {\n        \"id\": \"evt-p2-3\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:20:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 2\"\n      },\n      {\n        \"id\": \"evt-p2-2\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:10:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 3\"\n      },\n      {\n        \"id\": \"evt-p2-1\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up WhatsApp message logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T08:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:00:00.000Z\",\n        \"notes\": \"Notes for page 2 followup 4\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-010 - Positive - Admin bypasses owner restrictions and views timeline of any lead",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "4560c43c-3b8f-4989-8854-e432c55ee7dd",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"data\": {\n    \"timeline\": [\n      {\n        \"id\": \"evt-2\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"John Doe\"\n        },\n        \"created_at\": \"2026-07-02T10:00:00Z\",\n        \"timestamp\": \"2026-07-02T10:00:00Z\",\n        \"notes\": null\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-011 - Positive - Admin timeline query supports type filtering",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -2352,14 +4568,14 @@
           "sendFileAsBody": false,
           "rules": [
             {
-              "target": "params",
-              "modifier": "leadId",
-              "value": "lead-uuid-999",
+              "target": "query",
+              "modifier": "type",
+              "value": "status_change",
               "operator": "equals",
               "invert": false
             }
           ],
-          "rulesOperator": "OR",
+          "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
@@ -2367,11 +4583,76 @@
           "callbacks": []
         },
         {
-          "uuid": "15163537-fd65-4b07-ba17-fdbedb7ac6f2",
-          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
+          "uuid": "26d3f1a3-9ca6-42f6-a2f4-624748c2820d",
+          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Timeline retrieved successfully\",\n  \"data\": {\n    \"lead_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"total_events\": 25,\n    \"timeline\": [\n      {\n        \"id\": \"evt-p1-20\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T12:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T12:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 0\"\n      },\n      {\n        \"id\": \"evt-p1-19\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-18\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 2\"\n      },\n      {\n        \"id\": \"evt-p1-17\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-16\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 4\"\n      },\n      {\n        \"id\": \"evt-p1-15\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-14\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T11:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T11:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 6\"\n      },\n      {\n        \"id\": \"evt-p1-13\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-12\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 8\"\n      },\n      {\n        \"id\": \"evt-p1-11\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-10\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 10\"\n      },\n      {\n        \"id\": \"evt-p1-9\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-8\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T10:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T10:00:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 12\"\n      },\n      {\n        \"id\": \"evt-p1-7\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:50:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-6\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Email logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:40:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:40:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 14\"\n      },\n      {\n        \"id\": \"evt-p1-5\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:30:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:30:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-4\",\n        \"type\": \"followup\",\n        \"description\": \"Follow-up Call logged\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:20:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:20:00.000Z\",\n        \"notes\": \"Detailed notes for follow-up event 16\"\n      },\n      {\n        \"id\": \"evt-p1-3\",\n        \"type\": \"status_change\",\n        \"description\": \"Stage updated to Contacted\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Maya Executive\"\n        },\n        \"created_at\": \"2026-07-06T09:10:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:10:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-2\",\n        \"type\": \"assigned\",\n        \"description\": \"Lead assigned to Maya Executive by Admin\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T09:00:00.000Z\",\n        \"timestamp\": \"2026-07-06T09:00:00.000Z\",\n        \"notes\": null\n      },\n      {\n        \"id\": \"evt-p1-1\",\n        \"type\": \"created\",\n        \"description\": \"Lead Created\",\n        \"actor\": {\n          \"id\": \"usr-1\",\n          \"name\": \"Admin User\"\n        },\n        \"created_at\": \"2026-07-06T08:50:00.000Z\",\n        \"timestamp\": \"2026-07-06T08:50:00.000Z\",\n        \"notes\": null\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 2,\n    \"total_count\": 25,\n    \"has_more\": true\n  }\n}",
           "latency": 0,
-          "statusCode": 401,
-          "label": "Complete follow-up - 401 unauthorized",
+          "statusCode": 200,
+          "label": "TEST-EP4-FUP3-012 - Positive - Admin timeline query supports pagination parameters",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "1",
+              "operator": "equals",
+              "invert": false
+            },
+            {
+              "target": "query",
+              "modifier": "limit",
+              "value": "20",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "208c718b-52ee-4b7d-9c1f-d9275e35ec49",
+      "type": "http",
+      "documentation": "STORY-4.3.1: PUT /marketing/leads/:id/timeline/:eventId (API-3)",
+      "method": "put",
+      "endpoint": "marketing/leads/:id/timeline/:eventId",
+      "responses": [
+        {
+          "uuid": "6993f804-ff98-4524-97fc-087357e0d0ce",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 405,\n  \"message\": \"Method not allowed. Timeline events are read-only and strictly append-only.\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP3-013 - Failed - PUT requests on timeline event are rejected (Method Not Allowed)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "abbf252f-ca40-4e6e-ae06-305253fd1b21",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 405,\n  \"message\": \"Method not allowed. Timeline events are read-only and strictly append-only.\"\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP3-016 - Security - Admin cannot delete or edit historic events",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
@@ -2381,34 +4662,131 @@
             {
               "target": "header",
               "modifier": "Authorization",
-              "value": "^Bearer ",
-              "operator": "regex",
-              "invert": true
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
             }
           ],
-          "rulesOperator": "OR",
+          "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
           "crudKey": "id",
           "callbacks": []
-        },
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a811b3d0-b1cb-48d6-8f8f-8b27392fbefe",
+      "type": "http",
+      "documentation": "STORY-4.3.1: PATCH /marketing/leads/:id/timeline/:eventId (API-3)",
+      "method": "patch",
+      "endpoint": "marketing/leads/:id/timeline/:eventId",
+      "responses": [
         {
-          "uuid": "16a0cb39-a5c8-4a8a-bd8c-8c7443eae331",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Follow-up marked as completed\",\n  \"data\": {\n    \"lead_id\": \"lead-uuid-001\",\n    \"outcome\": \"positive\",\n    \"notes\": \"Done\",\n    \"completed_at\": \"2026-07-06T10:00:00Z\",\n    \"completed_by\": \"me-001\"\n  }\n}",
+          "uuid": "e10703a6-2cb1-437f-be86-7835fb3489b7",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 405,\n  \"message\": \"Method not allowed. Timeline events are read-only and strictly append-only.\",\n  \"data\": null\n}",
           "latency": 0,
-          "statusCode": 200,
-          "label": "Complete follow-up - 200 success (default)",
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP3-014 - Failed - PATCH requests on timeline event are rejected",
           "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
           "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
-          "rulesOperator": "OR",
+          "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "fb64bc98-5cca-42ae-aaca-2d66f6266bb7",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 405,\n  \"message\": \"Method not allowed. Timeline events are read-only and strictly append-only.\"\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP3-016 - Security - Admin cannot delete or edit historic events",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "d2641399-dca8-46a5-9756-bb6f95e26130",
+      "type": "http",
+      "documentation": "STORY-4.3.1: DELETE /marketing/leads/:id/timeline/:eventId (API-3)",
+      "method": "delete",
+      "endpoint": "marketing/leads/:id/timeline/:eventId",
+      "responses": [
+        {
+          "uuid": "8a3246e9-d205-42ee-ae48-0f8ab504ced7",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 405,\n  \"message\": \"Method not allowed. Timeline events are read-only and strictly append-only.\",\n  \"data\": null\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP3-015 - Failed - DELETE requests on timeline event are rejected",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "da00e39d-7391-49c2-9017-43049fbd7c3c",
+          "body": "{\n  \"success\": false,\n  \"status_code\": 405,\n  \"message\": \"Method not allowed. Timeline events are read-only and strictly append-only.\"\n}",
+          "latency": 0,
+          "statusCode": 405,
+          "label": "TEST-EP4-FUP3-016 - Security - Admin cannot delete or edit historic events",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
           "crudKey": "id",
           "callbacks": []
         }
@@ -2505,14 +4883,6 @@
     },
     {
       "type": "route",
-      "uuid": "23870bde-d3d2-4b82-933a-ae6dfc6857ab"
-    },
-    {
-      "type": "route",
-      "uuid": "5a3ad2d0-77cc-44ca-a361-de67d21fccfe"
-    },
-    {
-      "type": "route",
       "uuid": "abadb9b3-b441-4518-8192-5773460c6b61"
     },
     {
@@ -2550,6 +4920,50 @@
     {
       "type": "route",
       "uuid": "3121496e-c664-42d0-9b33-8ffb1880742b"
+    },
+    {
+      "type": "route",
+      "uuid": "61782a95-5e1c-473d-8cec-7923ce727619"
+    },
+    {
+      "type": "route",
+      "uuid": "36adf2c8-e3a6-40cc-9d3e-9bd0342f4ff8"
+    },
+    {
+      "type": "route",
+      "uuid": "bf172d67-e205-482b-883e-336b127817f9"
+    },
+    {
+      "type": "route",
+      "uuid": "69fd6965-8781-4894-ba6e-1928b4ee089b"
+    },
+    {
+      "type": "route",
+      "uuid": "16f33d98-bb16-4044-90b0-f48a9d20389a"
+    },
+    {
+      "type": "route",
+      "uuid": "98e5a379-3cd6-4b68-b46c-ee6e00eb55f3"
+    },
+    {
+      "type": "route",
+      "uuid": "89e08824-67a2-4075-86e5-db8fa0e3fed8"
+    },
+    {
+      "type": "route",
+      "uuid": "208c718b-52ee-4b7d-9c1f-d9275e35ec49"
+    },
+    {
+      "type": "route",
+      "uuid": "a811b3d0-b1cb-48d6-8f8f-8b27392fbefe"
+    },
+    {
+      "type": "route",
+      "uuid": "d2641399-dca8-46a5-9756-bb6f95e26130"
+    },
+    {
+      "type": "route",
+      "uuid": "958c3cd4-8d77-47eb-bbde-41586408e597"
     }
   ],
   "proxyMode": false,

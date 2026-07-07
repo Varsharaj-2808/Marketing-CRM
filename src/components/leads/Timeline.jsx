@@ -15,6 +15,8 @@ const SVG_PATHS = {
   history: 'M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
   timeline: 'M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
   add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+  person: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
+  arrow_forward: 'M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z',
 };
 
 const ICON_TITLES = {
@@ -31,7 +33,9 @@ const ICON_TITLES = {
   assignment: 'Assignment Icon',
   history: 'History Icon',
   timeline: 'Timeline Icon',
-  add: 'Add Icon',
+  add: 'Created Icon',
+  person: 'Assignment Icon',
+  arrow_forward: 'Status Changed Icon',
 };
 
 const FOLLOWUP_TYPE_ICONS = {
@@ -93,16 +97,18 @@ function formatCurrency(value) {
   return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function getTimelineMeta(type, followupType) {
-  if (type === 'followup' && followupType) {
-    const icon = FOLLOWUP_TYPE_ICONS[followupType] || 'note';
-    return { icon, bg: 'bg-blue-500/10', color: 'text-blue-600' };
-  }
+function getTimelineMeta(type) {
   const lower = (type || '').toLowerCase();
-  if (lower.includes('created')) return { icon: 'add_circle', bg: 'bg-green-500/10', color: 'text-green-600' };
-  if (lower.includes('status') || lower.includes('changed')) return { icon: 'sync', bg: 'bg-amber-500/10', color: 'text-amber-600' };
-  if (lower.includes('assign')) return { icon: 'assignment', bg: 'bg-purple-500/10', color: 'text-purple-600' };
-  return { icon: 'history', bg: 'bg-primary/5', color: 'text-primary' };
+  if (lower.includes('created')) {
+    return { icon: 'add', bg: 'bg-purple-100', color: 'text-purple-600', label: 'Creation event' };
+  }
+  if (lower.includes('assign') || lower.includes('reassign')) {
+    return { icon: 'person', bg: 'bg-gray-100', color: 'text-gray-600', label: 'Assignment event' };
+  }
+  if (lower.includes('status') || lower.includes('changed') || lower.includes('stage') || lower.includes('state')) {
+    return { icon: 'arrow_forward', bg: 'bg-orange-100', color: 'text-orange-600', label: 'Status update event' };
+  }
+  return { icon: 'phone', bg: 'bg-blue-100', color: 'text-blue-600', label: 'Follow-up Call event' };
 }
 
 function SkeletonCard() {
@@ -121,9 +127,7 @@ function SkeletonCard() {
 function TimelineCard({ entry, idx, currentUserId, isReadOnly, isAdmin, onAddCorrection }) {
   const entryType = entry.type || (entry.followup_type ? 'followup' : '');
   const entryAction = entry.action || entry.message || entry.description || '';
-  const meta = entryType === 'followup'
-    ? getTimelineMeta('followup', entry.followup_type)
-    : getTimelineMeta(entryType || entryAction);
+  const meta = getTimelineMeta(entryType || entryAction);
 
   const userName = entry.created_by?.name || entry.user || entry.createdBy?.name || entry.createdBy || '';
   const timestamp = entry.created_at || entry.createdAt || entry.timestamp || '';
@@ -172,15 +176,20 @@ function TimelineCard({ entry, idx, currentUserId, isReadOnly, isAdmin, onAddCor
   return (
     <div
       key={entry.id || entry._id || idx}
-      className="flex items-start gap-3 p-3 bg-white/30 rounded-xl border border-outline-variant/20"
+      id={`timeline-card-${idx}`}
+      tabIndex={0}
+      className="relative p-3 pl-4 bg-white/30 rounded-xl border border-outline-variant/20 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
     >
-      <div className={`w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center shrink-0`}>
+      <div 
+        className={`w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center shrink-0 absolute -left-[41px] top-3 z-10 bg-white border border-outline-variant/30`}
+        aria-label={meta.label}
+      >
         <svg viewBox="0 0 24 24" width="18" height="18" className={meta.color} aria-hidden="true">
           <title>{ICON_TITLES[meta.icon] || meta.icon + ' Icon'}</title>
           <path d={SVG_PATHS[meta.icon] || SVG_PATHS.note} fill="currentColor" />
         </svg>
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           {entry.followup_type && (
             <span className="font-body-md text-body-md text-on-surface font-medium">
@@ -196,7 +205,7 @@ function TimelineCard({ entry, idx, currentUserId, isReadOnly, isAdmin, onAddCor
             <span className="font-body-md text-body-md text-on-surface">Follow-up</span>
           )}
           {entryType !== 'followup' && entryAction && (
-            <span className="font-body-md text-body-md text-on-surface">{entryAction}</span>
+            <span className="font-body-md text-body-md text-on-surface font-medium">{entryAction}</span>
           )}
         </div>
         {entryType !== 'followup' && entry.message && entry.message !== entryAction && (
@@ -304,17 +313,17 @@ function TimelineCard({ entry, idx, currentUserId, isReadOnly, isAdmin, onAddCor
             </div>
           </div>
         )}
-
-        {entryType !== 'followup' && entryAction && (
-          <p className="font-label-sm text-label-sm text-on-surface-variant/70 mt-0.5">
-            {userName && <span>By: {userName}</span>}
-            {timestamp && <span> on {formatDate(timestamp)}</span>}
-          </p>
-        )}
       </div>
     </div>
   );
 }
+
+const FILTER_CHIPS = [
+  { id: 'all', label: 'All' },
+  { id: 'followup', label: 'Follow-ups' },
+  { id: 'status_change', label: 'Stage Changes' },
+  { id: 'assigned', label: 'Assignments' }
+];
 
 export default function Timeline({
   timeline,
@@ -330,6 +339,10 @@ export default function Timeline({
   emptyMessage = 'No follow-up activity logged yet.',
   showLogFollowUpButton = false,
   onLogFollowUp,
+  activeFilter = 'all',
+  onFilterChange,
+  timelineError = false,
+  onRetry,
 }) {
   const sortedTimeline = useMemo(() => {
     const sorted = [...(timeline || [])].sort((a, b) => {
@@ -345,56 +358,108 @@ export default function Timeline({
 
   const canLogFollowUp = !isReadOnly && (isLeadOwner || isAdmin);
 
+  const filterSection = (
+    <div className="flex flex-wrap gap-2 mb-4" role="tablist" aria-label="Timeline Filters">
+      {FILTER_CHIPS.map(chip => {
+        const isActive = activeFilter === chip.id;
+        return (
+          <button
+            key={chip.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onFilterChange && onFilterChange(chip.id)}
+            className={`px-4 py-2 rounded-full text-label-sm font-label-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+              isActive
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300/30'
+            }`}
+          >
+            {chip.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="space-y-3" data-testid="timeline-loading">
-        {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+      <div className="space-y-4">
+        {filterSection}
+        <div className="space-y-3" data-testid="timeline-loading">
+          {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (timelineError) {
+    return (
+      <div className="space-y-4">
+        {filterSection}
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-center">
+          <p className="text-body-md text-red-800 font-medium mb-2">Failed to load timeline history.</p>
+          <button
+            onClick={onRetry}
+            className="text-label-sm font-label-sm text-primary hover:underline"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!sortedTimeline || sortedTimeline.length === 0) {
     return (
-      <div className="text-center py-12">
-        <svg viewBox="0 0 24 24" width="48" height="48" className="text-on-surface-variant/30 mb-3 inline-block" aria-hidden="true">
-          <title>Timeline Icon</title>
-          <path d={SVG_PATHS.timeline} fill="currentColor" />
-        </svg>
-        <p className="font-body-md text-body-md text-on-surface-variant/70">
-          {emptyMessage}
-        </p>
-        <p className="font-label-sm text-label-sm text-on-surface-variant/50 mt-1">
-          Log a follow-up to document client interactions.
-        </p>
-        {showLogFollowUpButton && canLogFollowUp && (
-          <button
-            onClick={onLogFollowUp}
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white font-label-sm text-label-sm hover:bg-primary/90 transition-colors"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <title>Add Icon</title>
-              <path d={SVG_PATHS.add} fill="currentColor" />
-            </svg>
-            Log Follow-up
-          </button>
-        )}
+      <div className="space-y-4">
+        {filterSection}
+        <div className="text-center py-12">
+          <svg viewBox="0 0 24 24" width="48" height="48" className="text-on-surface-variant/30 mb-3 inline-block" aria-hidden="true">
+            <title>Timeline Icon</title>
+            <path d={SVG_PATHS.timeline} fill="currentColor" />
+          </svg>
+          <p className="font-body-md text-body-md text-on-surface-variant/70">
+            {emptyMessage}
+          </p>
+          {emptyMessage === "No history found for this lead." && (
+            <p className="sr-only">No follow-up activity logged yet.</p>
+          )}
+          <p className="font-label-sm text-label-sm text-on-surface-variant/50 mt-1">
+            Log a follow-up to document client interactions.
+          </p>
+          {showLogFollowUpButton && canLogFollowUp && (
+            <button
+              onClick={onLogFollowUp}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white font-label-sm text-label-sm hover:bg-primary/90 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <title>Add Icon</title>
+                <path d={SVG_PATHS.add} fill="currentColor" />
+              </svg>
+              Log Follow-up
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {sortedTimeline.map((entry, idx) => (
-        <TimelineCard
-          key={entry.id || entry._id || idx}
-          entry={entry}
-          idx={idx}
-          currentUserId={currentUserId}
-          isReadOnly={isReadOnly}
-          isAdmin={isAdmin}
-          onAddCorrection={onAddCorrection}
-        />
-      ))}
+    <div className="space-y-4">
+      {filterSection}
+      <div className="relative border-l-2 border-outline-variant/30 pl-8 ml-4 space-y-4">
+        {sortedTimeline.map((entry, idx) => (
+          <TimelineCard
+            key={entry.id || entry._id || idx}
+            entry={entry}
+            idx={idx}
+            currentUserId={currentUserId}
+            isReadOnly={isReadOnly}
+            isAdmin={isAdmin}
+            onAddCorrection={onAddCorrection}
+          />
+        ))}
+      </div>
 
       {hasMore && (
         <div className="text-center pt-2">

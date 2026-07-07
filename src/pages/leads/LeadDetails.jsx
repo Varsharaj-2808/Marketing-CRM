@@ -33,8 +33,8 @@ const STATUS_MAP = {
   Lost: 'lost',
 };
 
-const TIMELINE_INITIAL_COUNT = 10;
-const TIMELINE_LOAD_MORE_COUNT = 10;
+const TIMELINE_INITIAL_COUNT = 20;
+const TIMELINE_LOAD_MORE_COUNT = 20;
 const SUBMIT_TIMEOUT_MS = 10000;
 
 export default function LeadDetails() {
@@ -55,6 +55,9 @@ export default function LeadDetails() {
   const [timelinePagination, setTimelinePagination] = useState({ page: 1, totalPages: 1, has_more: false });
   const [timelinePage, setTimelinePage] = useState(1);
   const [loadingMoreTimeline, setLoadingMoreTimeline] = useState(false);
+
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [timelineError, setTimelineError] = useState(false);
 
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
@@ -94,7 +97,7 @@ export default function LeadDetails() {
       .then((res) => {
         const leadData = res?.data || res?.lead || res || null;
         setLead(leadData);
-        loadTimeline(1, true);
+        loadTimeline(1, true, activeFilter);
       })
       .catch((err) => {
         if (err?.status === 403) {
@@ -109,9 +112,10 @@ export default function LeadDetails() {
       .finally(() => setLoading(false));
   }
 
-  async function loadTimeline(page = 1, replace = false) {
+  async function loadTimeline(page = 1, replace = false, filter = activeFilter) {
     if (page === 1) {
       setHistoryLoading(true);
+      setTimelineError(false);
     } else {
       setLoadingMoreTimeline(true);
     }
@@ -123,7 +127,11 @@ export default function LeadDetails() {
     abortControllerRef.current = controller;
 
     try {
-      const res = await fetchTimeline(leadId, { page, limit: TIMELINE_INITIAL_COUNT, signal: controller.signal });
+      const queryParams = { page, limit: TIMELINE_INITIAL_COUNT, signal: controller.signal };
+      if (filter !== 'all') {
+        queryParams.type = filter;
+      }
+      const res = await fetchTimeline(leadId, queryParams);
       if (controller.signal.aborted) return;
       const body = res?.body || res?.data || {};
       const newItems = body.timeline || body.data || [];
@@ -131,13 +139,22 @@ export default function LeadDetails() {
       if (replace) {
         setTimelineItems(newItems);
       } else {
+        const prevLength = timelineItems.length;
         setTimelineItems(prev => [...prev, ...newItems]);
+        
+        setTimeout(() => {
+          const firstNewCard = document.getElementById(`timeline-card-${prevLength}`);
+          if (firstNewCard) {
+            firstNewCard.focus();
+          }
+        }, 100);
       }
       setTimelinePagination(pagination);
       setTimelinePage(page);
     } catch (err) {
       if (err?.name === 'AbortError') return;
       if (page === 1) {
+        setTimelineError(true);
         const localLead = lead;
         if (localLead?.timeline && localLead.timeline.length > 0) {
           setTimelineItems(localLead.timeline);
@@ -357,11 +374,20 @@ export default function LeadDetails() {
 
   async function handleAddCorrection(followupId, correctionNotes) {
     await addCorrection(leadId, followupId, correctionNotes);
-    await loadTimeline(1, true);
+    await loadTimeline(1, true, activeFilter);
   }
 
   function handleLoadMoreTimeline() {
-    loadTimeline(timelinePage + 1, false);
+    loadTimeline(timelinePage + 1, false, activeFilter);
+  }
+
+  function handleFilterChange(filterId) {
+    if (!navigator.onLine && filterId !== 'all') {
+      showToast("Offline: Cannot filter timeline while offline.", "error");
+      return;
+    }
+    setActiveFilter(filterId);
+    loadTimeline(1, true, filterId);
   }
 
   function handleLogFollowUp() {
@@ -606,9 +632,13 @@ export default function LeadDetails() {
               isReadOnly={isReadOnly}
               isLeadOwner={isLeadOwner()}
               onAddCorrection={handleAddCorrection}
-              emptyMessage="No follow-up activity logged yet."
+              emptyMessage="No history found for this lead."
               showLogFollowUpButton={true}
               onLogFollowUp={handleLogFollowUp}
+              activeFilter={activeFilter}
+              onFilterChange={handleFilterChange}
+              timelineError={timelineError}
+              onRetry={() => loadTimeline(1, true, activeFilter)}
             />
           </div>
         </div>
