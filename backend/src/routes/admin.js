@@ -11,6 +11,7 @@ const bulkOperationsController = require('../controllers/bulkOperationsControlle
 const leadController = require('../controllers/leadController');
 const assignController = require('../controllers/assignController');
 const categoryController = require('../controllers/categoryController');
+const followupController = require('../controllers/followupController');
 
 router.post('/users', protect, authorize('Admin'), userController.createUser);
 router.get('/users', protect, authorize('Admin'), userController.getUsers);
@@ -80,5 +81,13 @@ router.get('/dashboard/at-risk', protect, authorize('Admin'), adminController.ge
 
 // ── STORY-4.2.1 | API-4 ─────────────────────────────────────
 router.post('/reminders/send-daily', protect, authorize('Admin'), adminController.sendDailyReminders);
+
+// ── STORY-4.3.1 | Admin Timeline ────────────────────────────
+router.get('/leads/:id/timeline', protect, authorize('Admin'), followupController.getTimeline);
+
+// ── STORY-4.3.1 | Timeline Immutability (Admin) ─────────────
+router.put('/leads/:id/timeline/:eventId',    protect, authorize('Admin'), followupController.rejectTimelineMutation);
+router.patch('/leads/:id/timeline/:eventId',  protect, authorize('Admin'), followupController.rejectTimelineMutation);
+router.delete('/leads/:id/timeline/:eventId', protect, authorize('Admin'), followupController.rejectTimelineMutation);
 
 module.exports = router;

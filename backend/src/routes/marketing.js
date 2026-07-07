@@ -42,6 +42,11 @@ router.get('/followups/overdue', protect, authorize('Admin', 'Marketing Executiv
 // Enhanced timeline (replaces assignController.getTimeline)
 router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), followupController.getTimeline);
 
+// Timeline Immutability — reject PUT/PATCH/DELETE on timeline events
+router.put('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectTimelineMutation);
+router.patch('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectTimelineMutation);
+router.delete('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectTimelineMutation);
+
 // Follow-up CRUD on a lead
 router.post('/leads/:id/followups', protect, authorize('Admin', 'Marketing Executive'), followupController.createFollowup);
 router.post('/leads/:id/followups/:fid/correction', protect, authorize('Admin', 'Marketing Executive'), followupController.addCorrection);
