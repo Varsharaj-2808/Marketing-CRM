@@ -1,4 +1,6 @@
-﻿/**
+﻿
+
+/**
  * ============================================================
  * STORY-4.2.1  View Today & Overdue Follow-ups — TDD Suite
  * ============================================================
@@ -23,6 +25,8 @@
  * ============================================================
  */
 
+process.env.JWT_SECRET = "test-jwt-secret-for-testing";
+
 const request = require("supertest");
 const express = require("express");
 const jwt     = require("jsonwebtoken");
@@ -34,7 +38,7 @@ jest.mock("../config/db", () => ({
   query:     (...args) => mockQuery(...args),
   getClient: jest.fn(),
 }));
-jest.mock("../utils/emailService",  () => ({ sendWelcomeEmail: jest.fn().mockResolvedValue() }));
+jest.mock("../utils/emailService",  () => ({ sendWelcomeEmail: jest.fn().mockResolvedValue(), sendDailyReminderEmail: jest.fn().mockResolvedValue() }));
 jest.mock("../utils/algoliaService", () => ({
   saveUser:      jest.fn().mockResolvedValue(),
   deleteUser:    jest.fn().mockResolvedValue(),
@@ -42,6 +46,35 @@ jest.mock("../utils/algoliaService", () => ({
   indexAllUsers: jest.fn().mockResolvedValue(),
   testConnection:jest.fn(),
 }));
+jest.mock("../models/User",            () => ({}), { virtual: true });
+jest.mock("../models/Lead",            () => ({}), { virtual: true });
+jest.mock("../models/LeadHistory",     () => ({}), { virtual: true });
+jest.mock("../models/AuditLog",        () => ({}), { virtual: true });
+jest.mock("../models/LeadSource",      () => ({}), { virtual: true });
+jest.mock("../models/BusinessCategory",     () => ({}), { virtual: true });
+jest.mock("../models/BusinessSubCategory",  () => ({}), { virtual: true });
+jest.mock("../models/Service",         () => ({}), { virtual: true });
+jest.mock("pdfkit", () => ({}));
+
+// ── Mock stub controllers that aren't under test ──────────────
+const stubHandler = (name) => (req, res) => res.status(501).json({ success: false, message: `Stub: ${name}` });
+const mockController = (methods) => {
+  const obj = {};
+  methods.forEach(m => { obj[m] = stubHandler(m); });
+  return obj;
+};
+
+jest.mock("../controllers/userController",          () => mockController(["createUser","getUsers","reindexUsers","getUser","updateUser","deleteUser"]));
+jest.mock("../controllers/auditLogController",       () => mockController(["getAuditLogs","getAuditLog"]));
+jest.mock("../controllers/systemSettingController",  () => mockController(["getSettings","updateSetting"]));
+jest.mock("../controllers/savedViewController",     () => mockController(["createSavedView","updateSavedView","deleteSavedView"]));
+jest.mock("../controllers/bulkOperationsController", () => mockController(["bulkSelect","bulkAssign","exportLeads"]));
+jest.mock("../controllers/assignController",         () => mockController(["assignLead"]));
+jest.mock("../controllers/categoryController",       () => mockController([
+  "getActiveCategories","getActiveSubCategories","getCategoryAuditLog","seedDefaultTaxonomy",
+  "getCategories","createCategory","getCategory","updateCategory","deleteCategory","patchCategoryStatus",
+  "getSubCategories","createSubCategory","getSubCategory","updateSubCategory","deleteSubCategory","patchSubCategoryStatus"
+]));
 
 // ── Express app ───────────────────────────────────────────────
 let app;
@@ -86,18 +119,20 @@ const FUTURE_ISO = "2026-07-15T12:00:00Z";   // future date
 
 const TODAY_LEADS = [
   { id: "lead-uuid-101", lead_id: "LD-2026-00101", company_name: "Hot Industries",
-    contact_person: "Alice", lead_quality: "Hot",  next_followup_date: `${TODAY_ISO}T09:00:00Z`, stage: "Contacted" },
+    contact_person: "Alice", lead_quality: "Hot",  next_followup_date: `${TODAY_ISO}T10:00:00Z`, stage: "Contacted" },
   { id: "lead-uuid-102", lead_id: "LD-2026-00102", company_name: "Warm Partners",
-    contact_person: "Bob",   lead_quality: "Warm", next_followup_date: `${TODAY_ISO}T11:00:00Z`, stage: "Contacted" },
+    contact_person: "Bob",   lead_quality: "Warm", next_followup_date: `${TODAY_ISO}T14:00:00Z`, stage: "Meeting Scheduled" },
   { id: "lead-uuid-103", lead_id: "LD-2026-00103", company_name: "Cold Solutions",
-    contact_person: "Carol", lead_quality: "Cold", next_followup_date: `${TODAY_ISO}T14:00:00Z`, stage: "Contacted" },
+    contact_person: "Carol", lead_quality: "Cold", next_followup_date: `${TODAY_ISO}T11:00:00Z`, stage: "Contacted" },
 ];
 
 const OVERDUE_LEADS = [
   { id: "lead-uuid-201", lead_id: "LD-2026-00085", company_name: "Ancient Corp",
-    contact_person: "Elvis Presley", lead_quality: "Hot",  next_followup_date: "2026-07-01T10:00:00Z", stage: "Contacted", days_overdue: 5 },
+    contact_person: "Elvis Presley", lead_quality: "Hot",  next_followup_date: "2026-07-03T10:00:00Z", stage: "Contacted", days_overdue: 3 },
   { id: "lead-uuid-202", lead_id: "LD-2026-00086", company_name: "Old Ventures",
-    contact_person: "Jane Doe",      lead_quality: "Warm", next_followup_date: "2026-07-04T10:00:00Z", stage: "Contacted", days_overdue: 2 },
+    contact_person: "Jane Doe",      lead_quality: "Warm", next_followup_date: "2026-07-05T10:00:00Z", stage: "Contacted", days_overdue: 1 },
+  { id: "lead-uuid-203", lead_id: "LD-2026-00087", company_name: "Other User Corp",
+    contact_person: "Other ME",      lead_quality: "Hot",  next_followup_date: "2026-07-01T11:00:00Z", stage: "Contacted", days_overdue: 5 },
 ];
 
 const AT_RISK_LEADS = [
@@ -124,9 +159,11 @@ describe("API-1 | GET /marketing/followups/today", () => {
    * TEST-EP4-FUP2-001
    * Positive – ME retrieves today follow-ups sorted Hot > Warm > Cold
    */
-  test("TEST-EP4-FUP2-001 | Positive – ME retrieves today follow-ups sorted Hot > Warm > Cold", async () => {
+  test("TEST-EP4-FUP2-001 | Positive – ME retrieves today follow-ups; other user's leads excluded, sorted Hot > Warm > Cold", async () => {
+    // Per b-001: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's leads → 2 returned
+    const myLeads = TODAY_LEADS.slice(0, 2);
     authMock(MARKETING_USER);
-    mockQuery.mockResolvedValueOnce({ rows: TODAY_LEADS });
+    mockQuery.mockResolvedValueOnce({ rows: myLeads });
 
     const res = await request(app)
       .get("/api/marketing/followups/today")
@@ -135,18 +172,17 @@ describe("API-1 | GET /marketing/followups/today", () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data).toHaveLength(3);
-    // Hot must come first (DB sorts by CASE priority)
+    expect(res.body.data).toHaveLength(2);
+    // Sorted by quality Hot > Warm > Cold
     expect(res.body.data[0].lead_quality).toBe("Hot");
     expect(res.body.data[1].lead_quality).toBe("Warm");
-    expect(res.body.data[2].lead_quality).toBe("Cold");
   });
 
   /**
    * TEST-EP4-FUP2-002
    * Positive – Empty array returned when no leads are due today
    */
-  test("TEST-EP4-FUP2-002 | Positive – Returns empty data array when no leads due today", async () => {
+  test("TEST-EP4-FUP2-002 | Positive – Returns empty data array when no followups due today", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
@@ -201,18 +237,19 @@ describe("API-1 | GET /marketing/followups/today", () => {
    * TEST-EP4-FUP2-005
    * Security – ME cannot access another user's today follow-ups (isolation via assigned_to)
    */
-  test("TEST-EP4-FUP2-005 | Security – ME only sees leads assigned to themselves (data isolation)", async () => {
-    // me-002 is authenticated; DB returns 0 leads because assigned_to = me-002 filters them out
+  test("TEST-EP4-FUP2-005 | Security – ME cannot access another user's queue via user_id param", async () => {
+    // Per b-005: Send ?user_id=me-001 as me-002; server ignores param, returns me-002's own data
     authMock(ME2_USER);
-    mockQuery.mockResolvedValueOnce({ rows: [] }); // no leads assigned to me-002 today
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // no leads assigned to me-002
 
     const res = await request(app)
-      .get("/api/marketing/followups/today")
+      .get("/api/marketing/followups/today?user_id=me-001")
       .set("Authorization", `Bearer ${me2Token}`);
 
+    // Server ignores the user_id param and returns the authenticated user's data
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data).toEqual([]); // me-002 cannot see me-001 leads
+    expect(res.body.data).toEqual([]);
   });
 
   /**
@@ -228,34 +265,51 @@ describe("API-1 | GET /marketing/followups/today", () => {
    * TEST-EP4-FUP2-007
    * Positive – Admin sees all users today follow-ups (no assigned_to filter)
    */
-  test("TEST-EP4-FUP2-007 | Positive – Admin retrieves today follow-ups across all MEs", async () => {
+  test("TEST-EP4-FUP2-007 | Positive – Admin retrieves today follow-ups unfiltered & filtered by assigned_to", async () => {
+    // Per b-007: Unfiltered returns all, filtered returns only the specified user's leads
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: TODAY_LEADS });
 
-    const res = await request(app)
+    const resAll = await request(app)
       .get("/api/marketing/followups/today")
       .set("Authorization", `Bearer ${adminToken}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveLength(TODAY_LEADS.length);
+    expect(resAll.status).toBe(200);
+    expect(resAll.body.success).toBe(true);
+    expect(resAll.body.data).toHaveLength(TODAY_LEADS.length);
+
+    // Filtered by assigned_to = me-001 (only 2 leads belong to me-001 in TODAY_LEADS)
+    const meLeads = TODAY_LEADS.slice(0, 2);
+    authMock(ADMIN_USER);
+    mockQuery.mockResolvedValueOnce({ rows: meLeads });
+
+    const resFiltered = await request(app)
+      .get(`/api/marketing/followups/today?assigned_to=${MARKETING_USER.id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(resFiltered.status).toBe(200);
+    expect(resFiltered.body.success).toBe(true);
+    expect(resFiltered.body.data).toHaveLength(2);
   });
 
   /**
    * TEST-EP4-FUP2-028
    * Security – SQL injection on assigned_to query param is sanitised
    */
-  test("TEST-EP4-FUP2-028 | Security – SQL injection on filter param is sanitised (parameterised query)", async () => {
+  test("TEST-EP4-FUP2-028 | Security – SQL injection on filter param is sanitised", async () => {
+    // Per b-028: Server should reject injection with 400 OR safely return 200 with empty result
     authMock(MARKETING_USER);
-    mockQuery.mockResolvedValueOnce({ rows: [] }); // DB uses parameterised query; safe result
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // parameterised query prevents injection
 
     const res = await request(app)
       .get("/api/marketing/followups/today?assigned_to='; DROP TABLE leads; --")
       .set("Authorization", `Bearer ${meToken}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true); // server did not crash
+    expect([200, 400]).toContain(res.status);
+    if (res.status === 200) {
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    }
   });
 
   /**
@@ -285,9 +339,12 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
    * TEST-EP4-FUP2-008
    * Positive – ME retrieves overdue leads sorted by most overdue first
    */
-  test("TEST-EP4-FUP2-008 | Positive – ME retrieves overdue leads sorted descending by days_overdue", async () => {
+  test("TEST-EP4-FUP2-008 | Positive – ME retrieves overdue leads; other user's leads excluded, sorted DESC", async () => {
+    // Per b-008: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's → 2 returned
+    // Lead A (3 days), Lead B (1 day) — sorted most overdue first
+    const myOverdue = OVERDUE_LEADS.slice(0, 2);
     authMock(MARKETING_USER);
-    mockQuery.mockResolvedValueOnce({ rows: OVERDUE_LEADS }); // already sorted DESC
+    mockQuery.mockResolvedValueOnce({ rows: myOverdue });
 
     const res = await request(app)
       .get("/api/marketing/followups/overdue")
@@ -297,11 +354,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data).toHaveLength(2);
-    // Verify each record has days_overdue > 0
-    res.body.data.forEach(l => {
-      expect(l).toHaveProperty("days_overdue");
-      expect(l.days_overdue).toBeGreaterThan(0);
-    });
+    // days_overdue correctly calculated
+    expect(res.body.data[0].days_overdue).toBe(3);
+    expect(res.body.data[1].days_overdue).toBe(1);
     // Most overdue first
     expect(res.body.data[0].days_overdue).toBeGreaterThanOrEqual(res.body.data[1].days_overdue);
   });
@@ -364,13 +419,13 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
    * TEST-EP4-FUP2-012
    * Security – ME cannot access another user's overdue leads
    */
-  test("TEST-EP4-FUP2-012 | Security – ME sees only their own overdue leads (data isolation)", async () => {
-    // me-002 authenticates; DB assigned_to = me-002 returns nothing
+  test("TEST-EP4-FUP2-012 | Security – ME cannot access another user's overdue queue via user_id param", async () => {
+    // Per b-012: Send ?user_id=me-001 as me-002; server ignores param, returns me-002's own data
     authMock(ME2_USER);
-    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // no overdue leads for me-002
 
     const res = await request(app)
-      .get("/api/marketing/followups/overdue")
+      .get("/api/marketing/followups/overdue?user_id=me-001")
       .set("Authorization", `Bearer ${me2Token}`);
 
     expect(res.status).toBe(200);
@@ -381,16 +436,29 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
    * TEST-EP4-FUP2-013
    * Positive – Admin can view overdue for all users or filter by assigned_to
    */
-  test("TEST-EP4-FUP2-013 | Positive – Admin retrieves overdue follow-ups across all MEs", async () => {
+  test("TEST-EP4-FUP2-013 | Positive – Admin retrieves overdue follow-ups unfiltered & filtered by assigned_to", async () => {
+    // Per b-013: Unfiltered returns all, filtered returns only the specified user's overdue leads
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: OVERDUE_LEADS });
 
-    const res = await request(app)
+    const resAll = await request(app)
       .get("/api/marketing/followups/overdue")
       .set("Authorization", `Bearer ${adminToken}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(OVERDUE_LEADS.length);
+    expect(resAll.status).toBe(200);
+    expect(resAll.body.data).toHaveLength(OVERDUE_LEADS.length);
+
+    // Filtered by assigned_to = me-001 (only 2 leads belong to me-001 in OVERDUE_LEADS)
+    const meOverdue = OVERDUE_LEADS.slice(0, 2);
+    authMock(ADMIN_USER);
+    mockQuery.mockResolvedValueOnce({ rows: meOverdue });
+
+    const resFiltered = await request(app)
+      .get(`/api/marketing/followups/overdue?assigned_to=${MARKETING_USER.id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(resFiltered.status).toBe(200);
+    expect(resFiltered.body.data).toHaveLength(2);
   });
 
   /**
@@ -592,29 +660,34 @@ describe("API-4 | POST /admin/reminders/send-daily  [RED — not yet implemented
 });
 
 // ══════════════════════════════════════════════════════════════
-// API-5 | GET /marketing/notifications/count
+// API-5 | GET /marketing/notifications
 // ══════════════════════════════════════════════════════════════
-describe("API-5 | GET /marketing/notifications/count", () => {
+describe("API-5 | GET /marketing/notifications", () => {
 
   /**
    * TEST-EP4-FUP2-021
-   * Positive – ME retrieves unread notification count
+   * Positive – ME retrieves notifications list with unread count
    */
-  test("TEST-EP4-FUP2-021 | Positive – ME retrieves unread notification count as number", async () => {
-    // protect: User.findById (1 query)
+  test("TEST-EP4-FUP2-021 | Positive – ME retrieves notification list with unread count", async () => {
+    // Per b-021: GET /notifications returns data array + unread count
     authMock(MARKETING_USER);
-    // Notification.getUnreadCount (1 query: SELECT COUNT(*))
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: "3" }] });
+    mockQuery.mockResolvedValueOnce({ rows: [
+      { id: "notif-1", notification_type: "lead_reminder", message: "Reminder: Follow-up due", read: false },
+      { id: "notif-2", notification_type: "lead_reminder", message: "Reminder: Follow-up due", read: true },
+    ]});
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: "1" }] }); // 1 unread
 
     const res = await request(app)
-      .get("/api/marketing/notifications/count")
+      .get("/api/marketing/notifications")
       .set("Authorization", `Bearer ${meToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
     expect(res.body).toHaveProperty("unread_count");
     expect(typeof res.body.unread_count).toBe("number");
-    expect(res.body.unread_count).toBe(3);
+    expect(res.body.unread_count).toBe(1);
   });
 
 });
@@ -742,11 +815,11 @@ describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
 
   /**
    * TEST-EP4-FUP2-026
-   * Positive – Leads list includes is_overdue boolean flag
-   * Lead.findAll executes 2 queries: COUNT(*) then SELECT data
+   * Positive – Leads list includes is_overdue boolean with correct true/false values
    */
-  test("TEST-EP4-FUP2-026 | Positive – Leads list includes next_followup_date and is_overdue boolean flag", async () => {
-    authMock(MARKETING_USER);                                            // protect (1 query)
+  test("TEST-EP4-FUP2-026 | Positive – Leads include is_overdue true for past, false for future dates", async () => {
+    // Per b-026: Lead A (past date) → is_overdue: true, Lead B (future date) → is_overdue: false
+    authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [{ count: "2" }] });         // COUNT
     mockQuery.mockResolvedValueOnce({ rows: LEADS_WITH_FLAGS });          // data
 
@@ -757,39 +830,51 @@ describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
 
     const overdueLead = res.body.data.find(l => l.lead_id === "LD-2026-00085");
     const activeLead  = res.body.data.find(l => l.lead_id === "LD-2026-00112");
-    // is_overdue must be present on both rows
-    if (overdueLead) expect(overdueLead).toHaveProperty("is_overdue");
-    if (activeLead)  expect(activeLead).toHaveProperty("is_overdue");
+
+    expect(overdueLead).toBeDefined();
+    expect(overdueLead.is_overdue).toBe(true);
+
+    expect(activeLead).toBeDefined();
+    expect(activeLead.is_overdue).toBe(false);
   });
 
   /**
    * TEST-EP4-FUP2-027
-   * Edge – Won/Lost leads always have is_overdue = false
+   * Edge – Won/Lost leads always have is_overdue = false regardless of past due date
    */
   test("TEST-EP4-FUP2-027 | Edge – Closed Won/Lost leads always return is_overdue = false", async () => {
-    const closedLead = {
-      id: "lead-uuid-205", lead_id: "LD-2026-00021", company_name: "Closed Corp",
-      stage: "Won", priority: "Hot", assigned_to: MARKETING_USER.id,
-      next_followup_date: PAST_ISO,  // past date but closed
-      is_overdue: false,             // business rule: closed leads are never overdue
-    };
+    // Per b-027: Even with past next_followup_date, closed leads must have is_overdue: false
+    const closedLeads = [
+      { id: "lead-uuid-205", lead_id: "LD-2026-00021", company_name: "Won Corp",
+        stage: "Won", priority: "Hot", assigned_to: MARKETING_USER.id,
+        next_followup_date: PAST_ISO, is_overdue: false },
+      { id: "lead-uuid-206", lead_id: "LD-2026-00022", company_name: "Lost Corp",
+        stage: "Lost", priority: "Hot", assigned_to: MARKETING_USER.id,
+        next_followup_date: PAST_ISO, is_overdue: false },
+    ];
 
     authMock(MARKETING_USER);
-    mockQuery.mockResolvedValueOnce({ rows: [{ count: "1" }] });
-    mockQuery.mockResolvedValueOnce({ rows: [closedLead] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ count: "2" }] });
+    mockQuery.mockResolvedValueOnce({ rows: closedLeads });
 
     const res = await request(app)
       .get("/api/marketing/leads")
       .set("Authorization", `Bearer ${meToken}`);
 
     expect(res.status).toBe(200);
-    const wonLead = res.body.data.find(l => l.stage === "Won");
-    if (wonLead) {
-      expect(wonLead.is_overdue).toBe(false); // must never be true for closed leads
-    }
+
+    const wonLead  = res.body.data.find(l => l.stage === "Won");
+    const lostLead = res.body.data.find(l => l.stage === "Lost");
+
+    expect(wonLead).toBeDefined();
+    expect(wonLead.is_overdue).toBe(false);
+
+    expect(lostLead).toBeDefined();
+    expect(lostLead.is_overdue).toBe(false);
   });
 
 });

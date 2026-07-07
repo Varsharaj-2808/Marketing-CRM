@@ -378,13 +378,25 @@ exports.getTodayFollowups = async (req, res, next) => {
     let params;
 
     if (isAdmin) {
-      sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
-                    l.next_followup_date, l.stage
-             FROM leads l
-             WHERE DATE(l.next_followup_date) = CURRENT_DATE
-               AND l.stage NOT IN ('Won', 'Lost')
-             ORDER BY ${qualityOrder} ASC`;
-      params = [];
+      const assignedTo = req.query.assigned_to;
+      if (assignedTo) {
+        sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
+                      l.next_followup_date, l.stage
+               FROM leads l
+               WHERE DATE(l.next_followup_date) = CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+                 AND l.assigned_to = $1
+               ORDER BY ${qualityOrder} ASC`;
+        params = [assignedTo];
+      } else {
+        sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
+                      l.next_followup_date, l.stage
+               FROM leads l
+               WHERE DATE(l.next_followup_date) = CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+               ORDER BY ${qualityOrder} ASC`;
+        params = [];
+      }
     } else {
       sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
                     l.next_followup_date, l.stage
@@ -416,15 +428,29 @@ exports.getOverdueFollowups = async (req, res, next) => {
     let params;
 
     if (isAdmin) {
-      sql = `SELECT l.id, l.company_name, l.contact_person,
-                    l.next_followup_date, l.stage, l.priority as lead_quality,
-                    (CURRENT_DATE - DATE(l.next_followup_date))::int as days_overdue
-             FROM leads l
-             WHERE l.next_followup_date IS NOT NULL
-               AND DATE(l.next_followup_date) < CURRENT_DATE
-               AND l.stage NOT IN ('Won', 'Lost')
-             ORDER BY days_overdue DESC`;
-      params = [];
+      const assignedTo = req.query.assigned_to;
+      if (assignedTo) {
+        sql = `SELECT l.id, l.company_name, l.contact_person,
+                      l.next_followup_date, l.stage, l.priority as lead_quality,
+                      (CURRENT_DATE - DATE(l.next_followup_date))::int as days_overdue
+               FROM leads l
+               WHERE l.next_followup_date IS NOT NULL
+                 AND DATE(l.next_followup_date) < CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+                 AND l.assigned_to = $1
+               ORDER BY days_overdue DESC`;
+        params = [assignedTo];
+      } else {
+        sql = `SELECT l.id, l.company_name, l.contact_person,
+                      l.next_followup_date, l.stage, l.priority as lead_quality,
+                      (CURRENT_DATE - DATE(l.next_followup_date))::int as days_overdue
+               FROM leads l
+               WHERE l.next_followup_date IS NOT NULL
+                 AND DATE(l.next_followup_date) < CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+               ORDER BY days_overdue DESC`;
+        params = [];
+      }
     } else {
       sql = `SELECT l.id, l.company_name, l.contact_person,
                     l.next_followup_date, l.stage, l.priority as lead_quality,
