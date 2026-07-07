@@ -32,7 +32,7 @@ exports.createFollowup = async (req, res, next) => {
 
     // Validate lead UUID
     if (!UUID_REGEX.test(id)) {
-      return res.status(400).json({ error: 'Invalid lead ID format' });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid lead ID format' } });
     }
 
     const {
@@ -87,24 +87,24 @@ exports.createFollowup = async (req, res, next) => {
     }
 
     if (Object.keys(errors).length > 0) {
-      return res.status(400).json(errors);
+      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { errors } });
     }
 
     // ── Lead existence & ownership ────────────
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, status_code: 404, message: 'Lead not found', data: null });
     }
 
     const isAdmin = req.user.role === 'Admin';
 
     if (!isAdmin && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to perform action on this lead' });
+      return res.status(403).json({ success: false, status_code: 403, message: 'Access denied. Not authorized to perform action on this lead', data: null });
     }
 
     // Closed lead check
     if (lead.stage === 'Won' || lead.stage === 'Lost') {
-      return res.status(403).json({ error: 'Cannot add follow-up to a closed lead. Contact Admin to reopen.' });
+      return res.status(403).json({ success: false, status_code: 403, message: 'Cannot add follow-up to a closed lead. Contact Admin to reopen.', data: null });
     }
 
     // ── Create follow-up ──────────────────────
@@ -209,17 +209,17 @@ exports.getTimeline = async (req, res, next) => {
 
     // Validate lead UUID
     if (!UUID_REGEX.test(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid lead ID format' });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid lead ID format' } });
     }
 
     let page = parseInt(req.query.page);
     let limit = parseInt(req.query.limit);
 
     if (req.query.page !== undefined && (!/^\d+$/.test(req.query.page) || Number.isNaN(page) || page < 1 || !Number.isInteger(page))) {
-      return res.status(400).json({ success: false, message: 'Invalid page or limit parameter. Must be positive integers.' });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid page or limit parameter. Must be positive integers.' } });
     }
     if (req.query.limit !== undefined && (!/^\d+$/.test(req.query.limit) || Number.isNaN(limit) || limit < 1 || !Number.isInteger(limit))) {
-      return res.status(400).json({ success: false, message: 'Invalid page or limit parameter. Must be positive integers.' });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid page or limit parameter. Must be positive integers.' } });
     }
 
     page = (page && page > 0) ? page : 1;
@@ -236,19 +236,21 @@ exports.getTimeline = async (req, res, next) => {
       if (invalid.length > 0) {
         return res.status(400).json({
           success: false,
-          message: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}`,
+          status_code: 400,
+          message: 'Validation failed',
+          body: { error: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}` },
         });
       }
     }
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ success: false, message: 'Lead not found' });
+      return res.status(404).json({ success: false, status_code: 404, message: 'Lead not found', data: null });
     }
 
     const isAdmin = req.user.role === 'Admin';
     if (!isAdmin && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Not authorized to view this timeline' });
+      return res.status(403).json({ success: false, status_code: 403, message: 'Access denied. Not authorized to view this lead\'s timeline', data: null });
     }
 
     // ── Legacy format: filter=Assignment ──────
@@ -307,37 +309,28 @@ exports.getTimeline = async (req, res, next) => {
       else if (h.field_name === 'followup_logged') type = 'followup';
 
       return {
-        type,
         id: h.id,
-        change_summary: h.change_summary,
-        old_value: h.old_value,
-        new_value: h.new_value,
-        changed_by: {
-          id: h.changed_by,
-          name: h.changed_by_name || null,
-        },
+        type,
+        description: h.change_summary || null,
         created_at: h.created_at,
+        actor: h.changed_by_name || null,
       };
     });
 
     // Map followup entries to timeline events
-    const followupEvents = followupRows.map((f) => ({
-      type: 'followup',
-      id: f.id,
-      description: f.notes || null,
-      followup_type: f.followup_type,
-      outcome: f.outcome,
-      notes: f.notes || null,
-      next_followup_date: f.next_followup_date || null,
-      proposal_amount: f.proposal_amount !== undefined ? f.proposal_amount : null,
-      stage_at_log: f.stage_at_log || null,
-      created_by: {
-        id: f.created_by_id || f.created_by,
-        name: f.created_by_name || null,
-      },
-      created_at: f.created_at,
-      correction_notes: f.correction_notes || null,
-    }));
+    const followupEvents = followupRows.map((f) => {
+      const ftype = f.followup_type || '';
+      const outcome = f.outcome || '';
+      const actorName = f.created_by_name || null;
+      const desc = f.notes || `Follow-up (${ftype}) logged with outcome ${outcome}${actorName ? ' by ' + actorName : ''}`;
+      return {
+        id: f.id,
+        type: 'followup',
+        description: desc,
+        created_at: f.created_at,
+        actor: actorName,
+      };
+    });
 
     // Combine and filter
     let allEvents = [...historyEvents, ...followupEvents];
@@ -366,15 +359,20 @@ exports.getTimeline = async (req, res, next) => {
 
     return res.json({
       success: true,
+      status_code: 200,
+      message: 'Timeline retrieved successfully',
       data: {
         lead_id: id,
         company_name: lead.company_name,
+        total_events: totalCount,
         timeline: pagedEvents,
       },
-      page,
-      totalPages,
-      totalCount,
-      hasMore: page < totalPages,
+      pagination: {
+        page,
+        total_pages: totalPages,
+        total_count: totalCount,
+        has_more: page < totalPages,
+      },
     });
   } catch (error) {
     next(error);
@@ -499,12 +497,12 @@ exports.addCorrection = async (req, res, next) => {
     const { correction_notes } = req.body;
 
     if (!correction_notes || (typeof correction_notes === 'string' && correction_notes.trim() === '')) {
-      return res.status(400).json({ correction_notes: 'Correction notes cannot be empty' });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Correction notes cannot be empty' } });
     }
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, status_code: 404, message: 'Lead not found', data: null });
     }
 
     // Fetch followup
@@ -515,12 +513,12 @@ exports.addCorrection = async (req, res, next) => {
     const followup = followupResult.rows[0];
 
     if (!followup) {
-      return res.status(404).json({ error: 'Follow-up not found' });
+      return res.status(404).json({ success: false, status_code: 404, message: 'Follow-up not found', data: null });
     }
 
     const isAdmin = req.user.role === 'Admin';
     if (!isAdmin && followup.created_by !== req.user.id) {
-      return res.status(403).json({ error: 'You can only correct your own follow-up records' });
+      return res.status(403).json({ success: false, status_code: 403, message: 'Access denied. You can only correct your own follow-up records', data: null });
     }
 
     const updated = await Followup.addCorrection(fid, correction_notes.trim(), req.user.id);
@@ -553,11 +551,11 @@ exports.addCorrection = async (req, res, next) => {
 exports.rejectMutation = (req, res) => {
   const method = req.method.toUpperCase();
   if (method === 'DELETE') {
-    return res.status(405).json({ error: 'Follow-up records cannot be deleted' });
+    return res.status(405).json({ success: false, status_code: 405, message: 'Method not allowed. Follow-up records cannot be deleted.', data: null });
   }
-  return res.status(405).json({ error: 'Follow-up records are immutable. Use correction endpoint instead.' });
+  return res.status(405).json({ success: false, status_code: 405, message: 'Method not allowed. Follow-up records are immutable. Use correction endpoint instead.', data: null });
 };
 
 exports.rejectTimelineMutation = (req, res) => {
-  return res.status(405).json({ success: false, message: 'Timeline events are read-only and strictly append-only.' });
+  return res.status(405).json({ success: false, status_code: 405, message: 'Method not allowed. Timeline events are read-only and strictly append-only.', data: null });
 };

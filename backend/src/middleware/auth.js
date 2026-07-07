@@ -22,6 +22,9 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
+    // Normalize role from JWT (handles legacy casing)
+    if (decoded.role) user.role = decoded.role;
+
     req.user = user;
     next();
   } catch (error) {

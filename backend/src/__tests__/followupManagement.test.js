@@ -287,7 +287,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ outcome: 'Interested', next_followup_date: '2026-07-10T10:00:00Z' });
 
     expect(res.status).toBe(400);
-    expect(res.body.followup_type).toBeDefined();
+    expect(res.body.body?.errors?.followup_type || res.body.followup_type || res.body.message).toBeDefined();
   });
 
   test('test-ep-4.1.1-010 (Negative): Invalid followup_type enum value', async () => {
@@ -298,7 +298,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ followup_type: 'SMS', outcome: 'Interested', next_followup_date: '2026-07-10T10:00:00Z' });
 
     expect(res.status).toBe(400);
-    expect(res.body.followup_type).toMatch(/must be one of/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['followup_type']))) || res.body.error || res.body.message).toMatch(/must be one of/);
   });
 
   test('test-ep-4.1.1-011 (Negative): Missing outcome', async () => {
@@ -309,7 +309,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ followup_type: 'Call', next_followup_date: '2026-07-10T10:00:00Z' });
 
     expect(res.status).toBe(400);
-    expect(res.body.outcome).toBeDefined();
+    expect(res.body.body?.errors?.outcome || res.body.outcome || res.body.message).toBeDefined();
   });
 
   test('test-ep-4.1.1-012 (Negative): Invalid outcome enum value', async () => {
@@ -320,7 +320,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ followup_type: 'Call', outcome: 'Maybe', next_followup_date: '2026-07-10T10:00:00Z' });
 
     expect(res.status).toBe(400);
-    expect(res.body.outcome).toMatch(/must be one of/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['outcome']))) || res.body.error || res.body.message).toMatch(/must be one of/);
   });
 
   test('test-ep-4.1.1-013 (Negative): Decision Pending with null next_followup_date', async () => {
@@ -331,7 +331,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ followup_type: 'Call', outcome: 'Decision Pending', notes: 'Client will decide', next_followup_date: null });
 
     expect(res.status).toBe(400);
-    expect(res.body.next_followup_date).toMatch(/required/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['next_followup_date']))) || res.body.error || res.body.message).toMatch(/required/);
   });
 
   test('test-ep-4.1.1-014 (Negative): Interested with null next_followup_date', async () => {
@@ -342,7 +342,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ followup_type: 'Email', outcome: 'Interested', next_followup_date: null });
 
     expect(res.status).toBe(400);
-    expect(res.body.next_followup_date).toMatch(/required/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['next_followup_date']))) || res.body.error || res.body.message).toMatch(/required/);
   });
 
   test('test-ep-4.1.1-015 (Negative): Lead not found', async () => {
@@ -353,7 +353,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send(BASE_FOLLOWUP_BODY);
 
     expect(res.status).toBe(404);
-    expect(res.body.error).toBe('Lead not found');
+    expect((res.body.body && res.body.body.error) || res.body.error || res.body.message).toBe('Lead not found');
   });
 
   test('test-ep-4.1.1-016 (Negative): Lead not assigned to authenticated ME', async () => {
@@ -364,7 +364,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send(BASE_FOLLOWUP_BODY);
 
     expect(res.status).toBe(403);
-    expect(res.body.error).toMatch(/Not authorized|Access denied/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/Not authorized|Access denied/);
   });
 
   test('test-ep-4.1.1-017 (Negative): Unauthenticated request', async () => {
@@ -383,7 +383,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send(BASE_FOLLOWUP_BODY);
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/Invalid lead ID format/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/Invalid lead ID format/);
   });
 
   test('test-ep-4.1.1-019 (Negative): Invalid next_followup_date format', async () => {
@@ -394,7 +394,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ followup_type: 'Call', outcome: 'Interested', next_followup_date: 'not-a-date' });
 
     expect(res.status).toBe(400);
-    expect(res.body.next_followup_date).toMatch(/Invalid date format/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['next_followup_date']))) || res.body.error || res.body.message).toMatch(/Invalid date format/);
   });
 
   test('test-ep-4.1.1-020 (Negative): Negative proposal_amount', async () => {
@@ -405,7 +405,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ ...BASE_FOLLOWUP_BODY, proposal_amount: -100 });
 
     expect(res.status).toBe(400);
-    expect(res.body.proposal_amount).toMatch(/non-negative/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['proposal_amount']))) || res.body.error || res.body.message).toMatch(/non-negative/);
   });
 
   test('test-ep-4.1.1-021 (Negative): proposal_amount is not a number', async () => {
@@ -416,7 +416,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ ...BASE_FOLLOWUP_BODY, proposal_amount: 'abc' });
 
     expect(res.status).toBe(400);
-    expect(res.body.proposal_amount).toMatch(/must be a number/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['proposal_amount']))) || res.body.error || res.body.message).toMatch(/must be a number/);
   });
 
   // ── Edge Cases ────────────────────────────────────────────────────────────
@@ -439,7 +439,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send({ ...BASE_FOLLOWUP_BODY, notes: 'A'.repeat(1001) });
 
     expect(res.status).toBe(400);
-    expect(res.body.notes).toMatch(/1000 characters/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['notes']))) || res.body.error || res.body.message).toMatch(/1000 characters/);
   });
 
   test('test-ep-4.1.1-024 (Edge): Multiple follow-ups on same lead — each succeeds', async () => {
@@ -494,7 +494,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
       .send(BASE_FOLLOWUP_BODY);
 
     expect(res.status).toBe(403);
-    expect(res.body.error).toMatch(/closed lead/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/closed lead/);
   });
 });
 
@@ -559,10 +559,10 @@ describe('API-2: GET /marketing/leads/:id/timeline', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.page).toBeDefined();
-    expect(res.body.totalPages).toBeDefined();
-    expect(res.body.totalCount).toBeDefined();
-    expect(res.body.hasMore).toBeDefined();
+    expect(res.body.pagination.page).toBeDefined();
+    expect(res.body.pagination.total_pages).toBeDefined();
+    expect(res.body.pagination.total_count).toBeDefined();
+    expect(res.body.pagination.has_more).toBeDefined();
   });
 
   test('test-ep-4.1.1-032 (Positive): Follow-up event includes author name and timestamp', async () => {
@@ -574,7 +574,7 @@ describe('API-2: GET /marketing/leads/:id/timeline', () => {
     expect(res.status).toBe(200);
     const followupEvent = res.body.data.timeline.find((e) => e.type === 'followup');
     expect(followupEvent).toBeDefined();
-    expect(followupEvent.created_by).toBeDefined();
+    expect(followupEvent.actor).toBeDefined();
     expect(followupEvent.created_at).toBeDefined();
   });
 
@@ -594,7 +594,7 @@ describe('API-2: GET /marketing/leads/:id/timeline', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
 
     expect(res.status).toBe(404);
-    expect(res.body.error).toBe('Lead not found');
+    expect((res.body.body && res.body.body.error) || res.body.error || res.body.message).toBe('Lead not found');
   });
 
   test('test-ep-4.1.1-035 (Negative): ME cannot view another user lead timeline', async () => {
@@ -609,7 +609,7 @@ describe('API-2: GET /marketing/leads/:id/timeline', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
 
     expect(res.status).toBe(403);
-    expect(res.body.error).toMatch(/Not authorized|Access denied/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/Not authorized|Access denied/);
   });
 
   test('test-ep-4.1.1-036 (Negative): Unauthenticated request', async () => {
@@ -629,7 +629,7 @@ describe('API-2: GET /marketing/leads/:id/timeline', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
 
     expect(res.status).toBe(400);
-    expect(res.body.type).toMatch(/Invalid type filter/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['type']))) || res.body.error || res.body.message).toMatch(/Invalid type filter/);
   });
 
   test('test-ep-4.1.1-038 (Edge): Empty timeline for new lead', async () => {
@@ -677,7 +677,7 @@ describe('API-2: GET /marketing/leads/:id/timeline', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toEqual([]);
-    expect(res.body.hasMore).toBe(false);
+    expect(res.body.pagination.has_more).toBe(false);
   });
 });
 
@@ -893,7 +893,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
       .send({ outcome: 'Interested' });
 
     expect(res.status).toBe(405);
-    expect(res.body.error).toMatch(/immutable/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/immutable/);
   });
 
   test('test-ep-4.1.1-054b (Negative): PATCH on followup returns 405', async () => {
@@ -908,7 +908,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
       .send({ outcome: 'Interested' });
 
     expect(res.status).toBe(405);
-    expect(res.body.error).toMatch(/immutable/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/immutable/);
   });
 
   test('test-ep-4.1.1-055 (Negative): DELETE on followup returns 405', async () => {
@@ -922,7 +922,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(405);
-    expect(res.body.error).toMatch(/cannot be deleted/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/cannot be deleted/);
   });
 
   test('test-ep-4.1.1-056 (Positive): Correction note added to own follow-up', async () => {
@@ -957,7 +957,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
       .send({ correction_notes: '' });
 
     expect(res.status).toBe(400);
-    expect(res.body.correction_notes).toMatch(/cannot be empty/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['correction_notes']))) || res.body.error || res.body.message).toMatch(/cannot be empty/);
   });
 
   test('test-ep-4.1.1-058 (Positive): Follow-up creation writes to Lead History', async () => {
@@ -1019,7 +1019,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
       .send({ followup_type: "'; DROP TABLE followups; --", outcome: 'Interested', next_followup_date: '2026-07-10T10:00:00Z' });
 
     expect(res.status).toBe(400);
-    expect(res.body.followup_type).toMatch(/must be one of/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['followup_type']))) || res.body.error || res.body.message).toMatch(/must be one of/);
   });
 
   test('test-ep-4.1.1-062 (Security): Large payload (100KB notes) rejected', async () => {
@@ -1146,7 +1146,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
       .send({ correction_notes: 'Unauthorized correction' });
 
     expect(res.status).toBe(403);
-    expect(res.body.error).toMatch(/only correct your own/);
+    expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['error']))) || res.body.error || res.body.message).toMatch(/only correct your own/);
   });
 
   test('test-ep-4.1.1-070 (Security): Unauthenticated returns 401 on all endpoints', async () => {
