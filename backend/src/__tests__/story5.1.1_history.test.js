@@ -86,7 +86,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
               change_summary: 'Stage changed',
               changed_by: 'user-1',
               changed_by_name: 'John Doe',
-              created_at: '2026-07-03T14:00:00Z',
+              changed_at: '2026-07-03T14:00:00Z',
               is_system_generated: false
             }
           ]
@@ -148,8 +148,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['SELECT COUNT(*) FROM lead_history WHERE lead_id = $1 AND field_name = $2', () => ({ rows: [{ count: '2' }] })],
         ['SELECT h.*, u.name as changed_by_name', () => ({
           rows: [
-            { id: 'h1', field_name: 'stage', old_value: 'New', new_value: 'Contacted', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: '2026-07-04T10:00:00Z', is_system_generated: false },
-            { id: 'h2', field_name: 'stage', old_value: 'Contacted', new_value: 'Qualified', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: '2026-07-03T10:00:00Z', is_system_generated: false }
+            { id: 'h1', field_name: 'stage', old_value: 'New', new_value: 'Contacted', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: '2026-07-04T10:00:00Z', is_system_generated: false },
+            { id: 'h2', field_name: 'stage', old_value: 'Contacted', new_value: 'Qualified', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: '2026-07-03T10:00:00Z', is_system_generated: false }
           ]
         })]
       ]);
@@ -165,7 +165,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       const LEAD_UUID = '33333333-3333-3333-3333-333333333333';
       const rows = Array.from({ length: 20 }, (_, i) => ({
         id: `h${i}`, field_name: 'stage', old_value: 'New', new_value: 'Contacted',
-        changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: `2026-07-${String(20 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
+        changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: `2026-07-${String(20 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
       }));
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [{ id: LEAD_UUID, assigned_to: MARKETING_USER.id }] })],
@@ -184,7 +184,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       const LEAD_UUID = '44444444-4444-4444-4444-444444444444';
       const rows = Array.from({ length: 5 }, (_, i) => ({
         id: `h${i}`, field_name: 'stage', old_value: 'New', new_value: 'Contacted',
-        changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: `2026-07-0${5 - i}T10:00:00Z`, is_system_generated: false
+        changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: `2026-07-0${5 - i}T10:00:00Z`, is_system_generated: false
       }));
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [{ id: LEAD_UUID, assigned_to: MARKETING_USER.id }] })],
@@ -263,7 +263,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['SELECT h.*, u.name as changed_by_name', () => ({
           rows: Array.from({ length: 30 }, (_, i) => ({
             id: `h${i}`, field_name: 'stage', old_value: 'New', new_value: 'Contacted',
-            changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: `2026-07-${String(30 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
+            changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: `2026-07-${String(30 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
           }))
         })]
       ]);
@@ -284,7 +284,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['SELECT h.*, u.name as changed_by_name', () => ({
           rows: Array.from({ length: 20 }, (_, i) => ({
             id: `h${i}`, field_name: 'stage', old_value: 'New', new_value: 'Contacted',
-            changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: `2026-07-${String(30 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
+            changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: `2026-07-${String(30 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
           }))
         })]
       ]);
@@ -303,7 +303,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['SELECT COUNT(*) FROM lead_history WHERE lead_id = $1 AND field_name = $2', () => ({ rows: [{ count: '3' }] })],
         ['SELECT h.*, u.name as changed_by_name', () => ({
           rows: [
-            { id: 'h1', field_name: 'assigned_to', old_value: null, new_value: MARKETING_USER.id, changed_by: ADMIN_USER.id, changed_by_name: 'Admin', created_at: '2026-07-04T10:00:00Z', is_system_generated: true }
+            { id: 'h1', field_name: 'assigned_to', old_value: null, new_value: MARKETING_USER.id, changed_by: ADMIN_USER.id, changed_by_name: 'Admin', changed_at: '2026-07-04T10:00:00Z', is_system_generated: true }
           ]
         })]
       ]);
@@ -346,8 +346,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['SELECT COUNT(*) FROM lead_history WHERE lead_id = $1', () => ({ rows: [{ count: '2' }] })],
         ['SELECT h.*, u.name as changed_by_name', () => ({
           rows: [
-            { id: 'h1', field_name: 'assigned_to', old_value: null, new_value: MARKETING_USER.id, changed_by: null, changed_by_name: 'System', created_at: '2026-07-04T10:00:00Z', is_system_generated: true },
-            { id: 'h2', field_name: 'stage', old_value: 'New', new_value: 'Contacted', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: '2026-07-03T10:00:00Z', is_system_generated: false }
+            { id: 'h1', field_name: 'assigned_to', old_value: null, new_value: MARKETING_USER.id, changed_by: null, changed_by_name: 'System', changed_at: '2026-07-04T10:00:00Z', is_system_generated: true },
+            { id: 'h2', field_name: 'stage', old_value: 'New', new_value: 'Contacted', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: '2026-07-03T10:00:00Z', is_system_generated: false }
           ]
         })]
       ]);
@@ -370,7 +370,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['WHERE l.id = $1', () => ({ rows: [{ id: LEAD_UUID, assigned_to: null }] })],
         ['SELECT h.*, u.name as changed_by_name', () => ({
           rows: [
-            { id: 'h1', field_name: 'stage', old_value: 'New', new_value: 'Contacted', change_summary: 'Stage changed', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: '2026-07-04T10:00:00Z', reason: null, is_system_generated: false }
+            { id: 'h1', field_name: 'stage', old_value: 'New', new_value: 'Contacted', change_summary: 'Stage changed', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: '2026-07-04T10:00:00Z', reason: null, is_system_generated: false }
           ]
         })]
       ]);
@@ -379,7 +379,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toMatch(/text\/csv/);
-      expect(res.text).toContain('field_name,old_value,new_value,change_summary,changed_by,created_at,reason');
+      expect(res.text).toContain('field_name,old_value,new_value,change_summary,changed_by,changed_at,reason');
       expect(res.text).toContain('stage');
     });
 
@@ -427,7 +427,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
   describe('GET /api/admin/audit-log', () => {
     test('test-ep-5.1.1-b-056: Admin fetches audit log with filters', async () => {
       defaultQuery([
-        ['SELECT * FROM audit_logs', () => ({ rows: [{ id: 'aud-1', user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{"field_name":"stage"}', ip_address: '127.0.0.1', created_at: '2026-06-20T10:00:00Z' }] })],
+        ['SELECT * FROM audit_logs', () => ({ rows: [{ id: 'aud-1', user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{"field_name":"stage"}', ip_address: '127.0.0.1', changed_at: '2026-06-20T10:00:00Z' }] })],
         ['SELECT COUNT(*) FROM', () => ({ rows: [{ count: '1' }] })]
       ]);
       const res = await request(app)
@@ -440,7 +440,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
     test('test-ep-5.1.1-b-057: Audit log pagination with custom page size', async () => {
       const rows = [];
       for (let i = 0; i < 10; i++) {
-        rows.push({ id: 'aud-' + i, user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{}', ip_address: '127.0.0.1', created_at: '2026-06-20T10:00:00Z' });
+        rows.push({ id: 'aud-' + i, user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{}', ip_address: '127.0.0.1', changed_at: '2026-06-20T10:00:00Z' });
       }
       defaultQuery([
         ['SELECT * FROM audit_logs', () => ({ rows })],
@@ -454,7 +454,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
 
     test('test-ep-5.1.1-b-058: Filter by entity_affected', async () => {
       defaultQuery([
-        ['SELECT * FROM audit_logs', () => ({ rows: [{ id: 'aud-1', user_id: ADMIN_USER.id, action: 'USER_CREATED', resource: 'user', resource_id: 'user-1', result: 'Success', details: '{}', ip_address: '127.0.0.1', created_at: '2026-06-20T10:00:00Z' }] })],
+        ['SELECT * FROM audit_logs', () => ({ rows: [{ id: 'aud-1', user_id: ADMIN_USER.id, action: 'USER_CREATED', resource: 'user', resource_id: 'user-1', result: 'Success', details: '{}', ip_address: '127.0.0.1', changed_at: '2026-06-20T10:00:00Z' }] })],
         ['SELECT COUNT(*) FROM', () => ({ rows: [{ count: '1' }] })]
       ]);
       const res = await request(app)
@@ -513,7 +513,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       defaultQuery([
         ['SELECT * FROM audit_logs', () => ({
           rows: [{
-            id: AUDIT_UUID, user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{"field_name":"stage","from":"New","to":"Contacted"}', ip_address: '203.0.113.45', created_at: '2026-06-20T10:00:00Z'
+            id: AUDIT_UUID, user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{"field_name":"stage","from":"New","to":"Contacted"}', ip_address: '203.0.113.45', changed_at: '2026-06-20T10:00:00Z'
           }]
         })]
       ]);
@@ -556,7 +556,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
     test('test-ep-5.1.1-b-067: Admin exports audit log as CSV', async () => {
       defaultQuery([
         ['SELECT COUNT(*) FROM', () => ({ rows: [{ count: '1' }] })],
-        ['SELECT * FROM audit_logs', () => ({ rows: [{ id: 'aud-1', user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{}', ip_address: '127.0.0.1', created_at: '2026-06-20T10:00:00Z' }] })]
+        ['SELECT * FROM audit_logs', () => ({ rows: [{ id: 'aud-1', user_id: ADMIN_USER.id, action: 'lead.status_changed', resource: 'lead', resource_id: 'lead-1', result: 'Success', details: '{}', ip_address: '127.0.0.1', changed_at: '2026-06-20T10:00:00Z' }] })]
       ]);
       const res = await request(app)
         .get('/api/admin/audit-log/export?from=2026-06-01&to=2026-06-26&format=csv')
@@ -605,7 +605,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['WHERE l.id = $1', () => ({ rows: [{ id: XSS_LEAD, assigned_to: null }] })],
         ['SELECT COUNT(*) FROM lead_history WHERE lead_id = $1', () => ({ rows: [{ count: '1' }] })],
         ['SELECT h.*, u.name as changed_by_name', () => ({
-          rows: [{ id: 'h-xss', field_name: 'stage', old_value: "<script>alert('XSS')</script>", new_value: 'Contacted', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', created_at: '2026-07-04T10:00:00Z', is_system_generated: false }
+          rows: [{ id: 'h-xss', field_name: 'stage', old_value: "<script>alert('XSS')</script>", new_value: 'Contacted', changed_by: MARKETING_USER.id, changed_by_name: 'John Doe', changed_at: '2026-07-04T10:00:00Z', is_system_generated: false }
           ]
         })]
       ]);
@@ -622,7 +622,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       for (let i = 0; i < 500; i++) {
         rows.push({
           id: `h${i}`, field_name: 'stage', old_value: 'New', new_value: 'Contacted',
-          changed_by: ADMIN_USER.id, changed_by_name: 'Admin', created_at: `2026-07-${String(500 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
+          changed_by: ADMIN_USER.id, changed_by_name: 'Admin', changed_at: `2026-07-${String(500 - i).padStart(2, '0')}T10:00:00Z`, is_system_generated: false
         });
       }
       defaultQuery([
@@ -719,7 +719,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         ['BEGIN', () => ({})],
         ['UPDATE leads SET stage', () => ({ rows: [mockUpdatedRow()] })],
         ['INSERT INTO lead_history', () => ({
-          rows: [{ id: 'hist-017', lead_id: LEAD_UUID, field_name: 'stage', old_value: 'New Lead', new_value: 'Contacted', change_summary: 'Stage updated from New Lead to Contacted', changed_by: MARKETING_USER.id, created_at: '2026-07-04T10:00:00Z', is_system_generated: false }]
+          rows: [{ id: 'hist-017', lead_id: LEAD_UUID, field_name: 'stage', old_value: 'New Lead', new_value: 'Contacted', change_summary: 'Stage updated from New Lead to Contacted', changed_by: MARKETING_USER.id, changed_at: '2026-07-04T10:00:00Z', is_system_generated: false }]
         })],
         ['COMMIT', () => ({})]
       ]);
@@ -740,7 +740,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockLeadRow()] })]
       ]);
-      const historyRow = { id: 'hist-018', lead_id: LEAD_UUID, field_name: 'stage', old_value: 'New Lead', new_value: 'Contacted', change_summary: 'Stage updated from New Lead to Contacted by Mock User', changed_by: MARKETING_USER.id, created_at: '2026-07-04T10:00:00Z', is_system_generated: false };
+      const historyRow = { id: 'hist-018', lead_id: LEAD_UUID, field_name: 'stage', old_value: 'New Lead', new_value: 'Contacted', change_summary: 'Stage updated from New Lead to Contacted by Mock User', changed_by: MARKETING_USER.id, changed_at: '2026-07-04T10:00:00Z', is_system_generated: false };
       const client = mkClient([
         ['BEGIN', () => ({})],
         ['UPDATE leads SET stage', () => ({ rows: [mockUpdatedRow()] })],
@@ -968,7 +968,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       id: LEAD_UUID, lead_id: 'LD-001', company_name: 'Acme Corp',
       stage: 'Negotiation', assigned_to: MARKETING_USER.id,
       lead_status: 'Active', lost_reason: null, final_deal_value: null,
-      closure_date: null, created_at: '2026-01-15T00:00:00Z',
+      closure_date: null, changed_at: '2026-01-15T00:00:00Z',
       ...overrides
     });
 
@@ -1101,7 +1101,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       id: LEAD_UUID, lead_id: 'LD-001', company_name: 'Acme Corp',
       stage: 'Won', assigned_to: MARKETING_USER.id,
       lead_status: 'Closed', lost_reason: null, final_deal_value: 250000,
-      closure_date: '2026-06-30', created_at: '2026-01-15T00:00:00Z',
+      closure_date: '2026-06-30', changed_at: '2026-01-15T00:00:00Z',
       ...overrides
     });
 

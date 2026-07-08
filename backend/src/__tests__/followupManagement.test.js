@@ -244,7 +244,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
   });
 
   test('test-ep-4.1.1-006 (Positive): All valid outcome values', async () => {
-    const validOutcomes = ['Interested', 'Need More Info', 'Proposal Requested', 'Budget Discussion', 'Decision Pending'];
+    const validOutcomes = ['Interested', 'Need More Info', 'Proposal Requested', 'Budget Discussion', 'Decision Pending', 'Not Interested'];
     for (const outcome of validOutcomes) {
       mockLeadFound();
       const res = await request(app)

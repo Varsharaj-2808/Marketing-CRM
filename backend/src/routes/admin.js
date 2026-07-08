@@ -11,6 +11,12 @@ const bulkOperationsController = require('../controllers/bulkOperationsControlle
 const leadController = require('../controllers/leadController');
 const assignController = require('../controllers/assignController');
 const categoryController = require('../controllers/categoryController');
+const leadHistoryController = require('../controllers/leadHistoryController');
+
+router.get('/leads/:id/field-history/export', protect, authorize('Admin'), leadHistoryController.exportFieldHistory);
+router.get('/leads/:id/field-history', protect, authorize('Admin'), leadHistoryController.getFieldHistory);
+router.all('/leads/:id/field-history', protect, authorize('Admin'), leadHistoryController.rejectMutation);
+
 const followupController = require('../controllers/followupController');
 
 router.post('/users', protect, authorize('Admin'), userController.createUser);
@@ -24,8 +30,13 @@ router.patch('/users/:id/deactivate', protect, authorize('Admin'), adminControll
 router.patch('/users/:id/activate', protect, authorize('Admin'), adminController.activateUser);
 router.get('/users/:id/status-history', protect, authorize('Admin'), adminController.getUserStatusHistory);
 
+router.get('/audit-log/export', protect, authorize('Admin'), auditLogController.exportAuditLogs);
 router.get('/audit-log', protect, authorize('Admin'), auditLogController.getAuditLogs);
 router.get('/audit-log/:id', protect, authorize('Admin'), auditLogController.getAuditLog);
+
+router.get('/system-settings/audit-retention', protect, authorize('Admin'), systemSettingController.getAuditRetention);
+router.put('/system-settings/audit-retention', protect, authorize('Admin'), systemSettingController.updateAuditRetention);
+router.post('/audit-log/archive', protect, authorize('Admin'), auditLogController.archiveAuditLogs);
 
 router.get('/settings', protect, authorize('Admin'), systemSettingController.getSettings);
 router.put('/settings/:key', protect, authorize('Admin'), systemSettingController.updateSetting);

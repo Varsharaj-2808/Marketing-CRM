@@ -7,7 +7,14 @@ const {
 } = require('./setup');
 
 let mockQuery = jest.fn();
-jest.mock('../config/db', () => ({ query: (...args) => mockQuery(...args) }));
+const mockClient = {
+  query: (...args) => mockQuery(...args),
+  release: jest.fn(),
+};
+jest.mock('../config/db', () => ({
+  query: (...args) => mockQuery(...args),
+  getClient: jest.fn(() => Promise.resolve(mockClient)),
+}));
 
 const createTestApp = () => {
   const app = express();

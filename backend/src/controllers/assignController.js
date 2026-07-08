@@ -1,6 +1,7 @@
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
+const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const { query, getClient } = require('../config/db');
 
@@ -20,6 +21,7 @@ const resolveUser = async (identifier) => {
 };
 
 exports.assignLead = async (req, res, next) => {
+  let client;
   try {
     const { id } = req.params;
     const { assigned_to, reason } = req.body;
@@ -78,7 +80,12 @@ exports.assignLead = async (req, res, next) => {
       previousOwnerEmployeeId = prevResult.rows[0]?.employee_id || null;
     }
 
-    const updatedLead = await Lead.updateAssignedTo(id, targetUser.id);
+    client = await getClient();
+    await client.query('BEGIN');
+
+    // Update using transaction
+    const updateRes = await client.query('UPDATE leads SET assigned_to = $1 WHERE id = $2 RETURNING *', [targetUser.id, id]);
+    const updatedLead = updateRes.rows[0];
 
     const oldValue = previousOwnerEmployeeId || 'Unassigned';
     const newValue = targetUser.employee_id;
@@ -87,17 +94,21 @@ exports.assignLead = async (req, res, next) => {
       changeSummary += `. Reason: ${reason}`;
     }
 
-    await LeadHistory.create({
+    const historyLogged = await LeadHistory.create({
       leadId: id,
       fieldName: 'assigned_to',
       oldValue,
       newValue,
       changeSummary,
       changedBy: req.user.id,
-    });
+      isSystemGenerated: false
+    }, client);
 
-    const leadForNotif = updatedLead || lead;
-    const message = `Lead ${leadForNotif.lead_id} has been assigned to you`;
+    await client.query('COMMIT');
+    client.release();
+    client = null;
+
+    const message = `Lead ${updatedLead.lead_id} has been assigned to you`;
     try {
       await Notification.create({
         userId: targetUser.id,
@@ -109,14 +120,35 @@ exports.assignLead = async (req, res, next) => {
       console.error('Notification creation failed (non-blocking):', notifError.message);
     }
 
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email || '',
+        action: 'lead.assigned',
+        resource: 'lead',
+        resourceId: id,
+        details: JSON.stringify({ from: previousOwnerEmployeeId || null, to: targetUser.employee_id }),
+        ipAddress: getIpAndAgent(req).ipAddress,
+        userAgent: getIpAndAgent(req).userAgent,
+        result: 'success',
+      });
+    } catch (auditError) {
+      console.error('Audit log creation failed (non-blocking):', auditError.message);
+    }
+
     const finalLead = await Lead.findById(id);
 
     res.json({
       success: true,
       message: 'Lead assigned successfully.',
       data: finalLead,
+      history_logged: historyLogged
     });
   } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+      client.release();
+    }
     next(error);
   }
 };
@@ -142,7 +174,8 @@ exports.getTimeline = async (req, res, next) => {
     if (filter === 'Assignment') {
       history = await LeadHistory.findAssignments(id);
     } else {
-      history = await LeadHistory.findByLeadId(id);
+      const historyResult = await LeadHistory.findByLeadId(id);
+      history = Array.isArray(historyResult) ? historyResult : (historyResult.history || []);
     }
 
     const mapped = history.map((entry) => {

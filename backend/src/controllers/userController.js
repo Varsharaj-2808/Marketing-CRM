@@ -3,6 +3,7 @@ const AuditLog = require('../models/AuditLog');
 const { generateTempPassword } = require('../utils/passwordUtils');
 const { sendWelcomeEmail } = require('../utils/emailService');
 const algolia = require('../utils/algoliaService');
+const { query } = require('../config/db');
 
 const sanitize = (str) => str.replace(/<[^>]*>/g, '');
 
@@ -72,13 +73,13 @@ exports.createUser = async (req, res, next) => {
 
     await AuditLog.create({
       userId: req.user.id,
-      action: 'USER_CREATED',
-      resource: 'User',
+      action: 'user.created',
+      resource: 'user',
       resourceId: user.employee_id,
       details: JSON.stringify({ name: user.name, email: user.email, role: user.role, status: user.status }),
       ipAddress,
       userAgent,
-      result: 'Success',
+      result: 'success',
     });
 
     await sendWelcomeEmail(user.email, user.name, user.employee_id, tempPassword);
@@ -256,13 +257,13 @@ exports.updateUser = async (req, res, next) => {
     for (const change of changes) {
       await AuditLog.create({
         userId: req.user.id,
-        action: change.field === 'role' ? 'USER_ROLE_CHANGED' : 'USER_UPDATED',
-        resource: 'User',
+        action: change.field === 'role' ? 'user.role_changed' : 'user.updated',
+        resource: 'user',
         resourceId: user.employee_id || id,
-        details: JSON.stringify({ field: change.field, old_value: change.old, new_value: change.new }),
+        details: JSON.stringify({ field: change.field, old_value: change.old, new_value: change.new, old_role: change.old, new_role: change.new }),
         ipAddress,
         userAgent,
-        result: 'Success',
+        result: 'success',
       });
     }
 
@@ -297,10 +298,36 @@ exports.reindexUsers = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   try {
-    res.status(403).json({
-      success: false,
-      message: 'User deletion is not permitted. Use deactivation instead.',
+    const { id } = req.params;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(403).json({ success: false, message: 'User deletion is not permitted. Use deactivation instead.' });
+    }
+
+    const { ipAddress, userAgent } = getIpAndAgent(req);
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const result = await query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+    if (!result.rows[0]) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'user.deleted',
+      resource: 'user',
+      resourceId: user.employee_id || id,
+      details: JSON.stringify({ name: user.name, email: user.email, role: user.role }),
+      ipAddress,
+      userAgent,
+      result: 'success',
     });
+
+    res.json({ success: true, message: 'User deleted successfully.' });
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,7 @@
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const AuditLog = require('../models/AuditLog');
-const { query, getClient } = require('../config/db');
+const { query } = require('../config/db');
 const PDFDocument = require('pdfkit');
 
 const VALID_PRIORITIES = ['Hot', 'Warm', 'Cold'];
@@ -59,7 +59,7 @@ exports.createLead = async (req, res, next) => {
     await AuditLog.create({
       userId: req.user.id,
       email: req.user.email,
-      action: 'lead.created',
+      action: 'LEAD_CREATED',
       resource: 'Lead',
       resourceId: lead.lead_id,
       details: JSON.stringify({ company_name: lead.company_name, contact_person: lead.contact_person, mobile_number: lead.mobile_number }),
@@ -398,44 +398,22 @@ exports.updateLeadStage = async (req, res, next) => {
     if (stage === 'Won' || stage === 'Lost') {
       return res.status(400).json({ error: `To close a lead as ${stage}, please use the close endpoint.` });
     }
-    let client;
-    let historyLogged;
-    let updatedLead;
-    try {
-      client = await getClient();
-      await client.query('BEGIN');
-      
-      const updateRes = await client.query(
-        'UPDATE leads SET stage = $1, lead_status = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-        [stage, 'Active', id]
-      );
-      updatedLead = updateRes.rows[0];
 
-      historyLogged = await LeadHistory.create({
-        leadId: id,
-        fieldName: 'stage',
-        oldValue: lead.stage,
-        newValue: stage,
-        changeSummary: `Stage updated from ${lead.stage} to ${stage} by ${req.user.name || req.user.email}`,
-        changedBy: req.user.id,
-        isSystemGenerated: false
-      }, client);
+    const updatedLead = await Lead.updateStage(id, stage, 'Active');
 
-      await client.query('COMMIT');
-      client.release();
-      client = null;
-    } catch (dbErr) {
-      if (client) {
-        await client.query('ROLLBACK');
-        client.release();
-      }
-      return next(dbErr);
-    }
+    await LeadHistory.create({
+      leadId: id,
+      fieldName: 'stage',
+      oldValue: lead.stage,
+      newValue: stage,
+      changeSummary: `Stage updated from ${lead.stage} to ${stage} by ${req.user.name || req.user.email}`,
+      changedBy: req.user.id
+    });
 
     await AuditLog.create({
       userId: req.user.id,
       email: req.user.email,
-      action: 'lead.stage_changed',
+      action: 'LEAD_STAGE_CHANGED',
       resource: 'Lead',
       resourceId: updatedLead.lead_id,
       details: JSON.stringify({ oldStage: lead.stage, newStage: stage }),
@@ -445,7 +423,7 @@ exports.updateLeadStage = async (req, res, next) => {
     });
 
     const responseLead = { ...updatedLead, status: updatedLead.lead_status };
-    return res.status(200).json({ success: true, data: responseLead, history_logged: historyLogged });
+    return res.status(200).json({ success: true, data: responseLead });
   } catch (error) {
     next(error);
   }
@@ -507,7 +485,7 @@ exports.closeLeadLost = async (req, res, next) => {
     await AuditLog.create({
       userId: req.user.id,
       email: req.user.email,
-      action: 'lead.closed_lost',
+      action: 'LEAD_CLOSED_LOST',
       resource: 'Lead',
       resourceId: updatedLead.lead_id,
       details: JSON.stringify({ oldStage: lead.stage, reason: lost_reason }),
@@ -610,7 +588,7 @@ exports.closeLeadWon = async (req, res, next) => {
     await AuditLog.create({
       userId: req.user.id,
       email: req.user.email,
-      action: 'lead.closed_won',
+      action: 'LEAD_CLOSED_WON',
       resource: 'Lead',
       resourceId: updatedLead.lead_id,
       details: JSON.stringify({ oldStage: lead.stage, finalDealValue: numericValue, closureDate: closure_date }),

@@ -3,6 +3,11 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
 const leadController = require('../controllers/leadController');
+const leadHistoryController = require('../controllers/leadHistoryController');
+
+router.get('/leads/:id/field-history', protect, authorize('Marketing Executive'), leadHistoryController.getFieldHistory);
+router.all('/leads/:id/field-history', protect, authorize('Marketing Executive'), leadHistoryController.rejectMutation);
+
 const adminController = require('../controllers/adminController');
 const assignController = require('../controllers/assignController');
 const notificationController = require('../controllers/notificationController');
