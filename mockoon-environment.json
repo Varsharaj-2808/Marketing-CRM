@@ -5110,7 +5110,7 @@
         {
           "latency": 0,
           "default": true,
-          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"log-001\",\n      \"action\": \"lead.status_changed\",\n      \"entity\": \"lead\",\n      \"entity_id\": \"LD-2026-00001\",\n      \"performed_by\": { \"id\": \"EMP-00001\", \"name\": \"John Doe\", \"role\": \"Marketing\" },\n      \"ip_address\": \"203.0.113.45\",\n      \"details\": { \"field\": \"status\", \"from\": \"New\", \"to\": \"Contacted\" },\n      \"timestamp\": \"2026-06-20T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 20,\n    \"total_records\": 980\n  }\n}",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"e0b0e513-ef9f-4318-8097-f0bb26922f30\",\n      \"seq\": 1,\n      \"actor\": {\n        \"id\": \"actor-uuid-1\",\n        \"name\": \"Admin User\",\n        \"role\": \"Admin\"\n      },\n      \"action_type\": \"lead.assigned\",\n      \"entity_affected\": \"lead\",\n      \"entity_id\": \"lead-uuid-1\",\n      \"result\": \"success\",\n      \"ip_address\": \"203.0.113.45\",\n      \"details\": {},\n      \"created_at\": \"2026-07-07T12:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 20,\n    \"total_records\": 980\n  }\n}",
           "callbacks": [],
           "crudKey": "id",
           "disableTemplating": false,
@@ -5129,7 +5129,7 @@
         {
           "latency": 0,
           "default": false,
-          "body": "{\"success\": false, \"message\": \"Invalid date format. Use YYYY-MM-DD\"}",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid date format. Use YYYY-MM-DD\"\n}",
           "callbacks": [],
           "crudKey": "id",
           "disableTemplating": false,
@@ -5143,7 +5143,7 @@
               "operator": "equals",
               "modifier": "from",
               "target": "query",
-              "value": "invalid"
+              "value": "invalid-date"
             }
           ],
           "label": "Missing or invalid date range",
@@ -5152,6 +5152,52 @@
           "statusCode": 400,
           "uuid": "cf7d6674-978a-4600-84b5-707030884211",
           "databucketID": ""
+        },
+        {
+          "uuid": "aae598ed-6823-4238-9ea6-b4436453ad46",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Access denied. Admins only.",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer marketing_token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer unauthorized-token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-marketing",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admins only.\"\n}"
         }
       ],
       "type": "http",
@@ -5168,7 +5214,7 @@
         {
           "latency": 0,
           "default": true,
-          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"log-001\",\n    \"action\": \"user.deactivated\",\n    \"entity\": \"user\",\n    \"entity_id\": \"USR-001\",\n    \"performed_by\": { \"id\": \"ADM-001\", \"name\": \"Admin User\" },\n    \"ip_address\": \"203.0.113.1\",\n    \"details\": {},\n    \"timestamp\": \"2026-06-20T10:00:00Z\"\n  }\n}",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"e0b0e513-ef9f-4318-8097-f0bb26922f30\",\n    \"seq\": 1,\n    \"actor\": {\n      \"id\": \"actor-uuid-1\",\n      \"name\": \"Admin User\",\n      \"role\": \"Admin\"\n    },\n    \"action_type\": \"user.role_changed\",\n    \"entity_affected\": \"user\",\n    \"entity_id\": \"user-uuid-1\",\n    \"result\": \"success\",\n    \"ip_address\": \"203.0.113.45\",\n    \"details\": {\n      \"old_role\": \"Marketing\",\n      \"new_role\": \"Admin\"\n    },\n    \"created_at\": \"2026-07-07T12:00:00Z\"\n  }\n}",
           "callbacks": [],
           "crudKey": "id",
           "disableTemplating": false,
@@ -5187,7 +5233,7 @@
         {
           "latency": 0,
           "default": false,
-          "body": "{\"success\": false, \"message\": \"Audit log entry not found\"}",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Audit log entry not found\"\n}",
           "callbacks": [],
           "crudKey": "id",
           "disableTemplating": false,
@@ -5237,6 +5283,52 @@
           "statusCode": 400,
           "uuid": "8f1cec00-bf7a-4ad8-99ee-03d3200d7a8c",
           "databucketID": ""
+        },
+        {
+          "uuid": "1a6ffa5a-e1d5-468b-b745-3f7c371d1de4",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Access denied. Admins only.",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer marketing_token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer unauthorized-token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-marketing",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admins only.\"\n}"
         }
       ],
       "type": "http",
@@ -5253,12 +5345,17 @@
         {
           "latency": 0,
           "default": true,
-          "body": "id,action,entity,entity_id,performed_by,ip_address,details,timestamp\nlog-001,lead.status_changed,lead,LD-2026-00001,John Doe,203.0.113.45,\"{'field': 'status', 'from': 'New', 'to': 'Contacted'}\",2026-06-20T10:00:00Z\nlog-002,user.deactivated,user,USR-001,Admin User,203.0.113.1,{},2026-06-19T15:00:00Z",
+          "body": "seq,timestamp,actor_name,actor_role,action_type,entity_affected,entity_id,result,ip_address,details\n1,2026-07-07T12:00:00Z,Admin User,Admin,lead.assigned,lead,lead-uuid-1,success,203.0.113.45,{}",
           "callbacks": [],
           "crudKey": "id",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "headers": [],
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
           "bodyType": "INLINE",
           "filePath": "",
           "rules": [],
@@ -5272,7 +5369,7 @@
         {
           "latency": 0,
           "default": false,
-          "body": "{\"success\": false, \"message\": \"Format must be csv\"}",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Format must be csv\"\n}",
           "callbacks": [],
           "crudKey": "id",
           "disableTemplating": false,
@@ -5322,6 +5419,84 @@
           "statusCode": 400,
           "uuid": "b18ca5d0-f602-4098-8b21-56475b973595",
           "databucketID": ""
+        },
+        {
+          "uuid": "48c88ea3-bf78-43ac-96b9-3d815d434fb0",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "No records match applied filters",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "actor",
+              "target": "query",
+              "value": "nonexistent"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"No audit log entries found for the given filters\"\n}"
+        },
+        {
+          "uuid": "6d305c30-4e0a-4c52-b02c-17900d7bf213",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Access denied. Admins only.",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer marketing_token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer unauthorized-token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-marketing",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admins only.\"\n}"
         }
       ],
       "type": "http",
@@ -5955,6 +6130,259 @@
       "uuid": "f5a6b7c8-d9e0-1234-abcd-ef5678901234",
       "endpoint": "/admin/leads/:id/assign",
       "streamingInterval": 0
+    },
+    {
+      "uuid": "f7b64cb4-420d-41bc-9df6-c520cad35362",
+      "type": "http",
+      "documentation": "Fetch current audit log retention policy configuration",
+      "method": "get",
+      "endpoint": "/admin/system-settings/audit-retention",
+      "responses": [
+        {
+          "uuid": "cc968b65-0256-4f2b-b269-fadc8ad48013",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"key\": \"audit_log_retention_months\",\n    \"value\": \"12\",\n    \"description\": \"Months an audit record stays in active storage before archival\"\n  }\n}"
+        },
+        {
+          "uuid": "0b8eb34f-f04a-434b-be32-f51a3e1d5953",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Access denied. Admins only.",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer marketing_token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer unauthorized-token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-marketing",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admins only.\"\n}"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "338b7da6-e877-4570-a1bb-be27a453f976",
+      "type": "http",
+      "documentation": "Update retention period value",
+      "method": "put",
+      "endpoint": "/admin/system-settings/audit-retention",
+      "responses": [
+        {
+          "uuid": "8e8faefb-c23b-4cbc-92e1-b9aaf8860a98",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Retention policy updated\",\n  \"data\": {\n    \"key\": \"audit_log_retention_months\",\n    \"value\": \"18\",\n    \"updated_at\": \"\"\n  }\n}"
+        },
+        {
+          "uuid": "f11d0893-62cf-44b0-8d4c-25b92afad219",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid value",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "value",
+              "value": "-5",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "value",
+              "value": "0",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "value",
+              "value": "abc",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "value",
+              "value": "^[1-9]\\d*$",
+              "invert": true,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Retention period must be a positive integer (months)\"\n}"
+        },
+        {
+          "uuid": "41436d14-d8d4-412d-9220-86462b7240a6",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Access denied. Admins only.",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer marketing_token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer unauthorized-token",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-marketing",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admins only.\"\n}"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "6c5e04cb-e5e6-4483-a4fc-9d842756e5db",
+      "type": "http",
+      "documentation": "Archive system-wide audit logs",
+      "method": "post",
+      "endpoint": "/admin/audit-log/archive",
+      "responses": [
+        {
+          "uuid": "8d11a73b-3606-4cda-b7af-d39b01e19c6a",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Archival completed\",\n  \"archived_count\": 342,\n  \"retention_months\": 12,\n  \"cutoff_date\": \"2025-07-07\"\n}"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
   "rootChildren": [
@@ -6165,6 +6593,18 @@
     {
       "type": "route",
       "uuid": "f5a6b7c8-d9e0-1234-abcd-ef5678901234"
+    },
+    {
+      "type": "route",
+      "uuid": "f7b64cb4-420d-41bc-9df6-c520cad35362"
+    },
+    {
+      "type": "route",
+      "uuid": "338b7da6-e877-4570-a1bb-be27a453f976"
+    },
+    {
+      "type": "route",
+      "uuid": "6c5e04cb-e5e6-4483-a4fc-9d842756e5db"
     }
   ],
   "proxyMode": false,

@@ -563,11 +563,11 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
 
     const headers = screen.getAllByRole('columnheader');
     const headerTexts = headers.map(h => h.textContent.trim());
-    expect(headerTexts).toContain('Action');
-    expect(headerTexts).toContain('Resource');
-    expect(headerTexts).toContain('Resource ID');
-    expect(headerTexts).toContain('User');
-    expect(headerTexts).toContain('Details');
+    expect(headerTexts).toContain('Action Type');
+    expect(headerTexts).toContain('Entity Affected');
+    expect(headerTexts).toContain('Entity ID');
+    expect(headerTexts).toContain('Actor');
+    expect(headerTexts).toContain('Actions/Details');
     expect(headerTexts).toContain('IP Address');
     expect(headerTexts).toContain('Timestamp');
 
@@ -608,6 +608,10 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     const toInput = screen.getByLabelText('To');
     fireEvent.change(toInput, { target: { value: '2026-06-26' } });
 
+    // Click Apply Filters button to trigger fetch in new layout
+    const applyBtn = screen.getByRole('button', { name: /Apply Filters/i });
+    fireEvent.click(applyBtn);
+
     await waitFor(() => {
       const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/audit-log?'));
       expect(calls.length).toBeGreaterThanOrEqual(2);
@@ -616,9 +620,9 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     const lastCallUrl = fetchSpy.mock.calls
       .filter(c => String(c[0]).includes('/audit-log?'))
       .pop()[0];
-    expect(String(lastCallUrl)).toContain('action=lead.status_changed');
-    expect(String(lastCallUrl)).toContain('date_from=2026-06-01');
-    expect(String(lastCallUrl)).toContain('date_to=2026-06-26');
+    expect(String(lastCallUrl)).toContain('action_type=lead.status_changed');
+    expect(String(lastCallUrl)).toContain('from=2026-06-01');
+    expect(String(lastCallUrl)).toContain('to=2026-06-26');
   });
 
   // ---------- test-ep-5.1.1-f-022: Audit log row click navigates to detail ----------
@@ -643,8 +647,8 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
       expect(screen.getByText('Audit Log Detail')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('UPDATED')).toBeInTheDocument();
-    expect(screen.getByText('admin@company.com')).toBeInTheDocument();
+    expect(screen.getAllByText('UPDATED').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('admin@company.com').length).toBeGreaterThan(0);
   });
 
   // ---------- test-ep-5.1.1-f-023: Loading, empty, and error states ----------

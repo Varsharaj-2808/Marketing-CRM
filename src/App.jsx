@@ -15,7 +15,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import SecurityPage from './pages/admin/SecurityPage';
 import AuditLogPage from './pages/admin/AuditLogPage';
-import AuditLogDetailPage from './pages/admin/AuditLogDetailPage';
+import SystemSettingsPage from './pages/admin/SystemSettingsPage';
 import CategoriesPage from './pages/admin/CategoriesPage';
 import ServicesPage from './pages/admin/ServicesPage';
 import LeadSourcesPage from './pages/admin/LeadSourcesPage';
@@ -49,8 +49,9 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <AdminDashboardPage /> },
       { path: 'users', element: <UserManagementPage /> },
       { path: 'security', element: <SecurityPage /> },
-      { path: 'audit-logs', element: <AuditLogPage /> },
-      { path: 'audit-logs/:id', element: <AuditLogDetailPage /> },
+      { path: 'audit-log', element: <AuditLogPage /> },
+      { path: 'audit-logs', element: <Navigate to="/admin/audit-log" replace /> },
+      { path: 'system-settings/audit-retention', element: <SystemSettingsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
       { path: 'services', element: <ServicesPage /> },
       { path: 'lead-sources', element: <LeadSourcesPage /> },

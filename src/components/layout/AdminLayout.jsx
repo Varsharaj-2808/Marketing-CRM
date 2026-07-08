@@ -1,4 +1,4 @@
-﻿import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import NotificationBell from '../leads/NotificationBell';
@@ -10,7 +10,8 @@ const NAV_ITEMS = [
   { path: '/admin/categories', label: 'Categories', icon: 'category' },
   { path: '/admin/services', label: 'Services', icon: 'handyman' },
   { path: '/admin/lead-sources', label: 'Lead Sources', icon: 'source' },
-  { path: '/admin/audit-logs', label: 'Audit Logs', icon: 'receipt_long' },
+  { path: '/admin/audit-log', label: 'Audit Log', icon: 'receipt_long' },
+  { path: '/admin/system-settings/audit-retention', label: 'System Settings', icon: 'settings' },
   { path: '/admin/security', label: 'Security Policy', icon: 'security' },
   { path: '/admin/reports', label: 'Reports', icon: 'assessment' },
 ];

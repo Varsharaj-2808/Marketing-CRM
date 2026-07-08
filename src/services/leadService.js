@@ -1237,48 +1237,60 @@ export async function exportFieldHistory(leadId) {
 }
 
 export async function fetchAuditLogEntries(params = {}) {
-  try {
-    const query = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
-    query.set('_', Date.now());
-    return await requestJson(`${API_BASE_URL}/admin/audit-log?${query.toString()}`);
-  } catch {
-    return { success: true, data: [], pagination: { page: 1, total_pages: 1, total_records: 0 } };
-  }
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+  query.set('_', Date.now());
+  return await requestJson(`${API_BASE_URL}/admin/audit-log?${query.toString()}`);
 }
 
 export async function fetchAuditLogEntry(id) {
-  try {
-    return await requestJson(`${API_BASE_URL}/admin/audit-log/${id}?_=${Date.now()}`);
-  } catch {
-    return { success: false, message: 'Audit log entry not found.' };
-  }
+  return await requestJson(`${API_BASE_URL}/admin/audit-log/${id}?_=${Date.now()}`);
 }
 
 export async function exportAuditLog(params = {}) {
-  try {
-    const query = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
-    query.set('format', 'csv');
-    query.set('_', Date.now());
-    const res = await fetch(`${API_BASE_URL}/admin/audit-log/export?${query.toString()}`, {
-      headers: {
-        ...getAuthHeaders(),
-        'Accept': 'text/csv',
-      },
-    });
-    if (!res.ok) {
-      const json = await safeJson(res);
-      const error = new Error(json?.message || 'Export failed.');
-      error.status = res.status;
-      throw error;
-    }
-    return await res.blob();
-  } catch (err) {
-    if (err?.status) throw err;
-    return new Blob([], { type: 'text/csv' });
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+  query.set('format', 'csv');
+  query.set('_', Date.now());
+  const res = await fetch(`${API_BASE_URL}/admin/audit-log/export?${query.toString()}`, {
+    headers: {
+      ...getAuthHeaders(),
+      'Accept': 'text/csv',
+    },
+  });
+  if (!res.ok) {
+    const json = await safeJson(res);
+    const error = new Error(json?.message || 'Export failed.');
+    error.status = res.status;
+    error.payload = json;
+    throw error;
   }
+  return await res.blob();
 }
+
+export async function fetchRetentionSettings() {
+  return await requestJson(`${API_BASE_URL}/admin/system-settings/audit-retention?_=${Date.now()}`);
+}
+
+export async function updateRetentionSettings(value) {
+  const res = await fetch(`${API_BASE_URL}/admin/system-settings/audit-retention`, {
+    method: 'PUT',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ value }),
+  });
+  const json = await safeJson(res);
+  if (!res.ok) {
+    const error = new Error(json?.message || 'Failed to update retention settings.');
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
 
 export async function closeLead(leadId, payload) {
   try {
