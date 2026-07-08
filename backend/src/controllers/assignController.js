@@ -26,6 +26,11 @@ exports.assignLead = async (req, res, next) => {
     const { id } = req.params;
     const { assigned_to, reason } = req.body;
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
     if (!assigned_to || !assigned_to.trim()) {
       return res.status(400).json({ assigned_to: 'Target user ID is required' });
     }
