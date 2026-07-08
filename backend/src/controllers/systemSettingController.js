@@ -1,4 +1,5 @@
 const SystemSetting = require('../models/SystemSetting');
+const { query } = require('../config/db');
 
 exports.getSettings = async (req, res, next) => {
   try {
@@ -41,6 +42,34 @@ exports.updateSetting = async (req, res, next) => {
 
     const setting = await SystemSetting.set(key, value, description);
     res.json({ success: true, message: 'Setting updated successfully.', data: setting });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getAuditRetention = async (req, res, next) => {
+  try {
+    const result = await query('SELECT * FROM system_settings WHERE key = $1', ['audit_log_retention_months']);
+    if (!result.rows[0]) {
+      return res.json({ success: true, data: { key: 'audit_log_retention_months', value: '12' } });
+    }
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateAuditRetention = async (req, res, next) => {
+  try {
+    const { value } = req.body;
+
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      return res.status(400).json({ success: false, message: 'Retention value must be a positive integer' });
+    }
+
+    const setting = await SystemSetting.set('audit_log_retention_months', String(num), 'Months an audit record stays in active storage before archival');
+    res.json({ success: true, message: 'Retention policy updated successfully.', data: setting });
   } catch (error) {
     next(error);
   }

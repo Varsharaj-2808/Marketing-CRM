@@ -1,11 +1,13 @@
 const { query } = require('../config/db');
 
 const LeadHistory = {
-  async create(data) {
-    const { leadId, fieldName, oldValue, newValue, changeSummary, changedBy, reason, metadata } = data;
-    const result = await query(
-      `INSERT INTO lead_history ("lead_id", "field_name", "old_value", "new_value", "change_summary", "changed_by", "reason", "metadata")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+  async create(data, client = null) {
+    const { leadId, fieldName, oldValue, newValue, changeSummary, changedBy, reason, metadata, isSystemGenerated } = data;
+    const executeQuery = client ? client.query.bind(client) : query;
+    
+    const result = await executeQuery(
+      `INSERT INTO lead_history ("lead_id", "field_name", "old_value", "new_value", "change_summary", "changed_by", "reason", "metadata", "is_system_generated")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         leadId,
@@ -15,48 +17,60 @@ const LeadHistory = {
         changeSummary || null,
         changedBy || null,
         reason || null,
-        metadata ? JSON.stringify(metadata) : null
+        metadata ? JSON.stringify(metadata) : null,
+        isSystemGenerated || false
       ]
     );
     return result.rows[0];
   },
 
-  async findByLeadId(leadId) {
-    const result = await query(
-      `SELECT h.*, u.name as changed_by_name, u.employee_id as actor_employee_id
+  async findByLeadId(leadId, filters = {}) {
+    let sql = `SELECT h.*, u.name as changed_by_name, u.employee_id as actor_employee_id
        FROM lead_history h
        LEFT JOIN users u ON h.changed_by = u.id
-       WHERE h.lead_id = $1
-       ORDER BY h.created_at ASC`,
-      [leadId]
-    );
-    return result.rows;
+       WHERE h.lead_id = $1`;
+    const params = [leadId];
+    
+    if (filters.fieldName) {
+      params.push(filters.fieldName);
+      sql += ` AND h.field_name = $2`;
+    }
+    
+    sql += ` ORDER BY h.changed_at DESC`; // Newest first
+    
+    if (filters.limit) {
+      params.push(filters.limit);
+      sql += ` LIMIT $${params.length}`;
+      if (filters.page) {
+        const offset = (filters.page - 1) * filters.limit;
+        params.push(offset);
+        sql += ` OFFSET $${params.length}`;
+      }
+    }
+
+    const result = await query(sql, params);
+    
+    // Also return count for pagination
+    let countSql = `SELECT COUNT(*) FROM lead_history WHERE lead_id = $1`;
+    const countParams = [leadId];
+    if (filters.fieldName) {
+      countParams.push(filters.fieldName);
+      countSql += ` AND field_name = $2`;
+    }
+    const countResult = await query(countSql, countParams);
+    
+    return {
+      history: result.rows,
+      total_changes: countResult.rows[0] ? parseInt(countResult.rows[0].count) : 0
+    };
   },
 
   async findHistoryPaginated(leadId, page = 1, limit = 20) {
-    const offset = (page - 1) * limit;
-
-    const countResult = await query(
-      `SELECT COUNT(*) FROM lead_history
-       WHERE lead_id = $1 AND field_name IN ('stage', 'Stage Changed', 'Lead Reopened')`,
-      [leadId]
-    );
-    const totalEntries = parseInt(countResult.rows[0].count);
-
-    const result = await query(
-      `SELECT h.*, u.employee_id as actor_employee_id, u.name as actor_name
-       FROM lead_history h
-       LEFT JOIN users u ON h.changed_by = u.id
-       WHERE h.lead_id = $1 AND h.field_name IN ('stage', 'Stage Changed', 'Lead Reopened')
-       ORDER BY h.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [leadId, limit, offset]
-    );
-
+    const res = await this.findByLeadId(leadId, { page, limit });
     return {
-      data: result.rows,
-      totalEntries,
-      totalPages: Math.ceil(totalEntries / limit),
+      data: res.history,
+      totalEntries: res.total_changes,
+      totalPages: Math.ceil(res.total_changes / limit),
       page,
       limit,
     };
@@ -70,7 +84,7 @@ const LeadHistory = {
        LEFT JOIN users u ON h.changed_by = u.id
        LEFT JOIN users u2 ON h.changed_by = u2.id
        WHERE h.lead_id = $1 AND h.field_name = 'assigned_to'
-       ORDER BY h.created_at DESC`,
+       ORDER BY h.changed_at DESC`,
       [leadId]
     );
     return result.rows;

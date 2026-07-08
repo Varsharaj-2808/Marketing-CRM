@@ -27,10 +27,7 @@ const Lead = {
 
   async findById(id) {
     const result = await query(
-      `SELECT l.*, u.name as assigned_to_name
-       FROM leads l
-       LEFT JOIN users u ON l.assigned_to = u.id
-       WHERE l.id = $1`,
+      'SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id = $1',
       [id]
     );
     return result.rows[0] || null;

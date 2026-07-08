@@ -259,8 +259,8 @@ exports.getTimeline = async (req, res, next) => {
       if (LeadHistory.findAssignments) {
         history = await LeadHistory.findAssignments(id);
       } else {
-        history = await LeadHistory.findByLeadId(id);
-        history = history.filter((h) => h.field_name === 'assigned_to');
+        const historyResult2 = await LeadHistory.findByLeadId(id);
+        history = (Array.isArray(historyResult2) ? historyResult2 : (historyResult2.history || [])).filter((h) => h.field_name === 'assigned_to');
       }
 
       const mapped = history.map((entry) => {
@@ -296,7 +296,8 @@ exports.getTimeline = async (req, res, next) => {
     // ── Enhanced format ───────────────────────
 
     // Fetch history entries
-    const historyRows = await LeadHistory.findByLeadId(id);
+    const historyResult = await LeadHistory.findByLeadId(id);
+    const historyRows = Array.isArray(historyResult) ? historyResult : (historyResult.history || []);
 
     // Fetch followup entries
     const followupRows = await Followup.findByLeadId(id);

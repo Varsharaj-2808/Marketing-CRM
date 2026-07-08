@@ -56,9 +56,7 @@ const User = {
 
   async getNextEmployeeId() {
     const result = await query(
-      `SELECT COALESCE(
-        MAX(CAST(SUBSTRING("employee_id" FROM 5) AS INTEGER)), 0
-      ) + 1 AS next_seq FROM users`
+      `SELECT COALESCE(MAX(CAST(SUBSTRING("employee_id" FROM 5) AS INTEGER)), 0) + 1 AS next_seq FROM users`
     );
     const nextSeq = result.rows[0].next_seq;
     return `EMP-${String(nextSeq).padStart(5, '0')}`;

@@ -45,7 +45,7 @@ const AuditLog = {
     const countResult = await query(`SELECT COUNT(*) FROM audit_logs ${where}`, values);
     const totalRecords = parseInt(countResult.rows[0].count);
 
-    const sql = `SELECT * FROM audit_logs ${where} ORDER BY "createdAt" DESC LIMIT $${idx++} OFFSET $${idx++}`;
+    const sql = `SELECT a.* FROM audit_logs a ${where} ORDER BY "createdAt" DESC LIMIT $${idx++} OFFSET $${idx++}`;
     values.push(limit, offset);
     const result = await query(sql, values);
 

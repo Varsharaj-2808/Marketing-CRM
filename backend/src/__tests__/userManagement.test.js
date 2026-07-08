@@ -796,8 +796,8 @@ describe('2.9 Audit Log API', () => {
   const app = createTestApp();
 
   const MOCK_LOGS = [
-    { id: 'a1', user_id: ADMIN_USER.id, email: ADMIN_USER.email, action: 'USER_CREATED', resource: 'User', resourceId: 'EMP-00005', details: '{"name":"John"}', ipAddress: '::1', userAgent: 'supertest', result: 'Success', createdAt: '2026-06-28T10:00:00.000Z' },
-    { id: 'a2', user_id: ADMIN_USER.id, email: ADMIN_USER.email, action: 'LOGIN_SUCCESS', resource: 'Auth', resourceId: '', details: 'Successful login', ipAddress: '::1', userAgent: 'supertest', result: 'Success', createdAt: '2026-06-28T09:00:00.000Z' },
+    { id: '11111111-1111-4111-8111-111111111111', user_id: ADMIN_USER.id, email: ADMIN_USER.email, action: 'USER_CREATED', resource: 'User', resourceId: 'EMP-00005', details: '{"name":"John"}', ipAddress: '::1', userAgent: 'supertest', result: 'Success', createdAt: '2026-06-28T10:00:00.000Z' },
+    { id: '22222222-2222-4222-8222-222222222222', user_id: ADMIN_USER.id, email: ADMIN_USER.email, action: 'LOGIN_SUCCESS', resource: 'Auth', resourceId: '', details: 'Successful login', ipAddress: '::1', userAgent: 'supertest', result: 'Success', createdAt: '2026-06-28T09:00:00.000Z' },
   ];
 
   test('USER-061: Admin can list audit logs — 200', async () => {
@@ -848,10 +848,10 @@ describe('2.9 Audit Log API', () => {
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ]);
     const res = await request(app)
-      .get('/api/admin/audit-log/a1')
+      .get('/api/admin/audit-log/11111111-1111-4111-8111-111111111111')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data.id).toBe('a1');
+    expect(res.body.data.id).toBe('11111111-1111-4111-8111-111111111111');
   });
 
   test('USER-066: View non-existent audit log — 404', async () => {
@@ -860,7 +860,7 @@ describe('2.9 Audit Log API', () => {
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ]);
     const res = await request(app)
-      .get('/api/admin/audit-log/non-existent')
+      .get('/api/admin/audit-log/00000000-0000-4000-8000-000000000000')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(404);
   });

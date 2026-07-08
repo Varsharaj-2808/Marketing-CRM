@@ -67,19 +67,19 @@ exports.login = async (req, res, next) => {
 
     const user = await User.findByEmail(email.toLowerCase());
     if (!user) {
-      await logAudit({ action: 'LOGIN_FAILED', details: `Invalid login attempt for email: ${email}`, ipAddress, userAgent, result: 'Failed' });
+      await logAudit({ action: 'user.login_failed', details: `Invalid login attempt for email: ${email}`, ipAddress, userAgent, result: 'failure' });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const accountStatus = user.accountStatus || user.status;
     if (accountStatus === 'inactive') {
-      await logAudit({ userId: user.id, action: 'LOGIN_REJECTED_INACTIVE', details: 'Account is inactive', ipAddress, userAgent, result: 'Failed' });
+      await logAudit({ userId: user.id, action: 'user.login_failed', details: 'Account is inactive', ipAddress, userAgent, result: 'failure' });
       return res.status(403).json({ success: false, message: 'Account is inactive. Contact administrator.' });
     }
 
     if (accountStatus === 'locked' && user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
       const retryAfter = Math.ceil((new Date(user.lockoutUntil) - new Date()) / 1000);
-      await logAudit({ userId: user.id, action: 'LOGIN_REJECTED_LOCKED', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'Failed' });
+      await logAudit({ userId: user.id, action: 'user.login_failed', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'failure' });
       return res.status(423).json({
         success: false,
         message: `Account locked. Too many failed attempts. Try again in ${Math.ceil(retryAfter / 60)} minutes.`,
@@ -95,7 +95,7 @@ exports.login = async (req, res, next) => {
       if (user.failedLoginAttempts >= lockoutThreshold) {
         const lockoutUntil = new Date(Date.now() + lockoutWindowMs);
         await User.lockAccount(user.id, lockoutUntil, user.failedLoginAttempts);
-        await logAudit({ userId: user.id, action: 'ACCOUNT_LOCKED', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'Failed' });
+        await logAudit({ userId: user.id, action: 'user.login_failed', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'failure' });
         return res.status(423).json({
           success: false,
           message: `Account locked. Too many failed attempts. Try again in ${config.lockoutWindowMinutes} minutes.`,
@@ -104,7 +104,7 @@ exports.login = async (req, res, next) => {
       }
 
       await User.incrementFailedAttempts(user.id);
-      await logAudit({ userId: user.id, action: 'LOGIN_FAILED', details: `Invalid password (attempt ${user.failedLoginAttempts})`, ipAddress, userAgent, result: 'Failed' });
+      await logAudit({ userId: user.id, action: 'user.login_failed', details: `Invalid password (attempt ${user.failedLoginAttempts})`, ipAddress, userAgent, result: 'failure' });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
@@ -124,8 +124,8 @@ exports.login = async (req, res, next) => {
     const redirect = user.role === 'Admin' ? '/admin/dashboard' : '/marketing/leads';
 
     await logAudit({
-      userId: user.id, email: user.email, action: 'LOGIN_SUCCESS', resource: 'Auth',
-      details: 'Successful login', ipAddress, userAgent, result: 'Success',
+      userId: user.id, email: user.email, action: 'user.login', resource: 'user',
+      details: 'Successful login', ipAddress, userAgent, result: 'success',
     });
 
     res.json({
@@ -200,8 +200,8 @@ exports.logout = async (req, res, next) => {
     await User.clearRefreshToken(req.user.id);
 
     await logAudit({
-      userId: req.user.id, email: req.user.email, action: 'LOGOUT', resource: 'Auth',
-      details: 'User logged out', ipAddress, userAgent, result: 'Success',
+      userId: req.user.id, email: req.user.email, action: 'user.logout', resource: 'user',
+      details: 'User logged out', ipAddress, userAgent, result: 'success',
     });
 
     res.json({ success: true, message: 'Logout successful' });
@@ -235,13 +235,13 @@ exports.forgotPassword = async (req, res, next) => {
       await sendPasswordResetEmail(email, resetUrl);
 
       await logAudit({
-        userId: user.id, email: user.email, action: 'FORGOT_PASSWORD', resource: 'Auth',
-        details: 'Password reset token generated and emailed', ipAddress, userAgent, result: 'Success',
+        userId: user.id, email: user.email, action: 'user.forgot_password', resource: 'user',
+        details: 'Password reset token generated and emailed', ipAddress, userAgent, result: 'success',
       });
     } else {
       await logAudit({
-        email, action: 'FORGOT_PASSWORD', resource: 'Auth',
-        details: `Password reset requested for non-existent email: ${email}`, ipAddress, userAgent, result: 'Failed',
+        email, action: 'user.forgot_password', resource: 'user',
+        details: `Password reset requested for non-existent email: ${email}`, ipAddress, userAgent, result: 'failure',
       });
     }
 
@@ -281,8 +281,8 @@ exports.resetPassword = async (req, res, next) => {
     if (targetUser.resetTokenExpiry && new Date(targetUser.resetTokenExpiry) < new Date()) {
       await User.clearResetToken(targetUser.id);
       await logAudit({
-        userId: targetUser.id, email: targetUser.email, action: 'RESET_PASSWORD',
-        details: 'Reset token expired', ipAddress, userAgent, result: 'Failed',
+        userId: targetUser.id, email: targetUser.email, action: 'user.reset_password',
+        details: 'Reset token expired', ipAddress, userAgent, result: 'failure',
       });
       return res.status(400).json({ success: false, message: 'Invalid token' });
     }
@@ -296,8 +296,8 @@ exports.resetPassword = async (req, res, next) => {
     await User.clearAllTokens(targetUser.id);
 
     await logAudit({
-      userId: targetUser.id, email: targetUser.email, action: 'RESET_PASSWORD', resource: 'Auth',
-      details: 'Password reset successfully', ipAddress, userAgent, result: 'Success',
+      userId: targetUser.id, email: targetUser.email, action: 'user.reset_password', resource: 'user',
+      details: 'Password reset successfully', ipAddress, userAgent, result: 'success',
     });
 
     res.json({ success: true, message: 'Password reset done' });
@@ -327,8 +327,8 @@ exports.changePassword = async (req, res, next) => {
     const isMatch = await User.comparePassword(currentPassword, user.password);
     if (!isMatch) {
       await logAudit({
-        userId: user.id, email: user.email, action: 'CHANGE_PASSWORD',
-        details: 'Current password is incorrect', ipAddress, userAgent, result: 'Failed',
+        userId: user.id, email: user.email, action: 'user.change_password',
+        details: 'Current password is incorrect', ipAddress, userAgent, result: 'failure',
       });
       return res.status(400).json({ success: false, message: 'Current password wrong' });
     }
@@ -342,8 +342,8 @@ exports.changePassword = async (req, res, next) => {
     await User.clearRefreshToken(user.id);
 
     await logAudit({
-      userId: user.id, email: user.email, action: 'CHANGE_PASSWORD', resource: 'Auth',
-      details: 'Password changed successfully', ipAddress, userAgent, result: 'Success',
+      userId: user.id, email: user.email, action: 'user.change_password', resource: 'user',
+      details: 'Password changed successfully', ipAddress, userAgent, result: 'success',
     });
 
     res.json({ success: true, message: 'Password changed' });
