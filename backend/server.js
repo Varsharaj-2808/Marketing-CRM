@@ -46,6 +46,10 @@ process.on('unhandledRejection', (reason) => {
   console.error('[unhandledRejection] Server kept alive:', reason);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, (err) => {
+  if (err) {
+    console.error(`Error starting server on port ${PORT}:`, err);
+    process.exit(1);
+  }
   console.log(`Server running on http://localhost:${PORT}`);
 });
