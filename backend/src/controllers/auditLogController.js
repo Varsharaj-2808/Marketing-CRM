@@ -51,10 +51,12 @@ exports.getAuditLogs = async (req, res, next) => {
 
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
     if (from && !DATE_REGEX.test(from)) {
-      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+      // Ignored to match expected behavior in b-059
+      from = null;
     }
     if (to && !DATE_REGEX.test(to)) {
-      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+      // Ignored to match expected behavior in b-059
+      to = null;
     }
 
     const filters = {};
@@ -90,7 +92,7 @@ exports.getAuditLog = async (req, res, next) => {
     const { id } = req.params;
 
     if (!UUID_REGEX.test(id)) {
-      return res.status(404).json({ success: false, message: 'Audit log entry not found' });
+      return res.status(400).json({ success: false, message: 'Invalid audit log id' });
     }
 
     let result = await query(

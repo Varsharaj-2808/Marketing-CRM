@@ -2,10 +2,16 @@ const LeadHistory = require('../models/LeadHistory');
 const Lead = require('../models/Lead');
 const { query } = require('../config/db');
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 exports.getFieldHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { field_name, page = 1, limit = 50 } = req.query;
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
 
     const lead = await Lead.findById(id);
     if (!lead) {
@@ -51,6 +57,10 @@ exports.exportFieldHistory = async (req, res, next) => {
 
     if (format !== 'csv') {
       return res.status(400).json({ success: false, message: 'Format must be csv' });
+    }
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     const lead = await Lead.findById(id);

@@ -492,17 +492,46 @@ exports.closeLeadLost = async (req, res, next) => {
       }
     }
 
-    const updatedLead = await Lead.closeLost(id, lost_reason);
+    let client;
+    let updatedLead;
+    try {
+      client = await getClient();
+      await client.query('BEGIN');
 
-    await LeadHistory.create({
-      leadId: id,
-      fieldName: 'stage',
-      oldValue: lead.stage,
-      newValue: 'Lost',
-      changeSummary: `Lead closed as Lost by ${req.user.name || req.user.email} (Reason: ${lost_reason})`,
-      changedBy: req.user.id,
-      reason: lost_reason
-    });
+      const updateRes = await client.query(
+        `UPDATE leads SET stage = 'Lost', lead_status = 'Closed', lost_reason = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [lost_reason, id]
+      );
+      updatedLead = updateRes.rows[0];
+
+      if (!updatedLead) {
+        const fallbackRes = await query(
+          `UPDATE leads SET stage = 'Lost', lead_status = 'Closed', lost_reason = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+          [lost_reason, id]
+        );
+        updatedLead = fallbackRes.rows[0];
+      }
+
+      await LeadHistory.create({
+        leadId: id,
+        fieldName: 'stage',
+        oldValue: lead.stage,
+        newValue: 'Lost',
+        changeSummary: `Lead closed as Lost by ${req.user.name || req.user.email} (Reason: ${lost_reason})`,
+        changedBy: req.user.id,
+        reason: lost_reason
+      }, client);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      if (client) await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      if (client) {
+        client.release();
+        client = null;
+      }
+    }
 
     await AuditLog.create({
       userId: req.user.id,
@@ -595,17 +624,46 @@ exports.closeLeadWon = async (req, res, next) => {
       });
     }
 
-    const updatedLead = await Lead.closeWon(id, numericValue, closure_date);
+    let client;
+    let updatedLead;
+    try {
+      client = await getClient();
+      await client.query('BEGIN');
 
-    await LeadHistory.create({
-      leadId: id,
-      fieldName: 'stage',
-      oldValue: lead.stage,
-      newValue: 'Won',
-      changeSummary: `Lead closed as Won by ${req.user.name || req.user.email} (Value: ${numericValue}, Date: ${closure_date})`,
-      changedBy: req.user.id,
-      metadata: { final_deal_value: numericValue, closure_date }
-    });
+      const updateRes = await client.query(
+        `UPDATE leads SET stage = 'Won', lead_status = 'Closed', final_deal_value = $1, closure_date = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
+        [numericValue, closure_date, id]
+      );
+      updatedLead = updateRes.rows[0];
+
+      if (!updatedLead) {
+        const fallbackRes = await query(
+          `UPDATE leads SET stage = 'Won', lead_status = 'Closed', final_deal_value = $1, closure_date = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
+          [numericValue, closure_date, id]
+        );
+        updatedLead = fallbackRes.rows[0];
+      }
+
+      await LeadHistory.create({
+        leadId: id,
+        fieldName: 'stage',
+        oldValue: lead.stage,
+        newValue: 'Won',
+        changeSummary: `Lead closed as Won by ${req.user.name || req.user.email} (Value: ${numericValue}, Date: ${closure_date})`,
+        changedBy: req.user.id,
+        metadata: { final_deal_value: numericValue, closure_date }
+      }, client);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      if (client) await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      if (client) {
+        client.release();
+        client = null;
+      }
+    }
 
     await AuditLog.create({
       userId: req.user.id,

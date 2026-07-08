@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+const { query, getClient } = require('../config/db');
 const { sendDailyReminderEmail } = require('../utils/emailService');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
@@ -191,30 +191,59 @@ exports.reopenLead = async (req, res, next) => {
       return res.status(400).json({ error: `Lead is not closed. Current stage: ${lead.stage}` });
     }
 
-    const updatedLead = await Lead.reopen(id);
+    let client;
+    let updatedLead;
+    try {
+      client = await getClient();
+      await client.query('BEGIN');
 
-    await LeadHistory.create({
-      leadId: id,
-      fieldName: 'Lead Reopened',
-      oldValue: lead.stage,
-      newValue: 'Contacted',
-      changeSummary: `Lead reopened by Admin (Reason: ${reason})`,
-      changedBy: req.user.id,
-      reason
-    });
+      const updateRes = await client.query(
+        `UPDATE leads SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
+        [id]
+      );
+      updatedLead = updateRes.rows[0];
 
-    const { ipAddress, userAgent } = getIpAndAgent(req);
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'LEAD_REOPENED',
-      resource: 'Lead',
-      resourceId: updatedLead.lead_id,
-      details: JSON.stringify({ oldStage: lead.stage, reason }),
-      ipAddress,
-      userAgent,
-      result: 'Success'
-    });
+      if (!updatedLead) {
+        const fallbackRes = await query(
+          `UPDATE leads SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
+          [id]
+        );
+        updatedLead = fallbackRes.rows[0];
+      }
+
+      await LeadHistory.create({
+        leadId: id,
+        fieldName: 'Lead Reopened',
+        oldValue: lead.stage,
+        newValue: 'Contacted',
+        changeSummary: `Lead reopened by Admin (Reason: ${reason})`,
+        changedBy: req.user.id,
+        reason
+      }, client);
+
+      const { ipAddress, userAgent } = getIpAndAgent(req);
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'LEAD_REOPENED',
+        resource: 'Lead',
+        resourceId: updatedLead.lead_id,
+        details: JSON.stringify({ oldStage: lead.stage, reason }),
+        ipAddress,
+        userAgent,
+        result: 'Success'
+      });
+
+      await client.query('COMMIT');
+    } catch (err) {
+      if (client) await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      if (client) {
+        client.release();
+        client = null;
+      }
+    }
 
     const responseLead = { ...updatedLead, status: updatedLead.lead_status };
     return res.status(200).json({ success: true, data: responseLead });
