@@ -5,9 +5,8 @@ import SelectField from '../common/SelectField';
 const LOST_REASONS = [
   'Budget',
   'Competitor',
-  'Not Interested',
   'No Response',
-  'Timing',
+  'Cancelled',
   'Other',
 ];
 

@@ -3,27 +3,27 @@ import Modal from '../common/Modal';
 import InputField from '../common/InputField';
 
 export default function WonClosureModal({ isOpen, onClose, onConfirm, loading }) {
-  const [dealValue, setDealValue] = useState('');
+  const [finalDealValue, setFinalDealValue] = useState('');
   const [closureDate, setClosureDate] = useState('');
   const [errors, setErrors] = useState({});
 
   function handleConfirm() {
     const newErrors = {};
-    if (dealValue === '') {
-      newErrors.dealValue = 'Final deal value is required.';
-    } else if (Number(dealValue) < 0) {
-      newErrors.dealValue = 'Deal value cannot be negative.';
+    if (finalDealValue === '') {
+      newErrors.finalDealValue = 'Final deal value is required.';
+    } else if (Number(finalDealValue) < 0) {
+      newErrors.finalDealValue = 'Deal value cannot be negative.';
     }
     if (!closureDate) {
       newErrors.closureDate = 'Closure date is required.';
     }
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
-    onConfirm(Number(dealValue), closureDate);
+    onConfirm(Number(finalDealValue), closureDate);
   }
 
   function handleClose() {
-    setDealValue('');
+    setFinalDealValue('');
     setClosureDate('');
     setErrors({});
     onClose();
@@ -37,12 +37,12 @@ export default function WonClosureModal({ isOpen, onClose, onConfirm, loading })
       <div className="space-y-4">
         <InputField
           label="Final Deal Value"
-          name="deal-value"
+          name="final-deal-value"
           type="number"
-          value={dealValue}
-          onChange={(e) => { setDealValue(e.target.value); setErrors((prev) => ({ ...prev, dealValue: '' })); }}
+          value={finalDealValue}
+          onChange={(e) => { setFinalDealValue(e.target.value); setErrors((prev) => ({ ...prev, finalDealValue: '' })); }}
           placeholder="Enter amount"
-          error={errors.dealValue}
+          error={errors.finalDealValue}
           required
         />
         <InputField

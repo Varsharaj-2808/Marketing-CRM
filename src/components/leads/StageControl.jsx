@@ -20,6 +20,7 @@ export default function StageControl({
   currentStage,
   currentStatus,
   isAdmin,
+  isLeadOwner,
   onStageChange,
   onCloseAsWon,
   onOpenReopen,
@@ -49,7 +50,7 @@ export default function StageControl({
           />
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
-          {currentStage === 'Negotiation' && !isClosed && (
+          {currentStage === 'Negotiation' && !isClosed && (isAdmin || isLeadOwner) && (
             <button
               type="button"
               onClick={onCloseAsWon}

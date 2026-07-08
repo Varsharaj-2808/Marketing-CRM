@@ -1203,7 +1203,7 @@
     {
       "uuid": "958c3cd4-8d77-47eb-bbde-41586408e597",
       "type": "http",
-      "documentation": "TASK-3.2.1-01 | CRM_Story3_2.xlsx | POST /marketing/leads – Auto-generate Lead ID LD-YYYY-NNNNN",
+      "documentation": "TASK-3.2.1-01 | CRM_Story3_2.xlsx | POST /marketing/leads â€“ Auto-generate Lead ID LD-YYYY-NNNNN",
       "method": "post",
       "endpoint": "marketing/leads",
       "responses": [
@@ -1212,7 +1212,7 @@
           "body": "{\n  \"success\": true,\n  \"message\": \"Lead created successfully.\",\n  \"data\": {\n    \"id\": \"a0570b14-f4d9-4ee5-bd63-e510716a6d2f\",\n    \"seq\": \"12\",\n    \"lead_id\": \"LD-2026-86808\",\n    \"company_name\": \"Acme Corp\",\n    \"contact_person\": \"John Smith\",\n    \"mobile_number\": \"9999999901\",\n    \"email\": \"john@acme.com\",\n    \"website\": \"https://acme.com\",\n    \"city\": \"Mumbai\",\n    \"lead_source\": \"Website\",\n    \"category\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category\": \"885ba1d3-1c78-4112-8825-c5fda3ee3c83\",\n    \"service_interested\": [\n      \"CRM\"\n    ],\n    \"priority\": \"Hot\",\n    \"estimated_value\": \"50000.00\",\n    \"assigned_to\": \"b2575f19-b5da-4972-98f1-0edc5e7069bd\",\n    \"stage\": \"New Lead\",\n    \"lead_status\": \"New Lead\",\n    \"created_at\": \"2026-07-03T12:01:35.552Z\",\n    \"updated_at\": \"2026-07-03T12:01:35.552Z\",\n    \"assigned_at\": null,\n    \"lost_reason\": null,\n    \"final_deal_value\": null,\n    \"closure_date\": null,\n    \"deleted_at\": null\n  }\n}",
           "latency": 0,
           "statusCode": 201,
-          "label": "TASK-3.2.1-01 | Success – Lead created with auto-generated LD-YYYY-NNNNN ID",
+          "label": "TASK-3.2.1-01 | Success â€“ Lead created with auto-generated LD-YYYY-NNNNN ID",
           "headers": [
             {
               "key": "Content-Type",
@@ -1393,7 +1393,7 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"Format must be csv or excel\"\n}",
           "latency": 0,
           "statusCode": 400,
-          "label": "TASK-3.2.1-04 | Invalid format param – 400",
+          "label": "TASK-3.2.1-04 | Invalid format param â€“ 400",
           "headers": [
             {
               "key": "Content-Type",
@@ -1425,7 +1425,7 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"No leads found for the given filters\"\n}",
           "latency": 0,
           "statusCode": 404,
-          "label": "TASK-3.2.1-04 | No leads match filters – 404",
+          "label": "TASK-3.2.1-04 | No leads match filters â€“ 404",
           "headers": [
             {
               "key": "Content-Type",
@@ -4794,6 +4794,1167 @@
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"lead_id\": \"lead-001\",\n    \"total_changes\": 15,\n    \"history\": [\n      {\n        \"field\": \"status\",\n        \"old_value\": \"New\",\n        \"new_value\": \"Contacted\",\n        \"source\": \"user\",\n        \"changed_by\": { \"id\": \"EMP-00001\", \"name\": \"John Doe\" },\n        \"changed_at\": \"2026-06-20T10:00:00Z\"\n      },\n      {\n        \"field\": \"lead_quality\",\n        \"old_value\": \"Cold\",\n        \"new_value\": \"Hot\",\n        \"source\": \"user\",\n        \"changed_by\": { \"id\": \"EMP-00002\", \"name\": \"Jane Smith\" },\n        \"changed_at\": \"2026-06-22T14:00:00Z\"\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total_pages\": 1\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "505b60b7-1488-4185-8a9a-0a42400997e5",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Not authorized to view this lead's history\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "Authorization",
+              "target": "header",
+              "value": "Bearer unauthorized-token"
+            }
+          ],
+          "label": "Lead not assigned to logged-in user",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 403,
+          "uuid": "37047bc9-b739-48c8-bfcb-66a08a837cc2",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "a118f117-86a1-4a53-a30e-1232d36b8393",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid lead ID\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "invalid"
+            }
+          ],
+          "label": "Invalid lead ObjectId format",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "a29cdbae-e14a-4ecc-b0c1-271f4fd00274",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "get",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 GET field history (ME)",
+      "uuid": "14bbc985-a1d8-4c37-98e7-b546b7d6f4d9",
+      "endpoint": "/marketing/leads/:id/field-history",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"lead_id\": \"lead-001\",\n    \"total_changes\": 30,\n    \"history\": [\n      {\n        \"field\": \"company_name\",\n        \"old_value\": \"Old Corp\",\n        \"new_value\": \"New Corp Ltd\",\n        \"source\": \"user\",\n        \"changed_by\": { \"id\": \"EMP-00001\", \"name\": \"John Doe\" },\n        \"changed_at\": \"2026-06-20T10:00:00Z\"\n      },\n      {\n        \"field\": \"assigned_to\",\n        \"old_value\": \"UserA\",\n        \"new_value\": \"UserB\",\n        \"source\": \"user\",\n        \"changed_by\": { \"id\": \"EMP-00002\", \"name\": \"Jane Smith\" },\n        \"changed_at\": \"2026-06-22T14:00:00Z\"\n      },\n      {\n        \"field\": \"stage\",\n        \"old_value\": \"New\",\n        \"new_value\": \"Contacted\",\n        \"source\": \"system\",\n        \"changed_by\": { \"id\": \"system\", \"name\": \"Auto Stage Validation\" },\n        \"changed_at\": \"2026-06-23T09:00:00Z\"\n      }\n    ]\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 50,\n    \"total_pages\": 1\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "cee8ddd3-439d-4cbf-bf99-92bce8a82dc5",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "5b8be06e-8058-4c51-8ca1-a226e6eb89b6",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid lead ID\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "invalid"
+            }
+          ],
+          "label": "Invalid lead ObjectId format",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "a7adc9f0-78c3-4be3-a9e2-86580564e804",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "get",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 GET field history (Admin)",
+      "uuid": "2de127a5-656c-4342-8547-699dd76793cc",
+      "endpoint": "/admin/leads/:id/field-history",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "field_name,old_value,new_value,changed_by,changed_at\nstage,New,Contacted,John Doe,2026-07-05T10:30:00Z\nassigned_to,,John Doe,System,2026-07-05T09:00:00Z\nstatus,,Won,Admin User,2026-07-04T14:00:00Z",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "03b27e07-08dd-4303-bcd2-7faa944f7fb5",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Format must be csv\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "format",
+              "target": "query",
+              "value": "pdf"
+            }
+          ],
+          "label": "Invalid format param",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "3fc09d4d-907d-4fa5-a58a-78378e739c1d",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "01e44480-3816-48bd-9906-b9fb582d3d01",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"No history found for this lead\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "empty-lead"
+            }
+          ],
+          "label": "No history entries for this lead",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "6d877282-225b-4b4b-aa8a-d36761d3d7e4",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "get",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 GET field history export CSV",
+      "uuid": "49c3527a-2ccd-49c0-80ca-9e6960b07bc2",
+      "endpoint": "/admin/leads/:id/field-history/export",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"log-001\",\n      \"action\": \"lead.status_changed\",\n      \"entity\": \"lead\",\n      \"entity_id\": \"LD-2026-00001\",\n      \"performed_by\": { \"id\": \"EMP-00001\", \"name\": \"John Doe\", \"role\": \"Marketing\" },\n      \"ip_address\": \"203.0.113.45\",\n      \"details\": { \"field\": \"status\", \"from\": \"New\", \"to\": \"Contacted\" },\n      \"timestamp\": \"2026-06-20T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 20,\n    \"total_records\": 980\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "601366a0-40ff-43d7-949b-eec266a5a605",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid date format. Use YYYY-MM-DD\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "from",
+              "target": "query",
+              "value": "invalid"
+            }
+          ],
+          "label": "Missing or invalid date range",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "cf7d6674-978a-4600-84b5-707030884211",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "get",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 GET audit log",
+      "uuid": "c80aba0f-c8d5-41c9-ac25-932c0c5642ff",
+      "endpoint": "/admin/audit-log",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"log-001\",\n    \"action\": \"user.deactivated\",\n    \"entity\": \"user\",\n    \"entity_id\": \"USR-001\",\n    \"performed_by\": { \"id\": \"ADM-001\", \"name\": \"Admin User\" },\n    \"ip_address\": \"203.0.113.1\",\n    \"details\": {},\n    \"timestamp\": \"2026-06-20T10:00:00Z\"\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "ab04e569-67f4-4fd8-8eea-91791151a3f5",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Audit log entry not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Audit log entry not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "64b6f547-361b-4122-b885-4a9f9d2f30e7",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid audit log ID\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "invalid"
+            }
+          ],
+          "label": "Invalid audit log ObjectId format",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "8f1cec00-bf7a-4ad8-99ee-03d3200d7a8c",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "get",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 GET audit log detail",
+      "uuid": "2835ff23-5cc6-4c03-8c02-7cfa29edbf9a",
+      "endpoint": "/admin/audit-log/:id",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "id,action,entity,entity_id,performed_by,ip_address,details,timestamp\nlog-001,lead.status_changed,lead,LD-2026-00001,John Doe,203.0.113.45,\"{'field': 'status', 'from': 'New', 'to': 'Contacted'}\",2026-06-20T10:00:00Z\nlog-002,user.deactivated,user,USR-001,Admin User,203.0.113.1,{},2026-06-19T15:00:00Z",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "77363751-6030-4354-bf65-981364736bea",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Format must be csv\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "format",
+              "target": "query",
+              "value": "pdf"
+            }
+          ],
+          "label": "Invalid format param",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "414293c2-a5c5-497c-bd28-28dd6f5f7043",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid date format. Use YYYY-MM-DD\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "from",
+              "target": "query",
+              "value": "invalid"
+            }
+          ],
+          "label": "Missing or invalid date range",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "b18ca5d0-f602-4098-8b21-56475b973595",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "get",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 GET audit log export CSV",
+      "uuid": "d30c48a7-b7f5-47a4-890d-4d863145d909",
+      "endpoint": "/admin/audit-log/export",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Lead closed as Won\",\n  \"data\": {\n    \"id\": \"lead-001\",\n    \"status\": \"Won\",\n    \"final_deal_value\": 250000,\n    \"closure_date\": \"2026-06-30\",\n    \"closed_at\": \"2026-06-30T10:00:00Z\"\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Close lead as Won",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "a3d6a0ca-b228-4a4f-b8c1-a813839fce5f",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Lead closed as Lost\",\n  \"data\": {\n    \"id\": \"lead-001\",\n    \"status\": \"Lost\",\n    \"loss_reason\": \"Budget\",\n    \"closed_at\": \"2026-06-30T10:00:00Z\"\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "status",
+              "target": "body",
+              "value": "Lost"
+            }
+          ],
+          "label": "Close lead as Lost",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "07ddb5e3-2f8d-4e2b-b6a3-3255a1e1b1e8",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Not authorized to close this lead\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "Authorization",
+              "target": "header",
+              "value": "Bearer unauthorized-token"
+            }
+          ],
+          "label": "Lead not assigned to user",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 403,
+          "uuid": "30b49140-8071-40e5-8564-f0f4e2bbd4ce",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "ad56af6b-118d-4291-8d79-18e92e11b4b0",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Status must be Won or Lost to close\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "status",
+              "target": "body",
+              "value": "New"
+            }
+          ],
+          "label": "Status not Won or Lost",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "966e78d4-b83d-41b9-9f43-604b16ccc15d",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Loss reason is required when closing as Lost\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "status",
+              "target": "body",
+              "value": "Lost"
+            },
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "loss_reason",
+              "target": "body",
+              "value": ""
+            }
+          ],
+          "label": "Missing loss_reason for Lost",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "fbeed202-5ae3-4c52-8ccd-1aca97f71431",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Loss reason must be: Budget, Competitor, No Response, Cancelled, Other\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "loss_reason",
+              "target": "body",
+              "value": "Invalid"
+            }
+          ],
+          "label": "Invalid loss_reason enum",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "5ebd02e9-3b5d-4dd8-8f79-df02cca33150",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"final_deal_value and closure_date are required when closing as Won\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "status",
+              "target": "body",
+              "value": "Won"
+            },
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "final_deal_value",
+              "target": "body",
+              "value": ""
+            }
+          ],
+          "label": "Won closure missing final_deal_value or closure_date",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "df155dae-12cd-4a07-9c71-39931df0eeb8",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "put",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 PUT close lead",
+      "uuid": "b5a39942-694e-48b2-8b95-f8bb965663f7",
+      "endpoint": "/marketing/leads/:id/close",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Lead reopened\",\n  \"data\": {\n    \"id\": \"lead-001\",\n    \"status\": \"Contacted\",\n    \"reopened_by\": { \"id\": \"ADM-001\", \"name\": \"Admin User\" },\n    \"reopen_reason\": \"Client expressed renewed interest after 3 months\",\n    \"reopened_at\": \"2026-07-07T10:00:00Z\"\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "bdccda13-b867-4dca-a6fa-cbf1ef3cdebf",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Reopen reason is required\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "reopen_reason",
+              "target": "body",
+              "value": ""
+            }
+          ],
+          "label": "Missing reopen reason",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "9ca43268-56e0-4648-b2ab-c03187ccd545",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Only Won or Lost leads can be reopened\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "reopen_reason",
+              "target": "body",
+              "value": "reason"
+            }
+          ],
+          "label": "Lead is not in Won or Lost status",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "1a0cb709-6e79-4ace-936f-2215914d00c6",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "f097c921-c9f1-421f-ace1-067754cba9b0",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "put",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 PUT reopen lead",
+      "uuid": "3c83881b-2c56-434e-8bd6-52982dee1998",
+      "endpoint": "/admin/leads/:id/reopen",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Status updated\",\n  \"data\": {\n    \"id\": \"lead-001\",\n    \"company_name\": \"TechCorp\",\n    \"status\": \"Contacted\"\n  },\n  \"history_logged\": {\n    \"field\": \"status\",\n    \"old_value\": \"New\",\n    \"new_value\": \"Contacted\",\n    \"changed_by\": \"EMP-00001\",\n    \"changed_at\": \"2026-07-07T10:00:00Z\"\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "c29bbaab-b116-4392-92f1-0f5626336861",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Not authorized to update this lead\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "Authorization",
+              "target": "header",
+              "value": "Bearer unauthorized-token"
+            }
+          ],
+          "label": "Lead not assigned to user",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 403,
+          "uuid": "632758e0-5edd-4298-8d64-7f3ff250716b",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Status must be: New, Contacted, Qualified, Meeting, Proposal, Negotiation, Won, Lost, Hold\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "status",
+              "target": "body",
+              "value": "Invalid"
+            }
+          ],
+          "label": "Invalid status enum",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "b4dfb411-691d-48ea-ba31-45eebc16e272",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "a9a07ff4-0e47-41ab-9cce-81f1720b64aa",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid stage transition. New Lead can only move to Contacted.\", \"allowed_next\": [\"Contacted\"]}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "status",
+              "target": "body",
+              "value": "Qualified"
+            }
+          ],
+          "label": "Invalid stage transition",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 422,
+          "uuid": "2b76a50d-3a63-4143-8d31-22b360aee946",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "put",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 PUT update lead status",
+      "uuid": "e1a2b3c4-d5e6-7890-abcd-ef1234567890",
+      "endpoint": "/marketing/leads/:id/status",
+      "streamingInterval": 0
+    },
+    {
+      "responseMode": null,
+      "responses": [
+        {
+          "latency": 0,
+          "default": true,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Lead assigned\",\n  \"data\": {\n    \"id\": \"lead-001\",\n    \"company_name\": \"TechCorp\",\n    \"assigned_to\": { \"id\": \"EMP-00002\", \"name\": \"Jane Smith\" }\n  },\n  \"history_logged\": {\n    \"field\": \"assigned_to\",\n    \"old_value\": \"\",\n    \"new_value\": \"Jane Smith\",\n    \"changed_by\": \"ADM-001\",\n    \"changed_at\": \"2026-07-07T10:00:00Z\"\n  }\n}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [],
+          "label": "Default",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 200,
+          "uuid": "cf1cc681-5b2d-40ff-a411-2803f5afd649",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid lead ID\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "invalid"
+            }
+          ],
+          "label": "Invalid lead ObjectId",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "d31d6212-1411-4acf-8951-fc6d7e485f1c",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Lead not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "id",
+              "target": "params",
+              "value": "nonexistent"
+            }
+          ],
+          "label": "Lead not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "5ce6afe0-922f-4596-91db-cb67fe47b156",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"Invalid user ID\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "assigned_to",
+              "target": "body",
+              "value": "invalid"
+            }
+          ],
+          "label": "Invalid user ObjectId",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 400,
+          "uuid": "b1eebd34-ba15-4a90-a7c5-0ec2ba3c5e3f",
+          "databucketID": ""
+        },
+        {
+          "latency": 0,
+          "default": false,
+          "body": "{\"success\": false, \"message\": \"User not found\"}",
+          "callbacks": [],
+          "crudKey": "id",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "rules": [
+            {
+              "invert": false,
+              "operator": "equals",
+              "modifier": "assigned_to",
+              "target": "body",
+              "value": "nonexistent-user-id"
+            }
+          ],
+          "label": "Target user not found",
+          "rulesOperator": "OR",
+          "sendFileAsBody": false,
+          "statusCode": 404,
+          "uuid": "85257bc1-8bb6-4fbe-a7eb-c6861e289e06",
+          "databucketID": ""
+        }
+      ],
+      "type": "http",
+      "method": "patch",
+      "streamingMode": null,
+      "documentation": "STORY-5.1.1 PATCH assign lead",
+      "uuid": "f5a6b7c8-d9e0-1234-abcd-ef5678901234",
+      "endpoint": "/admin/leads/:id/assign",
+      "streamingInterval": 0
     }
   ],
   "rootChildren": [
@@ -4964,6 +6125,46 @@
     {
       "type": "route",
       "uuid": "958c3cd4-8d77-47eb-bbde-41586408e597"
+    },
+    {
+      "type": "route",
+      "uuid": "14bbc985-a1d8-4c37-98e7-b546b7d6f4d9"
+    },
+    {
+      "type": "route",
+      "uuid": "2de127a5-656c-4342-8547-699dd76793cc"
+    },
+    {
+      "type": "route",
+      "uuid": "49c3527a-2ccd-49c0-80ca-9e6960b07bc2"
+    },
+    {
+      "type": "route",
+      "uuid": "c80aba0f-c8d5-41c9-ac25-932c0c5642ff"
+    },
+    {
+      "type": "route",
+      "uuid": "2835ff23-5cc6-4c03-8c02-7cfa29edbf9a"
+    },
+    {
+      "type": "route",
+      "uuid": "d30c48a7-b7f5-47a4-890d-4d863145d909"
+    },
+    {
+      "type": "route",
+      "uuid": "b5a39942-694e-48b2-8b95-f8bb965663f7"
+    },
+    {
+      "type": "route",
+      "uuid": "3c83881b-2c56-434e-8bd6-52982dee1998"
+    },
+    {
+      "type": "route",
+      "uuid": "e1a2b3c4-d5e6-7890-abcd-ef1234567890"
+    },
+    {
+      "type": "route",
+      "uuid": "f5a6b7c8-d9e0-1234-abcd-ef5678901234"
     }
   ],
   "proxyMode": false,

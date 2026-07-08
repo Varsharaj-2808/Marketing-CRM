@@ -26,6 +26,7 @@ import WonClosureModal from '../../components/leads/WonClosureModal';
 import ReopenLeadModal from '../../components/leads/ReopenLeadModal';
 import FollowUpModal from '../../components/leads/FollowUpModal';
 import Timeline from '../../components/leads/Timeline';
+import FieldHistory from '../../components/leads/FieldHistory';
 import { getLeadField, toDisplayText } from '../../utils/leadDisplay';
 
 const STATUS_MAP = {
@@ -69,6 +70,8 @@ export default function LeadDetails() {
   const [followUpModalOpen, setFollowUpModalOpen] = useState(false);
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
   const [followUpServerError, setFollowUpServerError] = useState('');
+
+  const [activeTab, setActiveTab] = useState('timeline');
 
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -496,6 +499,7 @@ export default function LeadDetails() {
               currentStage={leadStage}
               currentStatus={getLeadField(lead, ['status'], '')}
               isAdmin={isAdmin}
+              isLeadOwner={isLeadOwner()}
               onStageChange={handleStageChange}
               onCloseAsWon={handleCloseAsWon}
               onOpenReopen={() => setReopenModalOpen(true)}
@@ -576,70 +580,107 @@ export default function LeadDetails() {
           )}
 
           <div className="mt-8 pt-6 border-t border-outline-variant/30">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-headline-md text-headline-md text-on-surface">
+            <div className="flex items-center gap-6 border-b border-outline-variant/20 mb-4" role="tablist" aria-label="Lead detail tabs">
+              <button
+                role="tab"
+                id="tab-timeline"
+                aria-selected={activeTab === 'timeline'}
+                aria-controls="panel-timeline"
+                onClick={() => setActiveTab('timeline')}
+                className={`pb-2 text-label-md font-label-md transition-colors relative ${activeTab === 'timeline' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
                 Timeline
-              </h3>
-              <div className="flex items-center gap-2">
-                {isClosedLead && !isReadOnly && (isLeadOwner() || isAdmin) && (
-                  <span
-                    className="text-label-sm text-on-surface-variant/50"
-                    title="Cannot add follow-up to a closed lead."
-                  >
+                {activeTab === 'timeline' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+              </button>
+              <button
+                role="tab"
+                id="tab-history"
+                aria-selected={activeTab === 'history'}
+                aria-controls="panel-history"
+                onClick={() => setActiveTab('history')}
+                className={`pb-2 text-label-md font-label-md transition-colors relative ${activeTab === 'history' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                History
+                {activeTab === 'history' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+              </button>
+            </div>
+
+            <div role="tabpanel" id="panel-timeline" aria-labelledby="tab-timeline" className={activeTab !== 'timeline' ? 'hidden' : ''}>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-headline-md text-headline-md text-on-surface">
+                    Timeline
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {isClosedLead && !isReadOnly && (isLeadOwner() || isAdmin) && (
+                      <span
+                        className="text-label-sm text-on-surface-variant/50"
+                        title="Cannot add follow-up to a closed lead."
+                      >
+                        <button
+                          ref={followUpButtonRef}
+                          disabled={true}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-200 text-gray-400 text-label-sm font-label-sm cursor-not-allowed"
+                          title="Cannot add follow-up to a closed lead."
+                        >
+                          <span className="material-symbols-outlined text-[16px]">add</span>
+                          Log Follow-up
+                        </button>
+                      </span>
+                    )}
+                    {!isClosedLead && !canLogFollowUp && !isReadOnly && (
+                      <span className="text-label-sm text-on-surface-variant/50">
+                        Only the lead owner can log follow-up actions.
+                      </span>
+                    )}
+                    {!isClosedLead && canLogFollowUp && (
+                      <button
+                        ref={followUpButtonRef}
+                        onClick={handleLogFollowUp}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-label-sm font-label-sm hover:bg-primary/90 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add</span>
+                        Log Follow-up
+                      </button>
+                    )}
                     <button
-                      ref={followUpButtonRef}
-                      disabled={true}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-200 text-gray-400 text-label-sm font-label-sm cursor-not-allowed"
-                      title="Cannot add follow-up to a closed lead."
+                      onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}/lead-history`)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label-sm font-label-sm text-primary hover:bg-primary/5 border border-primary/20 transition-all"
                     >
-                      <span className="material-symbols-outlined text-[16px]">add</span>
-                      Log Follow-up
+                      <span className="material-symbols-outlined text-[16px]">history</span>
+                      View Full History
                     </button>
-                  </span>
-                )}
-                {!isClosedLead && !canLogFollowUp && !isReadOnly && (
-                  <span className="text-label-sm text-on-surface-variant/50">
-                    Only the lead owner can log follow-up actions.
-                  </span>
-                )}
-                {!isClosedLead && canLogFollowUp && (
-                  <button
-                    ref={followUpButtonRef}
-                    onClick={handleLogFollowUp}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-label-sm font-label-sm hover:bg-primary/90 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">add</span>
-                    Log Follow-up
-                  </button>
-                )}
-                <button
-                  onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}/lead-history`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label-sm font-label-sm text-primary hover:bg-primary/5 border border-primary/20 transition-all"
-                >
-                  <span className="material-symbols-outlined text-[16px]">history</span>
-                  View Full History
-                </button>
+                  </div>
+                </div>
+                <Timeline
+                  timeline={timelineItems}
+                  loading={historyLoading}
+                  hasMore={timelinePagination.has_more}
+                  onLoadMore={handleLoadMoreTimeline}
+                  loadingMore={loadingMoreTimeline}
+                  currentUserId={currentUserId}
+                  isAdmin={isAdmin}
+                  isReadOnly={isReadOnly}
+                  isLeadOwner={isLeadOwner()}
+                  onAddCorrection={handleAddCorrection}
+                  emptyMessage="No history found for this lead."
+                  showLogFollowUpButton={true}
+                  onLogFollowUp={handleLogFollowUp}
+                  activeFilter={activeFilter}
+                  onFilterChange={handleFilterChange}
+                  timelineError={timelineError}
+                  onRetry={() => loadTimeline(1, true, activeFilter)}
+                />
               </div>
             </div>
-            <Timeline
-              timeline={timelineItems}
-              loading={historyLoading}
-              hasMore={timelinePagination.has_more}
-              onLoadMore={handleLoadMoreTimeline}
-              loadingMore={loadingMoreTimeline}
-              currentUserId={currentUserId}
-              isAdmin={isAdmin}
-              isReadOnly={isReadOnly}
-              isLeadOwner={isLeadOwner()}
-              onAddCorrection={handleAddCorrection}
-              emptyMessage="No history found for this lead."
-              showLogFollowUpButton={true}
-              onLogFollowUp={handleLogFollowUp}
-              activeFilter={activeFilter}
-              onFilterChange={handleFilterChange}
-              timelineError={timelineError}
-              onRetry={() => loadTimeline(1, true, activeFilter)}
-            />
+
+            <div role="tabpanel" id="panel-history" aria-labelledby="tab-history" className={activeTab !== 'history' ? 'hidden' : ''}>
+              <FieldHistory
+                leadId={leadId}
+                isAdminRoute={isAdminRoute}
+                visible={activeTab === 'history'}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -674,103 +674,11 @@ export async function updateLeadStage(leadId, stage) {
 }
 
 export async function closeLeadAsLost(leadId, reason) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/close`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ status: 'Lost', lostReason: reason }),
-    });
-    const json = await safeJson(res);
-    if (!res.ok) {
-      const error = new Error(json?.message || 'Failed to close lead as Lost.');
-      error.status = res.status;
-      throw error;
-    }
-    const lead = findLeadInStore(leadId);
-    if (lead) {
-      lead.status = 'Lost';
-      lead.stage = 'Closed';
-      lead.lostReason = reason;
-      lead.updatedAt = new Date().toISOString();
-      lead.timeline = [...(lead.timeline || []), {
-        action: 'Lead Closed',
-        message: `Lead closed as Lost (${reason})`,
-        user: 'System',
-        reason,
-        timestamp: new Date().toISOString(),
-      }];
-    }
-    return json || { success: true, data: { status: 'Lost', lostReason: reason } };
-  } catch (err) {
-    if (err?.status && err.status !== 502) throw err;
-    const lead = findLeadInStore(leadId);
-    if (lead) {
-      lead.status = 'Lost';
-      lead.stage = 'Closed';
-      lead.lostReason = reason;
-      lead.updatedAt = new Date().toISOString();
-      lead.timeline = [...(lead.timeline || []), {
-        action: 'Lead Closed',
-        message: `Lead closed as Lost (${reason})`,
-        user: 'System',
-        reason,
-        timestamp: new Date().toISOString(),
-      }];
-    }
-    return { success: true, data: { status: 'Lost', lostReason: reason } };
-  }
+  return closeLead(leadId, { status: 'Lost', loss_reason: reason });
 }
 
 export async function closeLeadAsWon(leadId, dealValue, closureDate) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/close`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ status: 'Won', dealValue, closureDate }),
-    });
-    const json = await safeJson(res);
-    if (!res.ok) {
-      const error = new Error(json?.message || 'Failed to close lead as Won.');
-      error.status = res.status;
-      throw error;
-    }
-    const lead = findLeadInStore(leadId);
-    if (lead) {
-      lead.status = 'Won';
-      lead.stage = 'Closed';
-      lead.dealValue = dealValue;
-      lead.closureDate = closureDate;
-      lead.updatedAt = new Date().toISOString();
-      lead.timeline = [...(lead.timeline || []), {
-        action: 'Lead Closed',
-        message: `Lead closed as Won with deal value ${dealValue}`,
-        user: 'System',
-        dealValue,
-        closureDate,
-        timestamp: new Date().toISOString(),
-      }];
-    }
-    return json || { success: true, data: { status: 'Won', dealValue, closureDate } };
-  } catch (err) {
-    if (err?.status && err.status !== 502) throw err;
-    const lead = findLeadInStore(leadId);
-    if (lead) {
-      lead.status = 'Won';
-      lead.stage = 'Closed';
-      lead.dealValue = dealValue;
-      lead.closureDate = closureDate;
-      lead.updatedAt = new Date().toISOString();
-      lead.timeline = [...(lead.timeline || []), {
-        action: 'Lead Closed',
-        message: `Lead closed as Won with deal value ${dealValue}`,
-        user: 'System',
-        dealValue,
-        closureDate,
-        timestamp: new Date().toISOString(),
-      }];
-    }
-    return { success: true, data: { status: 'Won', dealValue, closureDate } };
-  }
+  return closeLead(leadId, { status: 'Won', final_deal_value: dealValue, closure_date: closureDate });
 }
 
 export async function reopenLead(leadId, reason) {
@@ -1289,6 +1197,183 @@ export async function fetchAtRiskLeads(overdueDays = 3) {
     return json || { success: true, data: { total_at_risk: 0, breakdown: [], leads: [] } };
   } catch {
     return { success: true, data: { total_at_risk: 0, breakdown: [], leads: [] } };
+  }
+}
+
+export async function fetchFieldHistory(leadId, params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+  query.set('_', Date.now());
+  return await requestJson(`${API_BASE_URL}/marketing/leads/${leadId}/field-history?${query.toString()}`);
+}
+
+export async function fetchAdminFieldHistory(leadId, params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+  query.set('_', Date.now());
+  return await requestJson(`${API_BASE_URL}/admin/leads/${leadId}/field-history?${query.toString()}`);
+}
+
+export async function exportFieldHistory(leadId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/${leadId}/field-history/export?format=csv&_=${Date.now()}`, {
+      headers: {
+        ...getAuthHeaders(),
+        'Accept': 'text/csv',
+      },
+    });
+    if (!res.ok) {
+      const json = await safeJson(res);
+      const error = new Error(json?.message || 'Export failed.');
+      error.status = res.status;
+      throw error;
+    }
+    return await res.blob();
+  } catch (err) {
+    if (err?.status) throw err;
+    const blob = new Blob([], { type: 'text/csv' });
+    return blob;
+  }
+}
+
+export async function fetchAuditLogEntries(params = {}) {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+    query.set('_', Date.now());
+    return await requestJson(`${API_BASE_URL}/admin/audit-log?${query.toString()}`);
+  } catch {
+    return { success: true, data: [], pagination: { page: 1, total_pages: 1, total_records: 0 } };
+  }
+}
+
+export async function fetchAuditLogEntry(id) {
+  try {
+    return await requestJson(`${API_BASE_URL}/admin/audit-log/${id}?_=${Date.now()}`);
+  } catch {
+    return { success: false, message: 'Audit log entry not found.' };
+  }
+}
+
+export async function exportAuditLog(params = {}) {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+    query.set('format', 'csv');
+    query.set('_', Date.now());
+    const res = await fetch(`${API_BASE_URL}/admin/audit-log/export?${query.toString()}`, {
+      headers: {
+        ...getAuthHeaders(),
+        'Accept': 'text/csv',
+      },
+    });
+    if (!res.ok) {
+      const json = await safeJson(res);
+      const error = new Error(json?.message || 'Export failed.');
+      error.status = res.status;
+      throw error;
+    }
+    return await res.blob();
+  } catch (err) {
+    if (err?.status) throw err;
+    return new Blob([], { type: 'text/csv' });
+  }
+}
+
+export async function closeLead(leadId, payload) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/marketing/leads/${leadId}/close`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const json = await safeJson(res);
+    if (!res.ok) {
+      const error = new Error(json?.message || 'Failed to close lead.');
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      if (payload.status === 'Won') {
+        lead.status = 'Won';
+        lead.stage = 'Closed';
+        lead.final_deal_value = payload.final_deal_value;
+        lead.closure_date = payload.closure_date;
+        lead.closed_at = new Date().toISOString();
+      } else if (payload.status === 'Lost') {
+        lead.status = 'Lost';
+        lead.stage = 'Closed';
+        lead.loss_reason = payload.loss_reason;
+        lead.closed_at = new Date().toISOString();
+      }
+      lead.updatedAt = new Date().toISOString();
+    }
+    return json || { success: true, message: `Lead closed as ${payload.status}` };
+  } catch (err) {
+    if (err?.status && err.status !== 502) throw err;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      if (payload.status === 'Won') {
+        lead.status = 'Won';
+        lead.stage = 'Closed';
+        lead.final_deal_value = payload.final_deal_value;
+        lead.closure_date = payload.closure_date;
+      } else if (payload.status === 'Lost') {
+        lead.status = 'Lost';
+        lead.stage = 'Closed';
+        lead.loss_reason = payload.loss_reason;
+      }
+      lead.closed_at = new Date().toISOString();
+      lead.updatedAt = new Date().toISOString();
+    }
+    return { success: true, message: `Lead closed as ${payload.status}` };
+  }
+}
+
+export async function reopenLeadAdmin(leadId, reason) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/${leadId}/reopen`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reopen_reason: reason }),
+    });
+    const json = await safeJson(res);
+    if (!res.ok) {
+      const error = new Error(json?.message || 'Failed to reopen lead.');
+      error.status = res.status;
+      error.payload = json;
+      throw error;
+    }
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.status = '';
+      lead.stage = 'Contacted';
+      lead.reopen_reason = reason;
+      lead.reopened_at = new Date().toISOString();
+      delete lead.loss_reason;
+      delete lead.final_deal_value;
+      delete lead.closure_date;
+      delete lead.closed_at;
+      lead.updatedAt = new Date().toISOString();
+    }
+    return json || { success: true, message: 'Lead reopened', data: { status: 'Contacted' } };
+  } catch (err) {
+    if (err?.status && err.status !== 502) throw err;
+    const lead = findLeadInStore(leadId);
+    if (lead) {
+      lead.status = '';
+      lead.stage = 'Contacted';
+      lead.reopen_reason = reason;
+      lead.reopened_at = new Date().toISOString();
+      delete lead.loss_reason;
+      delete lead.final_deal_value;
+      delete lead.closure_date;
+      delete lead.closed_at;
+      lead.updatedAt = new Date().toISOString();
+    }
+    return { success: true, message: 'Lead reopened', data: { status: 'Contacted' } };
   }
 }
 

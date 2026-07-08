@@ -82,6 +82,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
           id: 'lead-200', leadId: 'LD-200', companyName: 'TestCorp',
           contactPerson: 'Alice', mobileNumber: '9000000100',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -111,6 +112,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
           id: 'lead-201', leadId: 'LD-201', companyName: 'TestCorp',
           contactPerson: 'Bob', mobileNumber: '9000000101',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -140,6 +142,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
           id: 'lead-202', leadId: 'LD-202', companyName: 'TestCorp',
           contactPerson: 'Charlie', mobileNumber: '9000000102',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -169,6 +172,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
           id: 'lead-203', leadId: 'LD-203', companyName: 'TestCorp',
           contactPerson: 'Diana', mobileNumber: '9000000103',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -232,6 +236,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
           id: 'lead-205', leadId: 'LD-205', companyName: 'TestCorp',
           contactPerson: 'Frank', mobileNumber: '9000000105',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -278,6 +283,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
           id: 'lead-206', leadId: 'LD-206', companyName: 'TestCorp',
           contactPerson: 'Grace', mobileNumber: '9000000106',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
@@ -479,6 +485,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
           id: 'lead-212', leadId: 'LD-212', companyName: 'TestCorp',
           contactPerson: 'Maria', mobileNumber: '9000000112',
           status: '', stage: 'Negotiation', priority: 'High',
+          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
           createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
         },
       });
