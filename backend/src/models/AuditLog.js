@@ -1,9 +1,10 @@
 const { query } = require('../config/db');
 
 const AuditLog = {
-  async create(data) {
+  async create(data, client) {
     const { userId, email, action, resource, resourceId, details, ipAddress, userAgent, result } = data;
-    const res = await query(
+    const db = client || { query };
+    const res = await db.query(
       `INSERT INTO audit_logs ("user_id", email, action, resource, "resourceId", details, "ipAddress", "userAgent", result)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,

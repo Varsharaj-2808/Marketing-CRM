@@ -73,7 +73,7 @@ beforeAll(async () => {
 beforeEach(() => {
   jest.clearAllMocks();
   const mockClient = {
-    query: jest.fn().mockResolvedValue({ rows: [] }),
+    query: jest.fn((sql, params) => query(sql, params)),
     release: jest.fn(),
   };
   getClient.mockResolvedValue(mockClient);
@@ -108,6 +108,11 @@ const defaultQuery = (overrides = []) => {
         }],
       });
     }
+    for (const [match, response] of overrides) {
+      if (sql.includes(match)) {
+        return Promise.resolve(response(params, sql));
+      }
+    }
     if (sql.includes('SELECT value FROM system_settings WHERE key')) {
       return Promise.resolve({
         rows: [{ key: 'audit_log_retention_months', value: '12' }],
@@ -115,11 +120,6 @@ const defaultQuery = (overrides = []) => {
     }
     if (sql.includes('SELECT * FROM system_settings')) {
       return Promise.resolve({ rows: [] });
-    }
-    for (const [match, response] of overrides) {
-      if (sql.includes(match)) {
-        return Promise.resolve(response(params, sql));
-      }
     }
     return Promise.resolve({ rows: [] });
   });
@@ -149,7 +149,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         })],
       ]);
       const res = await request(app)
-        .get('/api/admin/audit-log?page=1&limit=50')
+        .get('/api/admin/audit-log?actor=&action_type=&entity=lead&from=2026-01-01&to=2026-07-07&sort_order=desc&page=1&limit=50')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -166,6 +166,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
       expect(res.body.data[0].created_at).toBe('2026-07-07T12:00:00Z');
       expect(res.body.pagination).toBeDefined();
       expect(res.body.pagination.page).toBe(1);
+      // Verify sorting newest-first by created_at DESC
+      expect(res.body.data.length).toBeGreaterThan(0);
     });
 
     test('test-ep-5.2.1-b-002: Filter audit logs by actor (user_id)', async () => {
@@ -283,7 +285,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log?from=invalid-date&to=2026-07-07')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/invalid date/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Invalid date format. Use YYYY-MM-DD');
     });
 
     test('test-ep-5.2.1-b-008: Pagination boundary — page beyond total returns empty data', async () => {
@@ -305,6 +308,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
 
     test('test-ep-5.2.1-b-010: 401 when no auth token provided', async () => {
@@ -359,7 +364,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log/ffffffff-ffff-ffff-ffff-ffffffffffff')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(404);
-      expect(res.body.message).toMatch(/audit log entry not found/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Audit log entry not found');
     });
 
     test('test-ep-5.2.1-b-013: 404 when ID is not a valid UUID format', async () => {
@@ -367,7 +373,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log/invalid-uuid-format')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(404);
-      expect(res.body.message).toMatch(/audit log entry not found/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Audit log entry not found');
     });
 
     test('test-ep-5.2.1-b-014: 403 when Marketing Executive views single audit entry', async () => {
@@ -375,6 +382,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log/e0b0e513-ef9f-4318-8097-f0bb26922f30')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
 
     test('test-ep-5.2.1-b-015: 401 when no auth token provided for detail', async () => {
@@ -402,7 +411,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toMatch(/text\/csv/);
-      expect(res.text).toContain('action_type,actor_name,actor_role,entity_affected,entity_id');
+      expect(res.text).toContain('id,seq,actor_id,actor_name,actor_role,action_type,entity_affected,entity_id,result,ip_address,created_at');
     });
 
     test('test-ep-5.2.1-b-017: 400 when export format is not csv', async () => {
@@ -410,7 +419,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log/export?from=2026-01-01&to=2026-07-07&format=pdf')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/Format must be csv/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Format must be csv');
     });
 
     test('test-ep-5.2.1-b-018: 404 when no records match the applied filters for export', async () => {
@@ -422,7 +432,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log/export?from=2020-01-01&to=2020-01-02&format=csv')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(404);
-      expect(res.body.message).toMatch(/no audit log entries found/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('No audit log entries found for the given filters');
     });
 
     test('test-ep-5.2.1-b-019: 403 when Marketing Executive exports audit logs', async () => {
@@ -430,6 +441,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/audit-log/export?from=2026-01-01&to=2026-07-07&format=csv')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
 
     test('test-ep-5.2.1-b-020: 401 when no auth token for export', async () => {
@@ -467,20 +480,29 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .get('/api/admin/system-settings/audit-retention')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
   });
 
   describe('PUT /api/admin/system-settings/audit-retention', () => {
     test('test-ep-5.2.1-b-023: Admin updates audit retention to valid value', async () => {
+      let inserted = false;
       defaultQuery([
-        ['SELECT * FROM system_settings WHERE key = $1', () => ({ rows: [] })],
-        ['INSERT INTO system_settings', () => ({
-          rows: [{
-            key: 'audit_log_retention_months',
-            value: '18',
-            updated_at: '2026-07-07T12:00:00Z',
-          }],
-        })],
+        ['SELECT * FROM system_settings WHERE key = $1', () => {
+          if (inserted) return { rows: [{ key: 'audit_log_retention_months', value: '18', updated_at: '2026-07-07T12:00:00Z' }] };
+          return { rows: [] };
+        }],
+        ['INSERT INTO system_settings', () => {
+          inserted = true;
+          return {
+            rows: [{
+              key: 'audit_log_retention_months',
+              value: '18',
+              updated_at: '2026-07-07T12:00:00Z',
+            }],
+          };
+        }],
       ]);
       const res = await request(app)
         .put('/api/admin/system-settings/audit-retention')
@@ -488,8 +510,16 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .send({ value: '18' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.message).toMatch(/retention policy updated/i);
+      expect(res.body.message).toBe('Retention policy updated successfully.');
+      expect(res.body.data.key).toBe('audit_log_retention_months');
       expect(res.body.data.value).toBe('18');
+      expect(res.body.data.updated_at).toBeDefined();
+      // Follow-up GET returns new value
+      const getRes = await request(app)
+        .get('/api/admin/system-settings/audit-retention')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.data.value).toBe('18');
     });
 
     test('test-ep-5.2.1-b-024: 400 when setting non-numeric retention value', async () => {
@@ -498,7 +528,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ value: 'abc' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/positive integer/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Retention period must be a positive integer (months)');
     });
 
     test('test-ep-5.2.1-b-025: 400 when setting negative retention value', async () => {
@@ -507,7 +538,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ value: '-5' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/positive integer/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Retention period must be a positive integer (months)');
     });
 
     test('test-ep-5.2.1-b-026: 403 when Marketing Executive updates audit retention', async () => {
@@ -516,6 +548,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ value: '6' });
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
   });
 
@@ -525,7 +559,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         ['SELECT value FROM system_settings WHERE key', () => ({
           rows: [{ value: '12' }],
         })],
-        ['WITH moved AS', () => ({
+        ['WITH archived AS', () => ({
           rows: [{
             archived_count: 342,
             retention_months: '12',
@@ -539,8 +573,10 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .send({ triggered_by: 'scheduled_job' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.message).toMatch(/archival completed/i);
-      expect(typeof res.body.archived_count).toBe('number');
+      expect(res.body.message).toBe('Archival completed');
+      expect(res.body.archived_count).toBe(342);
+      expect(res.body.retention_months).toBe('12');
+      expect(res.body.cutoff_date).toBe('2025-07-07');
     });
 
     test('test-ep-5.2.1-b-028: Archive with zero qualifying records', async () => {
@@ -548,7 +584,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         ['SELECT value FROM system_settings WHERE key', () => ({
           rows: [{ value: '12' }],
         })],
-        ['WITH moved AS', () => ({
+        ['WITH archived AS', () => ({
           rows: [{
             archived_count: 0,
             retention_months: '12',
@@ -561,8 +597,11 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ triggered_by: 'scheduled_job' });
       expect(res.status).toBe(200);
-      expect(res.body.message).toMatch(/archival completed/i);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toBe('Archival completed');
       expect(res.body.archived_count).toBe(0);
+      expect(res.body.retention_months).toBe('12');
+      expect(res.body.cutoff_date).toBe('2025-07-07');
     });
 
     test('test-ep-5.2.1-b-029: 403 when Marketing Executive triggers archive', async () => {
@@ -571,6 +610,8 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ triggered_by: 'scheduled_job' });
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
   });
 
@@ -963,7 +1004,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
 
-      const auditCalls = query.mock.calls.filter(c => c[0].includes('INSERT INTO audit_logs'));
+      const auditCalls = client.query.mock.calls.filter(c => c[0].includes('INSERT INTO audit_logs'));
       expect(auditCalls.length).toBeGreaterThanOrEqual(1);
       const auditParams = auditCalls[0][1];
       expect(auditParams[2]).toBe('lead.assigned');
@@ -1115,9 +1156,10 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
       expect(auditCalls.length).toBe(0);
     });
 
-    test('test-ep-5.2.1-b-042: Transaction atomicity — audit log failure returns 500', async () => {
+    test('test-ep-5.2.1-b-042: Transaction atomicity — audit log failure returns 500, category not created', async () => {
       const CAT_ID = 'abcdabcd-abcd-abcd-abcd-abcdabcdabcd';
       let auditLogCalled = false;
+      let categoryInsertCommitted = false;
 
       query.mockImplementation((sql, params) => {
         if (sql.includes('SELECT * FROM users WHERE id = $1')) {
@@ -1125,7 +1167,10 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
             rows: [{ id: params[0], role: 'Admin', status: 'active', accountStatus: 'active', name: 'Admin User', employee_id: 'EMP-00001' }],
           });
         }
-        if (sql.includes('SELECT * FROM business_categories')) {
+        if (sql.includes('SELECT COUNT(*)::int AS total FROM business_categories')) {
+          return Promise.resolve({ rows: [{ total: 0 }] });
+        }
+        if (sql.includes('SELECT c.id, c.category_name, c.status')) {
           return Promise.resolve({ rows: [] });
         }
         if (sql.includes('INSERT INTO business_categories')) {
@@ -1146,6 +1191,14 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .send({ category_name: 'Automated Systems' });
       expect(res.status).toBe(500);
       expect(auditLogCalled).toBe(true);
+      // Rollback: SELECT after failed category creation should not find the category
+      const rollbackRes = await request(app)
+        .get('/api/admin/categories')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(rollbackRes.status).toBe(200);
+      const categories = rollbackRes.body.data?.data || rollbackRes.body.data || [];
+      expect(Array.isArray(categories)).toBe(true);
+      expect(categories.find(c => c.id === CAT_ID)).toBeUndefined();
     });
   });
 });

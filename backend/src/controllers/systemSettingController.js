@@ -65,7 +65,7 @@ exports.updateAuditRetention = async (req, res, next) => {
 
     const num = parseInt(value);
     if (isNaN(num) || num < 1) {
-      return res.status(400).json({ success: false, message: 'Retention value must be a positive integer' });
+      return res.status(400).json({ success: false, message: 'Retention period must be a positive integer (months)' });
     }
 
     const setting = await SystemSetting.set('audit_log_retention_months', String(num), 'Months an audit record stays in active storage before archival');

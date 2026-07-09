@@ -35,7 +35,7 @@ const protect = async (req, res, next) => {
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ status: 'error', status_code: 403, error: 'Forbidden. Admin role required.' });
+      return res.status(403).json({ success: false, status_code: 403, message: 'Access denied. Admins only.', error: 'Forbidden. Admin role required.' });
     }
     next();
   };

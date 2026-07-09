@@ -3,6 +3,7 @@ const { sendDailyReminderEmail } = require('../utils/emailService');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const algolia = require('../utils/algoliaService');
+const { withTransaction } = require('../utils/transactionHelper');
 const LeadSource = require('../models/LeadSource');
 const BusinessCategory = require('../models/BusinessCategory');
 const BusinessSubCategory = require('../models/BusinessSubCategory');
@@ -31,20 +32,24 @@ exports.deactivateUser = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'User is already inactive' });
     }
 
-    const updated = await User.updateAccountStatus(user.id, 'inactive');
+    let updated;
+
+    await withTransaction(async (client) => {
+      updated = await User.updateAccountStatus(user.id, 'inactive', client);
+
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'USER_STATUS_CHANGED',
+        resource: 'User',
+        resourceId: user.employee_id || id,
+        details: JSON.stringify({ status: { old: currentStatus, new: 'inactive' } }),
+        ipAddress,
+        userAgent,
+        result: 'Success',
+      }, client);
+    });
 
     await algolia.saveUser(updated).catch(err => console.error('[deactivateUser] Algolia indexing skipped:', err.message));
-
-    await AuditLog.create({
-      userId: req.user.id,
-      action: 'USER_STATUS_CHANGED',
-      resource: 'User',
-      resourceId: user.employee_id || id,
-      details: JSON.stringify({ status: { old: currentStatus, new: 'inactive' } }),
-      ipAddress,
-      userAgent,
-      result: 'Success',
-    });
 
     res.json({
       success: true,
@@ -71,20 +76,24 @@ exports.activateUser = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'User is already active' });
     }
 
-    const updated = await User.updateAccountStatus(user.id, 'active');
+    let updated;
+
+    await withTransaction(async (client) => {
+      updated = await User.updateAccountStatus(user.id, 'active', client);
+
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'USER_STATUS_CHANGED',
+        resource: 'User',
+        resourceId: user.employee_id || id,
+        details: JSON.stringify({ status: { old: currentStatus, new: 'active' } }),
+        ipAddress,
+        userAgent,
+        result: 'Success',
+      }, client);
+    });
 
     await algolia.saveUser(updated).catch(err => console.error('[activateUser] Algolia indexing skipped:', err.message));
-
-    await AuditLog.create({
-      userId: req.user.id,
-      action: 'USER_STATUS_CHANGED',
-      resource: 'User',
-      resourceId: user.employee_id || id,
-      details: JSON.stringify({ status: { old: currentStatus, new: 'active' } }),
-      ipAddress,
-      userAgent,
-      result: 'Success',
-    });
 
     res.json({
       success: true,

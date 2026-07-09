@@ -109,6 +109,18 @@ exports.assignLead = async (req, res, next) => {
       isSystemGenerated: false
     }, client);
 
+    await AuditLog.create({
+      userId: req.user.id,
+      email: req.user.email || '',
+      action: 'lead.assigned',
+      resource: 'lead',
+      resourceId: id,
+      details: JSON.stringify({ from: previousOwnerEmployeeId || null, to: targetUser.employee_id }),
+      ipAddress: getIpAndAgent(req).ipAddress,
+      userAgent: getIpAndAgent(req).userAgent,
+      result: 'success',
+    }, client);
+
     await client.query('COMMIT');
     client.release();
     client = null;
@@ -123,22 +135,6 @@ exports.assignLead = async (req, res, next) => {
       });
     } catch (notifError) {
       console.error('Notification creation failed (non-blocking):', notifError.message);
-    }
-
-    try {
-      await AuditLog.create({
-        userId: req.user.id,
-        email: req.user.email || '',
-        action: 'lead.assigned',
-        resource: 'lead',
-        resourceId: id,
-        details: JSON.stringify({ from: previousOwnerEmployeeId || null, to: targetUser.employee_id }),
-        ipAddress: getIpAndAgent(req).ipAddress,
-        userAgent: getIpAndAgent(req).userAgent,
-        result: 'success',
-      });
-    } catch (auditError) {
-      console.error('Audit log creation failed (non-blocking):', auditError.message);
     }
 
     const finalLead = await Lead.findById(id);

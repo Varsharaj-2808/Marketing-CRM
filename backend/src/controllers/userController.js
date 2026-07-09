@@ -4,6 +4,7 @@ const { generateTempPassword } = require('../utils/passwordUtils');
 const { sendWelcomeEmail } = require('../utils/emailService');
 const algolia = require('../utils/algoliaService');
 const { query } = require('../config/db');
+const { withTransaction } = require('../utils/transactionHelper');
 
 const sanitize = (str) => str.replace(/<[^>]*>/g, '');
 
@@ -62,24 +63,28 @@ exports.createUser = async (req, res, next) => {
     const tempPassword = generateTempPassword();
     const userStatus = status.toLowerCase();
 
-    const user = await User.create({
-      name: sanitize(name.trim()),
-      email: email.trim(),
-      mobile: mobile.trim(),
-      role,
-      password: tempPassword,
-      status: userStatus,
-    });
+    const user = await withTransaction(async (client) => {
+      const newUser = await User.create({
+        name: sanitize(name.trim()),
+        email: email.trim(),
+        mobile: mobile.trim(),
+        role,
+        password: tempPassword,
+        status: userStatus,
+      }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      action: 'user.created',
-      resource: 'user',
-      resourceId: user.employee_id,
-      details: JSON.stringify({ name: user.name, email: user.email, role: user.role, status: user.status }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'user.created',
+        resource: 'user',
+        resourceId: newUser.employee_id,
+        details: JSON.stringify({ name: newUser.name, email: newUser.email, role: newUser.role, status: newUser.status }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return newUser;
     });
 
     await sendWelcomeEmail(user.email, user.name, user.employee_id, tempPassword);
@@ -250,22 +255,26 @@ exports.updateUser = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No changes detected' });
     }
 
-    const updated = await User.update(user.id, fieldsToUpdate);
+    const updated = await withTransaction(async (client) => {
+      const updatedUser = await User.update(user.id, fieldsToUpdate, client);
+
+      for (const change of changes) {
+        await AuditLog.create({
+          userId: req.user.id,
+          action: change.field === 'role' ? 'user.role_changed' : 'user.updated',
+          resource: 'user',
+          resourceId: user.employee_id || id,
+          details: JSON.stringify({ field: change.field, old_value: change.old, new_value: change.new, old_role: change.old, new_role: change.new }),
+          ipAddress,
+          userAgent,
+          result: 'success',
+        }, client);
+      }
+
+      return updatedUser;
+    });
 
     await algolia.saveUser(updated).catch(err => console.error('[updateUser] Algolia indexing skipped:', err.message));
-
-    for (const change of changes) {
-      await AuditLog.create({
-        userId: req.user.id,
-        action: change.field === 'role' ? 'user.role_changed' : 'user.updated',
-        resource: 'user',
-        resourceId: user.employee_id || id,
-        details: JSON.stringify({ field: change.field, old_value: change.old, new_value: change.new, old_role: change.old, new_role: change.new }),
-        ipAddress,
-        userAgent,
-        result: 'success',
-      });
-    }
 
     res.json({
       success: true,
@@ -311,20 +320,22 @@ exports.deleteUser = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const result = await query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
-    if (!result.rows[0]) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
+    await withTransaction(async (client) => {
+      const deleteResult = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+      if (!deleteResult.rows[0]) {
+        throw new Error('User not found');
+      }
 
-    await AuditLog.create({
-      userId: req.user.id,
-      action: 'user.deleted',
-      resource: 'user',
-      resourceId: user.employee_id || id,
-      details: JSON.stringify({ name: user.name, email: user.email, role: user.role }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'user.deleted',
+        resource: 'user',
+        resourceId: user.employee_id || id,
+        details: JSON.stringify({ name: user.name, email: user.email, role: user.role }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
     });
 
     res.json({ success: true, message: 'User deleted successfully.' });

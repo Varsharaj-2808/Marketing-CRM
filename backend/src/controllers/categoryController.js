@@ -1,6 +1,7 @@
 const BusinessCategory = require('../models/BusinessCategory');
 const BusinessSubCategory = require('../models/BusinessSubCategory');
 const AuditLog = require('../models/AuditLog');
+const { withTransaction } = require('../utils/transactionHelper');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -37,18 +38,22 @@ exports.createCategory = async (req, res, next) => {
       return res.status(409).json(wrapError(409, 'Category name already exists', `A category named '${category_name.trim()}' already exists`));
     }
 
-    const category = await BusinessCategory.create({ category_name: category_name.trim() });
+    const category = await withTransaction(async (client) => {
+      const cat = await BusinessCategory.create({ category_name: category_name.trim() }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'category.created',
-      resource: 'category',
-      resourceId: category.id,
-      details: JSON.stringify({ category_name: category.category_name }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'category.created',
+        resource: 'category',
+        resourceId: cat.id,
+        details: JSON.stringify({ category_name: cat.category_name }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return cat;
     });
 
     res.status(201).json(wrapSuccess(201, 'Category created successfully', category));
@@ -116,20 +121,24 @@ exports.updateCategory = async (req, res, next) => {
       }
     }
 
-    const updated = await BusinessCategory.update(id, {
-      ...(category_name !== undefined && { category_name: category_name.trim() }),
-    });
+    const updated = await withTransaction(async (client) => {
+      const updatedCat = await BusinessCategory.update(id, {
+        ...(category_name !== undefined && { category_name: category_name.trim() }),
+      }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'category.updated',
-      resource: 'category',
-      resourceId: id,
-      details: JSON.stringify({ old: { category_name: category.category_name }, new: { category_name: updated.category_name } }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'category.updated',
+        resource: 'category',
+        resourceId: id,
+        details: JSON.stringify({ old: { category_name: category.category_name }, new: { category_name: updatedCat.category_name } }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return updatedCat;
     });
 
     res.json(wrapSuccess(200, 'Category updated successfully', updated));
@@ -161,18 +170,20 @@ exports.deleteCategory = async (req, res, next) => {
       });
     }
 
-    await BusinessCategory.delete(id);
+    await withTransaction(async (client) => {
+      await BusinessCategory.delete(id, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'category.deleted',
-      resource: 'category',
-      resourceId: id,
-      details: JSON.stringify({ category_name: category.category_name }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'category.deleted',
+        resource: 'category',
+        resourceId: id,
+        details: JSON.stringify({ category_name: category.category_name }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
     });
 
     res.json(wrapSuccess(200, 'Category deleted successfully', { id }));
@@ -200,18 +211,22 @@ exports.patchCategoryStatus = async (req, res, next) => {
       return res.status(400).json(wrapError(400, `Category is already ${status}`, `Requested status matches current status`));
     }
 
-    const updated = await BusinessCategory.update(id, { status });
+    const updated = await withTransaction(async (client) => {
+      const updatedCat = await BusinessCategory.update(id, { status }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'category.status_changed',
-      resource: 'category',
-      resourceId: id,
-      details: JSON.stringify({ old: { status: category.status }, new: { status } }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'category.status_changed',
+        resource: 'category',
+        resourceId: id,
+        details: JSON.stringify({ old: { status: category.status }, new: { status } }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return updatedCat;
     });
 
     const actionLabel = status === 'Inactive' ? 'deactivated' : 'activated';
@@ -246,24 +261,27 @@ exports.createSubCategory = async (req, res, next) => {
         `A sub-category named '${sub_category_name.trim()}' already exists under this parent category`));
     }
 
-    const subcategory = await BusinessSubCategory.create({
-      category_id,
-      sub_category_name: sub_category_name.trim(),
-    });
+    const subcategory = await withTransaction(async (client) => {
+      const sub = await BusinessSubCategory.create({
+        category_id,
+        sub_category_name: sub_category_name.trim(),
+      }, client);
 
-    // Attach parent category name for response
-    subcategory.category_name = parent.category_name;
+      sub.category_name = parent.category_name;
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'subcategory.created',
-      resource: 'sub_category',
-      resourceId: subcategory.id,
-      details: JSON.stringify({ sub_category_name: subcategory.sub_category_name, category_id }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'subcategory.created',
+        resource: 'sub_category',
+        resourceId: sub.id,
+        details: JSON.stringify({ sub_category_name: sub.sub_category_name, category_id }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return sub;
     });
 
     res.status(201).json(wrapSuccess(201, 'Sub-Category created successfully', subcategory));
@@ -338,24 +356,28 @@ exports.updateSubCategory = async (req, res, next) => {
       }
     }
 
-    const updated = await BusinessSubCategory.update(id, {
-      ...(sub_category_name !== undefined && { sub_category_name: sub_category_name.trim() }),
-      ...(category_id !== undefined && { category_id }),
-    });
+    const updated = await withTransaction(async (client) => {
+      const updatedSub = await BusinessSubCategory.update(id, {
+        ...(sub_category_name !== undefined && { sub_category_name: sub_category_name.trim() }),
+        ...(category_id !== undefined && { category_id }),
+      }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'subcategory.updated',
-      resource: 'sub_category',
-      resourceId: id,
-      details: JSON.stringify({
-        old: { sub_category_name: subcategory.sub_category_name },
-        new: { sub_category_name: updated.sub_category_name },
-      }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'subcategory.updated',
+        resource: 'sub_category',
+        resourceId: id,
+        details: JSON.stringify({
+          old: { sub_category_name: subcategory.sub_category_name },
+          new: { sub_category_name: updatedSub.sub_category_name },
+        }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return updatedSub;
     });
 
     res.json(wrapSuccess(200, 'Sub-Category updated successfully', updated));
@@ -387,18 +409,20 @@ exports.deleteSubCategory = async (req, res, next) => {
       });
     }
 
-    await BusinessSubCategory.delete(id);
+    await withTransaction(async (client) => {
+      await BusinessSubCategory.delete(id, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'subcategory.deleted',
-      resource: 'sub_category',
-      resourceId: id,
-      details: JSON.stringify({ sub_category_name: subcategory.sub_category_name }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'subcategory.deleted',
+        resource: 'sub_category',
+        resourceId: id,
+        details: JSON.stringify({ sub_category_name: subcategory.sub_category_name }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
     });
 
     res.json(wrapSuccess(200, 'Sub-Category deleted successfully', { id }));
@@ -426,18 +450,22 @@ exports.patchSubCategoryStatus = async (req, res, next) => {
       return res.status(400).json(wrapError(400, `Sub-Category is already ${status}`, 'Requested status matches current status'));
     }
 
-    const updated = await BusinessSubCategory.update(id, { status });
+    const updated = await withTransaction(async (client) => {
+      const updatedSub = await BusinessSubCategory.update(id, { status }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'subcategory.status_changed',
-      resource: 'sub_category',
-      resourceId: id,
-      details: JSON.stringify({ old: { status: subcategory.status }, new: { status } }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'subcategory.status_changed',
+        resource: 'sub_category',
+        resourceId: id,
+        details: JSON.stringify({ old: { status: subcategory.status }, new: { status } }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return updatedSub;
     });
 
     const actionLabel = status === 'Inactive' ? 'deactivated' : 'activated';
@@ -512,29 +540,31 @@ exports.seedDefaultTaxonomy = async (req, res, next) => {
     let categoriesCreated = 0;
     let subCategoriesCreated = 0;
 
-    for (const cat of defaults) {
-      const category = await BusinessCategory.create({ category_name: cat.name });
-      categoriesCreated++;
+    await withTransaction(async (client) => {
+      for (const cat of defaults) {
+        const category = await BusinessCategory.create({ category_name: cat.name }, client);
+        categoriesCreated++;
 
-      for (const sub of cat.subs) {
-        await BusinessSubCategory.create({
-          category_id: category.id,
-          sub_category_name: sub,
-        });
-        subCategoriesCreated++;
+        for (const sub of cat.subs) {
+          await BusinessSubCategory.create({
+            category_id: category.id,
+            sub_category_name: sub,
+          }, client);
+          subCategoriesCreated++;
+        }
       }
-    }
 
-    await AuditLog.create({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'category.taxonomy_seeded',
-      resource: 'category',
-      resourceId: 'system',
-      details: JSON.stringify({ categoriesCreated, subCategoriesCreated }),
-      ipAddress,
-      userAgent,
-      result: 'success',
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'category.taxonomy_seeded',
+        resource: 'category',
+        resourceId: 'system',
+        details: JSON.stringify({ categoriesCreated, subCategoriesCreated }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
     });
 
     res.json(wrapSuccess(200, 'Default taxonomy seeded', {
