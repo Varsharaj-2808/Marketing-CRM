@@ -155,10 +155,10 @@ const authMock = (user) => mockQuery.mockResolvedValueOnce({ rows: [user] });
 describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
-   * TEST-EP4-FUP2-001
+   * test-ep-4.2.1-b-001
    * Positive – ME retrieves today follow-ups sorted Hot > Warm > Cold
    */
-  test("TEST-EP4-FUP2-001 | Positive – ME retrieves today follow-ups; other user's leads excluded, sorted Hot > Warm > Cold", async () => {
+  test("test-ep-4.2.1-b-001 | Positive – ME retrieves today follow-ups; other user's leads excluded, sorted Hot > Warm > Cold", async () => {
     // Per b-001: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's leads → 2 returned
     const myLeads = TODAY_LEADS.slice(0, 2);
     authMock(MARKETING_USER);
@@ -178,10 +178,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-002
+   * test-ep-4.2.1-b-002
    * Positive – Empty array returned when no leads are due today
    */
-  test("TEST-EP4-FUP2-002 | Positive – Returns empty data array when no followups due today", async () => {
+  test("test-ep-4.2.1-b-002 | Positive – Returns empty data array when no followups due today", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
@@ -195,10 +195,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-003
+   * test-ep-4.2.1-b-003
    * Edge – Closed (Won/Lost) leads excluded from today queue
    */
-  test("TEST-EP4-FUP2-003 | Edge – Won/Lost leads excluded from today queue", async () => {
+  test("test-ep-4.2.1-b-003 | Edge – Won/Lost leads excluded from today queue", async () => {
     // DB WHERE clause filters out Won/Lost; controller returns only active leads
     const activeOnly = TODAY_LEADS.filter(l => !["Won", "Lost"].includes(l.stage));
     authMock(MARKETING_USER);
@@ -215,10 +215,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-004
+   * test-ep-4.2.1-b-004
    * Edge – Lead with next_followup_date = today 00:00 appears in today queue
    */
-  test("TEST-EP4-FUP2-004 | Edge – Lead due exactly at midnight today is included in today queue", async () => {
+  test("test-ep-4.2.1-b-004 | Edge – Lead due exactly at midnight today is included in today queue", async () => {
     const midnightLead = { ...TODAY_LEADS[0], next_followup_date: `${TODAY_ISO}T00:00:00Z` };
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [midnightLead] });
@@ -233,10 +233,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-005
+   * test-ep-4.2.1-b-005
    * Security – ME cannot access another user's today follow-ups (isolation via assigned_to)
    */
-  test("TEST-EP4-FUP2-005 | Security – ME cannot access another user's queue via user_id param", async () => {
+  test("test-ep-4.2.1-b-005 | Security – ME cannot access another user's queue via user_id param", async () => {
     // Per b-005: Send ?user_id=me-001 as me-002; server ignores param, returns me-002's own data
     authMock(ME2_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // no leads assigned to me-002
@@ -252,19 +252,19 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-006
+   * test-ep-4.2.1-b-006
    * Security – Unauthenticated request returns 401
    */
-  test("TEST-EP4-FUP2-006 | Security – Unauthenticated request returns 401", async () => {
+  test("test-ep-4.2.1-b-006 | Security – Unauthenticated request returns 401", async () => {
     const res = await request(app).get("/api/marketing/followups/today");
     expect(res.status).toBe(401);
   });
 
   /**
-   * TEST-EP4-FUP2-007
+   * test-ep-4.2.1-b-007
    * Positive – Admin sees all users today follow-ups (no assigned_to filter)
    */
-  test("TEST-EP4-FUP2-007 | Positive – Admin retrieves today follow-ups unfiltered & filtered by assigned_to", async () => {
+  test("test-ep-4.2.1-b-007 | Positive – Admin retrieves today follow-ups unfiltered & filtered by assigned_to", async () => {
     // Per b-007: Unfiltered returns all, filtered returns only the specified user's leads
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: TODAY_LEADS });
@@ -292,10 +292,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-028
+   * test-ep-4.2.1-b-028
    * Security – SQL injection on assigned_to query param is sanitised
    */
-  test("TEST-EP4-FUP2-028 | Security – SQL injection on filter param is sanitised", async () => {
+  test("test-ep-4.2.1-b-028 | Security – SQL injection on filter param is sanitised", async () => {
     // Per b-028: Server should reject injection with 400 OR safely return 200 with empty result
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // parameterised query prevents injection
@@ -312,10 +312,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-031
+   * test-ep-4.2.1-b-031
    * Edge – Past date (yesterday) excluded from today queue
    */
-  test("TEST-EP4-FUP2-031 | Edge – Past next_followup_date excluded from today queue (belongs in overdue)", async () => {
+  test("test-ep-4.2.1-b-031 | Edge – Past next_followup_date excluded from today queue (belongs in overdue)", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // DATE(next_followup_date) < CURRENT_DATE filtered out
 
@@ -335,10 +335,10 @@ describe("API-1 | GET /marketing/followups/today", () => {
 describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
-   * TEST-EP4-FUP2-008
+   * test-ep-4.2.1-b-008
    * Positive – ME retrieves overdue leads sorted by most overdue first
    */
-  test("TEST-EP4-FUP2-008 | Positive – ME retrieves overdue leads; other user's leads excluded, sorted DESC", async () => {
+  test("test-ep-4.2.1-b-008 | Positive – ME retrieves overdue leads; other user's leads excluded, sorted DESC", async () => {
     // Per b-008: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's → 2 returned
     // Lead A (3 days), Lead B (1 day) — sorted most overdue first
     const myOverdue = OVERDUE_LEADS.slice(0, 2);
@@ -361,10 +361,10 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-009
+   * test-ep-4.2.1-b-009
    * Positive – Empty array when no overdue leads
    */
-  test("TEST-EP4-FUP2-009 | Positive – Returns empty array when no overdue follow-ups exist", async () => {
+  test("test-ep-4.2.1-b-009 | Positive – Returns empty array when no overdue follow-ups exist", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
@@ -377,10 +377,10 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-010
+   * test-ep-4.2.1-b-010
    * Edge – Won/Lost leads excluded from overdue queue
    */
-  test("TEST-EP4-FUP2-010 | Edge – Won/Lost leads excluded from overdue queue", async () => {
+  test("test-ep-4.2.1-b-010 | Edge – Won/Lost leads excluded from overdue queue", async () => {
     const activeOverdue = OVERDUE_LEADS.filter(l => !["Won", "Lost"].includes(l.stage));
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: activeOverdue });
@@ -396,10 +396,10 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-011
+   * test-ep-4.2.1-b-011
    * Edge – days_overdue is correctly calculated (calendar days)
    */
-  test("TEST-EP4-FUP2-011 | Edge – days_overdue field is a positive integer calculated from CURRENT_DATE", async () => {
+  test("test-ep-4.2.1-b-011 | Edge – days_overdue field is a positive integer calculated from CURRENT_DATE", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [OVERDUE_LEADS[0]] }); // 5 days overdue
 
@@ -415,10 +415,10 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-012
+   * test-ep-4.2.1-b-012
    * Security – ME cannot access another user's overdue leads
    */
-  test("TEST-EP4-FUP2-012 | Security – ME cannot access another user's overdue queue via user_id param", async () => {
+  test("test-ep-4.2.1-b-012 | Security – ME cannot access another user's overdue queue via user_id param", async () => {
     // Per b-012: Send ?user_id=me-001 as me-002; server ignores param, returns me-002's own data
     authMock(ME2_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // no overdue leads for me-002
@@ -432,10 +432,10 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-013
+   * test-ep-4.2.1-b-013
    * Positive – Admin can view overdue for all users or filter by assigned_to
    */
-  test("TEST-EP4-FUP2-013 | Positive – Admin retrieves overdue follow-ups unfiltered & filtered by assigned_to", async () => {
+  test("test-ep-4.2.1-b-013 | Positive – Admin retrieves overdue follow-ups unfiltered & filtered by assigned_to", async () => {
     // Per b-013: Unfiltered returns all, filtered returns only the specified user's overdue leads
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: OVERDUE_LEADS });
@@ -461,10 +461,10 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-032
+   * test-ep-4.2.1-b-032
    * Edge – Future next_followup_date excluded from overdue queue
    */
-  test("TEST-EP4-FUP2-032 | Edge – Future next_followup_date excluded from overdue queue", async () => {
+  test("test-ep-4.2.1-b-032 | Edge – Future next_followup_date excluded from overdue queue", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // DATE < CURRENT_DATE excludes future
 
@@ -484,13 +484,13 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 describe("API-3 | GET /marketing/dashboard", () => {
 
   /**
-   * TEST-EP4-FUP2-014
+   * test-ep-4.2.1-b-014
    * Positive – Dashboard returns KPI data including stats, stage_breakdown, unread_notifications
    * Note: The Excel expects todays_followups & overdue_followups KPI counts.
    * The current /marketing/dashboard returns stats + stage_breakdown + unread_notifications.
    * This test verifies the existing contract and flags the delta for follow-up.
    */
-  test("TEST-EP4-FUP2-014 | Positive – Dashboard returns stats, stage_breakdown, unread_notifications", async () => {
+  test("test-ep-4.2.1-b-014 | Positive – Dashboard returns stats, stage_breakdown, unread_notifications", async () => {
     // protect: User.findById (1 query)
     authMock(MARKETING_USER);
     // getDashboard: Promise.all([leadStats, recentLeads, unreadCount]) = 3 parallel queries
@@ -514,10 +514,10 @@ describe("API-3 | GET /marketing/dashboard", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-015
+   * test-ep-4.2.1-b-015
    * Security – Missing/invalid token returns 401
    */
-  test("TEST-EP4-FUP2-015 | Security – Invalid token returns 401 on dashboard endpoint", async () => {
+  test("test-ep-4.2.1-b-015 | Security – Invalid token returns 401 on dashboard endpoint", async () => {
     const res = await request(app)
       .get("/api/marketing/dashboard")
       .set("Authorization", "Bearer INVALID_TOKEN");
@@ -526,11 +526,11 @@ describe("API-3 | GET /marketing/dashboard", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-030
+   * test-ep-4.2.1-b-030
    * Edge – UNIT TEST ONLY: Verifies controller logic handles large stats datasets without crashing.
    * NOTE: Actual performance target (< 1500ms) requires separate integration test with real DB.
    */
-  test("TEST-EP4-FUP2-030 | Edge – Unit test for controller dataset handling (Mocked)", async () => {
+  test("test-ep-4.2.1-b-030 | Edge – Unit test for controller dataset handling (Mocked)", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [{ total_leads: "200", active_leads: "180", won_leads: "10", lost_leads: "10", total_estimated_value: "10000000" }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
@@ -554,10 +554,10 @@ describe("API-3 | GET /marketing/dashboard", () => {
 describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
-   * TEST-EP4-FUP2-016
+   * test-ep-4.2.1-b-016
    * Positive – Admin triggers cron; notifications created for leads due today
    */
-  test("TEST-EP4-FUP2-016 | Positive – Admin triggers send-daily; reminders_sent > 0 for active leads", async () => {
+  test("test-ep-4.2.1-b-016 | Positive – Admin triggers send-daily; reminders_sent > 0 for active leads", async () => {
     authMock(ADMIN_USER);
     // Leads due today, not yet notified
     mockQuery.mockResolvedValueOnce({ rows: [
@@ -583,10 +583,10 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-017
+   * test-ep-4.2.1-b-017
    * Edge – Won/Lost leads skipped; reminders_sent = 0
    */
-  test("TEST-EP4-FUP2-017 | Edge – Won/Lost leads skipped; reminders_sent = 0", async () => {
+  test("test-ep-4.2.1-b-017 | Edge – Won/Lost leads skipped; reminders_sent = 0", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // all today leads are Won/Lost; query returns none
 
@@ -602,10 +602,10 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-018
+   * test-ep-4.2.1-b-018
    * Security – Marketing Executive is forbidden (403)
    */
-  test("TEST-EP4-FUP2-018 | Security – ME role is forbidden from triggering daily reminders (403)", async () => {
+  test("test-ep-4.2.1-b-018 | Security – ME role is forbidden from triggering daily reminders (403)", async () => {
     authMock(MARKETING_USER); // valid ME token but wrong role
 
     const res = await request(app)
@@ -619,10 +619,10 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-019
+   * test-ep-4.2.1-b-019
    * Negative – Invalid date string rejected with 400
    */
-  test("TEST-EP4-FUP2-019 | Negative – Invalid date string rejected with 400 validation error", async () => {
+  test("test-ep-4.2.1-b-019 | Negative – Invalid date string rejected with 400 validation error", async () => {
     authMock(ADMIN_USER);
 
     const res = await request(app)
@@ -636,10 +636,10 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-020
+   * test-ep-4.2.1-b-020
    * Edge – Duplicate run on same date returns reminders_sent = 0 (idempotent)
    */
-  test("TEST-EP4-FUP2-020 | Edge – Duplicate run same date returns 0 new reminders (idempotent)", async () => {
+  test("test-ep-4.2.1-b-020 | Edge – Duplicate run same date returns 0 new reminders (idempotent)", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // all leads already notified today
 
@@ -662,10 +662,10 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
 describe("API-5 | GET /marketing/notifications", () => {
 
   /**
-   * TEST-EP4-FUP2-021
+   * test-ep-4.2.1-b-021
    * Positive – ME retrieves notifications list with unread count
    */
-  test("TEST-EP4-FUP2-021 | Positive – ME retrieves notification list with unread count", async () => {
+  test("test-ep-4.2.1-b-021 | Positive – ME retrieves notification list with unread count", async () => {
     // Per b-021: GET /notifications returns data array + unread count
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [
@@ -695,10 +695,10 @@ describe("API-5 | GET /marketing/notifications", () => {
 describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
-   * TEST-EP4-FUP2-022
+   * test-ep-4.2.1-b-022
    * Positive – Admin fetches leads overdue >= 3 days with breakdown
    */
-  test("TEST-EP4-FUP2-022 | Positive – Admin fetches at-risk leads (3+ days) with total_at_risk, leads, breakdown", async () => {
+  test("test-ep-4.2.1-b-022 | Positive – Admin fetches at-risk leads (3+ days) with total_at_risk, leads, breakdown", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });     // leads query
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_BREAKDOWN }); // breakdown query
@@ -729,10 +729,10 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-023
+   * test-ep-4.2.1-b-023
    * Security – ME role is forbidden (403)
    */
-  test("TEST-EP4-FUP2-023 | Security – ME role is forbidden from at-risk endpoint (403)", async () => {
+  test("test-ep-4.2.1-b-023 | Security – ME role is forbidden from at-risk endpoint (403)", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -745,10 +745,10 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-024
+   * test-ep-4.2.1-b-024
    * Edge – Custom overdue_days=5 filters correctly
    */
-  test("TEST-EP4-FUP2-024 | Edge – overdue_days=5 returns only leads overdue by 5+ days", async () => {
+  test("test-ep-4.2.1-b-024 | Edge – overdue_days=5 returns only leads overdue by 5+ days", async () => {
     const fiveOnly = [AT_RISK_LEADS[0]]; // only Ancient Corp (5 days)
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: fiveOnly });
@@ -765,11 +765,11 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-025
+   * test-ep-4.2.1-b-025
    * Edge – UNIT TEST ONLY: Verifies controller doesn't throw when processing large datasets.
    * NOTE: Actual performance target (< 2s on 50k rows) requires separate integration test with real DB.
    */
-  test("TEST-EP4-FUP2-025 | Edge – Unit test for at-risk dataset processing (Mocked)", async () => {
+  test("test-ep-4.2.1-b-025 | Edge – Unit test for at-risk dataset processing (Mocked)", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_BREAKDOWN });
@@ -784,10 +784,10 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-029
+   * test-ep-4.2.1-b-029
    * Security – SQL injection on overdue_days param is sanitised
    */
-  test("TEST-EP4-FUP2-029 | Security – SQL injection on overdue_days param is sanitised", async () => {
+  test("test-ep-4.2.1-b-029 | Security – SQL injection on overdue_days param is sanitised", async () => {
     authMock(ADMIN_USER);
     // Parameterised query treats the injection as non-numeric; parseInt produces NaN → falls back to default 3
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });
@@ -819,10 +819,10 @@ describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
   ];
 
   /**
-   * TEST-EP4-FUP2-026
+   * test-ep-4.2.1-b-026
    * Positive – Leads list includes is_overdue boolean with correct true/false values
    */
-  test("TEST-EP4-FUP2-026 | Positive – Leads include is_overdue true for past, false for future dates", async () => {
+  test("test-ep-4.2.1-b-026 | Positive – Leads include is_overdue true for past, false for future dates", async () => {
     // Per b-026: Lead A (past date) → is_overdue: true, Lead B (future date) → is_overdue: false
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [{ count: "2" }] });         // COUNT
@@ -848,10 +848,10 @@ describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
   });
 
   /**
-   * TEST-EP4-FUP2-027
+   * test-ep-4.2.1-b-027
    * Edge – Won/Lost leads always have is_overdue = false regardless of past due date
    */
-  test("TEST-EP4-FUP2-027 | Edge – Closed Won/Lost leads always return is_overdue = false", async () => {
+  test("test-ep-4.2.1-b-027 | Edge – Closed Won/Lost leads always return is_overdue = false", async () => {
     // Per b-027: Even with past next_followup_date, closed leads must have is_overdue: false
     const closedLeads = [
       { id: "lead-uuid-205", lead_id: "LD-2026-00021", company_name: "Won Corp",
