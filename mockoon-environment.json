@@ -5366,7 +5366,7 @@
       "responses": [
         {
           "latency": 0,
-          "default": true,
+          "default": false,
           "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"e0b0e513-ef9f-4318-8097-f0bb26922f30\",\n      \"seq\": 1,\n      \"actor\": {\n        \"id\": \"actor-uuid-1\",\n        \"name\": \"Admin User\",\n        \"role\": \"Admin\"\n      },\n      \"action_type\": \"lead.assigned\",\n      \"entity_affected\": \"lead\",\n      \"entity_id\": \"lead-uuid-1\",\n      \"result\": \"success\",\n      \"ip_address\": \"203.0.113.45\",\n      \"details\": {},\n      \"created_at\": \"2026-07-07T12:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 20,\n    \"total_records\": 980\n  }\n}",
           "callbacks": [],
           "crudKey": "id",
@@ -5483,7 +5483,7 @@
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "default": false,
+          "default": true,
           "databucketID": "",
           "crudKey": "id",
           "callbacks": []
