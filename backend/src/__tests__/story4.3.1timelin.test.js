@@ -4,7 +4,7 @@
  * STORY-4.3.1  Lead Activity Timeline — TDD Suite
  * ============================================================
  * Source:
- *   - backend-story-4.3.1 (1).md  (24 backend API test cases)
+ *   - backend-story-4.3.1 (2).md  (24 backend API test cases)
  *
  * Sections:
  *   1. GET /marketing/leads/:id/timeline — ME Lead Timeline  (9 tests)
@@ -303,11 +303,11 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(20);
     expect(res.body.pagination.page).toBe(1);
-    expect(res.body.pagination).toHaveProperty('total_pages');
-    expect(res.body.pagination.total_pages).toBe(2);
-    expect(res.body.pagination).toHaveProperty('total_count');
-    expect(res.body.pagination.total_count).toBe(25);
-    expect(res.body.pagination.has_more).toBe(true);
+    expect(res.body.pagination).toHaveProperty('totalPages');
+    expect(res.body.pagination.totalPages).toBe(2);
+    expect(res.body.pagination).toHaveProperty('totalCount');
+    expect(res.body.pagination.totalCount).toBe(25);
+    expect(res.body.pagination.hasMore).toBe(true);
   });
 
   /**
@@ -338,9 +338,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(5);
     expect(res.body.pagination.page).toBe(2);
-    expect(res.body.pagination.total_pages).toBe(2);
-    expect(res.body.pagination.total_count).toBe(25);
-    expect(res.body.pagination.has_more).toBe(false);
+    expect(res.body.pagination.totalPages).toBe(2);
+    expect(res.body.pagination.totalCount).toBe(25);
+    expect(res.body.pagination.hasMore).toBe(false);
   });
 
   /**
@@ -498,9 +498,9 @@ describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", ()
 
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(20);
-    expect(res.body.pagination.has_more).toBe(true);
-    expect(res.body.pagination).toHaveProperty('total_pages');
-    expect(res.body.pagination).toHaveProperty('total_count');
+    expect(res.body.pagination.hasMore).toBe(true);
+    expect(res.body.pagination).toHaveProperty('totalPages');
+    expect(res.body.pagination).toHaveProperty('totalCount');
   });
 
 });

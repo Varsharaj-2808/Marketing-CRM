@@ -10,7 +10,7 @@ exports.getFieldHistory = async (req, res, next) => {
     const { field_name, page = 1, limit = 50 } = req.query;
 
     if (!UUID_REGEX.test(id)) {
-      return res.status(404).json({ success: false, message: 'Lead not found' });
+      return res.status(400).json({ success: false, message: 'Invalid lead ID' });
     }
 
     const lead = await Lead.findById(id);
@@ -74,9 +74,9 @@ exports.exportFieldHistory = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No history found for this lead' });
     }
 
-    const headers = 'field_name,old_value,new_value,change_summary,changed_by,changed_at,reason\n';
+    const headers = 'field_name,old_value,new_value,change_summary,changed_by_name,changed_at,reason\n';
     const rows = result.history.map(h =>
-      `"${h.field_name || ''}","${(h.old_value || '').replace(/"/g, '""')}","${(h.new_value || '').replace(/"/g, '""')}","${(h.change_summary || '').replace(/"/g, '""')}","${h.changed_by || ''}","${h.changed_at || ''}","${(h.reason || '').replace(/"/g, '""')}"`
+      `"${h.field_name || ''}","${(h.old_value || '').replace(/"/g, '""')}","${(h.new_value || '').replace(/"/g, '""')}","${(h.change_summary || '').replace(/"/g, '""')}","${h.changed_by_name || ''}","${h.changed_at || ''}","${(h.reason || '').replace(/"/g, '""')}"`
     ).join('\n');
 
     const csv = headers + rows;

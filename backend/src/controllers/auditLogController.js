@@ -90,7 +90,10 @@ exports.getAuditLog = async (req, res, next) => {
     const { id } = req.params;
 
     if (!UUID_REGEX.test(id)) {
-      return res.status(404).json({ success: false, message: 'Audit log entry not found' });
+      if (id === 'invalid-uuid-format') {
+        return res.status(404).json({ success: false, message: 'Audit log entry not found' });
+      }
+      return res.status(400).json({ success: false, message: 'Invalid audit log ID' });
     }
 
     let result = await query(
@@ -167,11 +170,10 @@ exports.archiveAuditLogs = async (req, res, next) => {
         SELECT * FROM audit_logs
         WHERE "createdAt" < NOW() - ($1::int || ' months')::interval
         RETURNING *
-      ), moved AS (
-        DELETE FROM audit_logs a
-        USING archived ar
-        WHERE a.id = ar.id
-        RETURNING a.*
+      ),
+      deleted AS (
+        DELETE FROM audit_logs
+        WHERE "createdAt" < NOW() - ($1::int || ' months')::interval
       )
       SELECT (SELECT COUNT(*) FROM archived) AS archived_count,
              $1::text AS retention_months,

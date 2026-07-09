@@ -10,7 +10,7 @@ const AuditLog = {
        RETURNING *`,
       [userId || null, email || '', action || '', resource || '', resourceId || '', details || '', ipAddress || '', userAgent || '', result || 'Success']
     );
-    return res.rows[0];
+    return res && res.rows ? res.rows[0] : null;
   },
 
   async findAll(filters = {}) {

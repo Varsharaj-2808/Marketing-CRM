@@ -21,7 +21,7 @@ const LeadHistory = {
         isSystemGenerated || false
       ]
     );
-    return result.rows[0];
+    return result && result.rows ? result.rows[0] : null;
   },
 
   async findByLeadId(leadId, filters = {}) {
