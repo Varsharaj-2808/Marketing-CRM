@@ -12,6 +12,7 @@ import SavedViewsPanel, { DEFAULT_SAVED_VIEWS } from '../../components/leads/Sav
 import SearchBar from '../../components/leads/SearchBar';
 import Toast from '../../components/common/Toast';
 import BulkAssignModal from '../../components/leads/BulkAssignModal';
+import ExportModal from '../../components/leads/ExportModal';
 import { getLeadField, toDisplayText } from '../../utils/leadDisplay';
 
 const PAGE_SIZE = 25;
@@ -106,6 +107,7 @@ export default function LeadList() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [reassigning, setReassigning] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -371,16 +373,28 @@ export default function LeadList() {
             <div className="flex-1">
               <SearchBar value={searchInput} onChange={setSearchInput} />
             </div>
-            {(isAdmin || isMarketingExecutive) && (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  id="export-filtered-btn"
-                  onClick={() => handleExportFiltered(isAdmin ? 'csv' : 'excel')}
-                  className="h-10 rounded-lg border border-outline-variant bg-white/70 px-4 text-label-md font-label-md text-on-surface hover:bg-white transition-all whitespace-nowrap"
-                >
-                  Export {isAdmin ? 'CSV' : 'Excel'}
-                </button>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleExportFiltered('csv')}
+                    style={{ display: 'none' }}
+                    className="h-10 rounded-lg border border-outline-variant bg-white/70 px-4 text-label-md font-label-md text-on-surface hover:bg-white transition-all whitespace-nowrap"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    id="export-filtered-btn"
+                    onClick={() => setExportModalOpen(true)}
+                    className="h-10 rounded-lg border border-outline-variant bg-white/70 px-4 text-label-md font-label-md text-on-surface hover:bg-white transition-all whitespace-nowrap"
+                  >
+                    Export
+                  </button>
+                </>
+              )}
+              {(isAdmin || isMarketingExecutive) && (
                 <button
                   type="button"
                   onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/create`)}
@@ -388,8 +402,8 @@ export default function LeadList() {
                 >
                   Create Lead
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -510,6 +524,16 @@ export default function LeadList() {
           selectedLeads={leads.filter((l) => selectedLeadIds.has(l.id))}
           onAssign={handleConfirmReassign}
           assigning={reassigning}
+        />
+
+        <ExportModal
+          isOpen={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          activeFilters={filters}
+          onExport={(format) => {
+            setExportModalOpen(false);
+            handleExportFiltered(format);
+          }}
         />
 
         <Toast

@@ -1003,14 +1003,14 @@
       "type": "http",
       "documentation": "EPIC-3 Story-2: GET admin/dashboard/kpis",
       "method": "get",
-      "endpoint": "admin/dashboard/kpis",
+      "endpoint": "admin/dashboard/category-volume",
       "responses": [
         {
-          "uuid": "991b94a4-8ea4-47b2-bbaf-ee1f7f90adc7",
-          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_leads\": 150,\n    \"new\": 30,\n    \"contacted\": 40,\n    \"qualified\": 25,\n    \"meeting\": 20,\n    \"proposal\": 15,\n    \"negotiation\": 10,\n    \"won\": 8,\n    \"lost\": 2,\n    \"conversion_rate\": \"5.33%\",\n    \"hot_leads\": 50,\n    \"warm_leads\": 70,\n    \"cold_leads\": 30,\n    \"category_id\": null,\n    \"sub_category_id\": null\n  }\n}",
+          "uuid": "2ae7731a-60ee-43a8-877f-2dfcf868130e",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_leads\": 150,\n    \"new\": 30,\n    \"contacted\": 40,\n    \"qualified\": 25,\n    \"meeting\": 20,\n    \"proposal\": 15,\n    \"negotiation\": 10,\n    \"won\": 8,\n    \"lost\": 2,\n    \"conversion_rate\": \"5.33%\",\n    \"hot_leads\": 50,\n    \"warm_leads\": 70,\n    \"cold_leads\": 30,\n    \"today_followups\": 12\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "Success Response",
+          "label": "Aggregate all leads - Default KPIs",
           "headers": [
             {
               "key": "Content-Type",
@@ -1019,13 +1019,116 @@
           ],
           "bodyType": "INLINE",
           "filePath": "",
-          "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c9f39287-f265-490f-86aa-639e3b957a3a",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_leads\": 100,\n    \"new\": 20,\n    \"contacted\": 25,\n    \"qualified\": 18,\n    \"won\": 6,\n    \"lost\": 1,\n    \"conversion_rate\": \"6%\",\n    \"today_followups\": 8\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Apply date-range filter",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-01-01",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "to",
+              "value": "2026-06-30",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "0ab57b91-5153-4a47-96ae-5cf28250ef68",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid date format. Use YYYY-MM-DD\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid date range parameters",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "invalid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "16f4329d-14e4-413e-8fc9-0bd96cf5352c",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_leads\": 50000,\n    \"new\": 8000,\n    \"contacted\": 12000,\n    \"qualified\": 9000,\n    \"meeting\": 7000,\n    \"proposal\": 6000,\n    \"negotiation\": 4000,\n    \"won\": 3000,\n    \"lost\": 1000,\n    \"hold\": 500,\n    \"at_risk_count\": 220,\n    \"conversion_rate\": \"6%\",\n    \"hot_leads\": 15000,\n    \"warm_leads\": 22000,\n    \"cold_leads\": 13000\n  },\n  \"meta\": {\n    \"generated_at\": \"2026-06-26T10:00:00Z\",\n    \"cache_ttl_seconds\": 60\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Optimised 50K lead dataset",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "to",
+              "value": "2026-06-26",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         }
@@ -1244,75 +1347,58 @@
       "endpoint": "marketing/dashboard",
       "responses": [
         {
-          "uuid": "9ad86848-56f7-4b63-80c5-0cef7fd34eb8",
-          "body": "{\n  \"success\": false,\n  \"status_code\": 401,\n  \"message\": \"Authentication required. Invalid or missing token\",\n  \"data\": null\n}",
-          "latency": 0,
-          "statusCode": 401,
-          "label": "TEST-EP4-FUP2-015 - Security - Missing or invalid token returns 401",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "header",
-              "modifier": "Authorization",
-              "value": "^Bearer ",
-              "operator": "regex",
-              "invert": true
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "feb834e2-5c67-4238-b087-6229be2c8853",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Dashboard KPIs retrieved successfully\",\n  \"data\": {\n    \"my_total_leads\": 50,\n    \"my_won\": 5,\n    \"my_lost\": 2,\n    \"my_conversion_rate\": \"10%\",\n    \"todays_followups\": 3,\n    \"overdue_followups\": 2,\n    \"hot_leads\": 12,\n    \"warm_leads\": 20,\n    \"cold_leads\": 18\n  },\n  \"meta\": {\n    \"execution_time_ms\": 220\n  }\n}",
+          "uuid": "95fc22e2-fce0-4666-bd10-166f93bd3005",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"cards\": {\n      \"my_leads\": 50,\n      \"my_followups_today\": 5,\n      \"my_won_leads\": 8,\n      \"my_lost_leads\": 3\n    },\n    \"conversion_rate\": {\n      \"won\": 8,\n      \"lost\": 3,\n      \"rate\": \"72.73%\"\n    }\n  },\n  \"meta\": {\n    \"assigned_to\": \"current_user_id_from_jwt\",\n    \"generated_at\": \"2026-07-09T10:00:00Z\"\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "TEST-EP4-FUP2-030 - Edge - Dashboard loading performs aggregate calcul",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
+          "label": "Default ME Dashboard View",
+          "headers": [
             {
-              "target": "header",
-              "modifier": "Authorization",
-              "value": "Bearer me-002-token",
-              "operator": "equals",
-              "invert": false
+              "key": "Content-Type",
+              "value": "application/json"
             }
           ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "1e890c1b-5d04-4f05-8b22-ab4c560ce00b",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"Dashboard KPIs retrieved successfully\",\n  \"data\": {\n    \"my_total_leads\": 50,\n    \"my_won\": 5,\n    \"my_lost\": 2,\n    \"my_conversion_rate\": \"10%\",\n    \"todays_followups\": 3,\n    \"overdue_followups\": 2,\n    \"hot_leads\": 12,\n    \"warm_leads\": 20,\n    \"cold_leads\": 18\n  }\n}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "TEST-EP4-FUP2-014 - Positive - Returns valid KPI counts including toda",
-          "headers": [],
           "bodyType": "INLINE",
           "filePath": "",
-          "databucketID": "",
           "sendFileAsBody": false,
           "rules": [],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "964eed8f-e10b-4371-9fd1-78267f48d6b8",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid or expired token\"\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Invalid or expired authorization token",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-invalid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         }
@@ -1365,35 +1451,51 @@
       "endpoint": "admin/leads/export",
       "responses": [
         {
-          "uuid": "62b485cc-51f6-4030-b344-022664aa93ad",
-          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "uuid": "4e8dc0a1-b0b4-4eac-8d67-92324442be58",
+          "body": "lead_id,company_name,category,sub_category,source,stage,owner,estimated_value,created_date\nLD-2026-00042,Acme Corp,Software,CRM,Website,Contacted,Priya,15000,2026-07-01",
           "latency": 0,
           "statusCode": 200,
-          "label": "Success Response",
+          "label": "Stream CSV file",
           "headers": [
             {
               "key": "Content-Type",
               "value": "text/csv"
+            },
+            {
+              "key": "X-Record-Count",
+              "value": "245"
+            },
+            {
+              "key": "X-Audit-Log-Id",
+              "value": "66a1b2c3d4e5f6a7b8c9d0"
             }
           ],
           "bodyType": "INLINE",
           "filePath": "",
-          "databucketID": "",
           "sendFileAsBody": false,
-          "rules": [],
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "format",
+              "value": "csv",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         },
         {
-          "uuid": "f590ae30-1e03-4100-8e4b-5e0d5a59410f",
+          "uuid": "92793a96-01a0-47a6-89fc-b04bb2ee5138",
           "body": "{\n  \"success\": false,\n  \"message\": \"Format must be csv or excel\"\n}",
           "latency": 0,
           "statusCode": 400,
-          "label": "TASK-3.2.1-04 | Invalid format param â€“ 400",
+          "label": "Invalid format param",
           "headers": [
             {
               "key": "Content-Type",
@@ -1402,30 +1504,30 @@
           ],
           "bodyType": "INLINE",
           "filePath": "",
-          "databucketID": "",
           "sendFileAsBody": false,
           "rules": [
             {
               "target": "query",
               "modifier": "format",
-              "value": "csv|excel",
-              "invert": true,
-              "operator": "regex"
+              "value": "pdf",
+              "invert": false,
+              "operator": "equals"
             }
           ],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         },
         {
-          "uuid": "e2e09186-5140-4b2e-bf90-48f55d6ac22b",
+          "uuid": "5c46798b-cd1b-4905-bd0d-321b072721b6",
           "body": "{\n  \"success\": false,\n  \"message\": \"No leads found for the given filters\"\n}",
           "latency": 0,
           "statusCode": 404,
-          "label": "TASK-3.2.1-04 | No leads match filters â€“ 404",
+          "label": "No leads match filters",
           "headers": [
             {
               "key": "Content-Type",
@@ -1434,7 +1536,6 @@
           ],
           "bodyType": "INLINE",
           "filePath": "",
-          "databucketID": "",
           "sendFileAsBody": false,
           "rules": [
             {
@@ -1449,6 +1550,129 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "09fd2199-c9b9-46d5-9ece-c030bfcfc7d4",
+          "body": "binary stream mock content",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Stream Excel file - Won status",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            },
+            {
+              "key": "X-Record-Count",
+              "value": "62"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "format",
+              "value": "excel",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "status",
+              "value": "Won",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "2c9f0899-f2e9-474a-b3e8-1f37ca15c8d1",
+          "body": "lead_id,company_name,category,sub_category,source,stage,owner,estimated_value,created_date\n",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Stream CSV file - Headers only",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            },
+            {
+              "key": "X-Record-Count",
+              "value": "0"
+            },
+            {
+              "key": "X-Audit-Log-Id",
+              "value": "66a2b2c3d4e5f6a7b8c9d0"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "format",
+              "value": "csv",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "status",
+              "value": "Nonexistent",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ce1589a7-8437-4a08-b930-13989ea47796",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Export is restricted to Admin role\"\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Export restricted to Admin role",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer marketing-token",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         }
@@ -1782,6 +2006,70 @@
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "79a60efe-6735-4f2e-bc84-4939a3294b16",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"l1\",\n      \"lead_id\": \"LD-2026-00042\",\n      \"company_name\": \"Acme Corp\",\n      \"contact_person\": \"Ravi\",\n      \"lead_quality\": \"Hot\",\n      \"next_followup_date\": \"2026-07-09T10:00:00Z\",\n      \"status\": \"Contacted\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 1,\n    \"total_records\": 5\n  },\n  \"applied_filters\": {\n    \"assigned_to\": \"current_user\",\n    \"next_followup_date\": \"2026-07-09\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Retrieve today's follow-ups - With Pagination",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "page",
+              "value": "1",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a59d1cff-8ce4-438a-aa7e-70802a659dce",
+          "body": "{\n  \"success\": true,\n  \"data\": [],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 0,\n    \"total_records\": 0\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "No followups today (empty state)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-zero-leads",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         }
@@ -2216,129 +2504,98 @@
       "endpoint": "admin/dashboard/at-risk",
       "responses": [
         {
-          "uuid": "e7fe0f10-0c90-49fa-9987-5e830c56e8ae",
-          "body": "{\n  \"success\": false,\n  \"status_code\": 403,\n  \"message\": \"Access denied. Admin role required.\",\n  \"data\": null\n}",
-          "latency": 0,
-          "statusCode": 403,
-          "label": "TEST-EP4-FUP2-023 - Security - ME (Marketing role) is forbidden from c",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "header",
-              "modifier": "Authorization",
-              "value": "Bearer me-001-token",
-              "operator": "equals",
-              "invert": false
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "c8d07914-9421-42df-ba48-64b2949ba242",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 1,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      }\n    ]\n  }\n}",
+          "uuid": "a818d284-269c-459f-90c8-413ccb33b1e9",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_at_risk\": 220,\n    \"breakdown\": [\n      {\n        \"user_id\": \"u1\",\n        \"user_name\": \"Priya\",\n        \"at_risk_count\": 34,\n        \"oldest_overdue_days\": 12\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"l1\",\n        \"lead_id\": \"LD-2026-00042\",\n        \"company_name\": \"Acme Corp\",\n        \"assigned_to\": \"Priya\",\n        \"days_overdue\": 5\n      }\n    ]\n  }\n}",
           "latency": 0,
           "statusCode": 200,
-          "label": "TEST-EP4-FUP2-024 - Edge - Custom overdue_days query filters leads pro",
-          "headers": [],
+          "label": "Fetch active leads overdue - default 3 days",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
           "bodyType": "INLINE",
           "filePath": "",
-          "databucketID": "",
           "sendFileAsBody": false,
           "rules": [
             {
               "target": "query",
               "modifier": "overdue_days",
-              "value": "5",
-              "operator": "equals",
-              "invert": false
+              "value": "3",
+              "invert": false,
+              "operator": "equals"
             }
           ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "3f595868-5bda-45b2-a6a4-4b114fd589eb",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 2,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"user_name\": \"John Doe\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      },\n      {\n        \"user_id\": \"me-002\",\n        \"user_name\": \"Jane Smith\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 3\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      },\n      {\n        \"id\": \"lead-uuid-203\",\n        \"lead_id\": \"LD-2026-00099\",\n        \"company_name\": \"Risk Inc\",\n        \"assigned_to\": \"Jane Smith\",\n        \"days_overdue\": 3\n      }\n    ]\n  },\n  \"meta\": {\n    \"execution_time_ms\": 180\n  }\n}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "TEST-EP4-FUP2-025 - Edge - At-risk queries are optimized to load under",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "header",
-              "modifier": "Authorization",
-              "value": "Bearer admin-token-perf",
-              "operator": "equals",
-              "invert": false
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "fac1328d-2dfe-44a2-9b76-44c7f471c564",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 2,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"user_name\": \"John Doe\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      },\n      {\n        \"user_id\": \"me-002\",\n        \"user_name\": \"Jane Smith\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 3\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      },\n      {\n        \"id\": \"lead-uuid-203\",\n        \"lead_id\": \"LD-2026-00099\",\n        \"company_name\": \"Risk Inc\",\n        \"assigned_to\": \"Jane Smith\",\n        \"days_overdue\": 3\n      }\n    ]\n  }\n}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "TEST-EP4-FUP2-029 - Security - SQL injection attempt on At-Risk parame",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [
-            {
-              "target": "query",
-              "modifier": "overdue_days",
-              "value": "DROP|--|'",
-              "operator": "regex",
-              "invert": false
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "7be401f7-9535-497f-aada-4136f483a18c",
-          "body": "{\n  \"success\": true,\n  \"status_code\": 200,\n  \"message\": \"At-risk leads fetched successfully\",\n  \"data\": {\n    \"total_at_risk\": 2,\n    \"breakdown\": [\n      {\n        \"user_id\": \"me-001\",\n        \"user_name\": \"John Doe\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 5\n      },\n      {\n        \"user_id\": \"me-002\",\n        \"user_name\": \"Jane Smith\",\n        \"at_risk_count\": 1,\n        \"oldest_overdue_days\": 3\n      }\n    ],\n    \"leads\": [\n      {\n        \"id\": \"lead-uuid-201\",\n        \"lead_id\": \"LD-2026-00085\",\n        \"company_name\": \"Ancient Corp\",\n        \"assigned_to\": \"John Doe\",\n        \"days_overdue\": 5\n      },\n      {\n        \"id\": \"lead-uuid-203\",\n        \"lead_id\": \"LD-2026-00099\",\n        \"company_name\": \"Risk Inc\",\n        \"assigned_to\": \"Jane Smith\",\n        \"days_overdue\": 3\n      }\n    ]\n  }\n}",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "TEST-EP4-FUP2-022 - Positive - Fetch active leads overdue by 3+ days (",
-          "headers": [],
-          "bodyType": "INLINE",
-          "filePath": "",
-          "databucketID": "",
-          "sendFileAsBody": false,
-          "rules": [],
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
           "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a6fea701-bc54-4ed8-bd9b-1f729e0a7799",
+          "body": "{\n  \"success\": false,\n  \"message\": \"overdue_days must be a positive integer\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid overdue threshold - non-numeric",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "overdue_days",
+              "value": "abc",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1c0f3614-5f54-44b9-aa6e-cac8e6aadd1b",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_at_risk\": 0,\n    \"breakdown\": [],\n    \"leads\": []\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "No overdue leads (empty state)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-07-01",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
           "crudKey": "id",
           "callbacks": []
         }
@@ -5198,6 +5455,38 @@
           "crudKey": "id",
           "callbacks": [],
           "body": "{\n  \"success\": false,\n  \"message\": \"Access denied. Admins only.\"\n}"
+        },
+        {
+          "uuid": "86263501-01cb-49a1-97f8-586fc2ae07f3",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"66a1b2c3d4e5f6a7b8c9d0\",\n      \"action\": \"lead.exported\",\n      \"entity\": \"lead\",\n      \"performed_by\": {\n        \"id\": \"u1\",\n        \"name\": \"Admin Kumar\",\n        \"role\": \"Admin\"\n      },\n      \"ip_address\": \"203.0.113.45\",\n      \"details\": {\n        \"record_count\": 245,\n        \"format\": \"csv\",\n        \"filters\": {\n          \"status\": \"Contacted\",\n          \"quality\": \"Hot\",\n          \"from\": \"2026-01-01\",\n          \"to\": \"2026-06-26\"\n        }\n      },\n      \"timestamp\": \"2026-07-09T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"total_pages\": 1,\n    \"total_records\": 1\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Filter audit log by lead.exported",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "action",
+              "value": "lead.exported",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
         }
       ],
       "type": "http",
@@ -6383,6 +6672,558 @@
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
+    },
+    {
+      "uuid": "05d79692-0cdb-4114-9c80-77255be3478f",
+      "type": "http",
+      "endpoint": "/admin/dashboard/category-volume",
+      "method": "get",
+      "responses": [
+        {
+          "uuid": "3e703798-cb8e-446b-ad4d-e37d319a3f73",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"category\": \"Software Solutions\",\n      \"sub_category\": \"CRM\",\n      \"lead_count\": 4200\n    },\n    {\n      \"category\": \"Software Solutions\",\n      \"sub_category\": \"ERP\",\n      \"lead_count\": 2600\n    },\n    {\n      \"category\": \"Digital Marketing\",\n      \"sub_category\": \"SEO\",\n      \"lead_count\": 1800\n    }\n  ],\n  \"meta\": {\n    \"total_categories\": 6,\n    \"cache_ttl_seconds\": 60\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Group leads by category - Default",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-01-01",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "to",
+              "value": "2026-06-30",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "c5632084-9cda-44e0-b9fd-4f5bfdfb8fe3",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"category\": \"Software Solutions\",\n      \"sub_category\": \"CRM\",\n      \"lead_count\": 4200\n    },\n    {\n      \"category\": \"Software Solutions\",\n      \"sub_category\": \"ERP\",\n      \"lead_count\": 2600\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Filter to single parent category",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "category_id",
+              "value": "64f1a2b3c4d5e6f7a8b9c0d1",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ea097a39-f64c-415b-83fb-b1381195bca4",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid date format. Use YYYY-MM-DD\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid date range parameters",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "invalid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b0eca355-a1a0-4a65-97a9-65485a9c56eb",
+          "body": "{\n  \"success\": true,\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "No leads found (empty state)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2020-01-01",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "documentation": "",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b3ab45d8-0862-4c61-89b3-32c481b3c6ba",
+      "type": "http",
+      "endpoint": "/admin/dashboard/won-rate-by-source",
+      "method": "get",
+      "responses": [
+        {
+          "uuid": "3415dc6d-3fde-4c56-8f2f-77cf6f510848",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"source\": \"Website\",\n      \"total\": 12000,\n      \"won\": 900,\n      \"lost\": 400,\n      \"win_rate\": \"7.5%\"\n    },\n    {\n      \"source\": \"Referral\",\n      \"total\": 6000,\n      \"won\": 720,\n      \"lost\": 150,\n      \"win_rate\": \"12%\"\n    },\n    {\n      \"source\": \"Google Ads\",\n      \"total\": 9000,\n      \"won\": 450,\n      \"lost\": 500,\n      \"win_rate\": \"5%\"\n    }\n  ],\n  \"meta\": {\n    \"cache_ttl_seconds\": 60\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Won rate per source - Default",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-01-01",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "to",
+              "value": "2026-06-30",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "6457f3ab-0c0f-417f-9fc4-24721f35f6fe",
+          "body": "{\n  \"success\": false,\n  \"message\": \"'from' date must be earlier than 'to' date\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid date range from earlier than to",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-06-30",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "to",
+              "value": "2026-01-01",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "2de39357-a37c-44a9-a134-e4f0cb11c605",
+          "body": "{\n  \"success\": true,\n  \"data\": []\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Empty state won rate",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-07-01",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "documentation": "",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "ab229745-dce4-4bd1-93d0-1766fae7e6fa",
+      "type": "http",
+      "endpoint": "marketing/dashboard/cards",
+      "method": "get",
+      "responses": [
+        {
+          "uuid": "f2d043dc-aa36-4978-88a3-dde02803d832",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"my_leads\": 50,\n    \"my_followups_today\": 5,\n    \"my_won_leads\": 8,\n    \"my_lost_leads\": 3\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default personal counts",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "86628c3f-0b31-4075-bea6-b3cf21de7f24",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"my_leads\": 50,\n    \"my_followups_today\": 5,\n    \"my_won_leads\": 8,\n    \"my_lost_leads\": 3\n  },\n  \"meta\": {\n    \"note\": \"assigned_to query param ignored; scope enforced from authenticated user\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Ignore assigned_to query parameter",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "assigned_to",
+              "value": "64f1a2b3c4d5e6f7a8b9c0d2",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e3e43311-a623-40e5-9ad1-036710104df4",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"my_leads\": 0,\n    \"my_followups_today\": 0,\n    \"my_won_leads\": 0,\n    \"my_lost_leads\": 0\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Zero leads assigned to current user",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-zero-leads",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "fb313259-abe0-41b6-86a6-df8b1d08a9e4",
+          "body": "{\n  \"success\": false,\n  \"message\": \"This endpoint is restricted to Marketing Executive role\"\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Access restricted to Marketing Executive",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer admin-token",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "documentation": "",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "7691da38-3f5d-4c2f-a798-610606b83fdd",
+      "type": "http",
+      "endpoint": "marketing/dashboard/conversion-rate",
+      "method": "get",
+      "responses": [
+        {
+          "uuid": "9b279a2f-754b-4a7c-846e-71b01c895082",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"won\": 8,\n    \"lost\": 3,\n    \"total_closed\": 11,\n    \"conversion_rate\": \"72.73%\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Personal conversion rate - Default",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "159e6930-cf5b-4148-b00b-40ba425e64b3",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"won\": 0,\n    \"lost\": 0,\n    \"total_closed\": 0,\n    \"conversion_rate\": \"0%\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Zero closed leads conversion rate",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-zero-leads",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "6b734e45-eb73-4921-8126-b153ba2f3c29",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"won\": 5,\n    \"lost\": 2,\n    \"total_closed\": 7,\n    \"conversion_rate\": \"71.43%\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Filtered personal conversion rate",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "from",
+              "value": "2026-01-01",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "query",
+              "modifier": "to",
+              "value": "2026-06-30",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "documentation": "",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "ede862de-14f9-4798-a494-b45a701459fe",
+      "type": "http",
+      "endpoint": "/marketing/leads/:id",
+      "method": "get",
+      "responses": [
+        {
+          "uuid": "1b3c9685-ea84-4924-a2a8-5e5864295aff",
+          "body": "{\n  \"success\": false,\n  \"message\": \"Not authorized to view this lead\"\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Lead not assigned to current ME",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "Authorization",
+              "value": "Bearer mock-jwt-token-unauthorized-lead",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "documentation": "",
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
   "rootChildren": [
@@ -6605,6 +7446,26 @@
     {
       "type": "route",
       "uuid": "6c5e04cb-e5e6-4483-a4fc-9d842756e5db"
+    },
+    {
+      "type": "route",
+      "uuid": "05d79692-0cdb-4114-9c80-77255be3478f"
+    },
+    {
+      "type": "route",
+      "uuid": "b3ab45d8-0862-4c61-89b3-32c481b3c6ba"
+    },
+    {
+      "type": "route",
+      "uuid": "ab229745-dce4-4bd1-93d0-1766fae7e6fa"
+    },
+    {
+      "type": "route",
+      "uuid": "7691da38-3f5d-4c2f-a798-610606b83fdd"
+    },
+    {
+      "type": "route",
+      "uuid": "ede862de-14f9-4798-a494-b45a701459fe"
     }
   ],
   "proxyMode": false,

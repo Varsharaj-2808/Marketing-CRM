@@ -1113,9 +1113,10 @@ export async function fetchTimeline(leadId, params = {}) {
   }
 }
 
-export async function fetchTodayFollowups() {
+export async function fetchTodayFollowups(params = {}) {
   try {
-    const res = await fetch(`${API_BASE_URL}/marketing/followups/today?_=${Date.now()}`, {
+    const query = appendCacheBuster(params);
+    const res = await fetch(`${API_BASE_URL}/marketing/followups/today?${query}`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -1388,5 +1389,135 @@ export async function reopenLeadAdmin(leadId, reason) {
     return { success: true, message: 'Lead reopened', data: { status: 'Contacted' } };
   }
 }
+
+export async function fetchCategoryVolume(params = {}) {
+  try {
+    const query = appendCacheBuster(params);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/category-volume?${query}`);
+  } catch (err) {
+    if (err?.status && err.status !== 502 && err.status !== 404) throw err;
+    return {
+      success: true,
+      data: [
+        { category: 'Software Solutions', sub_category: 'CRM', lead_count: 4200 },
+        { category: 'Software Solutions', sub_category: 'ERP', lead_count: 2600 },
+        { category: 'Digital Marketing', sub_category: 'SEO', lead_count: 1800 }
+      ]
+    };
+  }
+}
+
+export async function fetchWonRateBySource(params = {}) {
+  try {
+    const query = appendCacheBuster(params);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/won-rate-by-source?${query}`);
+  } catch (err) {
+    if (err?.status && err.status !== 502 && err.status !== 404) throw err;
+    return {
+      success: true,
+      data: [
+        { source: 'Website', total: 12000, won: 900, lost: 400, win_rate: '7.5%' },
+        { source: 'Referral', total: 6000, won: 720, lost: 150, win_rate: '12%' },
+        { source: 'Google Ads', total: 9000, won: 450, lost: 500, win_rate: '5%' }
+      ]
+    };
+  }
+}
+
+export async function fetchAdminAtRisk(params = {}) {
+  try {
+    const query = appendCacheBuster(params);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/at-risk?${query}`);
+  } catch (err) {
+    if (err?.status && err.status !== 502 && err.status !== 404) throw err;
+    return {
+      success: true,
+      data: {
+        total_at_risk: 220,
+        breakdown: [
+          { user_id: 'u1', user_name: 'Priya', at_risk_count: 34, oldest_overdue_days: 12 }
+        ],
+        leads: [
+          { id: 'l1', lead_id: 'LD-2026-00042', company_name: 'Acme Corp', assigned_to: 'Priya', days_overdue: 5 }
+        ]
+      }
+    };
+  }
+}
+
+export async function fetchMeDashboardCards() {
+  try {
+    return await requestJson(`${API_BASE_URL}/marketing/dashboard/cards?_=${Date.now()}`);
+  } catch (err) {
+    if (err?.status && err.status !== 502 && err.status !== 404) throw err;
+    return {
+      success: true,
+      data: {
+        my_leads: 50,
+        my_followups_today: 5,
+        my_won_leads: 8,
+        my_lost_leads: 3
+      }
+    };
+  }
+}
+
+export async function fetchMeConversionRate(params = {}) {
+  try {
+    const query = appendCacheBuster(params);
+    return await requestJson(`${API_BASE_URL}/marketing/dashboard/conversion-rate?${query}`);
+  } catch (err) {
+    if (err?.status && err.status !== 502 && err.status !== 404) throw err;
+    return {
+      success: true,
+      data: {
+        won: 8,
+        lost: 3,
+        total_closed: 11,
+        conversion_rate: '72.73%'
+      }
+    };
+  }
+}
+
+export async function fetchExportHistory(params = {}) {
+  try {
+    const query = appendCacheBuster({ ...params, action: 'lead.exported' });
+    return await requestJson(`${API_BASE_URL}/admin/audit-log?${query}`);
+  } catch (err) {
+    if (err?.status && err.status !== 502 && err.status !== 404) throw err;
+    return {
+      success: true,
+      data: [
+        {
+          id: '66a1b2c3d4e5f6a7b8c9d0',
+          action: 'lead.exported',
+          entity: 'lead',
+          performed_by: { id: 'u1', name: 'Admin Kumar', role: 'Admin' },
+          ip_address: '203.0.113.45',
+          details: {
+            record_count: 245,
+            format: 'csv',
+            filters: { status: 'Contacted', quality: 'Hot', from: '2026-01-01', to: '2026-06-26' }
+          },
+          timestamp: '2026-07-09T10:00:00Z'
+        }
+      ],
+      pagination: { page: 1, total_pages: 1, total_records: 1 }
+    };
+  }
+}
+
+export async function downloadExportFile(id) {
+  const url = `${API_BASE_URL}/admin/leads/export/history/${id}/download?_=${Date.now()}`;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  if (!res.ok) {
+    const json = await safeJson(res);
+    throw new Error(json?.message || 'Download failed.');
+  }
+  const blob = await res.blob();
+  return blob;
+}
+
 
 
