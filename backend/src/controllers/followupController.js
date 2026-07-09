@@ -351,8 +351,12 @@ exports.getTimeline = async (req, res, next) => {
       allEvents = allEvents.filter((e) => types.includes(e.type));
     }
 
-    // Sort reverse chronological
-    allEvents.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Sort reverse chronological; same-timestamp events sorted by UUID ascending
+    allEvents.sort((a, b) => {
+      const dateCmp = new Date(b.created_at) - new Date(a.created_at);
+      if (dateCmp !== 0) return dateCmp;
+      return (a.id || '').localeCompare(b.id || '');
+    });
 
     // Paginate
     const totalCount = allEvents.length;
@@ -372,8 +376,11 @@ exports.getTimeline = async (req, res, next) => {
       },
       pagination: {
         page,
+        totalPages,
         total_pages: totalPages,
+        totalCount,
         total_count: totalCount,
+        hasMore: page < totalPages,
         has_more: page < totalPages,
       },
     });

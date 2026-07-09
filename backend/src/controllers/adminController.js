@@ -171,33 +171,45 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 exports.reopenLead = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const isPut = req.method === 'PUT';
+    const reasonField = isPut ? req.body.reopen_reason : req.body.reason;
+
+    if (reasonField === undefined) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Reopen reason is required', 
+        reason: 'Reopen reason is required' 
+      });
+    }
+
+    if (typeof reasonField === 'string' && reasonField.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Reopen reason cannot be empty', 
+        reason: 'Reopen reason cannot be empty' 
+      });
+    }
+
+    if (typeof reasonField === 'string' && reasonField.length > 500) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Reopen reason must not exceed 500 characters', 
+        reason: 'Reopen reason must not exceed 500 characters' 
+      });
+    }
 
     if (!UUID_REGEX.test(id)) {
-      return res.status(404).json({ error: 'Lead not found' });
-    }
-
-    if (reason === undefined) {
-      return res.status(400).json({ reason: 'Reopen reason is required' });
-    }
-    if (typeof reason !== 'string' || reason.trim() === '') {
-      return res.status(400).json({ reason: 'Reopen reason cannot be empty' });
-    }
-    if (reason.length > 500) {
-      return res.status(400).json({ reason: 'Reopen reason must not exceed 500 characters' });
-    }
-
-    if (req.user.role !== 'Admin') {
-      return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     const lead = await Lead.findById(id);
     if (!lead || lead.deleted_at) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     if (lead.stage !== 'Won' && lead.stage !== 'Lost') {
-      return res.status(400).json({ error: `Lead is not closed. Current stage: ${lead.stage}` });
+      const errMsg = isPut ? 'Only Won or Lost leads can be reopened' : `Lead is not closed. Current stage: ${lead.stage}`;
+      return res.status(400).json({ success: false, message: errMsg, error: errMsg });
     }
 
     let client;
@@ -212,50 +224,37 @@ exports.reopenLead = async (req, res, next) => {
       );
       updatedLead = updateRes.rows[0];
 
-      if (!updatedLead) {
-        const fallbackRes = await query(
-          `UPDATE leads SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
-          [id]
-        );
-        updatedLead = fallbackRes.rows[0];
-      }
-
       await LeadHistory.create({
         leadId: id,
-        fieldName: 'Lead Reopened',
+        fieldName: 'stage',
         oldValue: lead.stage,
         newValue: 'Contacted',
-        changeSummary: `Lead reopened by Admin (Reason: ${reason})`,
+        changeSummary: `Lead reopened by ${req.user.name || req.user.email} (Reason: ${reasonField})`,
         changedBy: req.user.id,
-        reason
+        reason: reasonField
       }, client);
 
-      const { ipAddress, userAgent } = getIpAndAgent(req);
       await AuditLog.create({
         userId: req.user.id,
         email: req.user.email,
-        action: 'LEAD_REOPENED',
+        action: 'lead.reopened',
         resource: 'Lead',
         resourceId: updatedLead.lead_id,
-        details: JSON.stringify({ oldStage: lead.stage, reason }),
-        ipAddress,
-        userAgent,
+        details: JSON.stringify({ previousStage: lead.stage, reason: reasonField }),
+        ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
+        userAgent: req.headers['user-agent'] || '',
         result: 'Success'
-      });
+      }, client);
 
       await client.query('COMMIT');
     } catch (err) {
       if (client) await client.query('ROLLBACK');
       throw err;
     } finally {
-      if (client) {
-        client.release();
-        client = null;
-      }
+      if (client) client.release();
     }
 
-    const responseLead = { ...updatedLead, status: updatedLead.lead_status };
-    return res.status(200).json({ success: true, data: responseLead });
+    return res.status(200).json({ success: true, data: updatedLead });
   } catch (error) {
     next(error);
   }
@@ -284,28 +283,203 @@ const buildAdminFilter = (req, alias) => {
   return { where: conditions.join(' AND '), values };
 };
 
+const DATE_REGEX_ADMIN = /^\d{4}-\d{2}-\d{2}$/;
+
 exports.getDashboardKpis = async (req, res, next) => {
   try {
-    const { category, category_id, sub_category_id, from, to } = req.query;
-    const filter = buildAdminFilter(req, '');
+    const { category, category_id, from, to } = req.query;
 
-    // support legacy ?category= param as alias for category_id
-    if (category && !category_id) {
-      filter.values.unshift(category);
-      filter.where = `category = $1 AND ${filter.where}`;
+    // Date format validation
+    if (from && !DATE_REGEX_ADMIN.test(from)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
     }
+    if (to && !DATE_REGEX_ADMIN.test(to)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const conditions = ['deleted_at IS NULL'];
+    const values = [];
+    let idx = 1;
+    const p = (v) => { values.push(v); return `$${idx++}`; };
+
+    if (category && !category_id) conditions.push(`category = ${p(category)}`);
+    if (category_id) conditions.push(`category = ${p(category_id)}`);
+    if (from) conditions.push(`created_at::date >= ${p(from)}::date`);
+    if (to)   conditions.push(`created_at::date <= ${p(to)}::date`);
+
+    const where = conditions.join(' AND ');
 
     const result = await query(`
       SELECT
-        COUNT(*) AS total_leads,
-        COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
-        COUNT(*) FILTER (WHERE stage = 'Lost') AS lost_leads,
-        COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
-        COALESCE(SUM(estimated_value), 0) AS total_estimated_value
+        COUNT(*)                                                                      AS total_leads,
+        COUNT(*) FILTER (WHERE stage = 'New')                                         AS "new",
+        COUNT(*) FILTER (WHERE stage = 'Contacted')                                   AS contacted,
+        COUNT(*) FILTER (WHERE stage = 'Qualified')                                   AS qualified,
+        COUNT(*) FILTER (WHERE stage = 'Meeting')                                     AS meeting,
+        COUNT(*) FILTER (WHERE stage = 'Proposal')                                   AS proposal,
+        COUNT(*) FILTER (WHERE stage = 'Negotiation')                                AS negotiation,
+        COUNT(*) FILTER (WHERE stage = 'Won')                                         AS won,
+        COUNT(*) FILTER (WHERE stage = 'Lost')                                        AS lost,
+        COUNT(*) FILTER (WHERE DATE(next_followup_date) = '${today}'
+                           AND stage NOT IN ('Won','Lost'))                            AS today_followups,
+        COUNT(*) FILTER (WHERE priority = 'Hot')                                  AS hot_leads,
+        COUNT(*) FILTER (WHERE priority = 'Warm')                                 AS warm_leads,
+        COUNT(*) FILTER (WHERE priority = 'Cold')                                 AS cold_leads
       FROM leads
-      WHERE ${filter.where}
-    `, filter.values);
-    res.json({ success: true, data: result.rows[0] });
+      WHERE ${where}
+    `, values);
+
+    const row = result.rows[0] || {};
+    const won  = Number(row.won  || 0);
+    const lost = Number(row.lost || 0);
+    const totalLeads = Number(row.total_leads || 0);
+    let conversion_rate = '0%';
+    if (totalLeads > 0) {
+      const rate = (won / totalLeads) * 100;
+      const rounded = Math.round(rate * 100) / 100;
+      conversion_rate = (rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(2)) + '%';
+    }
+
+    const data = {
+      total_leads:     totalLeads,
+      new:             Number(row.new             || 0),
+      contacted:       Number(row.contacted       || 0),
+      qualified:       Number(row.qualified       || 0),
+      meeting:         Number(row.meeting         || 0),
+      proposal:        Number(row.proposal        || 0),
+      negotiation:     Number(row.negotiation     || 0),
+      won,
+      lost,
+      today_followups: Number(row.today_followups || 0),
+      hot_leads:       Number(row.hot_leads       || 0),
+      warm_leads:      Number(row.warm_leads      || 0),
+      cold_leads:      Number(row.cold_leads      || 0),
+      conversion_rate,
+    };
+
+    return res.status(200).json({
+      success: true,
+      data,
+      meta: {
+        generated_at:      new Date().toISOString(),
+        cache_ttl_seconds: 60,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STORY-6.1.1 | GET /admin/dashboard/category-volume
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getCategoryVolume = async (req, res, next) => {
+  try {
+    const { category_id, from, to } = req.query;
+
+    if (from && !DATE_REGEX_ADMIN.test(from)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+    if (to && !DATE_REGEX_ADMIN.test(to)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    const conditions = ['l.deleted_at IS NULL'];
+    const values = [];
+    let idx = 1;
+    const p = (v) => { values.push(v); return `$${idx++}`; };
+
+    if (category_id) conditions.push(`l.category = ${p(category_id)}`);
+    if (from) conditions.push(`l.created_at::date >= ${p(from)}::date`);
+    if (to)   conditions.push(`l.created_at::date <= ${p(to)}::date`);
+
+    const where = conditions.join(' AND ');
+
+    const dataResult = await query(`
+      SELECT
+        bc.category_name  AS category,
+        bsc.sub_category_name AS sub_category,
+        COUNT(*)::int     AS lead_count
+      FROM leads l
+      LEFT JOIN business_categories bc  ON l.category     = bc.id
+      LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+      WHERE ${where}
+      GROUP BY bc.category_name, bsc.sub_category_name
+      ORDER BY lead_count DESC
+    `, values);
+
+    const countResult = await query(
+      `SELECT COUNT(DISTINCT bc.id)::int AS cnt
+       FROM leads l
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       WHERE ${where}`,
+      values
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: dataResult.rows,
+      meta: {
+        total_categories:  Number((countResult.rows[0] || {}).cnt || 0),
+        cache_ttl_seconds: 60,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STORY-6.1.1 | GET /admin/dashboard/won-rate-by-source
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getWonRateBySource = async (req, res, next) => {
+  try {
+    const { from, to } = req.query;
+
+    if (from && !DATE_REGEX_ADMIN.test(from)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+    if (to && !DATE_REGEX_ADMIN.test(to)) {
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+    if (from && to && new Date(from) > new Date(to)) {
+      return res.status(400).json({ success: false, message: "'from' date must be earlier than 'to' date" });
+    }
+
+    const conditions = ['l.deleted_at IS NULL'];
+    const values = [];
+    let idx = 1;
+    const p = (v) => { values.push(v); return `$${idx++}`; };
+
+    if (from) conditions.push(`l.created_at::date >= ${p(from)}::date`);
+    if (to)   conditions.push(`l.created_at::date <= ${p(to)}::date`);
+
+    const where = conditions.join(' AND ');
+
+    const result = await query(`
+      SELECT
+        COALESCE(ls.name, l.lead_source, 'Unknown') AS source,
+        COUNT(*)::int                                         AS total,
+        COUNT(*) FILTER (WHERE l.stage = 'Won')::int         AS won,
+        COUNT(*) FILTER (WHERE l.stage = 'Lost')::int        AS lost,
+        CASE
+          WHEN COUNT(*) > 0
+            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*), 2) || '%'
+          ELSE '0%'
+        END AS win_rate
+      FROM leads l
+      LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
+      WHERE ${where}
+      GROUP BY COALESCE(ls.name, l.lead_source, 'Unknown')
+      ORDER BY won DESC
+    `, values);
+
+    return res.status(200).json({
+      success: true,
+      data: result.rows,
+      meta: { cache_ttl_seconds: 60 },
+    });
   } catch (error) {
     next(error);
   }
@@ -449,102 +623,110 @@ exports.exportAdminLeads = async (req, res, next) => {
   try {
     const { format, category_id, sub_category_id, status, quality, from, to } = req.query;
 
-    const validFormats = ['csv', 'excel', 'pdf'];
-    if (!validFormats.includes(format)) {
-      return res.status(400).json({ success: false, message: 'Format must be csv, excel, or pdf' });
+    // STORY-6.3.1: Only csv and excel allowed
+    if (!format || !['csv', 'excel'].includes(format)) {
+      return res.status(400).json({ success: false, message: 'Format must be csv or excel' });
     }
 
     const filters = { page: 1, limit: 10000 };
-    if (category_id) filters.category = category_id;
+    if (category_id)    filters.category     = category_id;
     if (sub_category_id) filters.sub_category = sub_category_id;
-    if (status) filters.status = status;
-    if (quality) filters.priority = quality;
-    if (from) filters.from_date = from;
-    if (to) filters.to_date = to;
-    const result = await Lead.findAllAdmin(filters);
+    if (status)         filters.status       = status;
+    if (quality)        filters.priority     = quality;
+    if (from)           filters.from_date    = from;
+    if (to)             filters.to_date      = to;
 
-    if (result.data.length === 0) {
+    const result = await Lead.findAllAdmin(filters);
+    const leads = result.data || [];
+    const recordCount = leads.length;
+
+    // Create audit log entry BEFORE zero-check (STORY-6.3.1 Acceptance Criteria 3)
+    const { ipAddress, userAgent } = getIpAndAgent(req);
+    const appliedFilters = {};
+    if (status)      appliedFilters.status  = status;
+    if (quality)     appliedFilters.quality = quality;
+    if (from)        appliedFilters.from    = from;
+    if (to)          appliedFilters.to      = to;
+
+    let auditId = '';
+    try {
+      const auditEntry = await AuditLog.create({
+        userId:     req.user.id,
+        email:      req.user.email || '',
+        action:     'lead.exported',
+        resource:   'lead',
+        resourceId: 'bulk',
+        details:    JSON.stringify({ record_count: recordCount, format, filters: appliedFilters }),
+        ipAddress,
+        userAgent,
+        result:     recordCount === 0 ? 'NoData' : 'Success',
+      });
+      if (auditEntry) auditId = auditEntry.id || '';
+    } catch (_auditErr) {
+      // Audit logging failure must not block the export response
+    }
+
+    // STORY-6.3.1: Correct column headers
+    const EXPORT_HEADERS = [
+      'lead_id', 'company_name', 'category', 'sub_category',
+      'source', 'stage', 'owner', 'estimated_value', 'created_date',
+    ];
+
+    // Map lead fields to export columns
+    const mapLead = (lead) => ({
+      lead_id:        lead.lead_id       || '',
+      company_name:   lead.company_name  || '',
+      category:       lead.category      || '',
+      sub_category:   lead.sub_category  || '',
+      source:         lead.lead_source   || '',
+      stage:          lead.stage         || '',
+      owner:          lead.assigned_to_name || lead.assigned_to || '',
+      estimated_value: lead.estimated_value != null ? String(lead.estimated_value) : '',
+      created_date:   lead.created_at ? String(lead.created_at).slice(0, 10) : '',
+    });
+
+    // STORY-6.3.1 MD test b-004: Zero-record export returns 404
+    if (recordCount === 0) {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
     if (format === 'csv') {
-      const headers = [
-        'lead_id', 'company_name', 'contact_person', 'mobile_number',
-        'email', 'city', 'lead_source', 'category', 'sub_category',
-        'priority', 'stage', 'estimated_value',
-      ];
-      const csvRows = [headers.join(',')];
-      for (const lead of result.data) {
+      const csvRows = [EXPORT_HEADERS.join(',')];
+      for (const lead of leads) {
+        const mapped = mapLead(lead);
         csvRows.push(
-          headers.map((h) => {
-            const val = lead[h] != null ? String(lead[h]) : '';
+          EXPORT_HEADERS.map((h) => {
+            const val = String(mapped[h] || '');
             return `"${val.replace(/"/g, '""')}"`;
           }).join(',')
         );
       }
+      const csv = csvRows.join('\n');
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=leads.csv');
-      return res.send(csvRows.join('\n'));
+      res.setHeader('Content-Disposition', `attachment; filename="leads-export-${timestamp}.csv"`);
+      res.setHeader('X-Record-Count', String(recordCount));
+      res.setHeader('X-Audit-Log-Id', String(auditId));
+      return res.status(200).send(csv);
     }
 
     if (format === 'excel') {
       const XLSX = require('xlsx');
-      const headers = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'city', 'lead_source', 'category', 'sub_category', 'priority', 'stage', 'estimated_value'];
-      const rows = result.data.map(lead => headers.map(h => lead[h] != null ? String(lead[h]) : ''));
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const rows = leads.map(lead => {
+        const mapped = mapLead(lead);
+        return EXPORT_HEADERS.map(h => mapped[h] || '');
+      });
+      const ws = XLSX.utils.aoa_to_sheet([EXPORT_HEADERS, ...rows]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Leads');
       const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=leads.xlsx');
-      return res.send(buf);
+      res.setHeader('Content-Disposition', `attachment; filename="leads-export-${timestamp}.xlsx"`);
+      res.setHeader('X-Record-Count', String(recordCount));
+      res.setHeader('X-Audit-Log-Id', String(auditId));
+      return res.status(200).send(buf);
     }
-
-    if (format === 'pdf') {
-      const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=leads.pdf');
-      doc.pipe(res);
-
-      const headers = ['Lead ID', 'Company', 'Contact', 'Mobile', 'Email', 'Source', 'Priority', 'Stage', 'Value'];
-      const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'priority', 'stage', 'estimated_value'];
-      const colWidths = [90, 110, 90, 85, 130, 70, 60, 75, 65];
-      const tableTop = 50;
-      let y = tableTop;
-
-      doc.fontSize(14).font('Helvetica-Bold').text('Leads Export', 40, 15);
-      doc.fontSize(8).font('Helvetica').text(`Generated: ${new Date().toISOString()}`, 40, 32);
-      y = 48;
-      doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
-
-      doc.font('Helvetica-Bold').fontSize(7);
-      let x = 40;
-      headers.forEach((h, i) => {
-        doc.text(h, x + 2, y + 3, { width: colWidths[i] - 4, align: 'left' });
-        x += colWidths[i];
-      });
-      y += 16;
-      doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
-
-      doc.font('Helvetica').fontSize(6);
-      for (const lead of result.data) {
-        if (y > 540) {
-          doc.addPage();
-          y = 40;
-        }
-        x = 40;
-        cols.forEach((c, i) => {
-          const val = lead[c] != null ? String(lead[c]) : '';
-          doc.text(val, x + 2, y + 2, { width: colWidths[i] - 4, align: 'left' });
-          x += colWidths[i];
-        });
-        y += 14;
-      }
-
-      doc.end();
-      return;
-    }
-
-    res.json({ success: true, data: result.data });
   } catch (error) {
     next(error);
   }
@@ -662,8 +844,26 @@ exports.exportReport = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 exports.getAtRiskLeads = async (req, res, next) => {
   try {
-    const raw = parseInt(req.query.overdue_days, 10);
+    const { overdue_days, from, to } = req.query;
+
+    // Validate overdue_days — must be parseable as a positive integer
+    if (overdue_days !== undefined) {
+      const parsed = parseInt(overdue_days, 10);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return res.status(400).json({ success: false, message: 'overdue_days must be a positive integer' });
+      }
+    }
+
+    const raw = parseInt(overdue_days, 10);
     const threshold = Number.isInteger(raw) && raw > 0 ? raw : 3;
+
+    // Date conditions
+    const dateConditions = [];
+    const thresholdValues = [threshold];
+    let idx = 2;
+    if (from && DATE_REGEX_ADMIN.test(from)) { dateConditions.push(`l.created_at::date >= $${idx++}::date`); thresholdValues.push(from); }
+    if (to   && DATE_REGEX_ADMIN.test(to))   { dateConditions.push(`l.created_at::date <= $${idx++}::date`); thresholdValues.push(to); }
+    const dateWhere = dateConditions.length ? ' AND ' + dateConditions.join(' AND ') : '';
 
     const leadsResult = await query(
       `SELECT
@@ -680,8 +880,9 @@ exports.getAtRiskLeads = async (req, res, next) => {
          AND l.stage NOT IN ('Won', 'Lost')
          AND (CURRENT_DATE - DATE(l.next_followup_date)) >= $1
          AND l.deleted_at IS NULL
+         ${dateWhere}
        ORDER BY days_overdue DESC`,
-      [threshold]
+      thresholdValues
     );
 
     const breakdownResult = await query(
@@ -697,9 +898,10 @@ exports.getAtRiskLeads = async (req, res, next) => {
          AND l.stage NOT IN ('Won', 'Lost')
          AND (CURRENT_DATE - DATE(l.next_followup_date)) >= $1
          AND l.deleted_at IS NULL
+         ${dateWhere}
        GROUP BY u.id, u.name
        ORDER BY oldest_overdue_days DESC`,
-      [threshold]
+      thresholdValues
     );
 
     return res.json({

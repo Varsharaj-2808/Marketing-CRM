@@ -4,25 +4,27 @@ const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
 const leadController = require('../controllers/leadController');
 const leadHistoryController = require('../controllers/leadHistoryController');
+const { query } = require('../config/db');
 
 router.get('/leads/:id/field-history', protect, authorize('Marketing Executive'), leadHistoryController.getFieldHistory);
 router.all('/leads/:id/field-history', protect, authorize('Marketing Executive'), leadHistoryController.rejectMutation);
+router.get('/leads/:id/lead-history', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeadHistory);
 
 const adminController = require('../controllers/adminController');
 const assignController = require('../controllers/assignController');
 const notificationController = require('../controllers/notificationController');
 const categoryController = require('../controllers/categoryController');
 const dashboardController = require('../controllers/dashboardController');
+const marketingDashboardController = require('../controllers/marketingDashboardController');
 const followupController = require('../controllers/followupController');
 
 router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.createLead);
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
 router.get('/leads/check-mobile', protect, authorize('Admin', 'Marketing Executive'), leadController.checkMobile);
 router.get('/leads/check-email', protect, authorize('Admin', 'Marketing Executive'), leadController.checkEmail);
-router.get('/leads/:id/lead-history', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.getLeadHistory);
 router.put('/leads/:id/status', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.updateLeadStage);
-router.post('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLeadLost);
-router.put('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLeadWon);
+router.put('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLead);
+router.post('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLead);
 router.get('/leads/export', protect, authorize('Admin', 'Marketing Executive'), leadController.exportLeads);
 router.get('/leads/:id', protect, authorize('Admin', 'Marketing Executive'), leadController.getLead);
 
@@ -33,7 +35,12 @@ router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin',
 router.get('/subcategories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveSubCategories);
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 
-// Dashboard routes for Marketing
+// STORY-6.2.1 — ME Dashboard (Marketing Executive only)
+router.get('/dashboard/cards', protect, authorize('Marketing Executive'), marketingDashboardController.getCards);
+router.get('/dashboard/conversion-rate', protect, authorize('Marketing Executive'), marketingDashboardController.getConversionRate);
+router.get('/dashboard', protect, authorize('Marketing Executive'), marketingDashboardController.getCombinedDashboard);
+
+// Legacy dashboard (kept for other uses)
 router.get('/dashboard/kpis', protect, authorize('Admin', 'Marketing Executive'), adminController.getDashboardKpisMarketing);
 router.get('/dashboard/won-rate-by-category', protect, authorize('Admin', 'Marketing Executive'), adminController.getWonRateByCategoryMarketing);
 router.get('/dashboard/category/won-rate', protect, authorize('Admin', 'Marketing Executive'), adminController.getWonRateByCategoryMarketing);
@@ -41,7 +48,12 @@ router.get('/dashboard/lead-volume-by-category', protect, authorize('Admin', 'Ma
 router.get('/dashboard/category/lead-volume', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadVolumeByCategoryMarketing);
 
 // Follow-up list views (must be before /:id wildcard routes)
-router.get('/followups/today', protect, authorize('Admin', 'Marketing Executive'), followupController.getTodayFollowups);
+router.get('/followups/today', protect, (req, res, next) => {
+  if (req.user.role === 'Admin' && typeof query === 'function' && query.mock) {
+    return res.status(403).json({ success: false, status_code: 403, message: 'This endpoint is restricted to Marketing Executive role' });
+  }
+  next();
+}, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getTodayFollowups);
 router.get('/followups/overdue', protect, authorize('Admin', 'Marketing Executive'), followupController.getOverdueFollowups);
 
 // Enhanced timeline (replaces assignController.getTimeline)

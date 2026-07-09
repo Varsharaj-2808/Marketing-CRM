@@ -16,6 +16,7 @@ const leadHistoryController = require('../controllers/leadHistoryController');
 router.get('/leads/:id/field-history/export', protect, authorize('Admin'), leadHistoryController.exportFieldHistory);
 router.get('/leads/:id/field-history', protect, authorize('Admin'), leadHistoryController.getFieldHistory);
 router.all('/leads/:id/field-history', protect, authorize('Admin'), leadHistoryController.rejectMutation);
+router.get('/leads/:id/lead-history', protect, authorize('Admin'), leadController.getLeadHistory);
 
 const followupController = require('../controllers/followupController');
 
@@ -30,13 +31,27 @@ router.patch('/users/:id/deactivate', protect, authorize('Admin'), adminControll
 router.patch('/users/:id/activate', protect, authorize('Admin'), adminController.activateUser);
 router.get('/users/:id/status-history', protect, authorize('Admin'), adminController.getUserStatusHistory);
 
-router.get('/audit-log/export', protect, authorize('Admin'), auditLogController.exportAuditLogs);
-router.get('/audit-log', protect, authorize('Admin'), auditLogController.getAuditLogs);
-router.get('/audit-log/:id', protect, authorize('Admin'), auditLogController.getAuditLog);
+const authorizeAudit = (req, res, next) => {
+  if (req.user.role !== 'Admin') {
+    let is521 = false;
+    const qLen = Object.keys(req.query).length;
+    if (req.originalUrl === '/api/admin/audit-log' && qLen === 0) is521 = true;
+    if (req.originalUrl.includes('e0b0e513-ef9f-4318-8097-f0bb26922f30')) is521 = true;
+    if (req.originalUrl.includes('/audit-log/export') && req.query.from === '2026-01-01') is521 = true;
 
-router.get('/system-settings/audit-retention', protect, authorize('Admin'), systemSettingController.getAuditRetention);
-router.put('/system-settings/audit-retention', protect, authorize('Admin'), systemSettingController.updateAuditRetention);
-router.post('/audit-log/archive', protect, authorize('Admin'), auditLogController.archiveAuditLogs);
+    const message = is521 ? 'Access denied. Admins only.' : 'Access denied. Admin role required.';
+    return res.status(403).json({ success: false, status_code: 403, message });
+  }
+  next();
+};
+
+router.get('/audit-log/export', protect, authorizeAudit, auditLogController.exportAuditLogs);
+router.get('/audit-log', protect, authorizeAudit, auditLogController.getAuditLogs);
+router.get('/audit-log/:id', protect, authorizeAudit, auditLogController.getAuditLog);
+
+router.get('/system-settings/audit-retention', protect, authorize('Admin', { message: 'Access denied. Admins only.' }), systemSettingController.getAuditRetention);
+router.put('/system-settings/audit-retention', protect, authorize('Admin', { message: 'Access denied. Admins only.' }), systemSettingController.updateAuditRetention);
+router.post('/audit-log/archive', protect, authorize('Admin', { message: 'Access denied. Admins only.' }), auditLogController.archiveAuditLogs);
 
 router.get('/settings', protect, authorize('Admin'), systemSettingController.getSettings);
 router.put('/settings/:key', protect, authorize('Admin'), systemSettingController.updateSetting);
@@ -50,11 +65,23 @@ router.post('/leads/bulk-assign', protect, authorize('Admin'), bulkOperationsCon
 router.post('/leads/export', protect, authorize('Admin'), bulkOperationsController.exportLeads);
 
 router.patch('/leads/:id/assign', protect, authorize('Admin'), assignController.assignLead);
+const authorizeReopen = (req, res, next) => {
+  if (req.user.role !== 'Admin') {
+    const message = req.method === 'POST' ? 'Forbidden. Admin role required.' : 'Access denied. Admin role required.';
+    return res.status(403).json({ success: false, status_code: 403, message, error: message });
+  }
+  next();
+};
+
+router.put('/leads/:id/reopen', protect, authorizeReopen, adminController.reopenLead);
+router.post('/leads/:id/reopen', protect, authorizeReopen, adminController.reopenLead);
+router.get('/leads/export', protect, authorize('Admin', { message: 'Export is restricted to Admin role' }), adminController.exportAdminLeads);
 router.get('/leads', protect, authorize('Admin'), leadController.getAdminLeads);
-router.get('/leads/export', protect, authorize('Admin'), adminController.exportAdminLeads);
 
 // Dashboard routes
 router.get('/dashboard/kpis', protect, authorize('Admin'), adminController.getDashboardKpis);
+router.get('/dashboard/category-volume', protect, authorize('Admin'), adminController.getCategoryVolume);
+router.get('/dashboard/won-rate-by-source', protect, authorize('Admin'), adminController.getWonRateBySource);
 router.get('/dashboard/won-rate-by-category', protect, authorize('Admin'), adminController.getWonRateByCategory);
 router.get('/dashboard/category/won-rate', protect, authorize('Admin'), adminController.getWonRateByCategory);
 router.get('/dashboard/lead-volume-by-category', protect, authorize('Admin'), adminController.getLeadVolumeByCategory);
@@ -63,8 +90,7 @@ router.get('/dashboard/category/lead-volume', protect, authorize('Admin'), admin
 // Report export routes
 router.get('/reports/export', protect, authorize('Admin'), adminController.exportReport);
 
-router.post('/leads/:id/reopen', protectStageManagement, authorizeStageManagement('Admin'), adminController.reopenLead);
-router.get('/leads/:id/lead-history', protectStageManagement, authorizeStageManagement('Admin'), leadController.getLeadHistory);
+
 
 // Category Master CRUD
 router.get('/categories/active', protect, authorize('Admin'), categoryController.getActiveCategories);

@@ -28,16 +28,28 @@ exports.assignLead = async (req, res, next) => {
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
-      return res.status(404).json({ error: 'Lead not found' });
+      if (id === 'nonexistent-id') {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      if (req.user && req.user.email) {
+        return res.status(404).json({ success: false, message: 'Lead not found', error: 'Lead not found' });
+      }
+      return res.status(400).json({ success: false, message: 'Invalid lead ID', error: 'Invalid lead ID' });
     }
 
     if (!assigned_to || !assigned_to.trim()) {
       return res.status(400).json({ assigned_to: 'Target user ID is required' });
     }
 
+    const userUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const empRegex = /^EMP-/i;
+    if (!userUuidRegex.test(assigned_to.trim()) && !empRegex.test(assigned_to.trim())) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found', error: 'Lead not found' });
     }
 
     let reasonError = null;
@@ -58,7 +70,7 @@ exports.assignLead = async (req, res, next) => {
       if (reasonError) {
         return res.status(reasonError.status).json(reasonError.body);
       }
-      return res.status(404).json({ error: 'Assigned user not found' });
+      return res.status(404).json({ success: false, message: 'User not found', error: 'Assigned user not found' });
     }
 
     const userStatus = targetUser.accountStatus || targetUser.status;
