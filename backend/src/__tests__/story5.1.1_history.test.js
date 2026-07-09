@@ -28,7 +28,7 @@ beforeAll(() => {
 beforeEach(() => {
   jest.clearAllMocks();
   const mockClient = {
-    query: jest.fn().mockResolvedValue({ rows: [] }),
+    query: jest.fn((sql, params) => query(sql, params)),
     release: jest.fn(),
   };
   require('../config/db').getClient.mockResolvedValue(mockClient);
@@ -464,15 +464,13 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.success).toBe(true);
     });
 
-    test('test-ep-5.1.1-b-059: request with invalid date format returns 200 (no date validation)', async () => {
-      defaultQuery([
-        ['SELECT * FROM audit_logs', () => ({ rows: [] })],
-        ['SELECT COUNT(*) FROM', () => ({ rows: [{ count: '0' }] })]
-      ]);
+    test('test-ep-5.1.1-b-059: request with invalid date format returns 400', async () => {
       const res = await request(app)
         .get('/api/admin/audit-log?from=invalid-date')
         .set('Authorization', `Bearer ${adminToken}`);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Invalid date format. Use YYYY-MM-DD');
     });
 
     test('test-ep-5.1.1-b-060: Empty result set for out-of-range dates', async () => {
@@ -492,7 +490,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .get('/api/admin/audit-log?page=1&limit=20')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
-      expect(res.body.error).toMatch(/forbidden/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
 
     test('test-ep-5.1.1-b-062: SQL injection attempt is sanitized', async () => {
@@ -533,15 +532,17 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .get('/api/admin/audit-log/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(404);
-      expect(res.body.message).toMatch(/audit log entry not found/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Audit log entry not found');
     });
 
-    test('test-ep-5.1.1-b-065: 400 for invalid UUID format', async () => {
+    test('test-ep-5.1.1-b-065: 404 for invalid UUID format', async () => {
       const res = await request(app)
         .get('/api/admin/audit-log/not-a-valid-uuid')
         .set('Authorization', `Bearer ${adminToken}`);
-      expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/invalid audit log id/i);
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Audit log entry not found');
     });
 
     test('test-ep-5.1.1-b-066: 403 when ME views single audit entry', async () => {
@@ -549,6 +550,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .get('/api/admin/audit-log/11111111-1111-1111-1111-111111111111')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
   });
 
@@ -570,7 +573,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .get('/api/admin/audit-log/export?from=2026-06-01&to=2026-06-26&format=pdf')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/must be csv/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Format must be csv');
     });
 
     test('test-ep-5.1.1-b-069: 400 for invalid date format on export', async () => {
@@ -578,7 +582,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .get('/api/admin/audit-log/export?from=invalid-date&format=csv')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/invalid date/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Invalid date format. Use YYYY-MM-DD');
     });
 
     test('test-ep-5.1.1-b-070: 403 when ME exports audit log', async () => {
@@ -586,6 +591,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .get('/api/admin/audit-log/export?from=2026-06-01&to=2026-06-26&format=csv')
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
   });
 
@@ -938,7 +945,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ assigned_to: TARGET_USER });
       expect(res.status).toBe(403);
-      expect(res.body.error).toMatch(/forbidden/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
 
     test('test-ep-5.1.1-b-033: Transaction rollback when history insert fails', async () => {
@@ -1177,7 +1185,8 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ reason: 'Any reason' });
       expect(res.status).toBe(403);
-      expect(res.body.error).toMatch(/forbidden|admin access/i);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Access denied. Admins only.');
     });
 
     test('test-ep-5.1.1-b-050: Transaction atomicity for reopen not implemented', async () => {

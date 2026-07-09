@@ -193,6 +193,11 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data.timeline)).toBe(true);
+    expect(res.body.data.timeline.length).toBeGreaterThan(0);
+    if (res.body.data.timeline.length > 1) {
+      expect(new Date(res.body.data.timeline[0].created_at).getTime())
+        .toBeGreaterThanOrEqual(new Date(res.body.data.timeline[1].created_at).getTime());
+    }
     // 4 events total: 3 history + 1 followup (but followup_logged history entry removed due to dedup)
     // Actually dedup logic removes followup entries from historyEvents if same id appears in followupEvents
     // Since ids differ (hist vs fup), all 4 should remain
@@ -201,6 +206,19 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     // Sorted descending chronological
     const dates = res.body.data.timeline.map(e => e.created_at);
     expect(new Date(dates[0]).getTime()).toBeGreaterThan(new Date(dates[1]).getTime());
+
+    // Exact event order (Follow-up -> Stage Change -> Assignment -> Created)
+    const types = res.body.data.timeline.map(e => e.type || e.field_name || (e.followup_type ? 'followup' : 'unknown'));
+    // Depending on exactly how the controller formats type, it should be in this order based on timestamps:
+    // fup-001 (July 3) -> hist-003 (July 2) -> hist-002 (July 1 09:05) -> hist-001 (July 1 09:00)
+    expect(types[0]).toMatch(/followup|Call/);
+    expect(types[1]).toMatch(/status_change|status/);
+    expect(types[2]).toMatch(/assigned|assigned_to/);
+    expect(types[3]).toMatch(/created|lead_created/);
+
+    // Actor metadata check
+    expect(res.body.data.timeline[0]).toHaveProperty('actor'); // or created_by
+    expect(res.body.data.timeline[3]).toHaveProperty('actor'); // or changed_by
 
     // Each event has type, description/change_summary, created_at, actor/changed_by
     res.body.data.timeline.forEach(event => {
@@ -230,6 +248,10 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.body.success).toBe(true);
     expect(res.body.data.timeline).toHaveLength(1);
     expect(res.body.data.timeline[0].type).toBe("followup");
+    const types2 = res.body.data.timeline.map(e => e.type);
+    expect(types2).not.toContain("created");
+    expect(types2).not.toContain("assigned");
+    expect(types2).not.toContain("status_change");
   });
 
   /**
@@ -281,7 +303,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(20);
     expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination).toHaveProperty('total_pages');
     expect(res.body.pagination.total_pages).toBe(2);
+    expect(res.body.pagination).toHaveProperty('total_count');
     expect(res.body.pagination.total_count).toBe(25);
     expect(res.body.pagination.has_more).toBe(true);
   });
@@ -334,6 +358,7 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(403);
     // Spec: {"success":false,"message":"Not authorized to view this timeline"}
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Not authorized to view this timeline");
   });
 
   /**
@@ -350,6 +375,7 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(400);
     // Spec: {"success":false,"message":"Invalid lead ID format"}
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Invalid lead ID format");
   });
 
   /**
@@ -367,6 +393,7 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
     expect(res.status).toBe(404);
     // Spec: {"success":false,"message":"Lead not found"}
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Lead not found");
   });
 
   /**
@@ -375,10 +402,10 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
    */
   test("b-009 | Edge – Dates are ISO 8601 UTC strings, strict chronological order", async () => {
     const events = [
-      { ...FOLLOWUP_EVENT, id: "fup-001", created_at: "2026-07-03T11:00:00.000Z" },
+      { ...FOLLOWUP_EVENT, id: "fup-001", created_at: "2026-07-03T11:00:00.123Z" },
     ];
     const history = [
-      { ...CREATED_EVENT, id: "hist-001", created_at: "2026-07-01T09:00:00.000Z" },
+      { ...CREATED_EVENT, id: "hist-001", created_at: "2026-07-01T09:00:00.456Z" },
     ];
 
     authMock(MARKETING_USER);
@@ -472,6 +499,8 @@ describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", ()
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(20);
     expect(res.body.pagination.has_more).toBe(true);
+    expect(res.body.pagination).toHaveProperty('total_pages');
+    expect(res.body.pagination).toHaveProperty('total_count');
   });
 
 });
@@ -499,6 +528,7 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
     expect(res.status).toBe(405);
     // Spec: {"success":false,"message":"Timeline events are read-only and strictly append-only."}
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Timeline events are read-only and strictly append-only.");
   });
 
   /**
@@ -515,6 +545,12 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
 
     expect(res.status).toBe(405);
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Timeline events are read-only and strictly append-only.");
+    // "Database record remains unchanged" check
+    const AuditLog = require("../models/AuditLog");
+    expect(AuditLog.create).not.toHaveBeenCalled();
+    const LeadHistory = require("../models/LeadHistory");
+    expect(LeadHistory.findByLeadId).toHaveBeenCalledTimes(0); // Assuming it doesn't even reach the read
   });
 
   /**
@@ -530,6 +566,7 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
 
     expect(res.status).toBe(405);
     expect(res.body).toHaveProperty("success", false);
+    expect(mockQuery).not.toHaveBeenCalledWith(expect.stringContaining("DELETE")); // Database record is not deleted
   });
 
   /**
@@ -553,6 +590,8 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
       .send({ outcome: "changed" });
     expect(resPut.status).toBe(405);
     expect(resPut.body).toHaveProperty("success", false);
+    const AuditLog = require("../models/AuditLog");
+    expect(AuditLog.create).not.toHaveBeenCalled(); // audit trail remains unchanged
   });
 
 });
@@ -603,6 +642,7 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
     // Spec: 400 Bad Request (invalid type filter enum value)
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty("success", false);
+    expect(mockQuery).not.toHaveBeenCalledWith(expect.stringContaining("DROP TABLE")); // tables are not dropped
   });
 
   /**
@@ -685,6 +725,7 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
     // Spec: {"success":false,"message":"Invalid page or limit parameter. Must be positive integers."}
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Invalid page or limit parameter. Must be positive integers.");
   });
 
   /**
@@ -701,6 +742,7 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
     // Spec: {"success":false,"message":"Invalid type filter. Must be one or more of: created, status_change, followup, assigned"}
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty("success", false);
+    expect(res.body.message).toBe("Invalid type filter. Must be one or more of: created, status_change, followup, assigned");
   });
 
   /**
@@ -723,9 +765,13 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
     expect(res.status).toBe(200);
     expect(res.body.data.timeline).toHaveLength(2);
-    // Both have same timestamp; order should be deterministic (stable)
+    // Both have same timestamp; order should be deterministic (stable) based on UUID (a comes before b, etc.)
     const ids = res.body.data.timeline.map(e => e.id);
-    expect(ids).toEqual(expect.arrayContaining([eventA.id, eventB.id]));
+    // eventA.id is a00..., eventB.id is b00... 
+    // In DESC order of UUID, 'b' comes before 'a', or depending on Postgres implementation, it must be exactly stable.
+    // So we just assert it strictly equals the deterministic order the controller uses.
+    // If we assume alphabetical descending:
+    expect(ids).toEqual([eventA.id, eventB.id]);
   });
 
 });

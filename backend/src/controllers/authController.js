@@ -5,6 +5,7 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const SystemSetting = require('../models/SystemSetting');
 const { sendPasswordResetEmail } = require('../utils/emailService');
+const { withTransaction } = require('../utils/transactionHelper');
 
 const getLockoutConfig = async () => {
   try {
@@ -15,14 +16,6 @@ const getLockoutConfig = async () => {
       lockoutWindowMinutes: parseInt(process.env.LOCKOUT_WINDOW_MINUTES || '15'),
       resetTokenExpiryMinutes: parseInt(process.env.RESET_TOKEN_EXPIRY_MINUTES || '30'),
     };
-  }
-};
-
-const logAudit = async (data) => {
-  try {
-    await AuditLog.create(data);
-  } catch (err) {
-    console.error('Audit log error:', err.message);
   }
 };
 
@@ -67,19 +60,19 @@ exports.login = async (req, res, next) => {
 
     const user = await User.findByEmail(email.toLowerCase());
     if (!user) {
-      await logAudit({ action: 'user.login_failed', details: `Invalid login attempt for email: ${email}`, ipAddress, userAgent, result: 'failure' });
+      await AuditLog.create({ action: 'user.login_failed', details: `Invalid login attempt for email: ${email}`, ipAddress, userAgent, result: 'failure' });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const accountStatus = user.accountStatus || user.status;
     if (accountStatus === 'inactive') {
-      await logAudit({ userId: user.id, action: 'user.login_failed', details: 'Account is inactive', ipAddress, userAgent, result: 'failure' });
+      await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: 'Account is inactive', ipAddress, userAgent, result: 'failure' });
       return res.status(403).json({ success: false, message: 'Account is inactive. Contact administrator.' });
     }
 
     if (accountStatus === 'locked' && user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
       const retryAfter = Math.ceil((new Date(user.lockoutUntil) - new Date()) / 1000);
-      await logAudit({ userId: user.id, action: 'user.login_failed', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'failure' });
+      await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'failure' });
       return res.status(423).json({
         success: false,
         message: `Account locked. Too many failed attempts. Try again in ${Math.ceil(retryAfter / 60)} minutes.`,
@@ -94,8 +87,10 @@ exports.login = async (req, res, next) => {
 
       if (user.failedLoginAttempts >= lockoutThreshold) {
         const lockoutUntil = new Date(Date.now() + lockoutWindowMs);
-        await User.lockAccount(user.id, lockoutUntil, user.failedLoginAttempts);
-        await logAudit({ userId: user.id, action: 'user.login_failed', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'failure' });
+        await withTransaction(async (client) => {
+          await User.lockAccount(user.id, lockoutUntil, user.failedLoginAttempts, client);
+          await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'failure' }, client);
+        });
         return res.status(423).json({
           success: false,
           message: `Account locked. Too many failed attempts. Try again in ${config.lockoutWindowMinutes} minutes.`,
@@ -103,14 +98,14 @@ exports.login = async (req, res, next) => {
         });
       }
 
-      await User.incrementFailedAttempts(user.id);
-      await logAudit({ userId: user.id, action: 'user.login_failed', details: `Invalid password (attempt ${user.failedLoginAttempts})`, ipAddress, userAgent, result: 'failure' });
+      await withTransaction(async (client) => {
+        await User.incrementFailedAttempts(user.id, client);
+        await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: `Invalid password (attempt ${user.failedLoginAttempts})`, ipAddress, userAgent, result: 'failure' }, client);
+      });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    await User.unlockAccount(user.id);
     const isFirstLogin = !user.lastLoginAt;
-    await User.setLastLogin(user.id);
 
     // Normalize legacy role values before generating JWT
     if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
@@ -119,14 +114,18 @@ exports.login = async (req, res, next) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user, remember_me);
     const hashedRefresh = await bcrypt.hash(refreshToken, 12);
-    await User.storeRefreshToken(user.id, hashedRefresh);
+
+    await withTransaction(async (client) => {
+      await User.unlockAccount(user.id, client);
+      await User.setLastLogin(user.id, client);
+      await User.storeRefreshToken(user.id, hashedRefresh, client);
+      await AuditLog.create({
+        userId: user.id, email: user.email, action: 'user.login', resource: 'user',
+        details: 'Successful login', ipAddress, userAgent, result: 'success',
+      }, client);
+    });
 
     const redirect = user.role === 'Admin' ? '/admin/dashboard' : '/marketing/leads';
-
-    await logAudit({
-      userId: user.id, email: user.email, action: 'user.login', resource: 'user',
-      details: 'Successful login', ipAddress, userAgent, result: 'success',
-    });
 
     res.json({
       success: true,
@@ -197,11 +196,12 @@ exports.logout = async (req, res, next) => {
   try {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
-    await User.clearRefreshToken(req.user.id);
-
-    await logAudit({
-      userId: req.user.id, email: req.user.email, action: 'user.logout', resource: 'user',
-      details: 'User logged out', ipAddress, userAgent, result: 'success',
+    await withTransaction(async (client) => {
+      await User.clearRefreshToken(req.user.id, client);
+      await AuditLog.create({
+        userId: req.user.id, email: req.user.email, action: 'user.logout', resource: 'user',
+        details: 'User logged out', ipAddress, userAgent, result: 'success',
+      }, client);
     });
 
     res.json({ success: true, message: 'Logout successful' });
@@ -229,17 +229,18 @@ exports.forgotPassword = async (req, res, next) => {
       const hashedToken = await bcrypt.hash(resetToken, 12);
       const expiry = new Date(Date.now() + resetTokenExpiryMs);
 
-      await User.storeResetToken(user.id, hashedToken, expiry);
+      await withTransaction(async (client) => {
+        await User.storeResetToken(user.id, hashedToken, expiry, client);
+        await AuditLog.create({
+          userId: user.id, email: user.email, action: 'user.forgot_password', resource: 'user',
+          details: 'Password reset token generated and emailed', ipAddress, userAgent, result: 'success',
+        }, client);
+      });
 
       const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
       await sendPasswordResetEmail(email, resetUrl);
-
-      await logAudit({
-        userId: user.id, email: user.email, action: 'user.forgot_password', resource: 'user',
-        details: 'Password reset token generated and emailed', ipAddress, userAgent, result: 'success',
-      });
     } else {
-      await logAudit({
+      await AuditLog.create({
         email, action: 'user.forgot_password', resource: 'user',
         details: `Password reset requested for non-existent email: ${email}`, ipAddress, userAgent, result: 'failure',
       });
@@ -279,10 +280,12 @@ exports.resetPassword = async (req, res, next) => {
     }
 
     if (targetUser.resetTokenExpiry && new Date(targetUser.resetTokenExpiry) < new Date()) {
-      await User.clearResetToken(targetUser.id);
-      await logAudit({
-        userId: targetUser.id, email: targetUser.email, action: 'user.reset_password',
-        details: 'Reset token expired', ipAddress, userAgent, result: 'failure',
+      await withTransaction(async (client) => {
+        await User.clearResetToken(targetUser.id, client);
+        await AuditLog.create({
+          userId: targetUser.id, email: targetUser.email, action: 'user.reset_password',
+          details: 'Reset token expired', ipAddress, userAgent, result: 'failure',
+        }, client);
       });
       return res.status(400).json({ success: false, message: 'Invalid token' });
     }
@@ -292,12 +295,13 @@ exports.resetPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'New password must be different from current password' });
     }
 
-    await User.update(targetUser.id, { password: newPassword });
-    await User.clearAllTokens(targetUser.id);
-
-    await logAudit({
-      userId: targetUser.id, email: targetUser.email, action: 'user.reset_password', resource: 'user',
-      details: 'Password reset successfully', ipAddress, userAgent, result: 'success',
+    await withTransaction(async (client) => {
+      await User.update(targetUser.id, { password: newPassword }, client);
+      await User.clearAllTokens(targetUser.id, client);
+      await AuditLog.create({
+        userId: targetUser.id, email: targetUser.email, action: 'user.reset_password', resource: 'user',
+        details: 'Password reset successfully', ipAddress, userAgent, result: 'success',
+      }, client);
     });
 
     res.json({ success: true, message: 'Password reset done' });
@@ -326,7 +330,7 @@ exports.changePassword = async (req, res, next) => {
 
     const isMatch = await User.comparePassword(currentPassword, user.password);
     if (!isMatch) {
-      await logAudit({
+      await AuditLog.create({
         userId: user.id, email: user.email, action: 'user.change_password',
         details: 'Current password is incorrect', ipAddress, userAgent, result: 'failure',
       });
@@ -338,12 +342,13 @@ exports.changePassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'New password must be different from current password' });
     }
 
-    await User.update(user.id, { password: newPassword });
-    await User.clearRefreshToken(user.id);
-
-    await logAudit({
-      userId: user.id, email: user.email, action: 'user.change_password', resource: 'user',
-      details: 'Password changed successfully', ipAddress, userAgent, result: 'success',
+    await withTransaction(async (client) => {
+      await User.update(user.id, { password: newPassword }, client);
+      await User.clearRefreshToken(user.id, client);
+      await AuditLog.create({
+        userId: user.id, email: user.email, action: 'user.change_password', resource: 'user',
+        details: 'Password changed successfully', ipAddress, userAgent, result: 'success',
+      }, client);
     });
 
     res.json({ success: true, message: 'Password changed' });

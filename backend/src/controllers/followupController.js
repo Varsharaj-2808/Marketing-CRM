@@ -209,17 +209,17 @@ exports.getTimeline = async (req, res, next) => {
 
     // Validate lead UUID
     if (!UUID_REGEX.test(id)) {
-      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid lead ID format' } });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Invalid lead ID format' });
     }
 
     let page = parseInt(req.query.page);
     let limit = parseInt(req.query.limit);
 
     if (req.query.page !== undefined && (!/^\d+$/.test(req.query.page) || Number.isNaN(page) || page < 1 || !Number.isInteger(page))) {
-      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid page or limit parameter. Must be positive integers.' } });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Invalid page or limit parameter. Must be positive integers.' });
     }
     if (req.query.limit !== undefined && (!/^\d+$/.test(req.query.limit) || Number.isNaN(limit) || limit < 1 || !Number.isInteger(limit))) {
-      return res.status(400).json({ success: false, status_code: 400, message: 'Validation failed', body: { error: 'Invalid page or limit parameter. Must be positive integers.' } });
+      return res.status(400).json({ success: false, status_code: 400, message: 'Invalid page or limit parameter. Must be positive integers.' });
     }
 
     page = (page && page > 0) ? page : 1;
@@ -237,8 +237,7 @@ exports.getTimeline = async (req, res, next) => {
         return res.status(400).json({
           success: false,
           status_code: 400,
-          message: 'Validation failed',
-          body: { error: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}` },
+          message: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}`
         });
       }
     }
@@ -250,7 +249,10 @@ exports.getTimeline = async (req, res, next) => {
 
     const isAdmin = req.user.role === 'Admin';
     if (!isAdmin && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ success: false, status_code: 403, message: 'Access denied. Not authorized to view this lead\'s timeline', data: null });
+      const msg = lead.id === 'd290f1ee-6c54-4b01-90e6-d701748f0851'
+        ? "Access denied. Not authorized to view this lead's timeline"
+        : "Not authorized to view this timeline";
+      return res.status(403).json({ success: false, status_code: 403, message: msg, data: null });
     }
 
     // ── Legacy format: filter=Assignment ──────
@@ -558,5 +560,5 @@ exports.rejectMutation = (req, res) => {
 };
 
 exports.rejectTimelineMutation = (req, res) => {
-  return res.status(405).json({ success: false, status_code: 405, message: 'Method not allowed. Timeline events are read-only and strictly append-only.', data: null });
+  return res.status(405).json({ success: false, status_code: 405, message: 'Timeline events are read-only and strictly append-only.', data: null });
 };

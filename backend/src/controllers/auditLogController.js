@@ -51,12 +51,10 @@ exports.getAuditLogs = async (req, res, next) => {
 
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
     if (from && !DATE_REGEX.test(from)) {
-      // Ignored to match expected behavior in b-059
-      from = null;
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
     }
     if (to && !DATE_REGEX.test(to)) {
-      // Ignored to match expected behavior in b-059
-      to = null;
+      return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
     }
 
     const filters = {};
@@ -92,7 +90,7 @@ exports.getAuditLog = async (req, res, next) => {
     const { id } = req.params;
 
     if (!UUID_REGEX.test(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid audit log id' });
+      return res.status(404).json({ success: false, message: 'Audit log entry not found' });
     }
 
     let result = await query(
@@ -117,7 +115,7 @@ exports.getAuditLog = async (req, res, next) => {
 
 exports.exportAuditLogs = async (req, res, next) => {
   try {
-    const { from, to, format } = req.query;
+    const { from, to, format, actor, action_type, entity, entity_affected } = req.query;
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
     if (format && format !== 'csv') {
@@ -133,16 +131,19 @@ exports.exportAuditLogs = async (req, res, next) => {
       to: new Date(to),
       limit: 100000
     };
+    if (actor) filters.userId = actor;
+    if (action_type) filters.action = action_type;
+    if (entity_affected || entity) filters.resource = entity_affected || entity;
 
     const result = await AuditLog.findAll(filters);
 
     if (result.data.length === 0 && result.pagination.totalRecords === 0) {
-      return res.status(404).json({ success: false, message: 'No audit log entries found matching the filter criteria' });
+      return res.status(404).json({ success: false, message: 'No audit log entries found for the given filters' });
     }
 
-    const headers = 'action_type,actor_name,actor_role,entity_affected,entity_id\n';
+    const headers = 'id,seq,actor_id,actor_name,actor_role,action_type,entity_affected,entity_id,result,ip_address,created_at\n';
     const rows = result.data.map(h =>
-      `"${h.action || ''}","${h.actor_name || ''}","${h.actor_role || ''}","${h.resource || ''}","${h.resourceId || ''}"`
+      `"${h.id || ''}","${h.seq || ''}","${h.user_id || ''}","${h.actor_name || ''}","${h.actor_role || ''}","${h.action || ''}","${h.resource || ''}","${h.resourceId || ''}","${h.result || ''}","${h.ipAddress || ''}","${h.createdAt || ''}"`
     ).join('\n');
 
     const csv = headers + rows;
@@ -161,12 +162,18 @@ exports.archiveAuditLogs = async (req, res, next) => {
     const retentionMonths = parseInt(setting) || 12;
 
     const result = await query(
-      `WITH moved AS (
-        DELETE FROM audit_logs
+      `WITH archived AS (
+        INSERT INTO audit_logs_archive
+        SELECT * FROM audit_logs
         WHERE "createdAt" < NOW() - ($1::int || ' months')::interval
         RETURNING *
+      ), moved AS (
+        DELETE FROM audit_logs a
+        USING archived ar
+        WHERE a.id = ar.id
+        RETURNING a.*
       )
-      SELECT (SELECT COUNT(*) FROM moved) AS archived_count,
+      SELECT (SELECT COUNT(*) FROM archived) AS archived_count,
              $1::text AS retention_months,
              (NOW() - ($1::int || ' months')::interval)::date::text AS cutoff_date`,
       [retentionMonths]
@@ -175,7 +182,7 @@ exports.archiveAuditLogs = async (req, res, next) => {
     const row = result.rows[0];
     res.json({
       success: true,
-      message: 'Archival completed successfully',
+      message: 'Archival completed',
       archived_count: parseInt(row.archived_count),
       retention_months: row.retention_months,
       cutoff_date: row.cutoff_date,

@@ -7,7 +7,7 @@ const {
 } = require('./setup');
 
 let mockQuery = jest.fn();
-jest.mock('../config/db', () => ({ query: (...args) => mockQuery(...args) }));
+jest.mock('../config/db', () => ({ query: (...args) => mockQuery(...args), getClient: jest.fn().mockResolvedValue({ query: jest.fn().mockResolvedValue({ rows: [] }), release: jest.fn() }) }));
 jest.mock('../utils/emailService', () => ({
   sendWelcomeEmail: jest.fn().mockResolvedValue(),
 }));

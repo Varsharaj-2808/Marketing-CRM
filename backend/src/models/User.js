@@ -62,7 +62,7 @@ const User = {
     return `EMP-${String(nextSeq).padStart(5, '0')}`;
   },
 
-  async create(data) {
+  async create(data, client) {
     const { name, email, mobile, role, password, status } = data;
     const employeeId = await this.getNextEmployeeId();
     const passwordHash = await bcrypt.hash(password, 12);
@@ -72,7 +72,8 @@ const User = {
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || nameParts[0];
 
-    const result = await query(
+    const db = client || { query };
+    const result = await db.query(
       `INSERT INTO users ("employee_id", name, email, mobile, role, "accountStatus", password, "firstName", "lastName")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status, "createdAt", "updatedAt"`,
@@ -81,7 +82,7 @@ const User = {
     return result.rows[0];
   },
 
-  async update(id, fields) {
+  async update(id, fields, client) {
     const setClauses = [];
     const values = [];
     let idx = 1;
@@ -101,7 +102,8 @@ const User = {
     if (setClauses.length === 0) return null;
 
     values.push(id);
-    const result = await query(
+    const db = client || { query };
+    const result = await db.query(
       `UPDATE users SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
       values
     );
@@ -134,61 +136,72 @@ const User = {
     return bcrypt.compare(plainPassword, hashedPassword);
   },
 
-  async incrementFailedAttempts(id) {
-    await query('UPDATE users SET "failedLoginAttempts" = "failedLoginAttempts" + 1 WHERE id = $1', [id]);
+  async incrementFailedAttempts(id, client) {
+    const db = client || { query };
+    await db.query('UPDATE users SET "failedLoginAttempts" = "failedLoginAttempts" + 1 WHERE id = $1', [id]);
   },
 
-  async lockAccount(id, lockoutUntil, failedAttempts) {
-    await query(
+  async lockAccount(id, lockoutUntil, failedAttempts, client) {
+    const db = client || { query };
+    await db.query(
       'UPDATE users SET "accountStatus" = $1, "lockoutUntil" = $2, "failedLoginAttempts" = $3 WHERE id = $4',
       ['locked', lockoutUntil, failedAttempts || 0, id]
     );
   },
 
-  async unlockAccount(id) {
-    await query(
+  async unlockAccount(id, client) {
+    const db = client || { query };
+    await db.query(
       'UPDATE users SET "failedLoginAttempts" = 0, "lockoutUntil" = NULL, "accountStatus" = $1 WHERE id = $2',
       ['active', id]
     );
   },
 
-  async setLastLogin(id) {
-    await query('UPDATE users SET "lastLoginAt" = NOW() WHERE id = $1', [id]);
+  async setLastLogin(id, client) {
+    const db = client || { query };
+    await db.query('UPDATE users SET "lastLoginAt" = NOW() WHERE id = $1', [id]);
   },
 
-  async storeRefreshToken(id, hashedToken) {
-    await query('UPDATE users SET "refreshToken" = $1 WHERE id = $2', [hashedToken, id]);
+  async storeRefreshToken(id, hashedToken, client) {
+    const db = client || { query };
+    await db.query('UPDATE users SET "refreshToken" = $1 WHERE id = $2', [hashedToken, id]);
   },
 
-  async storeResetToken(id, hashedToken, expiry) {
-    await query(
+  async storeResetToken(id, hashedToken, expiry, client) {
+    const db = client || { query };
+    await db.query(
       'UPDATE users SET "resetToken" = $1, "resetTokenExpiry" = $2 WHERE id = $3',
       [hashedToken, expiry, id]
     );
   },
 
-  async clearResetToken(id) {
-    await query('UPDATE users SET "resetToken" = NULL, "resetTokenExpiry" = NULL WHERE id = $1', [id]);
+  async clearResetToken(id, client) {
+    const db = client || { query };
+    await db.query('UPDATE users SET "resetToken" = NULL, "resetTokenExpiry" = NULL WHERE id = $1', [id]);
   },
 
-  async clearRefreshToken(id) {
-    await query('UPDATE users SET "refreshToken" = NULL WHERE id = $1', [id]);
+  async clearRefreshToken(id, client) {
+    const db = client || { query };
+    await db.query('UPDATE users SET "refreshToken" = NULL WHERE id = $1', [id]);
   },
 
-  async clearAllTokens(id) {
-    await query('UPDATE users SET "refreshToken" = NULL, "resetToken" = NULL, "resetTokenExpiry" = NULL WHERE id = $1', [id]);
+  async clearAllTokens(id, client) {
+    const db = client || { query };
+    await db.query('UPDATE users SET "refreshToken" = NULL, "resetToken" = NULL, "resetTokenExpiry" = NULL WHERE id = $1', [id]);
   },
 
-  async updateAccountStatus(id, status) {
-    const result = await query(
+  async updateAccountStatus(id, status, client) {
+    const db = client || { query };
+    const result = await db.query(
       'UPDATE users SET "accountStatus" = $1 WHERE id = $2 RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status',
       [status, id]
     );
     return result.rows[0] || null;
   },
 
-  async updateRole(id, role) {
-    const result = await query(
+  async updateRole(id, role, client) {
+    const db = client || { query };
+    const result = await db.query(
       'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status',
       [role, id]
     );
