@@ -1067,6 +1067,11 @@ describe('STORY-6.3.1 — GET /admin/audit-log (Export Verification)', () => {
     expect(res.body.data.length).toBeGreaterThan(0);
     const entry = res.body.data[0];
     expect(entry.action).toBe('lead.exported');
+    expect(entry.entity).toBe('lead');
+    expect(entry.performed_by).toBeDefined();
+    expect(entry.performed_by.role).toBe('Admin');
+    expect(entry.ip_address).toBeDefined();
+    expect(entry.timestamp).toBeDefined();
     expect(entry.details).toBeDefined();
     expect(entry.details.record_count).toBeDefined();
     expect(entry.details.format).toBeDefined();
