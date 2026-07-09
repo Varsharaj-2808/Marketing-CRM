@@ -31,10 +31,12 @@ function formatCurrency(value) {
 
 function parseProposalAmount(value) {
   if (!value || value.trim() === '') return { value: null, error: null };
-  const cleaned = value.replace(/[^0-9.]/g, '');
+  const trimmed = value.trim();
+  const rawNum = Number(trimmed);
+  if (isNaN(rawNum)) return { value: null, error: 'Proposal amount must be a number.' };
+  if (rawNum < 0) return { value: null, error: 'Proposal amount must be a non-negative number.' };
+  const cleaned = trimmed.replace(/[^0-9.]/g, '');
   const num = Number(cleaned);
-  if (isNaN(num)) return { value: null, error: 'Proposal amount must be a number.' };
-  if (num < 0) return { value: null, error: 'Proposal amount must be a non-negative number.' };
   if (num > MAX_PROPOSAL_AMOUNT) return { value: null, error: `Proposal amount cannot exceed ${MAX_PROPOSAL_AMOUNT.toLocaleString('en-US')}.` };
   return { value: Math.round(num * 100) / 100, error: null };
 }

@@ -490,18 +490,21 @@ describe('STORY-4.2.1: View Today\'s and Overdue Follow-ups Integration Tests', 
   });
 
   // f-014: Role protection
-  it('test-ep-4.2.1-f-014: Marketing Executive role gets 403 response when requesting at-risk API', async () => {
+  it('test-ep-4.2.1-f-014: Marketing Executive role sees Access Denied when visiting admin dashboard', async () => {
     setUser(marketingUser);
-    leadService.fetchAtRiskLeads.mockResolvedValue({
-      success: false,
-      status_code: 403,
-      message: "Access denied. Admin role required.",
-      data: null
-    });
+    render(
+      <MemoryRouter initialEntries={['/admin/dashboard']}>
+        <AuthProvider>
+          <AdminDashboardPage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
-    const res = await leadService.fetchAtRiskLeads();
-    expect(res.success).toBe(false);
-    expect(res.status_code).toBe(403);
+    await waitFor(() => {
+      expect(screen.getByTestId('access-denied')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
+    expect(leadService.fetchAtRiskLeads).not.toHaveBeenCalled();
   });
 
   // f-015: Bell badge unread count
@@ -660,19 +663,55 @@ describe('STORY-4.2.1: View Today\'s and Overdue Follow-ups Integration Tests', 
   });
 
   // f-021: Routing refresh F5 integrity
-  it('test-ep-4.2.1-f-021: Routing routes load components properly', () => {
+  it('test-ep-4.2.1-f-021: Verify that browser refresh during notification read selection does not corrupt client routing state', async () => {
     setUser(marketingUser);
-    render(
+    const mockNotif = {
+      success: true,
+      data: [
+        { id: 'notif-1', message: 'Follow-up due today for TechCorp', leadId: 'lead-001', read: false }
+      ]
+    };
+    notificationService.fetchNotifications.mockResolvedValue(mockNotif);
+    leadService.fetchTodayFollowups.mockResolvedValue({ success: true, data: [] });
+    leadService.fetchOverdueFollowups.mockResolvedValue({ success: true, data: [] });
+
+    const { unmount } = render(
       <MemoryRouter initialEntries={['/marketing/dashboard']}>
         <AuthProvider>
+          <NotificationBell />
           <Routes>
-            <Route path="/marketing/dashboard" element={<div>Dashboard Component</div>} />
+            <Route path="/marketing/dashboard" element={<DashboardPage />} />
+            <Route path="/marketing/leads/:leadId" element={<div data-testid="lead-details-loaded">Lead Details Page</div>} />
           </Routes>
         </AuthProvider>
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Dashboard Component')).toBeInTheDocument();
+    const bell = screen.getByRole('button', { name: /Notifications/ });
+    fireEvent.click(bell);
+
+    const notifItem = await screen.findByText('Follow-up due today for TechCorp');
+    fireEvent.click(notifItem);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('lead-details-loaded')).toBeInTheDocument();
+    });
+
+    unmount();
+
+    render(
+      <MemoryRouter initialEntries={['/marketing/leads/lead-001']}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/marketing/leads/:leadId" element={<div data-testid="lead-details-loaded">Lead Details Page</div>} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('lead-details-loaded')).toBeInTheDocument();
+    });
   });
 
   // f-022: Offline resilience

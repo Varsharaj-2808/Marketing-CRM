@@ -716,7 +716,7 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
     expect(screen.getByRole('button', { name: /Show less/i })).toBeInTheDocument();
   });
 
-  it('test-ep-4.3.1-f-005: Verify four event filtering chips are rendered', async () => {
+  it('test-ep-4.3.1-f-005: Verify four event filtering chips are rendered with All active by default and click changes styles', async () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
@@ -734,27 +734,97 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
     expect(filterFollow).toBeInTheDocument();
     expect(filterStages).toBeInTheDocument();
     expect(filterAssign).toBeInTheDocument();
+
+    expect(filterAll).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(filterFollow);
+    await waitFor(() => {
+      expect(filterFollow).toHaveAttribute('aria-selected', 'true');
+      expect(filterAll).toHaveAttribute('aria-selected', 'false');
+    });
   });
 
   it('test-ep-4.3.1-f-006: Verify clicking "Follow-ups" filters the feed and queries type=followup', async () => {
     setUser(marketingUser);
     const fetchMock = vi.fn().mockImplementation((input) => {
-      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        if (url.includes('type=followup')) {
+          return mockRes({
+            status: 'success',
+            body: {
+              timeline: FOUR_EVENTS_TIMELINE.body.timeline.filter(e => e.type === 'followup'),
+              pagination: { page: 1, totalPages: 1, has_more: false }
+            }
+          });
+        }
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
       return mockRes(MOCK_LEAD);
     });
     global.fetch = fetchMock;
 
     renderLeadDetails('/marketing/leads/lead-100');
 
-    const filterFollow = await screen.findByRole('tab', { name: 'Follow-ups' });
+    const filterAll = await screen.findByRole('tab', { name: 'All' });
+    expect(filterAll).toHaveAttribute('aria-selected', 'true');
+
+    const filterFollow = screen.getByRole('tab', { name: 'Follow-ups' });
     fireEvent.click(filterFollow);
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('type=followup'), expect.any(Object));
     });
+
+    await waitFor(() => {
+      expect(screen.getByText('Call')).toBeInTheDocument();
+      expect(screen.queryByText('Lead Created')).not.toBeInTheDocument();
+      expect(screen.queryByText('Lead Assigned')).not.toBeInTheDocument();
+    });
+    expect(filterFollow).toHaveAttribute('aria-selected', 'true');
+    expect(filterAll).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('test-ep-4.3.1-f-007: Verify clicking "Stage Changes" queries type=status_change', async () => {
+  it('test-ep-4.3.1-f-007: Verify clicking "All" chip restores the full chronological timeline feed', async () => {
+    setUser(marketingUser);
+    const fetchMock = vi.fn().mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        if (url.includes('type=followup')) {
+          return mockRes({
+            status: 'success',
+            body: {
+              timeline: FOUR_EVENTS_TIMELINE.body.timeline.filter(e => e.type === 'followup'),
+              pagination: { page: 1, totalPages: 1, has_more: false }
+            }
+          });
+        }
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
+      return mockRes(MOCK_LEAD);
+    });
+    global.fetch = fetchMock;
+
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    const filterAll = await screen.findByRole('tab', { name: 'All' });
+    const filterFollow = screen.getByRole('tab', { name: 'Follow-ups' });
+
+    fireEvent.click(filterFollow);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('type=followup'), expect.any(Object));
+    });
+
+    fireEvent.click(filterAll);
+
+    await waitFor(() => {
+      expect(screen.getByText('Call')).toBeInTheDocument();
+      expect(screen.getByText('Lead Created')).toBeInTheDocument();
+    });
+    expect(filterAll).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('test-ep-4.3.1-f-008: Verify clicking "Stage Changes" or "Assignments" filters the feed accordingly', async () => {
     setUser(marketingUser);
     const fetchMock = vi.fn().mockImplementation((input) => {
       if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
@@ -770,19 +840,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('type=status_change'), expect.any(Object));
     });
-  });
 
-  it('test-ep-4.3.1-f-008: Verify clicking "Assignments" queries type=assigned', async () => {
-    setUser(marketingUser);
-    const fetchMock = vi.fn().mockImplementation((input) => {
-      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
-      return mockRes(MOCK_LEAD);
-    });
-    global.fetch = fetchMock;
-
-    renderLeadDetails('/marketing/leads/lead-100');
-
-    const filterAssign = await screen.findByRole('tab', { name: 'Assignments' });
+    const filterAssign = screen.getByRole('tab', { name: 'Assignments' });
     fireEvent.click(filterAssign);
 
     await waitFor(() => {
@@ -916,18 +975,54 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
 
   it('test-ep-4.3.1-f-016: Verify new activities refetch page 1 timeline immediately', async () => {
     setUser(marketingUser);
-    const fetchMock = vi.fn().mockImplementation((input) => {
-      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+    let timelineCallCount = 0;
+    let followupPosted = false;
+    const fetchMock = vi.fn().mockImplementation((input, options) => {
+      const url = String(input);
+      const method = options?.method || 'GET';
+      if (method === 'POST' && url.includes('/followups')) {
+        followupPosted = true;
+        return mockRes({ success: true, data: { id: 'new-fup', followup_type: 'Call', outcome: 'Interested' } });
+      }
+      if (url.includes('/timeline')) {
+        timelineCallCount++;
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
       return mockRes(MOCK_LEAD);
     });
     global.fetch = fetchMock;
 
     renderLeadDetails('/marketing/leads/lead-100');
     await screen.findByText('Lead Created');
+    const timelineCallsBefore = timelineCallCount;
 
-    // Trigger log follow-up or add correction logic which calls loadTimeline(1, true)
-    const logBtn = await screen.findAllByRole('button', { name: /Log Follow-up/i });
-    expect(logBtn[0]).toBeInTheDocument();
+    const logBtn = await screen.findByRole('button', { name: /Log Follow-up/i });
+    fireEvent.click(logBtn);
+
+    await screen.findByRole('heading', { name: 'Log Follow-up' });
+
+    const typeBtn = screen.getByRole('combobox', { name: /Follow-up Type/i });
+    fireEvent.click(typeBtn);
+    const typeOptions = await screen.findAllByRole('option');
+    const callOption = typeOptions.find(o => o.textContent.includes('Call'));
+    fireEvent.click(callOption);
+    fireEvent.change(screen.getByLabelText(/Outcome/i), { target: { value: 'Interested' } });
+
+    const nextDateInput = screen.getByLabelText(/Next Follow-up Date/i);
+    fireEvent.change(nextDateInput, { target: { value: '2026-07-10' } });
+
+    const submitBtn = screen.getByRole('button', { name: 'Submit' });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(followupPosted).toBe(true);
+    });
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/followups'), expect.any(Object));
+
+    await waitFor(() => {
+      expect(timelineCallCount).toBeGreaterThan(timelineCallsBefore);
+    });
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/timeline'), expect.any(Object));
   });
 
   it('test-ep-4.3.1-f-017: Verify timeline displays functional inline retry box on error', async () => {
@@ -994,17 +1089,65 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
   });
 
   it('test-ep-4.3.1-f-020: Verify reassignments trigger page 1 timeline refresh immediately', async () => {
-    setUser(marketingUser);
-    const fetchMock = vi.fn().mockImplementation((input) => {
-      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+    setUser(adminUser);
+    let assigned = false;
+    const fetchMock = vi.fn().mockImplementation((input, options) => {
+      const url = String(input);
+      const method = options?.method || 'GET';
+      if (method === 'PATCH' && url.includes('/assign')) {
+        assigned = true;
+        return mockRes({ success: true, data: { assignedTo: 'ME-002' } });
+      }
+      if (method === 'GET' && url.includes('/admin/users')) {
+        return mockRes({ success: true, data: [
+          { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive', role: 'Marketing Executive' },
+          { id: 'ME-002', employee_id: 'ME-002', name: 'Jane Smith', role: 'Marketing Executive' },
+        ]});
+      }
+      if (url.includes('/timeline')) {
+        if (assigned) {
+          const assignEntry = {
+            id: 'assign-5', action: 'Lead Assigned', message: 'Lead reassigned from Maya Executive to Jane Smith', created_at: '2026-07-06T14:00:00Z', type: 'assigned', created_by: { name: 'Maya Executive' }
+          };
+          return mockRes({
+            status: 'success',
+            body: {
+              timeline: [assignEntry, ...FOUR_EVENTS_TIMELINE.body.timeline],
+              pagination: { page: 1, totalPages: 1, has_more: false }
+            }
+          });
+        }
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
       return mockRes(MOCK_LEAD);
     });
     global.fetch = fetchMock;
 
     renderLeadDetails('/marketing/leads/lead-100');
-
     await screen.findByText('Lead Assigned');
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/timeline'), expect.any(Object));
+
+    const reassignBtn = screen.getByRole('button', { name: /Reassign lead/i });
+    fireEvent.click(reassignBtn);
+
+    const modalTitle = await screen.findByText('Reassign Lead');
+    expect(modalTitle).toBeInTheDocument();
+
+    const userSelect = await screen.findByLabelText('Marketing Executive');
+    fireEvent.change(userSelect, { target: { value: 'ME-002' } });
+
+    const reasonArea = screen.getByLabelText('Reassignment reason');
+    fireEvent.change(reasonArea, { target: { value: 'Workload balancing' } });
+
+    const confirmBtn = screen.getByRole('button', { name: 'Reassign' });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(assigned).toBe(true);
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/assign'), expect.any(Object));
+    });
   });
 
   it('test-ep-4.3.1-f-021: Verify empty timeline displays "No history found for this lead."', async () => {
@@ -1092,23 +1235,56 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
 
   it('test-ep-4.3.1-f-024: Verify race conditions cancel stale timeline load requests', async () => {
     setUser(marketingUser);
+    let requestIndex = 0;
     const fetchMock = vi.fn().mockImplementation((input) => {
-      if (String(input).includes('/timeline')) return mockRes(FOUR_EVENTS_TIMELINE);
+      const url = String(input);
+      if (url.includes('/timeline')) {
+        requestIndex++;
+        const currentIdx = requestIndex;
+        if (url.includes('type=followup')) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve(mockRes({
+              status: 'success',
+              body: { timeline: [{ id: 'fup-1', action: 'Follow-up Call', created_at: '2026-07-06T10:00:00Z', type: 'followup', created_by: { name: 'Maya' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
+            })), 200);
+          });
+        }
+        if (url.includes('type=status_change')) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve(mockRes({
+              status: 'success',
+              body: { timeline: [{ id: 'sc-1', action: 'Stage Changed', created_at: '2026-07-06T10:00:00Z', type: 'status_change', created_by: { name: 'Maya' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
+            })), 100);
+          });
+        }
+        if (url.includes('type=assigned')) {
+          return mockRes({
+            status: 'success',
+            body: { timeline: [{ id: 'as-1', action: 'Lead Assigned to Jane', created_at: '2026-07-06T10:00:00Z', type: 'assigned', created_by: { name: 'Admin' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
+          });
+        }
+        return mockRes(FOUR_EVENTS_TIMELINE);
+      }
       return mockRes(MOCK_LEAD);
     });
     global.fetch = fetchMock;
 
     renderLeadDetails('/marketing/leads/lead-100');
 
-    // Click tabs quickly
     const filterFollow = await screen.findByRole('tab', { name: 'Follow-ups' });
+    const filterStage = screen.getByRole('tab', { name: 'Stage Changes' });
     const filterAssign = screen.getByRole('tab', { name: 'Assignments' });
 
     fireEvent.click(filterFollow);
+    fireEvent.click(filterStage);
     fireEvent.click(filterAssign);
 
-    // Abort controller cancels previous controller
-    expect(fetchMock).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText('Lead Assigned to Jane')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Follow-up Call')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stage Changed')).not.toBeInTheDocument();
   });
 });
 

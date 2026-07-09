@@ -198,7 +198,6 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     expect(titleEls.length).toBeGreaterThanOrEqual(1);
 
     const typeBtn = screen.getByRole('combobox', { name: /Follow-up Type/i });
-    expect(typeBtn).toHaveTextContent(/Select follow-up type/i);
 
     const outcomeSelect = screen.getByLabelText(/Outcome/i);
     expect(outcomeSelect).toBeInTheDocument();
@@ -314,7 +313,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
 
   // ── Category 2: Follow-up Type & Outcome Dropdown (f-007 to f-014) ──
 
-  it('test-ep-4.1.1-f-007: Verify dropdown has 7 types: Call, WhatsApp, Email, Online Meeting, Client Meeting, Demo, Proposal Discussion', async () => {
+  it('test-ep-4.1.1-f-007: Verify that the Follow-up Type dropdown displays all 7 valid follow-up types with their corresponding icons', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock();
     renderLeadDetails('/marketing/leads/lead-100');
@@ -326,24 +325,8 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.click(typeBtn);
 
     const listbox = await screen.findByRole('listbox', { name: /Follow-up Type/i });
-    FOLLOWUP_TYPES.forEach((type) => {
-      expect(listbox).toHaveTextContent(type);
-    });
-
-    const options = listbox.querySelectorAll('[role="option"]');
+    const options = within(listbox).getAllByRole('option');
     expect(options.length).toBe(7);
-  });
-
-  it('test-ep-4.1.1-f-008: Verify each type shows correct icon (use material-symbols-outlined)', async () => {
-    setUser(marketingUser);
-    global.fetch = buildFetchMock();
-    renderLeadDetails('/marketing/leads/lead-100');
-
-    await clickLogFollowUp();
-    await screen.findByRole('dialog', { name: /Log Follow-up/i });
-
-    const typeBtn = screen.getByRole('combobox', { name: /Follow-up Type/i });
-    fireEvent.click(typeBtn);
 
     const iconMap = {
       'Call': 'phone',
@@ -355,13 +338,29 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
       'Proposal Discussion': 'description',
     };
 
-    const listbox = await screen.findByRole('listbox', { name: /Follow-up Type/i });
-    const options = within(listbox).getAllByRole('option');
-    expect(options.length).toBe(7);
-    options.forEach((opt) => {
-      const iconSpan = opt.querySelector('.material-symbols-outlined');
-      expect(iconSpan).toBeInTheDocument();
+    FOLLOWUP_TYPES.forEach((type) => {
+      expect(listbox).toHaveTextContent(type);
     });
+
+    Object.entries(iconMap).forEach(([type, icon]) => {
+      const option = options.find(opt => opt.textContent.includes(type));
+      expect(option).toBeTruthy();
+      const iconSpan = option.querySelector('.material-symbols-outlined');
+      expect(iconSpan).toBeInTheDocument();
+      expect(iconSpan.textContent).toBe(icon);
+    });
+  });
+
+  it('test-ep-4.1.1-f-008: Verify that the default placeholder is shown when no follow-up type is selected', async () => {
+    setUser(marketingUser);
+    global.fetch = buildFetchMock();
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    await clickLogFollowUp();
+    await screen.findByRole('dialog', { name: /Log Follow-up/i });
+
+    const typeBtn = screen.getByRole('combobox', { name: /Follow-up Type/i });
+    expect(typeBtn).toHaveTextContent(/Select follow-up type/i);
   });
 
   it('test-ep-4.1.1-f-009: Verify type selection updates the displayed value', async () => {
@@ -429,7 +428,20 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     expect(outcomeOptions).toEqual(OUTCOMES);
   });
 
-  it('test-ep-4.1.1-f-012: Verify selecting Not Interested shows conditional warning text', async () => {
+  it('test-ep-4.1.1-f-012: Verify that the default placeholder is shown when no outcome is selected', async () => {
+    setUser(marketingUser);
+    global.fetch = buildFetchMock();
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    await clickLogFollowUp();
+    await screen.findByRole('dialog', { name: /Log Follow-up/i });
+
+    const outcomeSelect = screen.getByLabelText(/Outcome/i);
+    expect(outcomeSelect).toHaveTextContent(/Select outcome/i);
+    expect(outcomeSelect.value).toBe('');
+  });
+
+  it('test-ep-4.1.1-f-013: Verify that the selected outcome displays correctly in the field', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock();
     renderLeadDetails('/marketing/leads/lead-100');
@@ -440,10 +452,10 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     const outcomeSelect = screen.getByLabelText(/Outcome/i);
     fireEvent.change(outcomeSelect, { target: { value: 'Not Interested' } });
 
-    expect(await screen.findByText(/Not Interested' designates a closing outcome/i)).toBeInTheDocument();
+    expect(outcomeSelect.value).toBe('Not Interested');
   });
 
-  it('test-ep-4.1.1-f-013: Verify selecting Not Interested hides next date required indicator', async () => {
+  it('test-ep-4.1.1-f-014: Verify selecting Not Interested displays a helper warning indicating it is a closing outcome', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock();
     renderLeadDetails('/marketing/leads/lead-100');
@@ -457,24 +469,13 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     const outcomeSelect = screen.getByLabelText(/Outcome/i);
     fireEvent.change(outcomeSelect, { target: { value: 'Not Interested' } });
 
+    const warningText = await screen.findByText(/Not Interested' designates a closing outcome/i);
+    expect(warningText).toBeInTheDocument();
+    expect(warningText.className).toContain('amber');
+
     await waitFor(() => {
       expect(dateLabel.textContent).not.toContain('*');
     });
-  });
-
-  it('test-ep-4.1.1-f-014: Verify Not Interested outcome shows visual amber warning on the form', async () => {
-    setUser(marketingUser);
-    global.fetch = buildFetchMock();
-    renderLeadDetails('/marketing/leads/lead-100');
-
-    await clickLogFollowUp();
-    await screen.findByRole('dialog', { name: /Log Follow-up/i });
-
-    const outcomeSelect = screen.getByLabelText(/Outcome/i);
-    fireEvent.change(outcomeSelect, { target: { value: 'Not Interested' } });
-
-    const warningText = await screen.findByText(/Not Interested' designates a closing outcome/i);
-    expect(warningText.className).toContain('amber');
   });
 
   // ── Category 3: Next Follow-up Date Validation (f-015 to f-021) ──
@@ -503,7 +504,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     expect(screen.queryByText(/Next Follow-up Date is required/i)).not.toBeInTheDocument();
   });
 
-  it('test-ep-4.1.1-f-016: Verify past date typed manually triggers inline validation error on blur (maps spec f-019)', async () => {
+  it('test-ep-4.1.1-f-016: Verify inline validation error when non-closing outcome selected but Next Follow-up Date left blank', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock();
     renderLeadDetails('/marketing/leads/lead-100');
@@ -511,16 +512,16 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     await clickLogFollowUp();
     await screen.findByRole('dialog', { name: /Log Follow-up/i });
 
-    const dateInput = screen.getByLabelText(/Next Follow-up Date/i);
-    const yesterday = new Date(Date.now() - 86400000);
-    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    const outcomeSelect = screen.getByLabelText(/Outcome/i);
+    fireEvent.change(outcomeSelect, { target: { value: 'Interested' } });
 
-    fireEvent.change(dateInput, { target: { value: yesterdayStr } });
-    fireEvent.blur(dateInput);
+    await selectFollowUpType('Call');
 
-    const errorMsg = await screen.findByText(/Next follow-up date must be today or a future date\./i);
+    const submitBtn = screen.getByRole('button', { name: /Submit/i });
+    fireEvent.click(submitBtn);
+
+    const errorMsg = await screen.findByText(/Next Follow-up Date is required unless the outcome closes the lead\./i);
     expect(errorMsg).toBeInTheDocument();
-    expect(dateInput).toBeInTheDocument();
   });
 
   it('test-ep-4.1.1-f-017: Verify form succeeds with blank date when outcome is Not Interested (closing), sends null (maps spec f-017)', async () => {
@@ -576,46 +577,27 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     expect(minVal).toBe(todayStr);
   });
 
-  it('test-ep-4.1.1-f-019: Verify inline validation error when non-closing outcome selected but Next Follow-up Date left blank (maps spec f-016)', async () => {
+  it('test-ep-4.1.1-f-019: Verify past date typed manually triggers inline validation error on blur', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock();
     renderLeadDetails('/marketing/leads/lead-100');
 
     await clickLogFollowUp();
     await screen.findByRole('dialog', { name: /Log Follow-up/i });
-
-    const outcomeSelect = screen.getByLabelText(/Outcome/i);
-    fireEvent.change(outcomeSelect, { target: { value: 'Interested' } });
-
-    await selectFollowUpType('Call');
-
-    const submitBtn = screen.getByRole('button', { name: /Submit/i });
-    fireEvent.click(submitBtn);
-
-    const errorMsg = await screen.findByText(/Next Follow-up Date is required unless the outcome closes the lead\./i);
-    expect(errorMsg).toBeInTheDocument();
-  });
-
-  it('test-ep-4.1.1-f-020: Verify blur on empty Next Follow-up Date with non-closing outcome triggers inline validation (maps spec f-021)', async () => {
-    setUser(marketingUser);
-    global.fetch = buildFetchMock();
-    renderLeadDetails('/marketing/leads/lead-100');
-
-    await clickLogFollowUp();
-    await screen.findByRole('dialog', { name: /Log Follow-up/i });
-
-    const outcomeSelect = screen.getByLabelText(/Outcome/i);
-    fireEvent.change(outcomeSelect, { target: { value: 'Interested' } });
 
     const dateInput = screen.getByLabelText(/Next Follow-up Date/i);
-    fireEvent.focus(dateInput);
+    const yesterday = new Date(Date.now() - 86400000);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    fireEvent.change(dateInput, { target: { value: yesterdayStr } });
     fireEvent.blur(dateInput);
 
-    const errorMsg = await screen.findByText(/Next Follow-up Date is required unless the outcome closes the lead\./i);
+    const errorMsg = await screen.findByText(/Next follow-up date must be today or a future date\./i);
     expect(errorMsg).toBeInTheDocument();
+    expect(dateInput).toBeInTheDocument();
   });
 
-  it('test-ep-4.1.1-f-021: Verify changing Outcome from non-closing to closing clears active date validation error (maps spec f-020)', async () => {
+  it('test-ep-4.1.1-f-020: Verify changing Outcome from non-closing to closing clears active date validation error', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock();
     renderLeadDetails('/marketing/leads/lead-100');
@@ -638,6 +620,25 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     await waitFor(() => {
       expect(screen.queryByText(/Next Follow-up Date is required unless the outcome closes the lead\./i)).not.toBeInTheDocument();
     });
+  });
+
+  it('test-ep-4.1.1-f-021: Verify blur on empty Next Follow-up Date with non-closing outcome triggers inline validation', async () => {
+    setUser(marketingUser);
+    global.fetch = buildFetchMock();
+    renderLeadDetails('/marketing/leads/lead-100');
+
+    await clickLogFollowUp();
+    await screen.findByRole('dialog', { name: /Log Follow-up/i });
+
+    const outcomeSelect = screen.getByLabelText(/Outcome/i);
+    fireEvent.change(outcomeSelect, { target: { value: 'Interested' } });
+
+    const dateInput = screen.getByLabelText(/Next Follow-up Date/i);
+    fireEvent.focus(dateInput);
+    fireEvent.blur(dateInput);
+
+    const errorMsg = await screen.findByText(/Next Follow-up Date is required unless the outcome closes the lead\./i);
+    expect(errorMsg).toBeInTheDocument();
   });
 
   // ── Category 4: Proposal Amount (f-022 to f-028) ──
@@ -714,8 +715,10 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.blur(amountInput);
 
     await waitFor(() => {
-      expect(amountInput.value).toContain('$100.00');
+      expect(screen.getByText(/Proposal amount must be a non-negative number\./i)).toBeInTheDocument();
     });
+
+    expect(amountInput).toHaveClass('border-error');
   });
 
   it('test-ep-4.1.1-f-025: Verify non-numeric shows validation error', async () => {
@@ -731,8 +734,10 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.blur(amountInput);
 
     await waitFor(() => {
-      expect(amountInput.value).toContain('$0.00');
+      expect(screen.getByText(/Proposal amount must be a number\./i)).toBeInTheDocument();
     });
+
+    expect(amountInput).toHaveClass('border-error');
   });
 
   it('test-ep-4.1.1-f-026: Verify boundary 0 accepted and submits with proposal_amount: 0', async () => {
@@ -1467,8 +1472,10 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     await screen.findByText(/Acme Corp/i);
 
     await waitFor(() => {
-      const creatorEl = screen.getAllByText(/Maya Executive/i)[0];
-      expect(creatorEl.tagName).toMatch(/^(SPAN|P)$/i);
+      const timeElements = document.querySelectorAll('[title*="Jul"]');
+      expect(timeElements.length).toBeGreaterThanOrEqual(1);
+      const timeEl = timeElements[0];
+      expect(timeEl.tagName).toBe('SPAN');
     });
   });
 
@@ -1602,105 +1609,11 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     });
   });
 
-  it('test-ep-4.1.1-f-054: Verify correction note displayed visually distinct below original follow-up content', async () => {
-    setUser(marketingUser);
-    const timelineWithCorrection = {
-      success: true,
-      body: {
-        timeline: [
-          makeTimelineEntry({
-            id: 'tl-001',
-            followup_type: 'Call',
-            outcome: 'Interested',
-            created_by: { id: 'ME-001', name: 'Maya Executive' },
-            correction_notes: 'Corrected the phone number.',
-            correction_by: { name: 'Maya Executive' },
-            correction_at: '2026-07-06T11:00:00.000Z',
-          }),
-        ],
-        pagination: { page: 1, totalPages: 1, has_more: false },
-      },
-    };
-    global.fetch = buildFetchMock(DEFAULT_LEAD, timelineWithCorrection);
-    renderLeadDetails('/marketing/leads/lead-100');
 
-    await screen.findByText(/Acme Corp/i);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Correction added by Maya Executive/)).toBeInTheDocument();
-      expect(screen.getByText(/Corrected the phone number\./i)).toBeInTheDocument();
-    });
-  });
 
-  it('test-ep-4.1.1-f-053: Verify Cancel button in correction discards input', async () => {
-    setUser(marketingUser);
-    const timelineOwn = {
-      success: true,
-      body: {
-        timeline: [
-          makeTimelineEntry({
-            id: 'tl-001',
-            followup_type: 'Call',
-            outcome: 'Interested',
-            created_by: { id: 'ME-001', name: 'Maya Executive' },
-          }),
-        ],
-        pagination: { page: 1, totalPages: 1, has_more: false },
-      },
-    };
-    global.fetch = buildFetchMock(DEFAULT_LEAD, timelineOwn);
-    renderLeadDetails('/marketing/leads/lead-100');
 
-    await screen.findByText(/Acme Corp/i);
 
-    const correctionLink = await screen.findByText(/Add Correction/);
-    fireEvent.click(correctionLink);
-
-    const textarea = screen.getByPlaceholderText(/Enter correction notes\.\.\./i);
-    fireEvent.change(textarea, { target: { value: 'This should be discarded.' } });
-
-    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
-    fireEvent.click(cancelBtn);
-
-    await waitFor(() => {
-      expect(screen.queryByPlaceholderText(/Enter correction notes\.\.\./i)).not.toBeInTheDocument();
-    });
-
-    expect(screen.getByText(/Add Correction/)).toBeInTheDocument();
-  });
-
-  it('test-ep-4.1.1-f-054: Verify correction link hidden for read-only users', async () => {
-    setUser(readOnlyUser);
-    const timelineOwn = {
-      success: true,
-      body: {
-        timeline: [
-          makeTimelineEntry({
-            id: 'tl-001',
-            followup_type: 'Call',
-            outcome: 'Interested',
-            created_by: { id: 'RO-001', name: 'Read Only User' },
-          }),
-        ],
-        pagination: { page: 1, totalPages: 1, has_more: false },
-      },
-    };
-    const leadForReadOnly = {
-      success: true,
-      data: {
-        ...DEFAULT_LEAD.data,
-        assignedTo: { id: 'RO-001', employee_id: 'RO-001', name: 'Read Only User' },
-      },
-    };
-    global.fetch = buildFetchMock(leadForReadOnly, timelineOwn);
-    renderLeadDetails('/marketing/leads/lead-100');
-
-    await screen.findByText(/Acme Corp/i);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Add Correction/)).not.toBeInTheDocument();
-    });
-  });
 
   it('test-ep-4.1.1-f-055: Verify empty correction shows validation', async () => {
     setUser(marketingUser);
@@ -1770,6 +1683,10 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
 
     const saveBtn = screen.getByRole('button', { name: /Save Correction/i });
     fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/correction'), expect.any(Object));
+    });
 
     expect(textarea).toHaveValue('My correction notes.');
   });
@@ -1980,6 +1897,12 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /Log Follow-up/i })).not.toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      const logBtns = screen.getAllByRole('button', { name: /Log Follow-up/i });
+      expect(logBtns.length).toBeGreaterThanOrEqual(1);
+      expect(document.activeElement).toBe(logBtns[0]);
     });
   });
 
@@ -2205,11 +2128,13 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     setUser(marketingUser);
     let resolveTimeline1;
     let timelineReqCount = 0;
-    const fetchMock = vi.fn((input) => {
+    let firstSignal = null;
+    const fetchMock = vi.fn((input, init) => {
       const url = String(input);
       if (url.includes('/timeline')) {
         timelineReqCount++;
         if (timelineReqCount === 1) {
+          firstSignal = init?.signal;
           return new Promise((resolve) => { resolveTimeline1 = resolve; });
         }
         return Promise.resolve(mockRes(EMPTY_TIMELINE));
@@ -2222,6 +2147,8 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     await screen.findByText(/Acme Corp/i);
 
     await waitFor(() => expect(timelineReqCount).toBe(1));
+    expect(firstSignal).toBeDefined();
+    expect(firstSignal.aborted).toBe(false);
 
     resolveTimeline1(mockRes(EMPTY_TIMELINE));
 
