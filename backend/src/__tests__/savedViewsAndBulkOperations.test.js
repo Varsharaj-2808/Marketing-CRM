@@ -107,12 +107,12 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'High Priority Leads', filters: { status: 'Open', priority: 'High', stage: 'Contacted' } });
     expect(res.status).toBe(201);
-    expect(res.body.id).toMatch(UUID_PATTERN);
-    expect(res.body.name).toBe('High Priority Leads');
-    expect(res.body.filters).toEqual({ status: 'Open', priority: 'High', stage: 'Contacted' });
-    expect(res.body.created_by).toBe(ADMIN_USER.id);
-    expect(res.body.created_at).toBeDefined();
-    expect(res.body.updated_at).toBeDefined();
+    expect(res.body.data.id).toMatch(UUID_PATTERN);
+    expect(res.body.data.name).toBe('High Priority Leads');
+    expect(res.body.data.filters).toEqual({ status: 'Open', priority: 'High', stage: 'Contacted' });
+    expect(res.body.data.created_by).toBe(ADMIN_USER.id);
+    expect(res.body.data.created_at).toBeDefined();
+    expect(res.body.data.updated_at).toBeDefined();
   });
 
   test('test-ep-2.2.1-002: Create saved view with name only and no filters — 201', async () => {
@@ -128,8 +128,8 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'All Leads', filters: {} });
     expect(res.status).toBe(201);
-    expect(res.body.name).toBe('All Leads');
-    expect(res.body.filters).toEqual({});
+    expect(res.body.data.name).toBe('All Leads');
+    expect(res.body.data.filters).toEqual({});
   });
 
   test('test-ep-2.2.1-003: Create saved view with partial filters (only status) — 201', async () => {
@@ -145,7 +145,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'Open Leads', filters: { status: 'Open' } });
     expect(res.status).toBe(201);
-    expect(res.body.filters).toEqual({ status: 'Open' });
+    expect(res.body.data.filters).toEqual({ status: 'Open' });
   });
 
   test('test-ep-2.2.1-004: Missing name field — 400', async () => {
@@ -202,7 +202,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${otherAdminToken}`)
       .send({ name: 'My Views', filters: {} });
     expect(res.status).toBe(201);
-    expect(res.body.name).toBe('My Views');
+    expect(res.body.data.name).toBe('My Views');
   });
 
   test('test-ep-2.2.1-008: Unauthorized — Marketing Executive role — 403', async () => {
@@ -238,7 +238,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: name100, filters: {} });
     expect(res.status).toBe(201);
-    expect(res.body.name).toBe(name100);
+    expect(res.body.data.name).toBe(name100);
   });
 
   test('test-ep-2.2.1-011: Name exceeding maximum length — 400', async () => {
@@ -265,7 +265,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'Test', filters: { status: 'Open', unknown_field: 'value' } });
     expect(res.status).toBe(201);
-    expect(res.body.filters.unknown_field).toBe('value');
+    expect(res.body.data.filters.unknown_field).toBe('value');
   });
 
   test('test-ep-2.2.1-013: XSS attempt in name field — 201', async () => {
@@ -282,7 +282,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: xssName, filters: {} });
     expect(res.status).toBe(201);
-    expect(res.body.name).toBe(xssName);
+    expect(res.body.data.name).toBe(xssName);
   });
 });
 
@@ -319,9 +319,9 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'Today Follow-up' });
     expect(res.status).toBe(200);
-    expect(res.body.name).toBe('Today Follow-up');
-    expect(res.body.filters).toEqual({ status: 'Open', stage: 'Contacted' });
-    expect(res.body.updated_at).toBeDefined();
+    expect(res.body.data.name).toBe('Today Follow-up');
+    expect(res.body.data.filters).toEqual({ status: 'Open', stage: 'Contacted' });
+    expect(res.body.data.updated_at).toBeDefined();
   });
 
   test('test-ep-2.2.1-015: Update filters only, name remains unchanged — 200', async () => {
@@ -337,8 +337,8 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ filters: { stage: 'Meeting Scheduled' } });
     expect(res.status).toBe(200);
-    expect(res.body.name).toBe('Follow-up');
-    expect(res.body.filters).toEqual({ stage: 'Meeting Scheduled' });
+    expect(res.body.data.name).toBe('Follow-up');
+    expect(res.body.data.filters).toEqual({ stage: 'Meeting Scheduled' });
   });
 
   test('test-ep-2.2.1-016: Update both name and filters — 200', async () => {
@@ -355,8 +355,8 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'Updated View', filters: { priority: 'High' } });
     expect(res.status).toBe(200);
-    expect(res.body.name).toBe('Updated View');
-    expect(res.body.filters).toEqual({ priority: 'High' });
+    expect(res.body.data.name).toBe('Updated View');
+    expect(res.body.data.filters).toEqual({ priority: 'High' });
   });
 
   test('test-ep-2.2.1-017: Update with empty name — 400', async () => {
@@ -488,7 +488,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
       .delete(`/api/admin/leads/saved-views/${VIEW_ID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Deleted');
+    expect(res.body.message).toBe('Saved view deleted');
   });
 
   test('test-ep-2.2.1-026: Delete non-existent viewId — 404', async () => {
@@ -557,7 +557,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
       .delete(`/api/admin/leads/saved-views/${VIEW_ID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res1.status).toBe(200);
-    expect(res1.body.message).toBe('Deleted');
+    expect(res1.body.message).toBe('Saved view deleted');
 
     mockQuery.mockReset();
     defaultQuery([
@@ -1076,12 +1076,12 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalPages).toBe(1);
-    expect(res.body.totalCount).toBe(3);
-    expect(res.body.limit).toBe(25);
-    expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data.length).toBe(3);
+    expect(res.body.data.page).toBe(1);
+    expect(res.body.data.totalPages).toBe(1);
+    expect(res.body.data.totalCount).toBe(3);
+    expect(res.body.data.limit).toBe(25);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
+    expect(res.body.data.data.length).toBe(3);
   });
 
   test('test-ep-2.2.1-064: Admin sees leads owned by all Marketing Executives — 200', async () => {
@@ -1095,8 +1095,8 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data.length).toBe(3);
-    const owners = new Set(res.body.data.map(l => l.assigned_to_name));
+    expect(res.body.data.data.length).toBe(3);
+    const owners = new Set(res.body.data.data.map(l => l.assigned_to_name));
     expect(owners.has('Marketing User')).toBe(true);
     expect(owners.has('Another User')).toBe(true);
     expect(owners.has(null)).toBe(true);
@@ -1113,8 +1113,8 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?search=Alpha')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data.length).toBe(1);
-    expect(res.body.data[0].company_name).toContain('Alpha');
+    expect(res.body.data.data.length).toBe(1);
+    expect(res.body.data.data[0].company_name).toContain('Alpha');
   });
 
   test('test-ep-2.2.1-066: Filter leads by status, priority, and stage — 200', async () => {
@@ -1128,7 +1128,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?status=Open&priority=High&stage=New%20Lead')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data[0].priority).toBe('Hot');
+    expect(res.body.data.data[0].priority).toBe('Hot');
   });
 
   test('test-ep-2.2.1-067: Filter leads by source, category, and assigned_to — 200', async () => {
@@ -1142,7 +1142,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?source=Website&category=IT%20Services&assigned_to=user-101')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data[0].lead_source).toBe('Website');
+    expect(res.body.data.data[0].lead_source).toBe('Website');
   });
 
   test('test-ep-2.2.1-068: Sort leads by estimated value descending — 200', async () => {
@@ -1156,7 +1156,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?sortBy=estimated_value&sortOrder=desc')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data[0].estimated_value).toBe(50000);
+    expect(res.body.data.data[0].estimated_value).toBe(50000);
   });
 
   test('test-ep-2.2.1-069: Sort leads by created date ascending — 200', async () => {
@@ -1170,7 +1170,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?sortBy=created_at&sortOrder=asc')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(new Date(res.body.data[0].created_at).getTime()).toBeLessThanOrEqual(new Date(res.body.data[1].created_at).getTime());
+    expect(new Date(res.body.data.data[0].created_at).getTime()).toBeLessThanOrEqual(new Date(res.body.data.data[1].created_at).getTime());
   });
 
   test('test-ep-2.2.1-070: Sort leads by priority and status — 200', async () => {
@@ -1184,7 +1184,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?sortBy=priority&sortOrder=desc')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
   test('test-ep-2.2.1-071: Paginated leads retrieval page 2 with custom limit — 200', async () => {
@@ -1198,11 +1198,11 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?page=2&limit=10')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(2);
-    expect(res.body.totalPages).toBe(7);
-    expect(res.body.totalCount).toBe(65);
-    expect(res.body.limit).toBe(10);
-    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.page).toBe(2);
+    expect(res.body.data.totalPages).toBe(7);
+    expect(res.body.data.totalCount).toBe(65);
+    expect(res.body.data.limit).toBe(10);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
   test('test-ep-2.2.1-072: Marketing Executive cannot access admin leads endpoint — 403', async () => {
@@ -1233,10 +1233,10 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?search=NonExistentCompanyXYZ')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalPages).toBe(0);
-    expect(res.body.totalCount).toBe(0);
-    expect(res.body.data).toEqual([]);
+    expect(res.body.data.page).toBe(1);
+    expect(res.body.data.totalPages).toBe(0);
+    expect(res.body.data.totalCount).toBe(0);
+    expect(res.body.data.data).toEqual([]);
   });
 
   test('test-ep-2.2.1-075: Combined search, filter, sort, and pagination — 200', async () => {
@@ -1250,9 +1250,9 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?search=Tech&status=Open&sortBy=created_at&sortOrder=desc&page=1&limit=10')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.limit).toBe(10);
-    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.page).toBe(1);
+    expect(res.body.data.limit).toBe(10);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
   test('test-ep-2.2.1-076: Invalid page number (negative or zero) — 400', async () => {
@@ -1292,8 +1292,8 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?from_date=2026-01-01&to_date=2026-01-31')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalCount).toBe(2);
+    expect(res.body.data.page).toBe(1);
+    expect(res.body.data.totalCount).toBe(2);
   });
 
   test('test-ep-2.2.1-079: Invalid date range (from_date greater than to_date) — 400', async () => {

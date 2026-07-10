@@ -49,12 +49,16 @@ exports.createSavedView = async (req, res, next) => {
     });
 
     res.status(201).json({
-      id: savedView.id,
-      name: savedView.name,
-      filters: savedView.filters,
-      created_by: savedView.created_by,
-      created_at: savedView.created_at,
-      updated_at: savedView.updated_at,
+      success: true,
+      message: 'Saved view created',
+      data: {
+        id: savedView.id,
+        name: savedView.name,
+        filters: savedView.filters,
+        created_by: savedView.created_by,
+        created_at: savedView.created_at,
+        updated_at: savedView.updated_at,
+      },
     });
   } catch (error) {
     next(error);
@@ -121,12 +125,16 @@ exports.updateSavedView = async (req, res, next) => {
     });
 
     res.json({
-      id: updated.id,
-      name: updated.name,
-      filters: updated.filters,
-      created_by: updated.created_by,
-      created_at: updated.created_at,
-      updated_at: updated.updated_at,
+      success: true,
+      message: 'Saved view updated',
+      data: {
+        id: updated.id,
+        name: updated.name,
+        filters: updated.filters,
+        created_by: updated.created_by,
+        created_at: updated.created_at,
+        updated_at: updated.updated_at,
+      },
     });
   } catch (error) {
     next(error);
@@ -165,7 +173,7 @@ exports.deleteSavedView = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json({ message: 'Deleted' });
+    res.json({ success: true, message: 'Saved view deleted' });
   } catch (error) {
     next(error);
   }

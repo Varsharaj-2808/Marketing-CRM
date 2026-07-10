@@ -166,8 +166,8 @@ describe('2.1 Create User (Positive) — USER-001 to USER-010', () => {
       .post('/api/auth/login')
       .send({ email: MARKETING_USER.email, password: 'TempP@ss123!' });
     expect(res.status).toBe(200);
-    expect(res.body.token).toBeDefined();
-    expect(res.body.refreshToken).toBeDefined();
+    expect(res.body.data.token).toBeDefined();
+    expect(res.body.data.refreshToken).toBeDefined();
   });
 
   test('USER-007: Various mobile formats accepted', async () => {
@@ -427,7 +427,7 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
       .post('/api/auth/login')
       .send({ email: MARKETING_USER.email, password: 'Test@123' });
     expect(res.status).toBe(200);
-    expect(jwt.decode(res.body.token).role).toBe('Admin');
+    expect(jwt.decode(res.body.data.token).role).toBe('Admin');
   });
 
   test('USER-030: Duplicate email on edit — 409', async () => {
@@ -564,7 +564,7 @@ describe('2.5 Role Change & Permission — USER-041 to USER-043', () => {
       .post('/api/auth/login')
       .send({ email: MARKETING_USER.email, password: 'Test@123' });
     expect(res.status).toBe(200);
-    expect(res.body.user.role).toBe('Admin');
+    expect(res.body.data.user.role).toBe('Admin');
   });
 
   test('USER-043: Old JWT retains old role until re-login', async () => {
@@ -901,8 +901,7 @@ describe('2.10 Refresh Token', () => {
       .post('/api/auth/refresh')
       .send({ refreshToken: validRefreshToken });
     expect(res.status).toBe(200);
-    expect(res.body.accessToken).toBeDefined();
-    expect(res.body.refreshToken).toBeDefined();
+    expect(res.body.data.token).toBeDefined();
   });
 
   test('USER-069: No refresh token in body — 400', async () => {

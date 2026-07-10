@@ -71,7 +71,33 @@ exports.createLead = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Lead created successfully.',
-      data: lead,
+      data: {
+        id: lead.id,
+        seq: lead.lead_id ? lead.lead_id.split('-').pop() : null,
+        lead_id: lead.lead_id,
+        company_name: lead.company_name,
+        contact_person: lead.contact_person,
+        mobile_number: lead.mobile_number,
+        email: lead.email,
+        website: lead.website,
+        city: lead.city,
+        lead_source: lead.lead_source,
+        category: lead.category,
+        sub_category: lead.sub_category,
+        service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : [],
+        priority: lead.priority,
+        estimated_value: lead.estimated_value,
+        assigned_to: lead.assigned_to,
+        stage: lead.stage,
+        lead_status: lead.lead_status,
+        created_at: lead.created_at,
+        updated_at: lead.updated_at,
+        assigned_at: lead.assigned_at || null,
+        lost_reason: lead.lost_reason || null,
+        final_deal_value: lead.final_deal_value || null,
+        closure_date: lead.closure_date || null,
+        deleted_at: lead.deleted_at || null,
+      },
     });
   } catch (error) {
     next(error);
@@ -86,9 +112,9 @@ exports.checkMobile = async (req, res, next) => {
     }
     const existing = await Lead.findByMobile(mobile);
     if (existing) {
-      return res.json({ isDuplicate: true, leadId: existing.lead_id });
+      return res.json({ success: true, message: 'Mobile number already exists', data: { isDuplicate: true, leadId: existing.lead_id } });
     }
-    res.json({ isDuplicate: false });
+    res.json({ success: true, message: 'Mobile number is available', data: { isDuplicate: false } });
   } catch (error) {
     next(error);
   }
@@ -102,9 +128,25 @@ exports.checkEmail = async (req, res, next) => {
     }
     const existing = await Lead.findByEmail(email);
     if (existing) {
-      return res.json({ isDuplicate: true, leadId: existing.lead_id });
+      return res.json({ success: true, message: 'Email already exists', data: { isDuplicate: true, leadId: existing.lead_id } });
     }
-    res.json({ isDuplicate: false });
+    res.json({ success: true, message: 'Email is available', data: { isDuplicate: false } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.checkDuplicate = async (req, res, next) => {
+  try {
+    const { mobileNumber } = req.body;
+    if (!mobileNumber) {
+      return res.status(400).json({ success: false, message: 'Mobile number is required' });
+    }
+    const existing = await Lead.findByMobile(mobileNumber);
+    if (existing) {
+      return res.json({ success: true, message: 'Duplicate mobile number found', data: { isDuplicate: true, leadId: existing.lead_id } });
+    }
+    res.json({ success: true, message: 'Mobile number is available', data: { isDuplicate: false } });
   } catch (error) {
     next(error);
   }
@@ -121,7 +163,33 @@ exports.getLead = async (req, res, next) => {
     if (req.user.role !== 'Admin' && lead.assigned_to !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Access denied. Lead not assigned to you.' });
     }
-    res.json({ success: true, data: lead });
+    const formattedLead = {
+      id: lead.id,
+      leadId: lead.lead_id,
+      company_name: lead.company_name,
+      website: lead.website,
+      category: lead.category,
+      sub_category: lead.sub_category,
+      contact_person: lead.contact_person,
+      mobile_number: lead.mobile_number,
+      email: lead.email,
+      city: lead.city,
+      lead_source: lead.lead_source,
+      servicesInterested: lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : [],
+      priority: lead.priority,
+      estimated_value: lead.estimated_value,
+      assigned_to: lead.assigned_to,
+      stage: lead.stage,
+      next_followup_date: lead.next_followup_date || null,
+      final_deal_value: lead.final_deal_value || null,
+      outcome: lead.lost_reason || null,
+      remarks: lead.remarks || null,
+      closure_date: lead.closure_date || null,
+      status: lead.lead_status || 'Active',
+      created_at: lead.created_at,
+      updated_at: lead.updated_at,
+    };
+    res.json({ success: true, data: formattedLead });
   } catch (error) {
     next(error);
   }
@@ -244,11 +312,14 @@ exports.getAdminLeads = async (req, res, next) => {
     });
 
     res.json({
-      page: result.page,
-      totalPages: result.totalPages,
-      totalCount: result.totalCount,
-      limit: result.limit || limitNum,
-      data: result.data,
+      success: true,
+      data: {
+        page: result.page,
+        totalPages: result.totalPages,
+        totalCount: result.totalCount,
+        limit: result.limit || limitNum,
+        data: result.data,
+      },
     });
   } catch (error) {
     next(error);
@@ -322,17 +393,25 @@ exports.getLeadHistory = async (req, res, next) => {
     if (isPaginated) {
       return res.status(200).json({
         success: true,
+        data: {
+          lead_id: lead.lead_id,
+          data: formattedData,
+          count: totalEntries,
+        },
         page: pageNum,
         limit: limitNum,
         totalPages,
         totalEntries,
         hasMore: pageNum < totalPages,
-        data: formattedData
       });
     } else {
       return res.status(200).json({
         success: true,
-        data: formattedData
+        data: {
+          lead_id: lead.lead_id,
+          data: formattedData,
+          count: formattedData.length,
+        },
       });
     }
   } catch (error) {
@@ -380,8 +459,11 @@ exports.updateLeadStage = async (req, res, next) => {
     }
 
     if (lead.stage === stage) {
-      const responseLead = { ...lead, status: lead.lead_status };
-      return res.status(200).json({ success: true, data: responseLead });
+      return res.status(200).json({
+        success: true,
+        message: 'Lead stage updated',
+        data: { id: lead.id, leadId: lead.lead_id, stage: lead.stage, updated_at: lead.updated_at },
+      });
     }
 
     const transitions = {
@@ -470,12 +552,15 @@ exports.updateLeadStage = async (req, res, next) => {
       result: 'Success'
     });
 
-    const responseLead = { ...updatedLead, status: updatedLead.lead_status };
     const formattedHistory = historyLogged ? {
       ...historyLogged,
       changed_by: { id: historyLogged.changed_by }
     } : {};
-    return res.status(200).json({ success: true, data: responseLead, history_logged: formattedHistory });
+    return res.status(200).json({
+      success: true,
+      message: 'Lead stage updated',
+      data: { id: updatedLead.id, leadId: updatedLead.lead_id, stage: updatedLead.stage, updated_at: updatedLead.updated_at },
+    });
   } catch (error) {
     next(error);
   }
@@ -575,8 +660,17 @@ exports.closeLeadLost = async (req, res, next) => {
       result: 'Success'
     });
 
-    const responseLead = { ...updatedLead, status: updatedLead.lead_status };
-    return res.status(200).json({ success: true, data: responseLead });
+    const responseLead = {
+      id: updatedLead.id,
+      leadId: updatedLead.lead_id,
+      stage: updatedLead.stage,
+      status: updatedLead.lead_status,
+      final_deal_value: updatedLead.final_deal_value,
+      closure_date: updatedLead.closure_date,
+      outcome: 'Lost',
+      updated_at: updatedLead.updated_at,
+    };
+    return res.status(200).json({ success: true, message: 'Lead closed successfully', data: responseLead });
   } catch (error) {
     next(error);
   }
@@ -707,8 +801,17 @@ exports.closeLeadWon = async (req, res, next) => {
       result: 'Success'
     });
 
-    const responseLead = { ...updatedLead, status: updatedLead.lead_status };
-    return res.status(200).json({ success: true, data: responseLead });
+    const responseLead = {
+      id: updatedLead.id,
+      leadId: updatedLead.lead_id,
+      stage: updatedLead.stage,
+      status: updatedLead.lead_status,
+      final_deal_value: updatedLead.final_deal_value,
+      closure_date: updatedLead.closure_date,
+      outcome: 'Won',
+      updated_at: updatedLead.updated_at,
+    };
+    return res.status(200).json({ success: true, message: 'Lead closed successfully', data: responseLead });
   } catch (error) {
     next(error);
   }
@@ -978,8 +1081,21 @@ exports.closeLead = async (req, res, next) => {
       }
     }
 
-    const responseLead = { ...updatedLead, status: updatedLead.lead_status };
-    return res.status(200).json({ success: true, data: responseLead, history_logged: historyLogged });
+    const responseLead = {
+      id: updatedLead.id,
+      leadId: updatedLead.lead_id,
+      stage: updatedLead.stage,
+      status: updatedLead.lead_status,
+      final_deal_value: updatedLead.final_deal_value,
+      closure_date: updatedLead.closure_date,
+      outcome: stage,
+      updated_at: updatedLead.updated_at,
+    };
+    return res.status(200).json({
+      success: true,
+      message: 'Lead closed successfully',
+      data: responseLead,
+    });
   } catch (error) {
     next(error);
   }

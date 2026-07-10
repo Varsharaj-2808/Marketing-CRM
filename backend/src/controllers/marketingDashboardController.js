@@ -57,11 +57,6 @@ exports.getCards = async (req, res, next) => {
       },
     };
 
-    // Always include meta note (covers security test-ep-6.2.1-b-006)
-    responseBody.meta = {
-      note: 'assigned_to query param ignored; scope enforced from authenticated user',
-    };
-
     return res.status(200).json(responseBody);
   } catch (error) {
     next(error);
@@ -205,9 +200,6 @@ exports.getCombinedDashboard = async (req, res, next) => {
       data: {
         cards,
         conversion_rate: { won, lost, rate },
-        stats: s,
-        stage_breakdown: stageResult ? stageResult.rows : [],
-        unread_notifications: unreadCount,
       },
       meta: {
         assigned_to: userId,
@@ -283,7 +275,7 @@ exports.getTodayFollowups = async (req, res, next) => {
       const dataResult = await query(
         `SELECT
            l.id, l.lead_id, l.company_name, l.contact_person,
-           l.priority as lead_quality, l.next_followup_date, l.stage
+           l.priority as lead_quality, l.next_followup_date, l.stage, l.remarks
          FROM leads l
          WHERE ${whereClause}
          ORDER BY ${QUALITY_ORDER}, l.next_followup_date ASC

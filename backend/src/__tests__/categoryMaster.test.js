@@ -136,12 +136,11 @@ describe('API-1: POST /admin/categories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_name: 'Technology' });
     expect(res.status).toBe(201);
-    expect(res.body.status).toBe('success');
-    expect(res.body.status_code).toBe(201);
+    expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Category created successfully');
-    expect(res.body.body.category_name).toBe('Technology');
-    expect(res.body.body.id).toMatch(UUID_PATTERN);
-    expect(res.body.body.status).toBe('Active');
+    expect(res.body.data.category_name).toBe('Technology');
+    expect(res.body.data.id).toMatch(UUID_PATTERN);
+    expect(res.body.data.status).toBe('Active');
   });
 
   test('TEST-EP3-CAT-002: Failed — Duplicate Category Name — 409', async () => {
@@ -155,9 +154,8 @@ describe('API-1: POST /admin/categories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_name: 'Digital Marketing' });
     expect(res.status).toBe(409);
-    expect(res.body.status).toBe('error');
-    expect(res.body.status_code).toBe(409);
-    expect(res.body.body.error).toMatch(/already exists/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/already exists/i);
   });
 
   test('TEST-EP3-CAT-003: Failed — Missing Mandatory Field — 400', async () => {
@@ -170,8 +168,8 @@ describe('API-1: POST /admin/categories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({});
     expect(res.status).toBe(400);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/required/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/validation failed/i);
   });
 
   test('TEST-EP3-CAT-004: Failed — Unauthorized (Non-Admin) — 403', async () => {
@@ -202,12 +200,12 @@ describe('API-2: GET /admin/categories', () => {
       .get('/api/admin/categories')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.totalCount).toBe(3);
-    expect(res.body.body.page).toBe(1);
-    expect(res.body.body.data.length).toBe(3);
-    expect(res.body.body.data[0].category_name).toBeDefined();
-    expect(res.body.body.data[0].subCategoryCount).toBeDefined();
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.totalCount).toBe(3);
+    expect(res.body.data.page).toBe(1);
+    expect(res.body.data.data.length).toBe(3);
+    expect(res.body.data.data[0].category_name).toBeDefined();
+    expect(res.body.data.data[0].subCategoryCount).toBeDefined();
   });
 
   test('TEST-EP3-CAT-006: Positive — Search by Name — 200', async () => {
@@ -221,8 +219,8 @@ describe('API-2: GET /admin/categories', () => {
       .get('/api/admin/categories?search=Digital')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.totalCount).toBe(1);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.totalCount).toBe(1);
   });
 
   test('TEST-EP3-CAT-007: Failed — Unauthenticated — 401', async () => {
@@ -247,8 +245,8 @@ describe('API-3: GET /admin/categories/:id', () => {
       .get(`/api/admin/categories/${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.category_name).toBe('Technology');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.category_name).toBe('Technology');
   });
 
   test('TEST-EP3-CAT-009: Failed — Category Not Found — 404', async () => {
@@ -261,8 +259,8 @@ describe('API-3: GET /admin/categories/:id', () => {
       .get(`/api/admin/categories/${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/does not exist/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/category not found/i);
   });
 });
 
@@ -285,8 +283,8 @@ describe('API-4: PUT /admin/categories/:id', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_name: 'IT & Technology Services' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.category_name).toBe('IT & Technology Services');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.category_name).toBe('IT & Technology Services');
   });
 
   test('TEST-EP3-CAT-011: Failed — Category Not Found — 404', async () => {
@@ -300,8 +298,8 @@ describe('API-4: PUT /admin/categories/:id', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_name: 'Ghost Category' });
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/does not exist/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/category not found/i);
   });
 
   test('TEST-EP3-CAT-012: Failed — Duplicate Name on Update — 409', async () => {
@@ -316,8 +314,8 @@ describe('API-4: PUT /admin/categories/:id', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_name: 'Digital Marketing' });
     expect(res.status).toBe(409);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/already exists/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/already exists/i);
   });
 });
 
@@ -339,8 +337,8 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'Inactive' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.status).toBe('Inactive');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.status).toBe('Inactive');
     expect(res.body.message).toMatch(/deactivated/i);
   });
 
@@ -355,7 +353,7 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'Inactive' });
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 
   test('TEST-EP3-CAT-015: Failed — Status Unchanged — 400', async () => {
@@ -369,8 +367,8 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'Active' });
     expect(res.status).toBe(400);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/matches current status/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/category is already/i);
   });
 
   test('PATCH with invalid status value — 400', async () => {
@@ -383,7 +381,7 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'invalid' });
     expect(res.status).toBe(400);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -405,8 +403,8 @@ describe('API-6: DELETE /admin/categories/:id', () => {
       .delete(`/api/admin/categories/${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.id).toBe(CATEGORY_UUID);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe(CATEGORY_UUID);
   });
 
   test('TEST-EP3-CAT-017: Failed — Category In Use (Blocked) — 409', async () => {
@@ -421,7 +419,7 @@ describe('API-6: DELETE /admin/categories/:id', () => {
       .delete(`/api/admin/categories/${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(409);
-    expect(res.body.status).toBe('error');
+    expect(res.body.message).toBe('Category is in use and cannot be deleted');
     expect(res.body.body.error).toMatch(/linked to 0 Sub-Categories \/ 3 active leads/i);
   });
 
@@ -435,7 +433,7 @@ describe('API-6: DELETE /admin/categories/:id', () => {
       .delete(`/api/admin/categories/${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -457,9 +455,9 @@ describe('API-7: POST /admin/subcategories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_id: CATEGORY_UUID, sub_category_name: 'Software' });
     expect(res.status).toBe(201);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.sub_category_name).toBe('Software');
-    expect(res.body.body.category_id).toBe(CATEGORY_UUID);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.sub_category_name).toBe('Software');
+    expect(res.body.data.category_id).toBe(CATEGORY_UUID);
   });
 
   test('TEST-EP3-CAT-020: Failed — Parent Category Not Found — 404', async () => {
@@ -473,8 +471,8 @@ describe('API-7: POST /admin/subcategories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_id: '00000000-0000-0000-0000-000000000999', sub_category_name: 'Hardware' });
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/not found/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/not found/i);
   });
 
   test('TEST-EP3-CAT-021: Failed — Duplicate Sub-Category Name Under Same Parent — 409', async () => {
@@ -489,7 +487,7 @@ describe('API-7: POST /admin/subcategories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ category_id: CATEGORY_UUID, sub_category_name: 'Software' });
     expect(res.status).toBe(409);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
     expect(res.body.message).toBe('Duplicate Sub-Category name under same parent');
   });
 
@@ -503,7 +501,7 @@ describe('API-7: POST /admin/subcategories', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({});
     expect(res.status).toBe(400);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -521,8 +519,8 @@ describe('API-8: GET /admin/subcategories', () => {
       .get(`/api/admin/subcategories?category_id=${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.data.length).toBe(1);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.data.length).toBe(1);
   });
 
   test('TEST-EP3-CAT-024: Failed — Unauthenticated — 401', async () => {
@@ -547,8 +545,8 @@ describe('API-9: GET /admin/subcategories/:id', () => {
       .get(`/api/admin/subcategories/${SUBCATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.sub_category_name).toBe('Software');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.sub_category_name).toBe('Software');
   });
 
   test('TEST-EP3-CAT-026: Failed — Sub-Category Not Found — 404', async () => {
@@ -561,8 +559,8 @@ describe('API-9: GET /admin/subcategories/:id', () => {
       .get(`/api/admin/subcategories/00000000-0000-0000-0000-000000000000`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/does not exist/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/sub-category not found/i);
   });
 });
 
@@ -585,8 +583,8 @@ describe('API-10: PUT /admin/subcategories/:id', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ sub_category_name: 'Web & E-commerce Development' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.sub_category_name).toBe('Web & E-commerce Development');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.sub_category_name).toBe('Web & E-commerce Development');
   });
 
   test('TEST-EP3-CAT-028: Failed — Sub-Category Not Found — 404', async () => {
@@ -600,7 +598,7 @@ describe('API-10: PUT /admin/subcategories/:id', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ sub_category_name: 'Ghost' });
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -622,8 +620,8 @@ describe('API-11: PATCH /admin/subcategories/:id/status', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'Inactive' });
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.status).toBe('Inactive');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.status).toBe('Inactive');
   });
 
   test('TEST-EP3-CAT-031: Failed — Sub-Category Not Found — 404', async () => {
@@ -637,7 +635,7 @@ describe('API-11: PATCH /admin/subcategories/:id/status', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'Inactive' });
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -658,8 +656,8 @@ describe('API-12: DELETE /admin/subcategories/:id', () => {
       .delete(`/api/admin/subcategories/${SUBCATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.id).toBe(SUBCATEGORY_UUID);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe(SUBCATEGORY_UUID);
   });
 
   test('TEST-EP3-CAT-033: Failed — Sub-Category In Use (Blocked) — 409', async () => {
@@ -673,7 +671,7 @@ describe('API-12: DELETE /admin/subcategories/:id', () => {
       .delete(`/api/admin/subcategories/${SUBCATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(409);
-    expect(res.body.status).toBe('error');
+    expect(res.body.message).toBe('Sub-Category is in use and cannot be deleted');
     expect(res.body.body.error).toMatch(/linked to active leads/i);
   });
 
@@ -687,7 +685,7 @@ describe('API-12: DELETE /admin/subcategories/:id', () => {
       .delete(`/api/admin/subcategories/00000000-0000-0000-0000-000000000000`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('error');
+    expect(res.body.success).toBe(false);
   });
 });
 
@@ -705,10 +703,10 @@ describe('API-13: GET /categories/active', () => {
       .get('/api/admin/categories/active')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.data.length).toBe(2);
-    expect(res.body.body.count).toBe(2);
-    expect(res.body.body.data[0].category_name).toBeDefined();
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.data.length).toBe(2);
+    expect(res.body.data.count).toBe(2);
+    expect(res.body.data.data[0].category_name).toBeDefined();
   });
 });
 
@@ -727,10 +725,10 @@ describe('API-14: GET /subcategories/active', () => {
       .get(`/api/admin/subcategories/active?category_id=${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.data.length).toBe(1);
-    expect(res.body.body.count).toBe(1);
-    expect(res.body.body.category_id).toBe(CATEGORY_UUID);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.data.length).toBe(1);
+    expect(res.body.data.count).toBe(1);
+    expect(res.body.data.category_id).toBe(CATEGORY_UUID);
   });
 
   test('TEST-EP3-CAT-037: Positive — No Sub-Categories for Category — 200', async () => {
@@ -744,9 +742,9 @@ describe('API-14: GET /subcategories/active', () => {
       .get(`/api/admin/subcategories/active?category_id=${CATEGORY2.id}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.data).toEqual([]);
-    expect(res.body.body.count).toBe(0);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.data).toEqual([]);
+    expect(res.body.data.count).toBe(0);
   });
 
   test('TEST-EP3-CAT-038: Failed — Missing category_id — 400', async () => {
@@ -758,8 +756,8 @@ describe('API-14: GET /subcategories/active', () => {
       .get('/api/admin/subcategories/active')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(400);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/category[_ ]?id/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/validation failed/i);
   });
 });
 
@@ -784,9 +782,9 @@ describe('API-15: POST /admin/categories/seed-defaults', () => {
       .post('/api/admin/categories/seed-defaults')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.body.categoriesCreated).toBe(8);
-    expect(res.body.body.subCategoriesCreated).toBe(34);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.categoriesCreated).toBe(8);
+    expect(res.body.data.subCategoriesCreated).toBe(34);
   });
 
   test('TEST-EP3-CAT-040: Failed — Already Seeded — 409', async () => {
@@ -799,8 +797,8 @@ describe('API-15: POST /admin/categories/seed-defaults', () => {
       .post('/api/admin/categories/seed-defaults')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(409);
-    expect(res.body.status).toBe('error');
-    expect(res.body.body.error).toMatch(/already been loaded/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/already seeded/i);
   });
 });
 

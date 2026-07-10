@@ -45,7 +45,8 @@ const generateRefreshToken = (user, rememberMe = false) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const { email, password, remember_me } = req.body;
+    const { email, password, remember_me, rememberMe } = req.body;
+    const effectiveRememberMe = remember_me || rememberMe;
     const { ipAddress, userAgent } = getIpAndAgent(req);
     const config = await getLockoutConfig();
     const lockoutThreshold = config.lockoutThreshold;
@@ -112,7 +113,7 @@ exports.login = async (req, res, next) => {
     else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user, remember_me);
+    const refreshToken = generateRefreshToken(user, effectiveRememberMe);
     const hashedRefresh = await bcrypt.hash(refreshToken, 12);
 
     await withTransaction(async (client) => {
@@ -125,16 +126,15 @@ exports.login = async (req, res, next) => {
       }, client);
     });
 
-    const redirect = user.role === 'Admin' ? '/admin/dashboard' : '/marketing/leads';
-
     res.json({
       success: true,
-      token: accessToken,
-      refreshToken,
-      token_expires_in: remember_me ? '30d' : '7d',
-      user: User.toResponseUser(user),
-      redirect,
-      isFirstLogin,
+      message: 'Login successful',
+      data: {
+        token: accessToken,
+        refreshToken,
+        expiresIn: 3600,
+        user: User.toResponseUser(user),
+      },
     });
   } catch (error) {
     next(error);
@@ -171,7 +171,13 @@ exports.refreshToken = async (req, res, next) => {
     const newRefreshToken = generateRefreshToken(user);
     await User.storeRefreshToken(user.id, await bcrypt.hash(newRefreshToken, 12));
 
-    res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
+    res.json({
+      success: true,
+      data: {
+        expiresIn: 3600,
+        token: newAccessToken,
+      },
+    });
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       return res.status(401).json({ success: false, message: 'Invalid token' });
@@ -246,7 +252,7 @@ exports.forgotPassword = async (req, res, next) => {
       });
     }
 
-    res.json({ success: true, message: 'If email exists, a password reset link has been sent.' });
+    res.json({ success: true, message: 'Password reset email sent successfully' });
   } catch (error) {
     next(error);
   }
@@ -304,7 +310,7 @@ exports.resetPassword = async (req, res, next) => {
       }, client);
     });
 
-    res.json({ success: true, message: 'Password reset done' });
+    res.json({ success: true, message: 'Password has been reset successfully' });
   } catch (error) {
     next(error);
   }

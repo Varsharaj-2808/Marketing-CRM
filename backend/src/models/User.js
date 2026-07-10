@@ -37,7 +37,8 @@ const User = {
 
   async findAll() {
     const result = await query(
-      'SELECT id, "employee_id", name, email, mobile, role, "accountStatus" as status, "failedLoginAttempts", "lockoutUntil", "lastLoginAt", "createdAt", "updatedAt" FROM users ORDER BY "createdAt" DESC'
+      `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status
+       FROM users ORDER BY "createdAt" DESC`
     );
     return result.rows;
   },
@@ -210,8 +211,17 @@ const User = {
 
   toSafeUser(user) {
     if (!user) return null;
-    const { password, refreshToken, resetToken, resetTokenExpiry, ...safe } = user;
-    return safe;
+    const { password, refreshToken, resetToken, resetTokenExpiry, failedLoginAttempts, lockoutUntil, lastLoginAt, ...safe } = user;
+    return {
+      id: safe.id,
+      employee_id: safe.employee_id,
+      employee_name: safe.name || [safe.firstName, safe.lastName].filter(Boolean).join(' ').trim() || safe.email,
+      name: safe.name || [safe.firstName, safe.lastName].filter(Boolean).join(' ').trim() || safe.email,
+      email: safe.email,
+      mobile: safe.mobile,
+      role: safe.role,
+      status: safe.accountStatus || safe.status,
+    };
   },
 
   toResponseUser(user) {
@@ -219,6 +229,7 @@ const User = {
     return {
       id: user.id,
       employee_id: user.employee_id,
+      employee_name: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email,
       name: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email,
       email: user.email,
       mobile: user.mobile,

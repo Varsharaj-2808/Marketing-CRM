@@ -54,7 +54,16 @@ exports.deactivateUser = async (req, res, next) => {
     res.json({
       success: true,
       message: 'User deactivated successfully.',
-      data: updated,
+      data: {
+        id: updated.id,
+        employee_id: updated.employee_id,
+        employee_name: updated.name,
+        name: updated.name,
+        email: updated.email,
+        mobile: updated.mobile,
+        role: updated.role,
+        status: updated.status,
+      },
     });
   } catch (error) {
     next(error);
@@ -98,7 +107,16 @@ exports.activateUser = async (req, res, next) => {
     res.json({
       success: true,
       message: 'User activated successfully.',
-      data: updated,
+      data: {
+        id: updated.id,
+        employee_id: updated.employee_id,
+        employee_name: updated.name,
+        name: updated.name,
+        email: updated.email,
+        mobile: updated.mobile,
+        role: updated.role,
+        status: updated.status,
+      },
     });
   } catch (error) {
     next(error);
@@ -128,7 +146,12 @@ exports.getUserStatusHistory = async (req, res, next) => {
 exports.getLeadSources = async (req, res, next) => {
   try {
     const sources = await LeadSource.findAllActive();
-    res.json({ success: true, data: sources });
+    const mappedSources = sources.map(s => ({
+      id: s.id,
+      source_name: s.name,
+      status: s.status,
+    }));
+    res.json({ success: true, data: mappedSources });
   } catch (error) {
     next(error);
   }
@@ -157,10 +180,51 @@ exports.getBusinessSubCategories = async (req, res, next) => {
   }
 };
 
+exports.checkCategoryInUse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const category = await BusinessCategory.findById(id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+    const countResult = await query(`SELECT COUNT(*)::int AS count FROM leads WHERE category = $1`, [category.category_name]);
+    const count = countResult.rows[0].count;
+    const subCountResult = await query(`SELECT COUNT(*)::int AS count FROM business_sub_categories WHERE category_id = $1`, [id]);
+    const subCategoryCount = subCountResult.rows[0].count;
+    res.json({ success: true, data: { in_use: count > 0, lead_count: count, sub_category_count: subCategoryCount } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.checkSubCategoryInUse = async (req, res, next) => {
+  try {
+    const { categoryId, subCategoryId } = req.params;
+    const category = await BusinessCategory.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+    const subcategory = await BusinessSubCategory.findById(subCategoryId);
+    if (!subcategory) {
+      return res.status(404).json({ success: false, message: 'Sub-category not found' });
+    }
+    const countResult = await query(`SELECT COUNT(*)::int AS count FROM leads WHERE category = $1 AND sub_category = $2`, [category.category_name, subcategory.sub_category_name]);
+    const count = countResult.rows[0].count;
+    res.json({ success: true, data: { in_use: count > 0, lead_count: count } });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getServices = async (req, res, next) => {
   try {
     const services = await Service.findAllActive();
-    res.json({ success: true, data: services });
+    const mappedServices = services.map(s => ({
+      id: s.id,
+      service_name: s.name,
+      status: s.status,
+    }));
+    res.json({ success: true, data: mappedServices });
   } catch (error) {
     next(error);
   }
@@ -254,7 +318,17 @@ exports.reopenLead = async (req, res, next) => {
       if (client) client.release();
     }
 
-    return res.status(200).json({ success: true, data: updatedLead });
+    return res.status(200).json({
+      success: true,
+      message: 'Lead reopened',
+      data: {
+        id: updatedLead.id,
+        status: updatedLead.stage,
+        reopened_by: { id: req.user.id, name: req.user.name || req.user.email },
+        reopen_reason: reasonField,
+        reopened_at: updatedLead.updated_at,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -351,20 +425,18 @@ exports.getDashboardKpis = async (req, res, next) => {
       negotiation:     Number(row.negotiation     || 0),
       won,
       lost,
-      today_followups: Number(row.today_followups || 0),
+      conversion_rate,
       hot_leads:       Number(row.hot_leads       || 0),
       warm_leads:      Number(row.warm_leads      || 0),
       cold_leads:      Number(row.cold_leads      || 0),
-      conversion_rate,
+      category_id: category_id || null,
+      sub_category_id: null,
+      today_followups: Number(row.today_followups || 0),
     };
 
     return res.status(200).json({
       success: true,
       data,
-      meta: {
-        generated_at:      new Date().toISOString(),
-        cache_ttl_seconds: 60,
-      },
     });
   } catch (error) {
     next(error);
@@ -409,21 +481,21 @@ exports.getCategoryVolume = async (req, res, next) => {
       ORDER BY lead_count DESC
     `, values);
 
-    const countResult = await query(
-      `SELECT COUNT(DISTINCT bc.id)::int AS cnt
-       FROM leads l
-       LEFT JOIN business_categories bc ON l.category = bc.id
-       WHERE ${where}`,
+    const totalLeadsResult = await query(
+      `SELECT COUNT(*)::int AS cnt FROM leads l WHERE ${where}`,
       values
     );
+    const totalLeads = Number((totalLeadsResult.rows[0] || {}).cnt || 0);
+
+    const mappedData = dataResult.rows.map(row => ({
+      category: row.category,
+      count: row.lead_count,
+      percentage: totalLeads > 0 ? Math.round((row.lead_count / totalLeads) * 100) + '%' : '0%',
+    }));
 
     return res.status(200).json({
       success: true,
-      data: dataResult.rows,
-      meta: {
-        total_categories:  Number((countResult.rows[0] || {}).cnt || 0),
-        cache_ttl_seconds: 60,
-      },
+      data: mappedData,
     });
   } catch (error) {
     next(error);
@@ -467,7 +539,7 @@ exports.getWonRateBySource = async (req, res, next) => {
           WHEN COUNT(*) > 0
             THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*), 2) || '%'
           ELSE '0%'
-        END AS win_rate
+        END AS rate
       FROM leads l
       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
       WHERE ${where}
@@ -478,7 +550,6 @@ exports.getWonRateBySource = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: result.rows,
-      meta: { cache_ttl_seconds: 60 },
     });
   } catch (error) {
     next(error);
@@ -490,21 +561,20 @@ exports.getWonRateByCategory = async (req, res, next) => {
     const filter = buildAdminFilter(req, 'l.');
     const result = await query(`
       SELECT
-        l.category AS category_id,
-        c.category_name,
-        COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) AS total_closed,
+        c.category_name AS category,
+        COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) AS total,
         COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
         COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
         CASE
           WHEN COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) > 0
             THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')), 2) || '%'
           ELSE '0.00%'
-        END AS win_rate
+        END AS rate
       FROM leads l
       LEFT JOIN business_categories c ON l.category = c.id
       WHERE ${filter.where} AND l.stage IN ('Won', 'Lost')
       GROUP BY l.category, c.category_name
-      ORDER BY win_rate DESC
+      ORDER BY rate DESC
     `, filter.values);
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -517,16 +587,28 @@ exports.getLeadVolumeByCategory = async (req, res, next) => {
     const filter = buildAdminFilter(req, 'l.');
     const result = await query(`
       SELECT
-        l.category AS category_id,
-        c.category_name,
-        COUNT(*) AS lead_count
+        c.category_name AS category,
+        COUNT(*) AS count
       FROM leads l
       LEFT JOIN business_categories c ON l.category = c.id
       WHERE ${filter.where}
       GROUP BY l.category, c.category_name
-      ORDER BY lead_count DESC
+      ORDER BY count DESC
     `, filter.values);
-    res.json({ success: true, data: result.rows });
+
+    const totalLeadsResult = await query(
+      `SELECT COUNT(*)::int AS cnt FROM leads l WHERE ${filter.where}`,
+      filter.values
+    );
+    const totalLeads = Number((totalLeadsResult.rows[0] || {}).cnt || 0);
+
+    const mappedData = result.rows.map(row => ({
+      category: row.category,
+      count: row.count,
+      percentage: totalLeads > 0 ? Math.round((row.count / totalLeads) * 100) + '%' : '0%',
+    }));
+
+    res.json({ success: true, data: mappedData });
   } catch (error) {
     next(error);
   }
@@ -906,12 +988,14 @@ exports.getAtRiskLeads = async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: 'At-risk leads fetched successfully',
-      data: {
-        total_at_risk: leadsResult.rows.length,
-        breakdown:     breakdownResult.rows,
-        leads:         leadsResult.rows,
-      },
+      data: leadsResult.rows.map(row => ({
+        id: row.id,
+        lead_id: row.lead_id,
+        company_name: row.company_name,
+        contact_person: row.contact_person,
+        assigned_to: row.assigned_to,
+        days_overdue: row.days_overdue,
+      })),
     });
   } catch (error) {
     next(error);
