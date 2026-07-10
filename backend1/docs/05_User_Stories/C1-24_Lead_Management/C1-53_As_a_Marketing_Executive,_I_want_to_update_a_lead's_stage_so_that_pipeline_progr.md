@@ -1,0 +1,69 @@
+---
+jira-key: C1-53
+issue-type: Story
+status: To Do
+updated: 2026-06-26 05:14:03
+---
+
+# C1-53: [STORY-2.4.1] As a Marketing Executive, I want to update a lead's stage so that pipeline progress is accurately reflected....
+
+**Issue Type:** Story
+
+## Metadata
+
+| Field | Value |
+|-------|-------|
+| Status | To Do |
+| Priority | High |
+| Assignee | Unassigned |
+| Reporter | Sulabh Varshney |
+| Created | 2026-06-26 05:14:03 |
+| Updated | 2026-06-26 05:14:03 |
+| Labels | EPIC-2, Lead-Status-&-Stage-Management |
+
+
+## Description
+
+User Story:
+
+As a Marketing Executive, I want to update a lead's stage so that pipeline progress is accurately reflected.
+
+Acceptance Criteria:
+
+Given a lead is in any active stage, when the user selects Stage = Lost, then the system forces selection of a Lost Reason before the change can be saved.
+
+Given a lead is in any active stage, when the user selects Stage = Won, then the system requires entry of Final Deal Value and Closure Date before save.
+
+Given a lead's Stage is changed, then a new row is appended to Lead History with previous stage, new stage, actor, and timestamp; no existing history row is ever edited or deleted.
+
+Given a lead is already Won or Lost, when a Marketing Executive attempts to change its stage again, then the action is blocked with the message 'This lead is closed. Contact Admin to reopen.' Admin retains override capability with mandatory reason capture.
+
+Given the current Stage is 'New Lead', then the only stage values the user may select next are 'Contacted', 'Hold', or 'Lost' (illegal/skipped transitions, e.g., 'New Lead' directly to 'Won', are blocked).
+
+
+## Acceptance Criteria
+
+Given a lead is in any active stage, when the user selects Stage = Lost, then the system forces selection of a Lost Reason before the change can be saved.
+
+Given a lead is in any active stage, when the user selects Stage = Won, then the system requires entry of Final Deal Value and Closure Date before save.
+
+Given a lead's Stage is changed, then a new row is appended to Lead History with previous stage, new stage, actor, and timestamp; no existing history row is ever edited or deleted.
+
+Given a lead is already Won or Lost, when a Marketing Executive attempts to change its stage again, then the action is blocked with the message 'This lead is closed. Contact Admin to reopen.' Admin retains override capability with mandatory reason capture.
+
+Given the current Stage is 'New Lead', then the only stage values the user may select next are 'Contacted', 'Hold', or 'Lost' (illegal/skipped transitions, e.g., 'New Lead' directly to 'Won', are blocked).
+
+
+## Links
+
+### Parent Epic
+
+- **Key:** C1-24
+- **Summary:** [EPIC-2] Lead Management
+### Child Issues
+
+- **C1-54:** [TASK-2.4.1-01] Build Stage selector on Lead Detail (New Lead -> Contacted -> Meeting Scheduled -> Requirement Gathering -> Proposal Sent -> Negotiation -> Won/Lost/Hold)- **C1-55:** [TASK-2.4.1-02] Build PATCH /leads/{id}/stage API with allowed-transition validation- **C1-56:** [TASK-2.4.1-03] Enforce mandatory Lost Reason capture when Stage = Lost- **C1-57:** [TASK-2.4.1-04] Enforce mandatory final Deal Value + Closure Date capture when Stage = Won- **C1-58:** [TASK-2.4.1-05] Write Stage-Changed event to Lead History (old stage -> new stage, actor, timestamp)- **C1-59:** [TASK-2.4.1-06] Lock stage edits on Won/Lost leads except for Admin override
+
+
+
+_Last updated: 2026-06-26 05:14:03_

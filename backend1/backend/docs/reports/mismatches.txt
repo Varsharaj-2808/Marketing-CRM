@@ -1,0 +1,447 @@
+test-ep-5.1.1-b-001 Description Mismatch
+  MD: Verify that a Marketing Executive can fetch the field-level change log for a lead assigned to them. Response returns lead_history rows with DB columns: field_name, old_value, new_value, change_summary, changed_by, changed_at, reason. Default limit is 20, sorted newest-first by changed_at.
+  Test: ME can fetch field history for assigned lead
+
+test-ep-5.1.1-b-002 Description Mismatch
+  MD: Verify that the field_name query parameter filters results to only changes for the specified field.
+  Test: field_name filter returns only matching entries
+
+test-ep-5.1.1-b-003 Description Mismatch
+  MD: Verify pagination boundary — initial load returns at most 20 entries per page, with accurate pagination metadata.
+  Test: Pagination returns first 20 entries
+
+test-ep-5.1.1-b-004 Description Mismatch
+  MD: Verify second page retrieval returns remaining entries beyond the initial 20.
+  Test: Second page returns remaining 5 entries
+
+test-ep-5.1.1-b-005 Description Mismatch
+  MD: Verify 403 Forbidden when a Marketing Executive queries field history for a lead assigned to a different user.
+  Test: 403 when ME queries lead assigned to another user
+
+test-ep-5.1.1-b-005 Message Mismatch
+  MD Expected: Not authorized to view this lead's history
+  Test does not contain exact match
+
+test-ep-5.1.1-b-006 Description Mismatch
+  MD: Verify 404 when requesting field history for a non-existent lead UUID.
+  Test: 404 for non-existent lead
+
+test-ep-5.1.1-b-006 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-007 Description Mismatch
+  MD: Verify 400 when lead ID parameter is not a valid UUID format.
+  Test: 400 for invalid UUID format (no UUID validation)
+
+test-ep-5.1.1-b-008 Description Mismatch
+  MD: Verify empty history response (lead with no lead_history rows) returns an empty array.
+  Test: Empty history returns empty array
+
+test-ep-5.1.1-b-009 Description Mismatch
+  MD: Verify 401 when no authentication token is provided.
+  Test: 401 when no auth token provided
+
+test-ep-5.1.1-b-009 Message Mismatch
+  MD Expected: No token provided
+  Test does not contain exact match
+
+test-ep-5.1.1-b-010 Description Mismatch
+  MD: Verify that Admin can view the full field-level change history for any lead in the system, bypassing ownership restrictions. Default limit is 50.
+  Test: Admin can view any lead field history
+
+test-ep-5.1.1-b-011 Description Mismatch
+  MD: Verify admin field history supports pagination with custom limit.
+  Test: Admin pagination with custom limit
+
+test-ep-5.1.1-b-012 Description Mismatch
+  MD: Verify admin field history supports filtering by field_name.
+  Test: Admin field_name filter
+
+test-ep-5.1.1-b-013 Description Mismatch
+  MD: Verify 404 when admin requests field history for a non-existent lead.
+  Test: 404 for non-existent lead via admin
+
+test-ep-5.1.1-b-013 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-014 Description Mismatch
+  MD: Verify 400 when admin uses an invalid lead ID format.
+  Test: 400 invalid UUID via admin (no UUID validation)
+
+test-ep-5.1.1-b-015 Description Mismatch
+  MD: Verify that a Marketing Executive cannot access the admin field-history endpoint (RBAC enforcement).
+  Test: 403 when ME accesses admin field-history
+
+test-ep-5.1.1-b-015 Message Mismatch
+  MD Expected: Access denied. Admin role required.
+  Test does not contain exact match
+
+test-ep-5.1.1-b-016 Description Mismatch
+  MD: Verify system-generated changes (auto stage validation, system rules) are returned with changed_by indicating system actor.
+  Test: System-generated changes identified
+
+test-ep-5.1.1-b-051 Description Mismatch
+  MD: Admin exports a lead’s field history as CSV. The CSV content matches exactly what is shown on screen, with columns: field_name, old_value, new_value, change_summary, changed_by, changed_at, reason.
+  Test: CSV export returns formatted CSV
+
+test-ep-5.1.1-b-052 Description Mismatch
+  MD: Verify 400 when the format parameter is not csv.
+  Test: 400 when export format is not csv
+
+test-ep-5.1.1-b-052 Message Mismatch
+  MD Expected: Format must be csv
+  Test does not contain exact match
+
+test-ep-5.1.1-b-053 Description Mismatch
+  MD: Verify 404 when exporting history for a non-existent lead.
+  Test: 404 when exporting non-existent lead
+
+test-ep-5.1.1-b-053 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-054 Description Mismatch
+  MD: Verify 404 when the lead has no lead_history rows to export.
+  Test: 404 when lead has no history
+
+test-ep-5.1.1-b-054 Message Mismatch
+  MD Expected: No history found for this lead
+  Test does not contain exact match
+
+test-ep-5.1.1-b-055 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to export field history.
+  Test: 403 when ME exports field history
+
+test-ep-5.1.1-b-055 Message Mismatch
+  MD Expected: Access denied. Admin role required.
+  Test does not contain exact match
+
+test-ep-5.1.1-b-056 Description Mismatch
+  MD: Admin fetches the system-wide audit log with filters (actor, action_type, entity_affected, date range). Response uses audit_logs DB columns: action_type, actor, entity_affected, entity_id, result, ip_address, details, created_at.
+  Test: Admin fetches audit log with filters
+
+test-ep-5.1.1-b-057 Description Mismatch
+  MD: Verify audit log pagination with configurable page size.
+  Test: Audit log pagination with custom page size
+
+test-ep-5.1.1-b-058 Description Mismatch
+  MD: Verify filtering by entity_affected returns only entries for that entity type.
+  Test: Filter by entity_affected
+
+test-ep-5.1.1-b-059 Description Mismatch
+  MD: Verify 400 when from or to date parameters are not in valid YYYY-MM-DD format.
+  Test: request with invalid date format returns 400
+
+test-ep-5.1.1-b-060 Description Mismatch
+  MD: Verify empty response when no audit log entries match the applied filters.
+  Test: Empty result set for out-of-range dates
+
+test-ep-5.1.1-b-061 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to access the audit log.
+  Test: 403 when ME attempts to access audit log
+
+test-ep-5.1.1-b-062 Description Mismatch
+  MD: Verify SQL injection attempt on filter parameters is properly sanitized.
+  Test: SQL injection attempt is sanitized
+
+test-ep-5.1.1-b-063 Description Mismatch
+  MD: Admin fetches a single audit log entry by its UUID with full detail.
+  Test: Admin fetches single audit entry with full detail
+
+test-ep-5.1.1-b-064 Description Mismatch
+  MD: Verify 404 when the audit log entry does not exist.
+  Test: 404 when audit log entry does not exist
+
+test-ep-5.1.1-b-065 Description Mismatch
+  MD: Verify 400 when the audit log ID is not a valid UUID format.
+  Test: 400 for invalid UUID format
+
+test-ep-5.1.1-b-066 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to view a single audit log entry.
+  Test: 403 when ME views single audit entry
+
+test-ep-5.1.1-b-067 Description Mismatch
+  MD: Admin exports the audit log as CSV within a specified date range.
+  Test: Admin exports audit log as CSV
+
+test-ep-5.1.1-b-068 Description Mismatch
+  MD: Verify 400 when export format is not csv.
+  Test: 400 when export format is not csv
+
+test-ep-5.1.1-b-069 Description Mismatch
+  MD: Verify 400 when date format in from or to is invalid.
+  Test: 400 for invalid date format on export
+
+test-ep-5.1.1-b-070 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to export the audit log.
+  Test: 403 when ME exports audit log
+
+test-ep-5.1.1-b-074 Description Mismatch
+  MD: Verify that no POST route exists to manually insert lead_history rows — history is only created internally by tracking middleware.
+  Test: POST on field-history returns 405/404
+
+test-ep-5.1.1-b-075 Description Mismatch
+  MD: Verify XSS prevention — script tags stored in old_value or new_value are returned safely in JSON without server-side processing or execution.
+  Test: XSS safe in field-history response
+
+test-ep-5.1.1-b-076 Description Mismatch
+  MD: Verify query performance on lead_history with large datasets (10,000+ entries for a single lead).
+  Test: Performance with 10,000 lead_history entries
+
+test-ep-5.1.1-b-071 Description Mismatch
+  MD: Verify that PUT requests against the lead_history resource are rejected (HTTP 405), ensuring the history table is insert-only.
+  Test: PUT /admin/leads/:id/field-history returns 405
+
+test-ep-5.1.1-b-071 Message Mismatch
+  MD Expected: Method not allowed
+  Test does not contain exact match
+
+test-ep-5.1.1-b-072 Description Mismatch
+  MD: Verify that PATCH requests against the lead_history resource are rejected (HTTP 405).
+  Test: PATCH /admin/leads/:id/field-history returns 405
+
+test-ep-5.1.1-b-073 Description Mismatch
+  MD: Verify that DELETE requests against the lead_history resource are rejected (HTTP 405).
+  Test: DELETE /admin/leads/:id/field-history returns 405
+
+test-ep-5.1.1-b-024 Description Mismatch
+  MD: Verify transaction atomicity — if the lead update fails after history row is inserted, both operations are rolled back. No orphan lead_history row exists.
+  Test: Transaction rollback when History insert fails
+
+test-ep-5.1.1-b-017 Description Mismatch
+  MD: Verify updating a lead’s stage creates a lead_history row capturing field_name, old_value, new_value, changed_by, changed_at — written in the same database transaction. The response includes a history_logged object confirming the entry.
+  Test: Valid stage transition creates history row
+
+test-ep-5.1.1-b-017 Message Mismatch
+  MD Expected: Status updated
+  Test does not contain exact match
+
+test-ep-5.1.1-b-018 Description Mismatch
+  MD: Verify that the history_logged object in the response exactly matches the corresponding lead_history row committed to the database.
+  Test: history_logged matches persisted DB row
+
+test-ep-5.1.1-b-019 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to update status on a lead not assigned to them.
+  Test: 403 when ME updates lead not assigned to them
+
+test-ep-5.1.1-b-019 Message Mismatch
+  MD Expected: Not authorized to update this lead
+  Test does not contain exact match
+
+test-ep-5.1.1-b-020 Description Mismatch
+  MD: Verify 400 when status value is not in the allowed enum of valid stages.
+  Test: 400 for invalid stage value
+
+test-ep-5.1.1-b-020 Message Mismatch
+  MD Expected: Stage must be one of: New, Contacted, Qualified, Meeting, Proposal, Negotiation, Won, Lost, Hold
+  Test does not contain exact match
+
+test-ep-5.1.1-b-021 Description Mismatch
+  MD: Verify 404 when updating status on a lead that does not exist.
+  Test: 404 for non-existent lead
+
+test-ep-5.1.1-b-021 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-022 Description Mismatch
+  MD: Verify 422 when an invalid stage transition is attempted (e.g., New -> Qualified directly, skipping Contacted). Response includes allowed_next array.
+  Test: 422 for invalid stage transition
+
+test-ep-5.1.1-b-022 Message Mismatch
+  MD Expected: Invalid stage transition. New can only move to Contacted.
+  Test does not contain exact match
+
+test-ep-5.1.1-b-023 Description Mismatch
+  MD: Verify 401 when no authentication token is provided.
+  Test: 401 when no auth token provided
+
+test-ep-5.1.1-b-023 Message Mismatch
+  MD Expected: No token provided
+  Test does not contain exact match
+
+test-ep-5.1.1-b-025 Description Mismatch
+  MD: Verify that updating a tracked field with the same value does NOT create a duplicate lead_history entry.
+  Test: Same stage value does not create duplicate history
+
+test-ep-5.1.1-b-026 Description Mismatch
+  MD: Verify Admin can assign an unassigned lead to a user. Creates a lead_history row with field_name = 'assigned_to' and an audit_logs entry.
+  Test: Admin assigns unassigned lead to user
+
+test-ep-5.1.1-b-026 Message Mismatch
+  MD Expected: Lead assigned
+  Test does not contain exact match
+
+test-ep-5.1.1-b-027 Description Mismatch
+  MD: Verify reassigning a lead from one user to another creates a history entry showing both old and new assignee.
+  Test: Admin reassigns lead to different user
+
+test-ep-5.1.1-b-028 Description Mismatch
+  MD: Verify 400 when lead ID is not a valid UUID format.
+  Test: 400 for invalid lead UUID format (no UUID validation)
+
+test-ep-5.1.1-b-028 Message Mismatch
+  MD Expected: Invalid lead ID
+  Test does not contain exact match
+
+test-ep-5.1.1-b-029 Description Mismatch
+  MD: Verify 400 when assigned_to user ID is not a valid UUID format.
+  Test: 400 for invalid assigned_to UUID format
+
+test-ep-5.1.1-b-029 Message Mismatch
+  MD Expected: Invalid user ID
+  Test does not contain exact match
+
+test-ep-5.1.1-b-030 Description Mismatch
+  MD: Verify 404 when the lead does not exist.
+  Test: 404 for non-existent lead
+
+test-ep-5.1.1-b-030 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-031 Description Mismatch
+  MD: Verify 404 when the target user does not exist in the users table.
+  Test: 404 for non-existent target user
+
+test-ep-5.1.1-b-031 Message Mismatch
+  MD Expected: User not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-032 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to access the admin assign endpoint.
+  Test: 403 when ME attempts to assign
+
+test-ep-5.1.1-b-032 Message Mismatch
+  MD Expected: Access denied. Admin role required.
+  Test does not contain exact match
+
+test-ep-5.1.1-b-033 Description Mismatch
+  MD: Verify transaction atomicity — if the lead update succeeds but the lead_history insert fails, the entire operation rolls back and leads.assigned_to remains unchanged.
+  Test: Transaction rollback when history insert fails
+
+test-ep-5.1.1-b-034 Description Mismatch
+  MD: Close a lead as Won — creates lead_history row for stage field, records final_deal_value and closure_date on the lead.
+  Test: ME closes lead as Won via PUT
+
+test-ep-5.1.1-b-034 Message Mismatch
+  MD Expected: Lead closed as Won
+  Test does not contain exact match
+
+test-ep-5.1.1-b-035 Description Mismatch
+  MD: Close a lead as Lost — creates lead_history row and records loss_reason on the lead.
+  Test: ME closes lead as Lost via PUT
+
+test-ep-5.1.1-b-035 Message Mismatch
+  MD Expected: Lead closed as Lost
+  Test does not contain exact match
+
+test-ep-5.1.1-b-036 Description Mismatch
+  MD: Verify 403 when attempting to close a lead not assigned to the user.
+  Test: 403 when closing lead not assigned to user
+
+test-ep-5.1.1-b-036 Message Mismatch
+  MD Expected: Not authorized to close this lead
+  Test does not contain exact match
+
+test-ep-5.1.1-b-037 Description Mismatch
+  MD: Verify 404 when closing a non-existent lead.
+  Test: 404 when closing non-existent lead
+
+test-ep-5.1.1-b-037 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-038 Description Mismatch
+  MD: Verify 400 when close status is not Won or Lost.
+  Test: 400 when close stage is not Won or Lost
+
+test-ep-5.1.1-b-038 Message Mismatch
+  MD Expected: Status must be Won or Lost to close
+  Test does not contain exact match
+
+test-ep-5.1.1-b-039 Description Mismatch
+  MD: Verify 400 when closing as Lost without providing loss_reason.
+  Test: 400 when closing as Lost without loss_reason
+
+test-ep-5.1.1-b-039 Message Mismatch
+  MD Expected: Loss reason is required when closing as Lost
+  Test does not contain exact match
+
+test-ep-5.1.1-b-040 Description Mismatch
+  MD: Verify 400 when loss_reason is not in the allowed enum values.
+  Test: 400 when loss_reason is invalid
+
+test-ep-5.1.1-b-040 Message Mismatch
+  MD Expected: Loss reason must be: Budget, Competitor, No Response, Cancelled, Other
+  Test does not contain exact match
+
+test-ep-5.1.1-b-041 Description Mismatch
+  MD: Verify 400 when closing as Won without final_deal_value and closure_date.
+  Test: 400 when closing as Won without deal value
+
+test-ep-5.1.1-b-041 Message Mismatch
+  MD Expected: final_deal_value and closure_date are required when closing as Won
+  Test does not contain exact match
+
+test-ep-5.1.1-b-042 Description Mismatch
+  MD: Verify 400 when final_deal_value is negative.
+  Test: 400 when final_deal_value is negative
+
+test-ep-5.1.1-b-042 Message Mismatch
+  MD Expected: final_deal_value must be a positive number
+  Test does not contain exact match
+
+test-ep-5.1.1-b-043 Description Mismatch
+  MD: Verify transaction atomicity — if the lead update succeeds but lead_history insert fails, the entire close operation rolls back.
+  Test: Transaction rollback when history insert fails on close
+
+test-ep-5.1.1-b-044 Description Mismatch
+  MD: Admin reopens a Won lead — creates lead_history row recording the transition from Won to Contacted with the reopen reason.
+  Test: Admin reopens Won lead
+
+test-ep-5.1.1-b-044 Message Mismatch
+  MD Expected: Lead reopened
+  Test does not contain exact match
+
+test-ep-5.1.1-b-045 Description Mismatch
+  MD: Admin reopens a Lost lead — same behavior as reopening a Won lead.
+  Test: Admin reopens Lost lead
+
+test-ep-5.1.1-b-046 Description Mismatch
+  MD: Verify 400 when reopen reason is missing.
+  Test: 400 when reopen reason is missing
+
+test-ep-5.1.1-b-046 Message Mismatch
+  MD Expected: Reopen reason is required
+  Test does not contain exact match
+
+test-ep-5.1.1-b-047 Description Mismatch
+  MD: Verify 400 when reopening a lead that is not in Won or Lost status.
+  Test: 400 when lead is not closed (Won/Lost)
+
+test-ep-5.1.1-b-047 Message Mismatch
+  MD Expected: Only Won or Lost leads can be reopened
+  Test does not contain exact match
+
+test-ep-5.1.1-b-048 Description Mismatch
+  MD: Verify 404 when reopening a non-existent lead.
+  Test: 404 when reopening non-existent lead
+
+test-ep-5.1.1-b-048 Message Mismatch
+  MD Expected: Lead not found
+  Test does not contain exact match
+
+test-ep-5.1.1-b-049 Description Mismatch
+  MD: Verify 403 when a Marketing Executive attempts to reopen a lead.
+  Test: 403 when ME attempts to reopen
+
+test-ep-5.1.1-b-049 Message Mismatch
+  MD Expected: Access denied. Admin role required.
+  Test does not contain exact match
+
+test-ep-5.1.1-b-050 Description Mismatch
+  MD: Verify transaction atomicity — both the lead record update and lead_history insertion occur in the same transaction.
+  Test: Transaction rollback when history insert fails on reopen

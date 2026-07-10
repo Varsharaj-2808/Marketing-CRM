@@ -1,0 +1,14 @@
+node_modules/
+.env
+
+# Generated exports
+exports/
+
+# Logs
+*.log
+
+# Test result artifacts
+*-results.json
+test-results*.json
+all-tests-results*.json
+
