@@ -60,7 +60,7 @@ export const api = {
 
   async forgotPassword(email) {
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/forgot-password?_=${Date.now()}`, {
+      const res = await fetch(`${API_BASE_URL}/auth/forgot_password?_=${Date.now()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

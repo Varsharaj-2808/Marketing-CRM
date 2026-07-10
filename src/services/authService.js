@@ -28,21 +28,21 @@ export async function logout() {
 }
 
 export async function forgotPassword(email) {
-  return request('/auth/forgot-password', {
+  return request('/auth/forgot_password', {
     method: 'POST',
     body: JSON.stringify({ email: email.trim() }),
   });
 }
 
 export async function refreshToken(refreshTokenValue) {
-  return request('/auth/refresh-token', {
+  return request('/auth/refresh_token', {
     method: 'POST',
     body: JSON.stringify({ refreshToken: refreshTokenValue }),
   });
 }
 
 export async function resetPassword(token, newPassword) {
-  return request('/auth/reset-password', {
+  return request('/auth/reset_password', {
     method: 'POST',
     body: JSON.stringify({ token, newPassword }),
   });

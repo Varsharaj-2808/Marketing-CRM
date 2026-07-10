@@ -190,14 +190,14 @@ function applyLeadFilters(leads, url) {
 }
 
 export const handlers = [
-  http.get(`${BASE}/admin/lead-sources`, () => {
+  http.get(`${BASE}/admin/lead_sources`, () => {
     return HttpResponse.json({
       success: true,
       data: leadSourcesStore,
     });
   }),
 
-  http.post(`${BASE}/admin/lead-sources`, async ({ request }) => {
+  http.post(`${BASE}/admin/lead_sources`, async ({ request }) => {
     const body = await request.json();
     const { name } = body;
     if (!name?.trim()) {
@@ -208,7 +208,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: newSource, message: 'Lead source created successfully.' }, { status: 201 });
   }),
 
-  http.put(`${BASE}/admin/lead-sources/:id`, async ({ params, request }) => {
+  http.put(`${BASE}/admin/lead_sources/:id`, async ({ params, request }) => {
     const { id } = params;
     const body = await request.json();
     const idx = leadSourcesStore.findIndex(s => s.id === id);
@@ -218,7 +218,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: leadSourcesStore[idx], message: 'Lead source updated successfully.' });
   }),
 
-  http.delete(`${BASE}/admin/lead-sources/:id`, ({ params }) => {
+  http.delete(`${BASE}/admin/lead_sources/:id`, ({ params }) => {
     const { id } = params;
     const idx = leadSourcesStore.findIndex(s => s.id === id);
     if (idx === -1) return HttpResponse.json({ success: false, message: 'Lead source not found.' }, { status: 404 });
@@ -368,19 +368,19 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/categories/:id/in-use`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:id/in_use`, ({ params }) => {
     const { id } = params;
     const leads = mockLeadsStore.filter(lead => lead.businessCategory === id);
     return HttpResponse.json({ inUse: leads.length > 0, leads });
   }),
 
-  http.get(`${BASE}/admin/categories/:id/audit-log`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:id/audit_log`, ({ params }) => {
     const { id } = params;
     const log = auditLogs.filter(e => e.resource === 'Category' && e.resourceId === id);
     return HttpResponse.json({ success: true, data: log });
   }),
 
-  http.post(`${BASE}/admin/categories/:categoryId/sub-categories`, async ({ params, request }) => {
+  http.post(`${BASE}/admin/categories/:categoryId/sub_categories`, async ({ params, request }) => {
     const { categoryId } = params;
     const body = await request.json();
     if (!categoriesStore.find(c => c.id === categoryId)) {
@@ -410,7 +410,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: newSub, message: 'Sub-category created successfully.' }, { status: 201 });
   }),
 
-  http.put(`${BASE}/admin/categories/:categoryId/sub-categories/:subId`, async ({ params, request }) => {
+  http.put(`${BASE}/admin/categories/:categoryId/sub_categories/:subId`, async ({ params, request }) => {
     const { categoryId, subId } = params;
     const body = await request.json();
     const subs = subCategoriesStore[categoryId];
@@ -439,7 +439,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: subs[idx], message: 'Sub-category updated successfully.' });
   }),
 
-  http.delete(`${BASE}/admin/categories/:categoryId/sub-categories/:subId`, ({ params }) => {
+  http.delete(`${BASE}/admin/categories/:categoryId/sub_categories/:subId`, ({ params }) => {
     const { categoryId, subId } = params;
     const subs = subCategoriesStore[categoryId];
     if (!subs) return HttpResponse.json({ success: false, message: 'Category not found.' }, { status: 404 });
@@ -466,7 +466,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, message: 'Sub-category deleted successfully.' });
   }),
 
-  http.get(`${BASE}/admin/categories/:categoryId/sub-categories/active`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:categoryId/sub_categories/active`, ({ params }) => {
     const { categoryId } = params;
     const subs = subCategoriesStore[categoryId] || [];
     return HttpResponse.json({
@@ -475,7 +475,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/categories/:categoryId/sub-categories/:subId/in-use`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:categoryId/sub_categories/:subId/in-use`, ({ params }) => {
     const { categoryId, subId } = params;
     const leads = mockLeadsStore.filter(lead => lead.businessSubCategory === subId);
     return HttpResponse.json({ inUse: leads.length > 0, leads });
@@ -610,7 +610,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: usersStore[idx], message: 'User deactivated successfully.' });
   }),
 
-  http.get(`${BASE}/api/admin/audit-log`, () => {
+  http.get(`${BASE}/admin/audit_log`, () => {
     return HttpResponse.json({
       success: true,
       data: auditLogs,
@@ -618,7 +618,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/categories/:categoryId/sub-categories`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:categoryId/sub_categories`, ({ params }) => {
     const { categoryId } = params;
     const subs = subCategoriesStore[categoryId] || [];
     return HttpResponse.json({
@@ -637,7 +637,7 @@ export const handlers = [
     return HttpResponse.json({ duplicate: false, exists: false });
   }),
 
-  http.get(`${BASE}/marketing/leads/:leadId/lead-history`, ({ params }) => {
+  http.get(`${BASE}/marketing/leads/:leadId/lead_history`, ({ params }) => {
     try {
       const leadId = params?.leadId;
       if (!leadId) {
@@ -663,7 +663,7 @@ export const handlers = [
     }
   }),
 
-  http.post(`${BASE}/marketing/leads/check-duplicate`, async ({ request }) => {
+  http.post(`${BASE}/marketing/leads/check_duplicate`, async ({ request }) => {
     const body = await request.json();
     const { mobileNumber } = body;
 
@@ -739,7 +739,7 @@ export const handlers = [
     });
   }),
 
-  http.post(`${BASE}/auth/forgot-password`, async ({ request }) => {
+  http.post(`${BASE}/auth/forgot_password`, async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json({
       success: true,
@@ -747,14 +747,14 @@ export const handlers = [
     });
   }),
 
-  http.post(`${BASE}/auth/reset-password`, async () => {
+  http.post(`${BASE}/auth/reset_password`, async () => {
     return HttpResponse.json({
       success: true,
       message: 'Password has been reset successfully.',
     });
   }),
 
-  http.post(`${BASE}/auth/refresh-token`, async () => {
+  http.post(`${BASE}/auth/refresh_token`, async () => {
     return HttpResponse.json({
       success: true,
       data: { token: 'mock-jwt-token-' + Date.now(), refreshToken: 'mock-refresh-token' },
@@ -891,7 +891,7 @@ export const handlers = [
     });
   }),
 
-  http.post(`${BASE}/admin/leads/bulk-assign`, async ({ request }) => {
+  http.post(`${BASE}/admin/leads/bulk_assign`, async ({ request }) => {
     const body = await request.json();
     const { leadIds, assignedTo, reason } = body;
 
@@ -994,7 +994,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/lead-history/:leadId`, ({ params }) => {
+  http.get(`${BASE}/lead_history/:leadId`, ({ params }) => {
     const { leadId } = params;
     const lead = mockLeadsStore.find(
       (l) => l.id === leadId || l.leadId === leadId
@@ -1167,7 +1167,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/dashboard/category/won-rate`, ({ request }) => {
+  http.get(`${BASE}/admin/dashboard/category/won_rate`, ({ request }) => {
     const url = new URL(request.url);
     const category_id = url.searchParams.get('category_id');
     let leads = [...mockLeadsStore];
@@ -1202,7 +1202,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/dashboard/category/lead-volume`, ({ request }) => {
+  http.get(`${BASE}/admin/dashboard/category/lead_volume`, ({ request }) => {
     const url = new URL(request.url);
     const filtered = getFilteredLeads(mockLeadsStore, url);
     
@@ -1349,7 +1349,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/dashboard/at-risk`, ({ request }) => {
+  http.get(`${BASE}/admin/dashboard/at_risk`, ({ request }) => {
     const url = new URL(request.url);
     const overdueDays = parseInt(url.searchParams.get('overdue_days')) || 3;
     

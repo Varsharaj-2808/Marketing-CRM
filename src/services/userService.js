@@ -168,7 +168,7 @@ export const userService = {
   },
 
   async getAuditLog(params = {}) {
-    const res = await apiRequest('/api/admin/audit-log');
+    const res = await apiRequest('/admin/audit_log');
     if (res?.success) {
       let filtered = res.data || [];
       if (params.user_id) filtered = filtered.filter(e => e.user_id === params.user_id);

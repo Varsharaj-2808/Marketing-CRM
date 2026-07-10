@@ -55,8 +55,8 @@ function setupE2eMocks(options = {}) {
   global.fetch = vi.fn().mockImplementation((input, init) => {
     const url = typeof input === 'string' ? input : input.toString();
 
-    if (url.includes('/admin/categories/') && url.includes('/sub-categories')) {
-      const match = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/);
+    if (url.includes('/admin/categories/') && url.includes('/sub_categories')) {
+      const match = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/);
       const categoryId = match?.[1];
       return mockRes({ success: true, data: MOCK_SUB_CATEGORIES[categoryId] || [] });
     }
@@ -69,7 +69,7 @@ function setupE2eMocks(options = {}) {
       return mockRes({ success: true, data: MOCK_USERS });
     }
 
-    if (url.includes('/marketing/leads/check-duplicate')) {
+    if (url.includes('/marketing/leads/check_duplicate')) {
       const body = JSON.parse(init?.body || '{}');
       if (duplicateMobile && body.mobileNumber === duplicateMobile) {
         return mockRes({ duplicate: true, leadId: 'LD-0042' });
@@ -77,7 +77,7 @@ function setupE2eMocks(options = {}) {
       return mockRes({ duplicate: false });
     }
 
-    if (url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST') {
+    if (url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST') {
       leadCreateCounter++;
       const leadId = `LD-${String(leadCreateCounter).padStart(4, '0')}`;
       const id = `lead-${String(leadCreateCounter).padStart(4, '0')}`;
@@ -206,7 +206,7 @@ describe('E2E: Create Lead — Full User Flow', () => {
     });
 
     const postCreateCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
     );
     expect(postCreateCalls.length).toBe(1);
 
@@ -244,7 +244,7 @@ describe('E2E: Create Lead — Full User Flow', () => {
     });
 
     const postCreateCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
     );
     const sentPayload = JSON.parse(postCreateCalls[0][1].body);
     expect(sentPayload.assignedTo).toBe('EMP-00002');
@@ -268,7 +268,7 @@ describe('E2E: Create Lead — Full User Flow', () => {
     });
 
     const postCreateCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
     );
     const sentPayload = JSON.parse(postCreateCalls[0][1].body);
     expect(sentPayload.companyName).toBeTruthy();
@@ -352,7 +352,7 @@ describe('E2E: Create Lead — Validation Flow', () => {
     });
 
     const postCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
     );
     expect(postCalls.length).toBe(0);
   });
@@ -388,7 +388,7 @@ describe('E2E: Create Lead — Duplicate Mobile Flow', () => {
     });
 
     const postCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
     );
     expect(postCalls.length).toBe(1);
   });

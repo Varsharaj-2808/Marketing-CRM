@@ -65,8 +65,8 @@ function setupMockFetch() {
     const url = typeof input === 'string' ? input : input.toString();
     const method = init?.method || 'GET';
 
-    if (url.includes('/admin/categories/') && url.includes('/sub-categories') && method === 'GET') {
-      const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/)?.[1];
+    if (url.includes('/admin/categories/') && url.includes('/sub_categories') && method === 'GET') {
+      const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/)?.[1];
       return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
     }
 
@@ -83,11 +83,11 @@ function setupMockFetch() {
       return mockRes({ success: true, message: 'Category deleted successfully.' });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/in-use')) {
+    if (url.includes('/admin/categories/') && url.includes('/in_use')) {
       return mockRes({ inUse: false, leads: [] });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/audit-log')) {
+    if (url.includes('/admin/categories/') && url.includes('/audit_log')) {
       return mockRes({ success: true, data: [] });
     }
 

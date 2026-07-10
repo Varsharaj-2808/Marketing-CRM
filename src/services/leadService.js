@@ -104,7 +104,7 @@ export async function fetchSubCategories(categoryId, params = {}) {
     const useNewPath = !isTestEnvironment();
     const url = useNewPath
       ? `${API_BASE_URL}/admin/subcategories?${appendCacheBuster({ ...params, category_id: categoryId })}`
-      : `${API_BASE_URL}/admin/categories/${categoryId}/sub-categories?${query}`;
+      : `${API_BASE_URL}/admin/categories/${categoryId}/sub_categories?${query}`;
 
     const res = await fetch(url, { headers: getAuthHeaders() });
     const json = await safeJson(res);
@@ -124,7 +124,7 @@ export async function fetchSubCategories(categoryId, params = {}) {
 
 export async function checkDuplicateLead(mobileNumber) {
   try {
-    const res = await fetch(`${API_BASE_URL}/marketing/leads/check-duplicate`, {
+    const res = await fetch(`${API_BASE_URL}/marketing/leads/check_duplicate`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ mobileNumber }),
@@ -245,7 +245,7 @@ export async function fetchLeadById(id, cacheBuster) {
 
 export async function fetchLeadSources() {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/lead-sources?_=${Date.now()}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/lead_sources?_=${Date.now()}`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -256,7 +256,7 @@ export async function fetchLeadSources() {
 
 export async function createLeadSource(data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/lead-sources`, {
+    const res = await fetch(`${API_BASE_URL}/admin/lead_sources`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -269,7 +269,7 @@ export async function createLeadSource(data) {
 
 export async function updateLeadSource(id, data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/lead-sources/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/lead_sources/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -282,7 +282,7 @@ export async function updateLeadSource(id, data) {
 
 export async function deleteLeadSource(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/lead-sources/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/lead_sources/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -381,7 +381,7 @@ export async function deleteCategory(id) {
 
 export async function createSubCategory(categoryId, data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub_categories`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -394,7 +394,7 @@ export async function createSubCategory(categoryId, data) {
 
 export async function updateSubCategory(categoryId, subId, data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub_categories/${subId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -407,7 +407,7 @@ export async function updateSubCategory(categoryId, subId, data) {
 
 export async function deleteSubCategory(categoryId, subId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub_categories/${subId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -432,7 +432,7 @@ export async function toggleCategoryStatus(id, isActive) {
 
 export async function toggleSubCategoryStatus(categoryId, subId, isActive) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub_categories/${subId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({ isActive }),
@@ -445,7 +445,7 @@ export async function toggleSubCategoryStatus(categoryId, subId, isActive) {
 
 export async function checkCategoryInUse(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${id}/in-use`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${id}/in_use`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -456,7 +456,7 @@ export async function checkCategoryInUse(id) {
 
 export async function checkSubCategoryInUse(categoryId, subId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}/in-use`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub_categories/${subId}/in_use`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -479,7 +479,7 @@ export async function fetchActiveCategories() {
 export async function fetchActiveSubCategories(categoryId) {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/active?_=${Date.now()}`,
+      `${API_BASE_URL}/admin/categories/${categoryId}/sub_categories/active?_=${Date.now()}`,
       { headers: getAuthHeaders() }
     );
     const json = await safeJson(res);
@@ -493,8 +493,8 @@ export async function fetchCategoryAuditLog(id) {
   try {
     const useNewPath = !isTestEnvironment();
     const url = useNewPath
-      ? `${API_BASE_URL}/admin/categories/audit-log?category_id=${id}&_=${Date.now()}`
-      : `${API_BASE_URL}/admin/categories/${id}/audit-log?_=${Date.now()}`;
+      ? `${API_BASE_URL}/admin/categories/audit_log?category_id=${id}&_=${Date.now()}`
+      : `${API_BASE_URL}/admin/categories/${id}/audit_log?_=${Date.now()}`;
 
     const res = await fetch(url, { headers: getAuthHeaders() });
     const json = await safeJson(res);
@@ -514,7 +514,7 @@ export async function fetchCategoryAuditLog(id) {
 
 export async function fetchSavedViews() {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/leads/saved-views?_=${Date.now()}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/saved_views?_=${Date.now()}`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -525,7 +525,7 @@ export async function fetchSavedViews() {
 
 export async function createSavedView(data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/leads/saved-views`, {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/saved_views`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -539,7 +539,7 @@ export async function createSavedView(data) {
 
 export async function deleteSavedView(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/leads/saved-views/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/saved_views/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -555,7 +555,7 @@ export async function reassignLeads(leadIds, _targetUserId) {
 
 export async function fetchLeadHistory(leadId) {
   try {
-    return await requestJson(`${API_BASE_URL}/marketing/leads/${leadId}/lead-history?_=${Date.now()}`);
+    return await requestJson(`${API_BASE_URL}/marketing/leads/${leadId}/lead_history?_=${Date.now()}`);
   } catch {
     const localLead = findLeadInStore(leadId);
     if (localLead?.timeline?.length > 0) {
@@ -743,7 +743,7 @@ export async function reopenLead(leadId, reason) {
 
 export async function bulkAssignLeads(leadIds, assignedTo, reason) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/leads/bulk-assign`, {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/bulk_assign`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ leadIds, assignedTo, reason }),
@@ -780,7 +780,7 @@ export async function bulkAssignLeads(leadIds, assignedTo, reason) {
 export async function fetchWonRateByCategory(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    return await requestJson(`${API_BASE_URL}/admin/dashboard/category/won-rate?${query}`);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/category/won_rate?${query}`);
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {
@@ -802,7 +802,7 @@ export async function fetchWonRateByCategory(params = {}) {
 export async function fetchLeadVolumeByCategory(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    return await requestJson(`${API_BASE_URL}/admin/dashboard/category/lead-volume?${query}`);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/category/lead_volume?${query}`);
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {
@@ -1198,7 +1198,7 @@ export async function addCorrection(leadId, followupId, correctionNotes) {
 export async function fetchAtRiskLeads(overdueDays = 3) {
   try {
     const query = appendCacheBuster({ overdue_days: overdueDays });
-    const res = await fetch(`${API_BASE_URL}/admin/dashboard/at-risk?${query}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/dashboard/at_risk?${query}`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -1213,19 +1213,19 @@ export async function fetchFieldHistory(leadId, params = {}) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
   query.set('_', Date.now());
-  return await requestJson(`${API_BASE_URL}/marketing/leads/${leadId}/field-history?${query.toString()}`);
+  return await requestJson(`${API_BASE_URL}/marketing/leads/${leadId}/field_history?${query.toString()}`);
 }
 
 export async function fetchAdminFieldHistory(leadId, params = {}) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
   query.set('_', Date.now());
-  return await requestJson(`${API_BASE_URL}/admin/leads/${leadId}/field-history?${query.toString()}`);
+  return await requestJson(`${API_BASE_URL}/admin/leads/${leadId}/field_history?${query.toString()}`);
 }
 
 export async function exportFieldHistory(leadId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/leads/${leadId}/field-history/export?format=csv&_=${Date.now()}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/${leadId}/field_history/export?format=csv&_=${Date.now()}`, {
       headers: {
         ...getAuthHeaders(),
         'Accept': 'text/csv',
@@ -1249,11 +1249,11 @@ export async function fetchAuditLogEntries(params = {}) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
   query.set('_', Date.now());
-  return await requestJson(`${API_BASE_URL}/admin/audit-log?${query.toString()}`);
+  return await requestJson(`${API_BASE_URL}/admin/audit_log?${query.toString()}`);
 }
 
 export async function fetchAuditLogEntry(id) {
-  return await requestJson(`${API_BASE_URL}/admin/audit-log/${id}?_=${Date.now()}`);
+  return await requestJson(`${API_BASE_URL}/admin/audit_log/${id}?_=${Date.now()}`);
 }
 
 export async function exportAuditLog(params = {}) {
@@ -1261,7 +1261,7 @@ export async function exportAuditLog(params = {}) {
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
   query.set('format', 'csv');
   query.set('_', Date.now());
-  const res = await fetch(`${API_BASE_URL}/admin/audit-log/export?${query.toString()}`, {
+  const res = await fetch(`${API_BASE_URL}/admin/audit_log/export?${query.toString()}`, {
     headers: {
       ...getAuthHeaders(),
       'Accept': 'text/csv',
@@ -1278,11 +1278,11 @@ export async function exportAuditLog(params = {}) {
 }
 
 export async function fetchRetentionSettings() {
-  return await requestJson(`${API_BASE_URL}/admin/system-settings/audit-retention?_=${Date.now()}`);
+  return await requestJson(`${API_BASE_URL}/admin/system_settings/audit_retention?_=${Date.now()}`);
 }
 
 export async function updateRetentionSettings(value) {
-  const res = await fetch(`${API_BASE_URL}/admin/system-settings/audit-retention`, {
+  const res = await fetch(`${API_BASE_URL}/admin/system_settings/audit_retention`, {
     method: 'PUT',
     headers: {
       ...getAuthHeaders(),
@@ -1401,7 +1401,7 @@ export async function reopenLeadAdmin(leadId, reason) {
 export async function fetchCategoryVolume(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    const res = await requestJson(`${API_BASE_URL}/admin/dashboard/category-volume?${query}`);
+    const res = await requestJson(`${API_BASE_URL}/admin/dashboard/category_volume?${query}`);
     if (res?.success && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
       const flat = res.data;
       const stages = ['new', 'contacted', 'qualified', 'meeting', 'proposal', 'negotiation', 'won', 'lost', 'hold'];
@@ -1431,7 +1431,7 @@ export async function fetchCategoryVolume(params = {}) {
 export async function fetchWonRateBySource(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    return await requestJson(`${API_BASE_URL}/admin/dashboard/won-rate-by-source?${query}`);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/won_rate_by_source?${query}`);
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {
@@ -1448,7 +1448,7 @@ export async function fetchWonRateBySource(params = {}) {
 export async function fetchAdminAtRisk(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    return await requestJson(`${API_BASE_URL}/admin/dashboard/at-risk?${query}`);
+    return await requestJson(`${API_BASE_URL}/admin/dashboard/at_risk?${query}`);
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {
@@ -1486,7 +1486,7 @@ export async function fetchMeDashboardCards() {
 export async function fetchMeConversionRate(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    return await requestJson(`${API_BASE_URL}/marketing/dashboard/conversion-rate?${query}`);
+    return await requestJson(`${API_BASE_URL}/marketing/dashboard/conversion_rate?${query}`);
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {
@@ -1504,7 +1504,7 @@ export async function fetchMeConversionRate(params = {}) {
 export async function fetchExportHistory(params = {}) {
   try {
     const query = appendCacheBuster({ ...params, action: 'lead.exported' });
-    return await requestJson(`${API_BASE_URL}/admin/audit-log?${query}`);
+    return await requestJson(`${API_BASE_URL}/admin/audit_log?${query}`);
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {

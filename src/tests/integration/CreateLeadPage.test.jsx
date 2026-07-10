@@ -73,8 +73,8 @@ function setupMockFetch(options = {}) {
   global.fetch = vi.fn().mockImplementation((input, init) => {
     const url = typeof input === 'string' ? input : input.toString();
 
-    if (url.includes('/admin/categories/') && url.includes('/sub-categories')) {
-      const match = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/);
+    if (url.includes('/admin/categories/') && url.includes('/sub_categories')) {
+      const match = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/);
       const categoryId = match?.[1];
       return mockRes({ success: true, data: MOCK_SUB_CATEGORIES[categoryId] || [] });
     }
@@ -87,7 +87,7 @@ function setupMockFetch(options = {}) {
       return mockRes({ success: true, data: MOCK_USERS });
     }
 
-    if (url.includes('/marketing/leads/check-duplicate')) {
+    if (url.includes('/marketing/leads/check_duplicate')) {
       if (duplicateMobile) {
         return mockRes({ duplicate: true, leadId: 'LD-0001' });
       }

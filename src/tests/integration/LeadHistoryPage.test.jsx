@@ -53,7 +53,7 @@ describe('LeadHistoryPage', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead-history')) {
+      if (url.includes('/lead_history')) {
         return mockRes({ success: true, data: [
           {
             action: 'Status Changed',
@@ -78,7 +78,7 @@ describe('LeadHistoryPage', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead-history')) {
+      if (url.includes('/lead_history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({ success: true, data: {

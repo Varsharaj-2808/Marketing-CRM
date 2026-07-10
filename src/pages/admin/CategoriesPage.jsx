@@ -76,7 +76,7 @@ async function fetchCategoryAuditLogDirect(categoryId) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/audit-log?category_id=${categoryId}&_=${Date.now()}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/audit_log?category_id=${categoryId}&_=${Date.now()}`, {
       headers: getAuthHeadersLocal(),
     });
     if (res.ok) {

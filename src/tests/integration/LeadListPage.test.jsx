@@ -296,7 +296,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead-history')) {
+      if (url.includes('/lead_history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({

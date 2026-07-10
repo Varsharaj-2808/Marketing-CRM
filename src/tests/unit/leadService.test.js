@@ -96,7 +96,7 @@ describe('leadService', () => {
       const result = await fetchSubCategories('cat-001');
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/admin/categories/cat-001/sub-categories'),
+        expect.stringContaining('/admin/categories/cat-001/sub_categories'),
         expect.any(Object)
       );
       expect(result.data).toHaveLength(2);
@@ -113,7 +113,7 @@ describe('leadService', () => {
       const result = await checkDuplicateLead('9876543210');
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/marketing/leads/check-duplicate'),
+        expect.stringContaining('/marketing/leads/check_duplicate'),
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ mobileNumber: '9876543210' }),

@@ -80,7 +80,7 @@ function getFieldHistoryResponse(pageNum = 1, totalPages = 1) {
 function buildLeadFetch(lead = getDefaultLead(), fieldHistoryRes = null) {
   return (input) => {
     const url = String(input);
-    if (url.includes('/field-history')) return mockRes(fieldHistoryRes || getFieldHistoryResponse());
+    if (url.includes('/field_history')) return mockRes(fieldHistoryRes || getFieldHistoryResponse());
     if (url.includes('/timeline')) return mockRes({ success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } });
     return mockRes(lead);
   };
@@ -229,7 +229,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     }));
     mockFetch((input) => {
       const url = String(input);
-      if (url.includes('/field-history')) {
+      if (url.includes('/field_history')) {
         const pageMatch = url.match(/page=(\d+)/);
         const page = pageMatch ? parseInt(pageMatch[1]) : 1;
         if (page === 1) {
@@ -278,7 +278,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
 
     fireEvent.change(select, { target: { value: 'stage' } });
     await waitFor(() => {
-      const calls = global.fetch.mock.calls.filter(c => String(c[0]).includes('/field-history'));
+      const calls = global.fetch.mock.calls.filter(c => String(c[0]).includes('/field_history'));
       expect(calls.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -530,7 +530,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     fireEvent.click(exportBtn);
 
     await waitFor(() => {
-      const calls = global.fetch.mock.calls.filter(c => String(c[0]).includes('/field-history/export'));
+      const calls = global.fetch.mock.calls.filter(c => String(c[0]).includes('/field_history/export'));
       expect(calls.length).toBe(1);
     });
 
@@ -553,8 +553,8 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     }));
     mockFetch((input) => {
       const url = String(input);
-      if (url.includes('/audit-log/export')) return mockRes('', 200);
-      if (url.includes('/audit-log')) return mockRes({ success: true, data: entries, pagination: { page: 1, total_pages: 5, total_records: 50 } });
+      if (url.includes('/audit_log/export')) return mockRes('', 200);
+      if (url.includes('/audit_log')) return mockRes({ success: true, data: entries, pagination: { page: 1, total_pages: 5, total_records: 50 } });
       return mockRes(getDefaultLead());
     });
     setUser(adminUser);
@@ -591,8 +591,8 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     }));
     const fetchSpy = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/audit-log/export')) return mockRes('', 200);
-      if (url.includes('/audit-log')) return mockRes({ success: true, data: entries, pagination: { page: 1, total_pages: 1, total_records: entries.length } });
+      if (url.includes('/audit_log/export')) return mockRes('', 200);
+      if (url.includes('/audit_log')) return mockRes({ success: true, data: entries, pagination: { page: 1, total_pages: 1, total_records: entries.length } });
       return mockRes(getDefaultLead());
     });
     mockFetch(fetchSpy);
@@ -613,12 +613,12 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     fireEvent.click(applyBtn);
 
     await waitFor(() => {
-      const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/audit-log?'));
+      const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/audit_log?'));
       expect(calls.length).toBeGreaterThanOrEqual(2);
     });
 
     const lastCallUrl = fetchSpy.mock.calls
-      .filter(c => String(c[0]).includes('/audit-log?'))
+      .filter(c => String(c[0]).includes('/audit_log?'))
       .pop()[0];
     expect(String(lastCallUrl)).toContain('action_type=lead.status_changed');
     expect(String(lastCallUrl)).toContain('from=2026-06-01');
@@ -632,8 +632,8 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     ];
     mockFetch((input) => {
       const url = String(input);
-      if (url.includes('/audit-log/42')) return mockRes({ success: true, data: entries[0] });
-      if (url.includes('/audit-log')) return mockRes({ success: true, data: entries, pagination: { page: 1, total_pages: 1, total_records: 1 } });
+      if (url.includes('/audit_log/42')) return mockRes({ success: true, data: entries[0] });
+      if (url.includes('/audit_log')) return mockRes({ success: true, data: entries, pagination: { page: 1, total_pages: 1, total_records: 1 } });
       return mockRes(getDefaultLead());
     });
     setUser(adminUser);
@@ -657,7 +657,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     const loadingPromise = new Promise(r => { resolvePromise = r; });
     mockFetch((input) => {
       const url = String(input);
-      if (url.includes('/field-history')) return loadingPromise;
+      if (url.includes('/field_history')) return loadingPromise;
       if (url.includes('/timeline')) return mockRes({ success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } });
       return mockRes(getDefaultLead());
     });
@@ -694,7 +694,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     errorPromise.catch(() => {});
     mockFetch((input) => {
       const url = String(input);
-      if (url.includes('/field-history')) return errorPromise;
+      if (url.includes('/field_history')) return errorPromise;
       if (url.includes('/timeline')) return mockRes({ success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } });
       return mockRes(getDefaultLead());
     });
@@ -737,12 +737,12 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     renderLeadDetails('/admin/leads/ld-100');
 
     await screen.findByRole('tab', { name: /History/i });
-    const historyCallsBefore = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/field-history')).length;
+    const historyCallsBefore = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/field_history')).length;
     expect(historyCallsBefore).toBe(0);
 
     await clickHistoryTab();
     await waitFor(() => {
-      const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/field-history'));
+      const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/field_history'));
       expect(calls.length).toBe(1);
     });
 
@@ -751,7 +751,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
 
     await clickHistoryTab();
     await waitFor(() => {
-      const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/field-history'));
+      const calls = fetchSpy.mock.calls.filter(c => String(c[0]).includes('/field_history'));
       expect(calls.length).toBe(1);
     });
   });

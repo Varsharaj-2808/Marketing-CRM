@@ -127,10 +127,10 @@ function setupFetchForLead(lead, extraMocks = {}) {
     if (url.includes('/admin/users')) {
       return mockRes({ success: true, data: mockUsers });
     }
-    if (url.includes('/lead-history')) {
+    if (url.includes('/lead_history')) {
       return mockRes({ success: true, data: extraMocks.history || lead.timeline || [] });
     }
-    if (url.includes('/admin/leads/bulk-assign')) {
+    if (url.includes('/admin/leads/bulk_assign')) {
       return extraMocks.bulkAssign || mockRes({ assigned: true, count: 2 }, 200);
     }
     if (url.includes('/leads/') && url.includes('/assign')) {
@@ -199,7 +199,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
       if (url.includes('/admin/users')) {
         return mockRes({ success: true, data: mockUsers });
       }
-      if (url.includes('/lead-history')) {
+      if (url.includes('/lead_history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/leads/') && url.includes('/assign')) {
@@ -239,7 +239,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
       if (url.includes('/admin/users')) {
         return mockRes({ success: true, data: mockUsers });
       }
-      if (url.includes('/lead-history')) {
+      if (url.includes('/lead_history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/leads/') && url.includes('/assign')) {
@@ -277,7 +277,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) return mockRes({ success: true }, 200);
       if (url.includes('/admin/leads/lead-001') && (url.includes('?_') || url.includes('_='))) {
         return mockRes({ success: true, data: { ...unownedLead, assignedTo: 'EMP-00002', assignedAt: new Date().toISOString() } });
@@ -307,7 +307,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) {
         return new Promise((resolve) => { resolveAssign = resolve; });
       }
@@ -337,7 +337,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) return mockRes({ message: 'Server error' }, 500);
       return mockRes({ success: true, data: unownedLead });
     });
@@ -360,7 +360,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) return mockRes({ message: 'Not found' }, 404);
       return mockRes({ success: true, data: unownedLead });
     });
@@ -399,7 +399,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: [] });
-      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
       return mockRes({ success: true, data: unownedLead });
     });
 
@@ -563,7 +563,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk-assign')) {
+      if (url.includes('/admin/leads/bulk_assign')) {
         bulkAssignCalled = true;
         return mockRes({ assigned: true, count: 2 }, 200);
       }
@@ -599,7 +599,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk-assign')) {
+      if (url.includes('/admin/leads/bulk_assign')) {
         bulkAssignCalled = true;
         return mockRes({ assigned: true, count: 1 }, 200);
       }
@@ -633,7 +633,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk-assign')) {
+      if (url.includes('/admin/leads/bulk_assign')) {
         return mockRes({ message: 'Reassignment reason required' }, 400);
       }
       return mockRes(mockLeadsResponse([leads[0], leads[1]]));
@@ -691,7 +691,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk-assign')) return mockRes({ message: 'Server error' }, 500);
+      if (url.includes('/admin/leads/bulk_assign')) return mockRes({ message: 'Server error' }, 500);
       return mockRes(mockLeadsResponse([leads[0], leads[1]]));
     });
     global.fetch = fetchMock;

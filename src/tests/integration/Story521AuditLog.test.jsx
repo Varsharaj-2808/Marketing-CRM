@@ -60,7 +60,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       localStorage.setItem('crm_user', JSON.stringify(adminUser));
 
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/audit-log')) {
+        if (url.includes('/admin/audit_log')) {
           return mockResponse({
             success: true,
             data: [
@@ -129,7 +129,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       localStorage.setItem('crm_user', JSON.stringify(adminUser));
 
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/audit-log')) {
+        if (url.includes('/admin/audit_log')) {
           expect(url).toContain('sort_order=desc');
           return mockResponse({
             success: true,
@@ -186,7 +186,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       localStorage.setItem('crm_user', JSON.stringify(adminUser));
 
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/audit-log')) {
+        if (url.includes('/admin/audit_log')) {
           return mockResponse({
             success: true,
             data: [
@@ -245,7 +245,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       localStorage.setItem('crm_user', JSON.stringify(adminUser));
 
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/audit-log')) {
+        if (url.includes('/admin/audit_log')) {
           return mockResponse({
             success: true,
             data: [],
@@ -619,7 +619,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
 
       let exportUrl = '';
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/audit-log/export')) {
+        if (url.includes('/admin/audit_log/export')) {
           exportUrl = url;
           return mockResponse('seq,timestamp\n1,2026-07-07T12:00:00Z', 200);
         }
@@ -646,7 +646,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       fireEvent.click(exportBtn);
 
       await waitFor(() => {
-        expect(exportUrl).toContain('/admin/audit-log/export');
+        expect(exportUrl).toContain('/admin/audit_log/export');
         expect(exportUrl).toContain('actor=John');
         expect(exportUrl).toContain('format=csv');
       });
@@ -660,7 +660,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       localStorage.setItem('crm_user', JSON.stringify(adminUser));
 
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/audit-log/export')) {
+        if (url.includes('/admin/audit_log/export')) {
           return mockResponse({ success: false, message: 'No audit log entries found for the given filters' }, 404);
         }
         return mockResponse({ success: true, data: [] });
@@ -705,7 +705,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       localStorage.setItem('crm_user', JSON.stringify(adminUser));
 
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/system-settings/audit-retention')) {
+        if (url.includes('/admin/system_settings/audit_retention')) {
           return mockResponse({
             success: true,
             data: {
@@ -743,7 +743,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       let putPayload = null;
 
       global.fetch = vi.fn().mockImplementation((url, init) => {
-        if (url.includes('/admin/system-settings/audit-retention')) {
+        if (url.includes('/admin/system_settings/audit_retention')) {
           if (init?.method === 'PUT') {
             putUrl = url;
             putPayload = JSON.parse(init.body);
@@ -776,7 +776,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       fireEvent.click(saveBtn);
 
       await waitFor(() => {
-        expect(putUrl).toContain('/admin/system-settings/audit-retention');
+        expect(putUrl).toContain('/admin/system_settings/audit_retention');
         expect(putPayload).toEqual({ value: '18' });
       });
 
@@ -791,7 +791,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
 
       let apiCalled = false;
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/system-settings/audit-retention')) {
+        if (url.includes('/admin/system_settings/audit_retention')) {
           apiCalled = true;
           return mockResponse({
             success: true,
@@ -827,7 +827,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
 
       let apiCalled = false;
       global.fetch = vi.fn().mockImplementation((url) => {
-        if (url.includes('/admin/system-settings/audit-retention')) {
+        if (url.includes('/admin/system_settings/audit_retention')) {
           apiCalled = true;
           return mockResponse({
             success: true,
