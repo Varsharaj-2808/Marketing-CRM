@@ -1,0 +1,15 @@
+{
+  "name": "marketing-crm-frontend",
+  "version": "1.0.0",
+  "description": "Marketing CRM Frontend",
+  "main": "src/main.jsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
