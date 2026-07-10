@@ -74,7 +74,11 @@ export async function fetchCategories(params = {}) {
     });
     const json = await safeJson(res);
     if (json?.body?.data) return { success: true, data: json.body.data };
-    if (json?.data) return json;
+    if (json?.data) {
+      if (Array.isArray(json.data)) return json;
+      if (json.data?.data) return { success: true, data: json.data.data };
+      return json;
+    }
   } catch {}
   return { success: true, data: FALLBACK_CATEGORIES };
 }
@@ -85,30 +89,29 @@ export async function fetchUsers() {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
-    if (json?.data) return json;
+    if (json?.data) {
+      if (Array.isArray(json.data)) return json;
+      if (json.data?.data) return { success: true, data: json.data.data };
+      return json;
+    }
   } catch {}
   return { success: true, data: [] };
 }
 
 export async function fetchSubCategories(categoryId, params = {}) {
   try {
-    const query = appendCacheBuster(params);
-    const useNewPath = !isTestEnvironment();
-    const url = useNewPath
-      ? `${API_BASE_URL}/admin/subcategories?${appendCacheBuster({ ...params, category_id: categoryId })}`
-      : `${API_BASE_URL}/admin/categories/${categoryId}/sub-categories?${query}`;
+    const url = `${API_BASE_URL}/admin/subcategories?${appendCacheBuster({ ...params, category_id: categoryId })}`;
 
     const res = await fetch(url, { headers: getAuthHeaders() });
     const json = await safeJson(res);
     if (json?.body?.data) {
       const list = Array.isArray(json.body.data) ? json.body.data : [];
-      const filtered = categoryId ? list.filter(s => s.category_id === categoryId) : list;
-      return { success: true, data: filtered };
+      return { success: true, data: list };
     }
     if (json?.data) {
-      const list = Array.isArray(json.data) ? json.data : [];
-      const filtered = categoryId && useNewPath ? list.filter(s => s.category_id === categoryId) : list;
-      return { success: true, data: filtered };
+      const raw = Array.isArray(json.data) ? json.data : (json.data?.data || []);
+      const list = Array.isArray(raw) ? raw : [];
+      return { success: true, data: list };
     }
   } catch {}
   return { success: true, data: FALLBACK_SUB_CATEGORIES[categoryId] || [] };
@@ -373,10 +376,10 @@ export async function deleteCategory(id) {
 
 export async function createSubCategory(categoryId, data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories`, {
+    const res = await fetch(`${API_BASE_URL}/admin/subcategories`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, category_id: categoryId }),
     });
     return await safeJson(res) || { success: false, message: 'Failed to create sub-category.' };
   } catch {
@@ -386,7 +389,7 @@ export async function createSubCategory(categoryId, data) {
 
 export async function updateSubCategory(categoryId, subId, data) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/subcategories/${subId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -399,7 +402,7 @@ export async function updateSubCategory(categoryId, subId, data) {
 
 export async function deleteSubCategory(categoryId, subId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/subcategories/${subId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -424,7 +427,7 @@ export async function toggleCategoryStatus(id, isActive) {
 
 export async function toggleSubCategoryStatus(categoryId, subId, isActive) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/subcategories/${subId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({ isActive }),
@@ -448,7 +451,7 @@ export async function checkCategoryInUse(id) {
 
 export async function checkSubCategoryInUse(categoryId, subId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/${subId}/in-use`, {
+    const res = await fetch(`${API_BASE_URL}/admin/subcategories/${subId}/in-use`, {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
@@ -463,7 +466,11 @@ export async function fetchActiveCategories() {
       headers: getAuthHeaders(),
     });
     const json = await safeJson(res);
-    if (json?.data) return json;
+    if (json?.data) {
+      if (Array.isArray(json.data)) return json;
+      if (json.data?.data) return { success: true, data: json.data.data };
+      return json;
+    }
   } catch {}
   return { success: true, data: FALLBACK_CATEGORIES.filter(c => c.isActive !== false) };
 }
@@ -471,11 +478,15 @@ export async function fetchActiveCategories() {
 export async function fetchActiveSubCategories(categoryId) {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/admin/categories/${categoryId}/sub-categories/active?_=${Date.now()}`,
+      `${API_BASE_URL}/admin/subcategories/active?category_id=${categoryId}&_=${Date.now()}`,
       { headers: getAuthHeaders() }
     );
     const json = await safeJson(res);
-    if (json?.data) return json;
+    if (json?.data) {
+      if (Array.isArray(json.data)) return json;
+      if (json.data?.data) return { success: true, data: json.data.data };
+      return json;
+    }
   } catch {}
   const allSubs = FALLBACK_SUB_CATEGORIES[categoryId] || [];
   return { success: true, data: allSubs.filter(s => s.isActive !== false) };
@@ -541,8 +552,40 @@ export async function deleteSavedView(id) {
   return { success: true, message: 'Deleted.' };
 }
 
-export async function reassignLeads(leadIds, _targetUserId) {
-  return { success: true, message: `${leadIds.length} lead(s) reassigned successfully.` };
+export async function reassignLeads(leadIds, targetUserId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/leads/bulk-assign`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ leadIds, assignedTo: targetUserId, reason: 'Reassigned' }),
+    });
+    const json = await safeJson(res);
+    if (!res.ok) {
+      const error = new Error(json?.message || 'Reassign failed');
+      error.status = res.status;
+      throw error;
+    }
+    leadIds.forEach((id) => {
+      const lead = findLeadInStore(id);
+      if (lead) {
+        lead.assignedTo = targetUserId;
+        lead.assignedAt = new Date().toISOString();
+        lead.updatedAt = new Date().toISOString();
+      }
+    });
+    return json || { success: true, count: leadIds.length };
+  } catch (err) {
+    if (err?.status && err.status !== 502) throw err;
+    leadIds.forEach((id) => {
+      const lead = findLeadInStore(id);
+      if (lead) {
+        lead.assignedTo = targetUserId;
+        lead.assignedAt = new Date().toISOString();
+        lead.updatedAt = new Date().toISOString();
+      }
+    });
+    return { success: true, count: leadIds.length };
+  }
 }
 
 export async function fetchLeadHistory(leadId) {

@@ -1,0 +1,1423 @@
+{
+  "uuid": "b9fc4c9e-b13d-42bd-9b9a-e1edb6540b5a",
+  "lastMigration": 33,
+  "name": "Marketing CRM API v3.1",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3001,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "09e70af3-b0a0-40a6-9a94-aef865ec52cd",
+      "type": "http",
+      "documentation": "API-1 POST /admin/categories",
+      "method": "post",
+      "endpoint": "/admin/categories",
+      "responses": [
+        {
+          "uuid": "bad8fece-c781-45c1-8a3c-3318da0715e6",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Category created successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"category_name\": \"carpentry\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T01:18:07.613Z\",\n    \"updated_at\": \"2026-07-03T01:18:07.613Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "Positive - Category Created",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8207665a-491b-4b03-a5c6-ec8666b7f63e",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Category name already exists\",\n  \"body\": {\n    \"error\": \"A category named 'IT Services' already exists\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Category Name",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1d1c6bae-d39c-49e4-8524-83b8e790e29f",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Only Admin can create categories\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Failed - Unauthorized (Non-Admin)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "d8ee0755-a057-4b76-973a-fb43f01404fb",
+      "type": "http",
+      "documentation": "API-2 GET /admin/categories",
+      "method": "get",
+      "endpoint": "/admin/categories",
+      "responses": [
+        {
+          "uuid": "0bd5b6c7-763e-45f5-8289-e6727d14212a",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Categories fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 9,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n        \"category_name\": \"carpentry\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 0\n      },\n      {\n        \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n        \"category_name\": \"Consulting\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 3\n      },\n      {\n        \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n        \"category_name\": \"Digital Marketing\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 4\n      },\n      {\n        \"id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\n        \"category_name\": \"Education & Training\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 2\n      },\n      {\n        \"id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\n        \"category_name\": \"Healthcare\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 3\n      },\n      {\n        \"id\": \"1239b5ff-5995-4563-b173-3f68e16f0971\",\n        \"category_name\": \"IT Servi\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 0\n      },\n      {\n        \"id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"category_name\": \"IT Services\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 6\n      },\n      {\n        \"id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n        \"category_name\": \"Manufacturing\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 3\n      },\n      {\n        \"id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\n        \"category_name\": \"Real Estate\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 2\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - List All Categories",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "9e4444bf-2afc-4a10-96b3-921c825552d8",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Categories fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 1,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n        \"category_name\": \"carpentry\",\n        \"status\": \"Active\",\n        \"subCategoryCount\": 0\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Search by Name",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "add0d8e1-1a32-4ef7-9d53-ca3e3e449ef5",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Required role(s): Admin\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Failed - Unauthenticated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "19b0b042-d4da-486f-891a-33fc2a3fa491",
+      "type": "http",
+      "documentation": "API-3 GET /admin/categories/:id",
+      "method": "get",
+      "endpoint": "/admin/categories/:id",
+      "responses": [
+        {
+          "uuid": "10585128-e83c-4609-8feb-7a3eb614ad53",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category fetched successfully\",\n  \"body\": {\n    \"id\": \"1239b5ff-5995-4563-b173-3f68e16f0971\",\n    \"category_name\": \"IT Servi\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T00:53:17.938Z\",\n    \"updated_at\": \"2026-07-03T00:53:17.938Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Category Retrieved",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ae9baf7c-4926-42d3-8160-14192d0f9b5b",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "e906e363-4a10-478c-8079-6bd232aac17d",
+      "type": "http",
+      "documentation": "API-4 PUT /admin/categories/:id",
+      "method": "put",
+      "endpoint": "/admin/categories/:id",
+      "responses": [
+        {
+          "uuid": "fc3f8981-ddcb-4945-a2bd-35a8ef8afe43",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category updated successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"category_name\": \"carpenter\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T01:18:07.613Z\",\n    \"updated_at\": \"2026-07-03T01:49:34.940Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Category Updated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "129ceb13-994e-4559-a49e-693a29c04a2e",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f0e469e6-f159-4e00-ba28-c97db48d6158",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Category name already exists\",\n  \"body\": {\n    \"error\": \"A category named 'IT Services' already exists\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Name on Update",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "872c8a9b-9e9b-4043-9845-44c2c35d4812",
+      "type": "http",
+      "documentation": "API-5 PATCH /admin/categories/:id/status",
+      "method": "patch",
+      "endpoint": "/admin/categories/:id/status",
+      "responses": [
+        {
+          "uuid": "808e9f8d-9313-41ea-81a7-0e5634916067",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category deactivated successfully\",\n  \"body\": {\n    \"id\": \"f18d514d-796f-45ef-9869-b184b15cadb4\",\n    \"category_name\": \"carpenter\",\n    \"status\": \"Inactive\",\n    \"created_at\": \"2026-07-03T01:18:07.613Z\",\n    \"updated_at\": \"2026-07-03T01:56:07.552Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Category Deactivated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e662c93e-4c2e-4332-9866-239f5a8316bd",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e2d258d2-c756-42f8-aa3b-f149566bdda4",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Category is already Active\",\n  \"body\": {\n    \"error\": \"Requested status matches current status\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Failed - Status Unchanged",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "c3a38d16-4203-4ab2-8e8b-6e7f9cc922c5",
+      "type": "http",
+      "documentation": "API-6 DELETE /admin/categories/:id",
+      "method": "delete",
+      "endpoint": "/admin/categories/:id",
+      "responses": [
+        {
+          "uuid": "12c1a99d-068c-40de-8cf0-32525acd26a4",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Category deleted successfully\",\n  \"body\": {\n    \"id\": \"b2c96173-c002-3f9f-9430-a7337ea7a790\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Category Deleted (Unused)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "827d63c3-f544-452a-8161-90929f4da93a",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Category is in use and cannot be deleted\",\n  \"body\": {\n    \"error\": \"Category is linked to 3 Sub-Categories / active leads. Deactivate instead.\",\n    \"inUse\": true\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Category In Use (Blocked)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ed00ab0d-45df-4f11-b739-fce7e76c0aef",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Category not found\",\n  \"body\": {\n    \"error\": \"Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "72296c13-3a48-4b93-89c4-2040c99feb30",
+      "type": "http",
+      "documentation": "API-7 POST /admin/subcategories",
+      "method": "post",
+      "endpoint": "/admin/subcategories",
+      "responses": [
+        {
+          "uuid": "56444a5c-af07-4b6b-879e-37756fa1244e",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 201,\n  \"message\": \"Sub-Category created successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-07-03T10:10:00Z\",\n    \"sub_category_name\": \"Web Development\",\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"category_name\": \"IT Services\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "Positive - Sub-Category Created",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8b204d43-77ec-4ad8-8afa-b35063e465a9",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Parent Category not found\",\n  \"body\": {\n    \"error\": \"Parent Category not found or inactive\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Parent Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b2a10787-359d-4050-b13f-d0e34c4bbb22",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Sub-Category already exists under this Category\",\n  \"body\": {\n    \"error\": \"'Web Development' already exists under 'IT Services'\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Name Under Same Parent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "eb0cad40-097c-4041-97e5-cc36dc51745e",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"error\": \"Parent Category is required\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Failed - Missing Mandatory Fields",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "de416213-f4cb-420a-887f-d1ff6f16f336",
+      "type": "http",
+      "documentation": "API-8 GET /admin/subcategories",
+      "method": "get",
+      "endpoint": "/admin/subcategories",
+      "responses": [
+        {
+          "uuid": "366f6720-f795-4fa7-b767-b854cf47d6a5",
+          "body": "{\r\n  \"status\": \"success\",\r\n  \"status_code\": 200,\r\n  \"message\": \"Sub-Categories fetched successfully\",\r\n  \"body\": {\r\n    \"page\": 1,\r\n    \"totalPages\": 1,\r\n    \"totalCount\": 28,\r\n    \"limit\": 20,\r\n    \"data\": [\r\n      {\r\n        \"id\": \"ecfaea99-30f2-493b-aa3c-dcc7ea77c40b\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"AI / Machine Learning\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"8a32d47c-5b82-468b-9cb0-de46d61fede7\",\r\n        \"category_id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\r\n        \"sub_category_name\": \"Automation\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Manufacturing\"\r\n      },\r\n      {\r\n        \"id\": \"3d4962c8-076d-4617-9ba8-a5f5f0441cce\",\r\n        \"category_id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\r\n        \"sub_category_name\": \"Business Process Outsourcing\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Consulting\"\r\n      },\r\n      {\r\n        \"id\": \"8ac7d886-8609-4d16-ace4-a2ea60245023\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Cloud Solutions\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"d3132586-38b6-4368-96c0-9c981a2b01c6\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"Content Marketing\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"c90456e7-ccb3-49fe-8e12-98c311abb8d4\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Cybersecurity\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"17d2912d-35fb-4d84-8d8e-14b858eba27b\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"DevOps\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"db94b04a-9e9e-47ca-8747-05673ff54f49\",\r\n        \"category_id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\r\n        \"sub_category_name\": \"E-learning Content\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Education & Training\"\r\n      },\r\n      {\r\n        \"id\": \"4a4f6e86-9353-48d4-a26c-d9c65220903d\",\r\n        \"category_id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\r\n        \"sub_category_name\": \"EHR Solutions\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Healthcare\"\r\n      },\r\n      {\r\n        \"id\": \"5d1a2c31-ca47-4d8f-b817-345b8f601bb8\",\r\n        \"category_id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\r\n        \"sub_category_name\": \"Health Analytics\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Healthcare\"\r\n      },\r\n      {\r\n        \"id\": \"341af2a0-25a1-4576-8584-b1a2c507a691\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-07-03T02:17:39.864Z\",\r\n        \"updated_at\": \"2026-07-03T02:17:39.864Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"54f70577-8254-4ec0-bedb-32cb7e9183ca\",\r\n        \"category_id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Consulting\"\r\n      },\r\n      {\r\n        \"id\": \"f5a587a0-0151-4f98-9ff1-07edcfd004dc\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-07-03T02:21:08.230Z\",\r\n        \"updated_at\": \"2026-07-03T02:21:08.230Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"b934a922-ddf4-4777-8e15-4d5007f57866\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"IT Strategy\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-07-03T02:20:07.647Z\",\r\n        \"updated_at\": \"2026-07-03T02:20:07.647Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"9a7df011-50a8-4ea0-9c09-67a1b6b3528d\",\r\n        \"category_id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\r\n        \"sub_category_name\": \"LMS Development\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Education & Training\"\r\n      },\r\n      {\r\n        \"id\": \"c80371ef-316d-4b84-8c15-a8634534bffb\",\r\n        \"category_id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\r\n        \"sub_category_name\": \"Management Consulting\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Consulting\"\r\n      },\r\n      {\r\n        \"id\": \"893b9297-42b6-45da-b48b-8b4dad5046e8\",\r\n        \"category_id\": \"a7b8c9d0-e1f2-3456-abcd-567890123456\",\r\n        \"sub_category_name\": \"Marketplace Integration\",\r\n        \"status\": \"Inactive\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"E-commerce\"\r\n      },\r\n      {\r\n        \"id\": \"e84a902a-02e1-4c85-88ff-00580aa732ac\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Mobile App Development\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      },\r\n      {\r\n        \"id\": \"2a3546ed-f21a-421c-aeba-73d114ccf817\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"PPC Advertising\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"4ec7b426-8dd5-4b60-b64c-d608cc1ef762\",\r\n        \"category_id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\r\n        \"sub_category_name\": \"Property Management\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Real Estate\"\r\n      },\r\n      {\r\n        \"id\": \"f42ceef9-fa8a-4094-b843-1274ea6e3ddb\",\r\n        \"category_id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\r\n        \"sub_category_name\": \"Quality Assurance\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Manufacturing\"\r\n      },\r\n      {\r\n        \"id\": \"4f07f894-8bfa-4f12-89db-6fa779a5c896\",\r\n        \"category_id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\r\n        \"sub_category_name\": \"Real Estate CRM\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Real Estate\"\r\n      },\r\n      {\r\n        \"id\": \"966acd4d-8fec-416c-aaa3-5537603cc596\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"SEO\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"8332894d-2115-47c6-971e-7fdf377a4aa6\",\r\n        \"category_id\": \"a7b8c9d0-e1f2-3456-abcd-567890123456\",\r\n        \"sub_category_name\": \"Shopify Development\",\r\n        \"status\": \"Inactive\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"E-commerce\"\r\n      },\r\n      {\r\n        \"id\": \"f62d6770-075f-4b88-b3b6-06d8f59f7b68\",\r\n        \"category_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\r\n        \"sub_category_name\": \"Social Media Management\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Digital Marketing\"\r\n      },\r\n      {\r\n        \"id\": \"2a0080af-45c0-40d4-acb9-3e05684324df\",\r\n        \"category_id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\r\n        \"sub_category_name\": \"Supply Chain\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Manufacturing\"\r\n      },\r\n      {\r\n        \"id\": \"264a91b9-5f58-495c-8ea2-75cb69ed6578\",\r\n        \"category_id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\r\n        \"sub_category_name\": \"Telemedicine\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"Healthcare\"\r\n      },\r\n      {\r\n        \"id\": \"885ba1d3-1c78-4112-8825-c5fda3ee3c83\",\r\n        \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\r\n        \"sub_category_name\": \"Web Development\",\r\n        \"status\": \"Active\",\r\n        \"created_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"updated_at\": \"2026-06-30T03:34:04.213Z\",\r\n        \"category_name\": \"IT Services\"\r\n      }\r\n    ]\r\n  }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - List Filtered By Parent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "bc509bab-560a-4d51-93f2-09d0db604737",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 401,\n  \"message\": \"Authentication required\",\n  \"body\": {\n    \"error\": \"Invalid token\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Failed - Unauthenticated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "27d931b8-6e5b-4ae3-9098-be611763815b",
+      "type": "http",
+      "documentation": "API-9 GET /admin/subcategories/:id",
+      "method": "get",
+      "endpoint": "/admin/subcategories/:id",
+      "responses": [
+        {
+          "uuid": "90007341-51d8-47c5-aaae-69cd062ff4b1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category fetched successfully\",\n  \"body\": {\n    \"id\": \"17d2912d-35fb-4d84-8d8e-14b858eba27b\",\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category_name\": \"DevOps\",\n    \"status\": \"Active\",\n    \"created_at\": \"2026-06-30T03:34:04.213Z\",\n    \"updated_at\": \"2026-06-30T03:34:04.213Z\",\n    \"category_name\": \"IT Services\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Sub-Category Retrieved",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "1e8e68ae-21a3-4c18-8fbe-c0325824e775",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "34febf83-02f9-4da8-88e1-a45a4af33bea",
+      "type": "http",
+      "documentation": "API-10 PUT /admin/subcategories/:id",
+      "method": "put",
+      "endpoint": "/admin/subcategories/:id",
+      "responses": [
+        {
+          "uuid": "538736f1-7772-4847-80b7-c4ba2dc3fc44",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category updated successfully\",\n  \"body\": {\n    \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n    \"status\": \"Active\",\n    \"updated_at\": \"2026-07-03T10:15:00Z\",\n    \"sub_category_name\": \"Web & E-commerce Development\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Sub-Category Updated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "567922e2-8ccc-402a-833f-a90e9a2f2254",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e52f2a42-1562-4be3-88b9-ba27848555d3",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Duplicate Sub-Category name under same parent\",\n  \"body\": {\n    \"error\": \"A sub-category named 'IT Strategy' already exists under this parent category\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Duplicate Name Within Same Parent",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "c843a715-8640-40a3-9fe3-315545e34c98",
+      "type": "http",
+      "documentation": "API-11 PATCH /admin/subcategories/:id/status",
+      "method": "patch",
+      "endpoint": "/admin/subcategories/:id/status",
+      "responses": [
+        {
+          "uuid": "302def78-dccc-4301-a0b9-9457b1f7fc4a",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category deactivated successfully\",\n  \"body\": {\n    \"id\": \"f5a587a0-0151-4f98-9ff1-07edcfd004dc\",\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"sub_category_name\": \"IT Strategy\",\n    \"status\": \"Inactive\",\n    \"created_at\": \"2026-07-03T02:21:08.230Z\",\n    \"updated_at\": \"2026-07-03T02:43:21.326Z\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Sub-Category Deactivated",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "462110ce-6d4f-4c40-af53-701ace230f39",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "e2db3300-c690-4a33-9efb-113ec27d1c10",
+      "type": "http",
+      "documentation": "API-12 DELETE /admin/subcategories/:id",
+      "method": "delete",
+      "endpoint": "/admin/subcategories/:id",
+      "responses": [
+        {
+          "uuid": "737c0397-75a3-4b60-8a96-013faa30969b",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Sub-Category deleted successfully\",\n  \"body\": {\n    \"id\": \"c3d07284-d113-4a00-a541-b8448fb8b802\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Sub-Category Deleted (Unused)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ba39ecbf-4aa6-4514-a363-c0ef94386c33",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Sub-Category is in use and cannot be deleted\",\n  \"body\": {\n    \"error\": \"Sub-Category is linked to active leads. Deactivate instead.\",\n    \"inUse\": true\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Sub-Category In Use (Blocked)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "be9892bc-4845-4a6a-bccd-8b99c93a9eb6",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 404,\n  \"message\": \"Sub-Category not found\",\n  \"body\": {\n    \"error\": \"Sub-Category with the specified ID does not exist\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Failed - Sub-Category Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "c8aedac7-2ca7-4d33-80db-d61ed82adaa7",
+      "type": "http",
+      "documentation": "API-13 GET /admin/categories/active",
+      "method": "get",
+      "endpoint": "/admin/categories/active",
+      "responses": [
+        {
+          "uuid": "f822e855-dd79-4c81-ac02-a26a4b925351",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active categories fetched successfully\",\n  \"body\": {\n    \"data\": [\n      {\n        \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n        \"category_name\": \"Consulting\"\n      },\n      {\n        \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n        \"category_name\": \"Digital Marketing\"\n      },\n      {\n        \"id\": \"f6a7b8c9-d0e1-2345-fabc-456789012345\",\n        \"category_name\": \"Education & Training\"\n      },\n      {\n        \"id\": \"d4e5f6a7-b8c9-0123-defa-234567890123\",\n        \"category_name\": \"Healthcare\"\n      },\n      {\n        \"id\": \"1239b5ff-5995-4563-b173-3f68e16f0971\",\n        \"category_name\": \"IT Servi\"\n      },\n      {\n        \"id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"category_name\": \"IT Services\"\n      },\n      {\n        \"id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n        \"category_name\": \"Manufacturing\"\n      },\n      {\n        \"id\": \"e5f6a7b8-c9d0-1234-efab-345678901234\",\n        \"category_name\": \"Real Estate\"\n      }\n    ],\n    \"count\": 8\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Active Categories for Dropdown",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "cfded449-5e62-4cab-bbf0-84323e04fc43",
+      "type": "http",
+      "documentation": "API-14 GET /subcategories/active",
+      "method": "get",
+      "endpoint": "/subcategories/active",
+      "responses": [
+        {
+          "uuid": "f74473c3-6706-4369-98f4-e671df510929",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active sub-categories fetched successfully\",\n  \"body\": {\n    \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n    \"data\": [\n      {\n        \"id\": \"e4c18495-e224-5b11-b652-c9559fc9c902\",\n        \"sub_category_name\": \"Web & E-commerce Development\"\n      }\n    ],\n    \"count\": 1\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Active Sub-Categories for Selected Category",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8740a793-9468-472d-916d-f882f98d5a57",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Active sub-categories fetched successfully\",\n  \"body\": {\n    \"category_id\": \"b2c96173-c002-3f9f-9430-a7337ea7a790\",\n    \"data\": [],\n    \"count\": 0\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - No Sub-Categories for Category",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "59f2df2a-f537-4943-a1c7-489cf65e0883",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 400,\n  \"message\": \"Validation failed\",\n  \"body\": {\n    \"errors\": {\n      \"category_id\": \"A valid categoryId is required\"\n    }\n  }\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Failed - Missing/Invalid categoryId",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "42c934cc-60e5-457e-8c79-5e7fbdd1a3b4",
+      "type": "http",
+      "documentation": "API-15 POST /admin/categories/seed-defaults",
+      "method": "post",
+      "endpoint": "/admin/categories/seed-defaults",
+      "responses": [
+        {
+          "uuid": "d371fbb1-6172-4a32-a9a2-31ad1b0819c1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Default taxonomy seeded\",\n  \"body\": {\n    \"categoriesCreated\": 8,\n    \"subCategoriesCreated\": 34,\n    \"skippedExisting\": 2\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Default Taxonomy Seeded",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "8066c2d9-c8aa-4f7f-b0ca-de99ba181b31",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 409,\n  \"message\": \"Default taxonomy already seeded\",\n  \"body\": {\n    \"error\": \"System default categories have already been loaded\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Failed - Already Seeded",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "fe13cf6d-bd8c-4606-984d-9295f6703346",
+      "type": "http",
+      "documentation": "API-16 GET /admin/categories/audit-log",
+      "method": "get",
+      "endpoint": "/admin/categories/audit-log",
+      "responses": [
+        {
+          "uuid": "850a6a47-08d1-472d-ab07-e1195fecd4ca",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Audit log fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 2,\n    \"limit\": 20,\n    \"data\": [\n      {\n        \"id\": \"h7i51828-h558-8e44-f985-g2882ifc2f35\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT Services\",\n        \"action\": \"CREATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"timestamp\": \"2026-07-03T10:00:00Z\"\n      },\n      {\n        \"id\": \"i8j62939-i669-9f55-g096-h3993jgd3g46\",\n        \"module\": \"Category\",\n        \"entityId\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n        \"entityName\": \"IT & Technology Services\",\n        \"action\": \"UPDATE\",\n        \"changedBy\": \"admin@yourcompany.com\",\n        \"changes\": {\n          \"category_name\": {\n            \"old\": \"IT Services\",\n            \"new\": \"IT & Technology Services\"\n          }\n        },\n        \"timestamp\": \"2026-07-03T10:05:00Z\"\n      }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - Audit Trail Retrieved",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "29f1fb84-cea8-40b9-9336-935096e63ed1",
+          "body": "{\n  \"status\": \"success\",\n  \"status_code\": 200,\n  \"message\": \"Audit log fetched successfully\",\n  \"body\": {\n    \"page\": 1,\n    \"totalPages\": 1,\n    \"totalCount\": 0,\n    \"limit\": 20,\n    \"data\": []\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Positive - No Entries For Filter",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b15b0e86-f747-4665-8427-b486501d106c",
+          "body": "{\n  \"status\": \"error\",\n  \"status_code\": 403,\n  \"message\": \"Access denied\",\n  \"body\": {\n    \"error\": \"Only Admin can view the audit log\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Failed - Unauthorized (Non-Admin)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "abadb9b3-b441-4518-8192-5773460c6b61",
+      "type": "http",
+      "documentation": "EPIC-3 Story-2: GET admin/dashboard/kpis",
+      "method": "get",
+      "endpoint": "admin/dashboard/kpis",
+      "responses": [
+        {
+          "uuid": "991b94a4-8ea4-47b2-bbaf-ee1f7f90adc7",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"total_leads\": 150,\n    \"new\": 30,\n    \"contacted\": 40,\n    \"qualified\": 25,\n    \"meeting\": 20,\n    \"proposal\": 15,\n    \"negotiation\": 10,\n    \"won\": 8,\n    \"lost\": 2,\n    \"conversion_rate\": \"5.33%\",\n    \"hot_leads\": 50,\n    \"warm_leads\": 70,\n    \"cold_leads\": 30,\n    \"category_id\": null,\n    \"sub_category_id\": null\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "7601101a-b6ad-4e08-9f6b-7839f5a028ae",
+      "type": "http",
+      "documentation": "EPIC-3 Story-2: GET admin/dashboard/category/won-rate",
+      "method": "get",
+      "endpoint": "admin/dashboard/category/won-rate",
+      "responses": [
+        {
+          "uuid": "ade6d653-71b9-4d6b-b4ad-11cb9bb5996d",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n      \"category_name\": \"IT Services\",\n      \"total_closed\": \"2\",\n      \"won\": \"1\",\n      \"lost\": \"1\",\n      \"win_rate\": \"50.00%\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "eec5849c-d22e-4ac3-a94b-0731811cc1db",
+      "type": "http",
+      "documentation": "EPIC-3 Story-2: GET admin/dashboard/category/lead-volume",
+      "method": "get",
+      "endpoint": "admin/dashboard/category/lead-volume",
+      "responses": [
+        {
+          "uuid": "a364a6b2-1a9a-4003-b78f-f6c5dce2a06b",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"category_id\": \"d3b07384-d113-4a00-a541-b8448fb8b801\",\n      \"category_name\": \"IT Services\",\n      \"lead_count\": \"9\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "ae3a24c7-ad63-439d-af51-380640a68c12",
+      "type": "http",
+      "documentation": "GET admin leads list",
+      "method": "get",
+      "endpoint": "admin/leads",
+      "responses": [
+        {
+          "uuid": "36930bc3-1047-4116-b40a-99397aa5ae55",
+          "body": "{\n  \"page\": 1,\n  \"totalPages\": 1,\n  \"totalCount\": 3,\n  \"limit\": 25,\n  \"data\": [\n    {\n      \"id\": \"lead-00001\",\n      \"leadId\": \"LD-2026-00001\",\n      \"company_name\": \"TechCorp Solutions\",\n      \"website\": \"https://techcorp.com\",\n      \"category\": \"cat-001\",\n      \"sub_category\": \"sub-001\",\n      \"contact_person\": \"Alice Johnson\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"alice@techcorp.com\",\n      \"city\": \"Mumbai\",\n      \"lead_source\": \"Website\",\n      \"servicesInterested\": [\n        \"Web Development\",\n        \"Cloud Solutions\"\n      ],\n      \"priority\": \"Hot\",\n      \"estimated_value\": \"500000\",\n      \"assigned_to\": \"EMP-00001\",\n      \"stage\": \"New\"\n    },\n    {\n      \"id\": \"lead-00002\",\n      \"leadId\": \"LD-2026-00002\",\n      \"company_name\": \"GrowthMark Agency\",\n      \"website\": \"https://growthmark.com\",\n      \"category\": \"cat-002\",\n      \"sub_category\": \"sub-005\",\n      \"contact_person\": \"Bob Smith\",\n      \"mobile_number\": \"8765432109\",\n      \"email\": \"bob@growthmark.com\",\n      \"city\": \"Delhi\",\n      \"lead_source\": \"Referral\",\n      \"servicesInterested\": [\n        \"SEO Services\",\n        \"Digital Marketing\"\n      ],\n      \"priority\": \"Warm\",\n      \"estimated_value\": \"250000\",\n      \"assigned_to\": \"EMP-00002\",\n      \"stage\": \"Contacted\"\n    },\n    {\n      \"id\": \"lead-00003\",\n      \"leadId\": \"LD-2026-00003\",\n      \"company_name\": \"MediCare Group\",\n      \"website\": \"\",\n      \"category\": \"cat-005\",\n      \"sub_category\": \"sub-015\",\n      \"contact_person\": \"Dr. Raj Patel\",\n      \"mobile_number\": \"7654321098\",\n      \"email\": \"raj@medicare.com\",\n      \"city\": \"Bangalore\",\n      \"lead_source\": \"Phone Inquiry\",\n      \"servicesInterested\": [\n        \"Consulting\"\n      ],\n      \"priority\": \"Cold\",\n      \"estimated_value\": \"1000000\",\n      \"assigned_to\": \"EMP-00003\",\n      \"stage\": \"Negotiation\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "683e60f9-e403-46a9-a4e9-99b1a968e262",
+      "type": "http",
+      "documentation": "GET marketing leads list",
+      "method": "get",
+      "endpoint": "marketing/leads",
+      "responses": [
+        {
+          "uuid": "b634dba7-98c5-4f13-b6b6-4d2badf827d9",
+          "body": "{\n  \"page\": 1,\n  \"totalPages\": 1,\n  \"totalCount\": 3,\n  \"limit\": 25,\n  \"data\": [\n    {\n      \"id\": \"lead-00001\",\n      \"leadId\": \"LD-2026-00001\",\n      \"company_name\": \"TechCorp Solutions\",\n      \"website\": \"https://techcorp.com\",\n      \"category\": \"cat-001\",\n      \"sub_category\": \"sub-001\",\n      \"contact_person\": \"Alice Johnson\",\n      \"mobile_number\": \"9876543210\",\n      \"email\": \"alice@techcorp.com\",\n      \"city\": \"Mumbai\",\n      \"lead_source\": \"Website\",\n      \"servicesInterested\": [\n        \"Web Development\",\n        \"Cloud Solutions\"\n      ],\n      \"priority\": \"Hot\",\n      \"estimated_value\": \"500000\",\n      \"assigned_to\": \"EMP-00001\",\n      \"stage\": \"New\"\n    },\n    {\n      \"id\": \"lead-00002\",\n      \"leadId\": \"LD-2026-00002\",\n      \"company_name\": \"GrowthMark Agency\",\n      \"website\": \"https://growthmark.com\",\n      \"category\": \"cat-002\",\n      \"sub_category\": \"sub-005\",\n      \"contact_person\": \"Bob Smith\",\n      \"mobile_number\": \"8765432109\",\n      \"email\": \"bob@growthmark.com\",\n      \"city\": \"Delhi\",\n      \"lead_source\": \"Referral\",\n      \"servicesInterested\": [\n        \"SEO Services\",\n        \"Digital Marketing\"\n      ],\n      \"priority\": \"Warm\",\n      \"estimated_value\": \"250000\",\n      \"assigned_to\": \"EMP-00002\",\n      \"stage\": \"Contacted\"\n    },\n    {\n      \"id\": \"lead-00003\",\n      \"leadId\": \"LD-2026-00003\",\n      \"company_name\": \"MediCare Group\",\n      \"website\": \"\",\n      \"category\": \"cat-005\",\n      \"sub_category\": \"sub-015\",\n      \"contact_person\": \"Dr. Raj Patel\",\n      \"mobile_number\": \"7654321098\",\n      \"email\": \"raj@medicare.com\",\n      \"city\": \"Bangalore\",\n      \"lead_source\": \"Phone Inquiry\",\n      \"servicesInterested\": [\n        \"Consulting\"\n      ],\n      \"priority\": \"Cold\",\n      \"estimated_value\": \"1000000\",\n      \"assigned_to\": \"EMP-00003\",\n      \"stage\": \"Negotiation\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "d683b259-325e-4a7e-9f03-bb546c0e6dc3",
+      "type": "http",
+      "documentation": "GET marketing dashboard metrics",
+      "method": "get",
+      "endpoint": "marketing/dashboard",
+      "responses": [
+        {
+          "uuid": "6977e7d9-d83e-46fe-a210-b8c80b93fd23",
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"stats\": {\n      \"total_leads\": \"8\",\n      \"active_leads\": \"6\",\n      \"won_leads\": \"1\",\n      \"lost_leads\": \"1\",\n      \"total_estimated_value\": \"292000.00\"\n    },\n    \"stage_breakdown\": [\n      {\n        \"stage\": \"Contacted\",\n        \"count\": 2\n      },\n      {\n        \"stage\": \"New Lead\",\n        \"count\": 2\n      },\n      {\n        \"stage\": \"Lost\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Meeting Scheduled\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Negotiation\",\n        \"count\": 1\n      },\n      {\n        \"stage\": \"Won\",\n        \"count\": 1\n      }\n    ],\n    \"recent_leads\": [],\n    \"unread_notifications\": 3\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "c654e44e-b870-4e1a-8989-ffda399e67f0",
+      "type": "http",
+      "documentation": "GET subcategories nested path",
+      "method": "get",
+      "endpoint": "admin/categories/:categoryId/sub-categories",
+      "responses": [
+        {
+          "uuid": "dd643849-4964-4979-8a74-bd4e9efd61f6",
+          "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"sub-001\",\n      \"sub_category_name\": \"Web Development\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-002\",\n      \"sub_category_name\": \"Mobile App Development\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-003\",\n      \"sub_category_name\": \"Cloud Solutions\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-004\",\n      \"sub_category_name\": \"IT Support\",\n      \"status\": \"Active\"\n    },\n    {\n      \"id\": \"sub-005\",\n      \"sub_category_name\": \"SEO Services\",\n      \"status\": \"Active\"\n    }\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "2ce6f10b-1a07-4f16-aa01-d811197c00f4",
+      "type": "http",
+      "documentation": "Export admin leads as CSV",
+      "method": "get",
+      "endpoint": "admin/leads/export",
+      "responses": [
+        {
+          "uuid": "62b485cc-51f6-4030-b344-022664aa93ad",
+          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "3cc7b2ad-4f84-4626-9ec4-da266bb7ca6a",
+      "type": "http",
+      "documentation": "Export marketing leads as CSV",
+      "method": "get",
+      "endpoint": "marketing/leads/export",
+      "responses": [
+        {
+          "uuid": "8bbae2fb-f005-4417-8acd-24bed4d5ca07",
+          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "3121496e-c664-42d0-9b33-8ffb1880742b",
+      "type": "http",
+      "documentation": "Export reports as CSV",
+      "method": "get",
+      "endpoint": "admin/reports/export",
+      "responses": [
+        {
+          "uuid": "9082a94d-09fb-4442-a24d-3fc362d51be7",
+          "body": "lead_id,company_name,contact_person,mobile_number,email,city,lead_source,category,sub_category,priority,stage,estimated_value\nLD-2026-00001,TechCorp Solutions,Alice Johnson,9876543210,alice@techcorp.com,Mumbai,Website,cat-001,sub-001,Hot,New,500000",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success Response",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": "disabled",
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "09e70af3-b0a0-40a6-9a94-aef865ec52cd"
+    },
+    {
+      "type": "route",
+      "uuid": "d8ee0755-a057-4b76-973a-fb43f01404fb"
+    },
+    {
+      "type": "route",
+      "uuid": "19b0b042-d4da-486f-891a-33fc2a3fa491"
+    },
+    {
+      "type": "route",
+      "uuid": "e906e363-4a10-478c-8079-6bd232aac17d"
+    },
+    {
+      "type": "route",
+      "uuid": "872c8a9b-9e9b-4043-9845-44c2c35d4812"
+    },
+    {
+      "type": "route",
+      "uuid": "c3a38d16-4203-4ab2-8e8b-6e7f9cc922c5"
+    },
+    {
+      "type": "route",
+      "uuid": "72296c13-3a48-4b93-89c4-2040c99feb30"
+    },
+    {
+      "type": "route",
+      "uuid": "de416213-f4cb-420a-887f-d1ff6f16f336"
+    },
+    {
+      "type": "route",
+      "uuid": "27d931b8-6e5b-4ae3-9098-be611763815b"
+    },
+    {
+      "type": "route",
+      "uuid": "34febf83-02f9-4da8-88e1-a45a4af33bea"
+    },
+    {
+      "type": "route",
+      "uuid": "c843a715-8640-40a3-9fe3-315545e34c98"
+    },
+    {
+      "type": "route",
+      "uuid": "e2db3300-c690-4a33-9efb-113ec27d1c10"
+    },
+    {
+      "type": "route",
+      "uuid": "c8aedac7-2ca7-4d33-80db-d61ed82adaa7"
+    },
+    {
+      "type": "route",
+      "uuid": "cfded449-5e62-4cab-bbf0-84323e04fc43"
+    },
+    {
+      "type": "route",
+      "uuid": "42c934cc-60e5-457e-8c79-5e7fbdd1a3b4"
+    },
+    {
+      "type": "route",
+      "uuid": "fe13cf6d-bd8c-4606-984d-9295f6703346"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "callbacks": []
+}

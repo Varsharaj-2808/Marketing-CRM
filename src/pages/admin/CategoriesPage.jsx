@@ -60,7 +60,8 @@ async function fetchSubCategoriesDirect(categoryId) {
         return { success: true, data: filtered };
       }
       if (json?.data) {
-        const filtered = json.data.filter(s => s.category_id === categoryId);
+        const list = Array.isArray(json.data) ? json.data : (json.data?.data || []);
+        const filtered = list.filter(s => s.category_id === categoryId);
         return { success: true, data: filtered };
       }
     }

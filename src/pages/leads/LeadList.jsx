@@ -49,7 +49,8 @@ function normalizeLead(lead) {
 }
 
 function normalizeListResponse(response) {
-  const data = response?.data || response?.leads || response?.results || [];
+  let data = response?.data || response?.leads || response?.results || [];
+  if (!Array.isArray(data) && data?.data && Array.isArray(data.data)) data = data.data;
   const pagination = response?.pagination || {};
   const total = Number(
     pagination.total ??

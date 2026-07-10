@@ -90,7 +90,8 @@ export const userService = {
     if (isTestEnv()) return this.getUsersSync(params);
     const res = await apiRequest('/admin/users');
     if (res?.success && res.data) {
-      const normalized = (res.data || []).map(normalizeUser);
+      const usersList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      const normalized = usersList.map(normalizeUser);
       const filtered = filterUsers(normalized, params);
       const { data, pagination } = paginate(filtered, params);
       return { success: true, data, pagination };
@@ -167,7 +168,7 @@ export const userService = {
   },
 
   async getAuditLog(params = {}) {
-    const res = await apiRequest('/api/admin/audit-log');
+    const res = await apiRequest('/admin/audit-log');
     if (res?.success) {
       let filtered = res.data || [];
       if (params.user_id) filtered = filtered.filter(e => e.user_id === params.user_id);
