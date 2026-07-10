@@ -80,15 +80,23 @@ exports.createLead = async (req, res, next) => {
 
 exports.checkMobile = async (req, res, next) => {
   try {
-    const { mobile } = req.query;
+    const mobile = (req.body && (req.body.mobileNumber || req.body.mobile)) || req.query.mobile;
     if (!mobile) {
       return res.status(400).json({ success: false, message: 'Mobile number is required' });
     }
     const existing = await Lead.findByMobile(mobile);
     if (existing) {
-      return res.json({ isDuplicate: true, leadId: existing.lead_id });
+      return res.json({
+        success: true, message: 'Mobile number already exists',
+        duplicate: true, leadId: existing.lead_id,
+        data: { duplicate: true, leadId: existing.lead_id, id: existing.lead_id },
+      });
     }
-    res.json({ isDuplicate: false });
+    res.json({
+      success: true, message: 'Mobile number is available',
+      duplicate: false, leadId: null,
+      data: { duplicate: false, leadId: null },
+    });
   } catch (error) {
     next(error);
   }
@@ -102,9 +110,17 @@ exports.checkEmail = async (req, res, next) => {
     }
     const existing = await Lead.findByEmail(email);
     if (existing) {
-      return res.json({ isDuplicate: true, leadId: existing.lead_id });
+      return res.json({
+        success: true, message: 'Email already exists',
+        duplicate: true, leadId: existing.lead_id,
+        data: { duplicate: true, leadId: existing.lead_id, id: existing.lead_id },
+      });
     }
-    res.json({ isDuplicate: false });
+    res.json({
+      success: true, message: 'Email is available',
+      duplicate: false, leadId: null,
+      data: { duplicate: false, leadId: null },
+    });
   } catch (error) {
     next(error);
   }
@@ -163,10 +179,13 @@ exports.getLeads = async (req, res, next) => {
 
     res.json({
       success: true,
+      message: 'Leads fetched successfully',
       data: result.data,
-      page: result.page,
-      totalPages: result.totalPages,
-      totalCount: result.totalCount,
+      pagination: {
+        page: result.page,
+        total: result.totalCount,
+        totalPages: result.totalPages,
+      },
     });
   } catch (error) {
     next(error);
@@ -240,11 +259,14 @@ exports.getAdminLeads = async (req, res, next) => {
     });
 
     res.json({
-      page: result.page,
-      totalPages: result.totalPages,
-      totalCount: result.totalCount,
-      limit: result.limit || limitNum,
+      success: true,
+      message: 'Leads fetched successfully',
       data: result.data,
+      pagination: {
+        page: result.page,
+        total: result.totalCount,
+        totalPages: result.totalPages,
+      },
     });
   } catch (error) {
     next(error);
@@ -259,16 +281,16 @@ exports.getLeadHistory = async (req, res, next) => {
     const { page, limit } = req.query;
 
     if (!UUID_REGEX.test(id)) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     const lead = await Lead.findById(id);
     if (!lead || lead.deleted_at) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     if (req.user.role !== 'Admin' && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+      return res.status(403).json({ success: false, message: 'Access denied. Lead not assigned to you.' });
     }
 
     const isPaginated = page !== undefined || limit !== undefined;
@@ -360,15 +382,15 @@ exports.updateLeadStage = async (req, res, next) => {
 
     const lead = await Lead.findById(id);
     if (!lead || lead.deleted_at) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     if (req.user.role !== 'Admin') {
       if (lead.assigned_to !== req.user.id) {
-        return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+        return res.status(403).json({ success: false, message: 'Access denied. Lead not assigned to you.' });
       }
       if (lead.stage === 'Won' || lead.stage === 'Lost') {
-        return res.status(403).json({ error: 'This lead is closed. Contact Admin to reopen.' });
+        return res.status(403).json({ success: false, message: 'This lead is closed. Contact Admin to reopen.' });
       }
     }
 
@@ -390,12 +412,13 @@ exports.updateLeadStage = async (req, res, next) => {
     const allowed = transitions[lead.stage] || [];
     if (!allowed.includes(stage)) {
       return res.status(422).json({
-        error: `Invalid stage transition from '${lead.stage}' to '${stage}'. Allowed transitions: ${allowed.join(', ')}`
+        success: false,
+        message: `Invalid stage transition from '${lead.stage}' to '${stage}'. Allowed transitions: ${allowed.join(', ')}`
       });
     }
 
     if (stage === 'Won' || stage === 'Lost') {
-      return res.status(400).json({ error: `To close a lead as ${stage}, please use the close endpoint.` });
+      return res.status(400).json({ success: false, message: `To close a lead as ${stage}, please use the close endpoint.` });
     }
 
     const updatedLead = await Lead.updateStage(id, stage, 'Active');
@@ -457,15 +480,15 @@ exports.closeLeadLost = async (req, res, next) => {
 
     const lead = await Lead.findById(id);
     if (!lead || lead.deleted_at) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     if (req.user.role !== 'Admin') {
       if (lead.assigned_to !== req.user.id) {
-        return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+        return res.status(403).json({ success: false, message: 'Access denied. Lead not assigned to you.' });
       }
       if (lead.stage === 'Won' || lead.stage === 'Lost') {
-        return res.status(403).json({ error: 'This lead is closed. Contact Admin to reopen.' });
+        return res.status(403).json({ success: false, message: 'This lead is closed. Contact Admin to reopen.' });
       }
     }
 
@@ -548,7 +571,7 @@ exports.closeLeadWon = async (req, res, next) => {
 
     const lead = await Lead.findById(id);
     if (!lead || lead.deleted_at) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
     const leadCreatedDate = new Date(lead.created_at);
@@ -559,16 +582,17 @@ exports.closeLeadWon = async (req, res, next) => {
 
     if (req.user.role !== 'Admin') {
       if (lead.assigned_to !== req.user.id) {
-        return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+        return res.status(403).json({ success: false, message: 'Access denied. Lead not assigned to you.' });
       }
       if (lead.stage === 'Won' || lead.stage === 'Lost') {
-        return res.status(403).json({ error: 'This lead is closed. Contact Admin to reopen.' });
+        return res.status(403).json({ success: false, message: 'This lead is closed. Contact Admin to reopen.' });
       }
     }
 
     if (lead.stage !== 'Negotiation') {
       return res.status(422).json({
-        error: `Cannot close as Won from stage '${lead.stage}'. Lead must be in 'Negotiation' stage.`
+        success: false,
+        message: `Cannot close as Won from stage '${lead.stage}'. Lead must be in 'Negotiation' stage.`
       });
     }
 

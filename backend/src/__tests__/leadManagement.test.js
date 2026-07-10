@@ -190,7 +190,7 @@ describe('API-2: GET /marketing/leads/check-mobile', () => {
       .get('/api/marketing/leads/check-mobile?mobile=9876543210')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(false);
+    expect(res.body.duplicate).toBe(false);
   });
 
   test('TEST-EP2-LEADS-006: Duplicate found — 200', async () => {
@@ -203,7 +203,7 @@ describe('API-2: GET /marketing/leads/check-mobile', () => {
       .get('/api/marketing/leads/check-mobile?mobile=9998887776')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(true);
+    expect(res.body.duplicate).toBe(true);
     expect(res.body.leadId).toBe('LD-2026-00001');
   });
 });
@@ -219,7 +219,7 @@ describe('API-3: GET /marketing/leads/check-email', () => {
       .get('/api/marketing/leads/check-email?email=unique@company.com')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(false);
+    expect(res.body.duplicate).toBe(false);
   });
 
   test('TEST-EP2-LEADS-008: Duplicate found — 200', async () => {
@@ -232,7 +232,7 @@ describe('API-3: GET /marketing/leads/check-email', () => {
       .get('/api/marketing/leads/check-email?email=existing@company.com')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(true);
+    expect(res.body.duplicate).toBe(true);
     expect(res.body.leadId).toBe('LD-2026-00001');
   });
 });
@@ -416,8 +416,8 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBe(2);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalCount).toBe(2);
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination.total).toBe(2);
   });
 
   test('TEST-EP2-LEADS-016: Admin retrieves all leads — 200', async () => {
@@ -433,7 +433,7 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.length).toBe(3);
-    expect(res.body.totalCount).toBe(3);
+    expect(res.body.pagination.total).toBe(3);
   });
 
   test('TEST-EP2-LEADS-017: Search leads by text query — 200', async () => {
@@ -491,9 +491,9 @@ describe('API-10: GET /marketing/leads', () => {
       .get('/api/marketing/leads?page=2&limit=25')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(2);
-    expect(res.body.totalPages).toBe(3);
-    expect(res.body.totalCount).toBe(65);
+    expect(res.body.pagination.page).toBe(2);
+    expect(res.body.pagination.totalPages).toBe(3);
+    expect(res.body.pagination.total).toBe(65);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 });

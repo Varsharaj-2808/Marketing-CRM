@@ -52,7 +52,8 @@ const generateRefreshToken = (user, rememberMe = false) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const { email, password, remember_me } = req.body;
+    const { email, password, remember_me, rememberMe } = req.body;
+    const effectiveRememberMe = remember_me !== undefined ? remember_me : rememberMe;
     const { ipAddress, userAgent } = getIpAndAgent(req);
     const config = await getLockoutConfig();
     const lockoutThreshold = config.lockoutThreshold;
@@ -117,7 +118,7 @@ exports.login = async (req, res, next) => {
     else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user, remember_me);
+    const refreshToken = generateRefreshToken(user, effectiveRememberMe);
     const hashedRefresh = await bcrypt.hash(refreshToken, 12);
     await User.storeRefreshToken(user.id, hashedRefresh);
 
@@ -130,12 +131,15 @@ exports.login = async (req, res, next) => {
 
     res.json({
       success: true,
-      token: accessToken,
-      refreshToken,
-      token_expires_in: remember_me ? '30d' : '7d',
-      user: User.toResponseUser(user),
-      redirect,
-      isFirstLogin,
+      message: 'Login successful',
+      data: {
+        token: accessToken,
+        refreshToken,
+        token_expires_in: effectiveRememberMe ? '30d' : '7d',
+        user: User.toResponseUser(user),
+        redirect,
+        isFirstLogin,
+      },
     });
   } catch (error) {
     next(error);
@@ -172,7 +176,11 @@ exports.refreshToken = async (req, res, next) => {
     const newRefreshToken = generateRefreshToken(user);
     await User.storeRefreshToken(user.id, await bcrypt.hash(newRefreshToken, 12));
 
-    res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
+    res.json({
+      success: true,
+      message: 'Token refreshed',
+      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+    });
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       return res.status(401).json({ success: false, message: 'Invalid token' });

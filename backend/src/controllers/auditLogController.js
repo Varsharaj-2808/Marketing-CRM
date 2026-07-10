@@ -15,7 +15,16 @@ exports.getAuditLogs = async (req, res, next) => {
 
     const result = await AuditLog.findAll(filters);
 
-    res.json({ success: true, data: result.data, pagination: result.pagination });
+    res.json({
+      success: true,
+      data: {
+        logs: result.data,
+        total: result.pagination.totalRecords,
+        page: result.pagination.page,
+        limit: result.pagination.limit,
+        totalPages: result.pagination.totalPages,
+      },
+    });
   } catch (error) {
     next(error);
   }

@@ -1076,10 +1076,9 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalPages).toBe(1);
-    expect(res.body.totalCount).toBe(3);
-    expect(res.body.limit).toBe(25);
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination.totalPages).toBe(1);
+    expect(res.body.pagination.total).toBe(3);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBe(3);
   });
@@ -1198,10 +1197,9 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?page=2&limit=10')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(2);
-    expect(res.body.totalPages).toBe(7);
-    expect(res.body.totalCount).toBe(65);
-    expect(res.body.limit).toBe(10);
+    expect(res.body.pagination.page).toBe(2);
+    expect(res.body.pagination.totalPages).toBe(7);
+    expect(res.body.pagination.total).toBe(65);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
@@ -1233,9 +1231,9 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?search=NonExistentCompanyXYZ')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalPages).toBe(0);
-    expect(res.body.totalCount).toBe(0);
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination.totalPages).toBe(0);
+    expect(res.body.pagination.total).toBe(0);
     expect(res.body.data).toEqual([]);
   });
 
@@ -1250,8 +1248,7 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?search=Tech&status=Open&sortBy=created_at&sortOrder=desc&page=1&limit=10')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.limit).toBe(10);
+    expect(res.body.pagination.page).toBe(1);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
@@ -1292,8 +1289,8 @@ describe('API-7: GET /admin/leads', () => {
       .get('/api/admin/leads?from_date=2026-01-01&to_date=2026-01-31')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.page).toBe(1);
-    expect(res.body.totalCount).toBe(2);
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination.total).toBe(2);
   });
 
   test('test-ep-2.2.1-079: Invalid date range (from_date greater than to_date) — 400', async () => {

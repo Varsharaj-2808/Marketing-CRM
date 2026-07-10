@@ -13,6 +13,7 @@ const followupController = require('../controllers/followupController');
 router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.createLead);
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
 router.get('/leads/check-mobile', protect, authorize('Admin', 'Marketing Executive'), leadController.checkMobile);
+router.post('/leads/check-duplicate', protect, authorize('Admin', 'Marketing Executive'), leadController.checkMobile);
 router.get('/leads/check-email', protect, authorize('Admin', 'Marketing Executive'), leadController.checkEmail);
 router.get('/leads/:id/lead-history', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.getLeadHistory);
 router.put('/leads/:id/status', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.updateLeadStage);

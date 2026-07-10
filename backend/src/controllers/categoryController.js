@@ -7,18 +7,15 @@ const getIpAndAgent = (req) => ({
   userAgent: req.headers['user-agent'] || '',
 });
 
-const wrapSuccess = (statusCode, message, body) => ({
-  status: 'success',
-  status_code: statusCode,
+const wrapSuccess = (message, data) => ({
+  success: true,
   message,
-  body,
+  data,
 });
 
-const wrapError = (statusCode, message, error) => ({
-  status: 'error',
-  status_code: statusCode,
+const wrapError = (message) => ({
+  success: false,
   message,
-  body: { error },
 });
 
 // ---- Categories ----
@@ -29,12 +26,12 @@ exports.createCategory = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!category_name || !category_name.trim()) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'Category name is required'));
+      return res.status(400).json(wrapError('Category name is required'));
     }
 
     const existing = await BusinessCategory.findAll();
     if (existing.some(c => c.category_name.toLowerCase() === category_name.trim().toLowerCase())) {
-      return res.status(409).json(wrapError(409, 'Category name already exists', `A category named '${category_name.trim()}' already exists`));
+      return res.status(409).json(wrapError('Category name already exists'));
     }
 
     const category = await BusinessCategory.create({ category_name: category_name.trim() });
@@ -51,7 +48,7 @@ exports.createCategory = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.status(201).json(wrapSuccess(201, 'Category created successfully', category));
+    res.status(201).json(wrapSuccess('Category created successfully', category));
   } catch (error) {
     next(error);
   }
@@ -67,7 +64,7 @@ exports.getCategories = async (req, res, next) => {
       limit: parseInt(limit, 10) || 20,
     });
 
-    res.json(wrapSuccess(200, 'Categories fetched successfully', {
+    res.json(wrapSuccess('Categories fetched successfully', {
       page: result.page,
       totalPages: result.totalPages,
       totalCount: result.total,
@@ -84,9 +81,9 @@ exports.getCategory = async (req, res, next) => {
     const { id } = req.params;
     const category = await BusinessCategory.findById(id);
     if (!category) {
-      return res.status(404).json(wrapError(404, 'Category not found', 'Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Category does not exist'));
     }
-    res.json(wrapSuccess(200, 'Category fetched successfully', category));
+    res.json(wrapSuccess('Category fetched successfully', category));
   } catch (error) {
     next(error);
   }
@@ -95,29 +92,38 @@ exports.getCategory = async (req, res, next) => {
 exports.updateCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { category_name } = req.body;
+    const { category_name, isActive } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     const category = await BusinessCategory.findById(id);
     if (!category) {
-      return res.status(404).json(wrapError(404, 'Category not found', 'Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Category does not exist'));
     }
 
     if (category_name !== undefined) {
       if (!category_name.trim()) {
-        return res.status(400).json(wrapError(400, 'Validation failed', 'Category name cannot be empty'));
+        return res.status(400).json(wrapError('Category name cannot be empty'));
       }
       const all = await BusinessCategory.findAll();
       const duplicate = all.find(
         c => c.id !== id && c.category_name.toLowerCase() === category_name.trim().toLowerCase()
       );
       if (duplicate) {
-        return res.status(409).json(wrapError(409, 'Category name already exists', `A category named '${category_name.trim()}' already exists`));
+        return res.status(409).json(wrapError('Category name already exists'));
+      }
+    }
+
+    let status;
+    if (isActive !== undefined) {
+      status = isActive ? 'Active' : 'Inactive';
+      if (category.status === status) {
+        return res.status(400).json(wrapError('Category status matches current status'));
       }
     }
 
     const updated = await BusinessCategory.update(id, {
       ...(category_name !== undefined && { category_name: category_name.trim() }),
+      ...(status !== undefined && { status }),
     });
 
     await AuditLog.create({
@@ -132,7 +138,7 @@ exports.updateCategory = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json(wrapSuccess(200, 'Category updated successfully', updated));
+    res.json(wrapSuccess('Category updated successfully', updated));
   } catch (error) {
     next(error);
   }
@@ -145,19 +151,15 @@ exports.deleteCategory = async (req, res, next) => {
 
     const category = await BusinessCategory.findById(id);
     if (!category) {
-      return res.status(404).json(wrapError(404, 'Category not found', 'Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Category does not exist'));
     }
 
     const { inUse, subCategoryCount, leadCount } = await BusinessCategory.isInUse(id);
     if (inUse) {
       return res.status(409).json({
-        status: 'error',
-        status_code: 409,
-        message: 'Category is in use and cannot be deleted',
-        body: {
-          error: `Category is linked to ${subCategoryCount} Sub-Categories / ${leadCount} active leads. Deactivate instead.`,
-          inUse: true,
-        },
+        success: false,
+        message: `Category is linked to ${subCategoryCount} Sub-Categories / ${leadCount} active leads. Deactivate instead.`,
+        data: { inUse: true },
       });
     }
 
@@ -175,7 +177,21 @@ exports.deleteCategory = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json(wrapSuccess(200, 'Category deleted successfully', { id }));
+    res.json(wrapSuccess('Category deleted successfully', { id }));
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.checkCategoryInUse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const category = await BusinessCategory.findById(id);
+    if (!category) {
+      return res.status(404).json(wrapError('Category does not exist'));
+    }
+    const { inUse, subCategoryCount, leadCount } = await BusinessCategory.isInUse(id);
+    res.json(wrapSuccess('Category in-use status checked', { inUse, subCategoryCount, leadCount }));
   } catch (error) {
     next(error);
   }
@@ -188,16 +204,16 @@ exports.patchCategoryStatus = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!status || !['Active', 'Inactive'].includes(status)) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'Status must be Active or Inactive'));
+      return res.status(400).json(wrapError('Status must be Active or Inactive'));
     }
 
     const category = await BusinessCategory.findById(id);
     if (!category) {
-      return res.status(404).json(wrapError(404, 'Category not found', 'Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Category not found'));
     }
 
     if (category.status === status) {
-      return res.status(400).json(wrapError(400, `Category is already ${status}`, `Requested status matches current status`));
+      return res.status(400).json(wrapError(`Category status matches current status`));
     }
 
     const updated = await BusinessCategory.update(id, { status });
@@ -215,7 +231,7 @@ exports.patchCategoryStatus = async (req, res, next) => {
     });
 
     const actionLabel = status === 'Inactive' ? 'deactivated' : 'activated';
-    res.json(wrapSuccess(200, `Category ${actionLabel} successfully`, updated));
+    res.json(wrapSuccess(`Category ${actionLabel} successfully`, updated));
   } catch (error) {
     next(error);
   }
@@ -229,21 +245,20 @@ exports.createSubCategory = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!category_id) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'Parent Category is required'));
+      return res.status(400).json(wrapError('Parent Category is required'));
     }
     if (!sub_category_name || !sub_category_name.trim()) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'Sub-Category name is required'));
+      return res.status(400).json(wrapError('Sub-Category name is required'));
     }
 
     const parent = await BusinessCategory.findById(category_id);
     if (!parent) {
-      return res.status(404).json(wrapError(404, 'Parent Category not found', 'Parent Category not found or inactive'));
+      return res.status(404).json(wrapError('Parent Category not found'));
     }
 
     const existingSubs = await BusinessSubCategory.findAll({ category_id });
     if (existingSubs.some(s => s.sub_category_name.toLowerCase() === sub_category_name.trim().toLowerCase())) {
-      return res.status(409).json(wrapError(409, 'Duplicate Sub-Category name under same parent',
-        `A sub-category named '${sub_category_name.trim()}' already exists under this parent category`));
+      return res.status(409).json(wrapError('Duplicate Sub-Category name under same parent'));
     }
 
     const subcategory = await BusinessSubCategory.create({
@@ -266,7 +281,7 @@ exports.createSubCategory = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.status(201).json(wrapSuccess(201, 'Sub-Category created successfully', subcategory));
+    res.status(201).json(wrapSuccess('Sub-Category created successfully', subcategory));
   } catch (error) {
     next(error);
   }
@@ -281,7 +296,7 @@ exports.getSubCategories = async (req, res, next) => {
 
     const subcategories = await BusinessSubCategory.findAll(filters);
 
-    res.json(wrapSuccess(200, 'Sub-Categories fetched successfully', {
+    res.json(wrapSuccess('Sub-Categories fetched successfully', {
       page: parseInt(page, 10) || 1,
       totalPages: 1,
       totalCount: subcategories.length,
@@ -298,9 +313,9 @@ exports.getSubCategory = async (req, res, next) => {
     const { id } = req.params;
     const subcategory = await BusinessSubCategory.findById(id);
     if (!subcategory) {
-      return res.status(404).json(wrapError(404, 'Sub-Category not found', 'Sub-Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Sub-Category does not exist'));
     }
-    res.json(wrapSuccess(200, 'Sub-Category fetched successfully', subcategory));
+    res.json(wrapSuccess('Sub-Category fetched successfully', subcategory));
   } catch (error) {
     next(error);
   }
@@ -309,22 +324,22 @@ exports.getSubCategory = async (req, res, next) => {
 exports.updateSubCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { sub_category_name, category_id } = req.body;
+    const { sub_category_name, category_id, isActive } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     const subcategory = await BusinessSubCategory.findById(id);
     if (!subcategory) {
-      return res.status(404).json(wrapError(404, 'Sub-Category not found', 'Sub-Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Sub-Category not found'));
     }
 
     if (sub_category_name !== undefined && !sub_category_name.trim()) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'Sub-Category name cannot be empty'));
+      return res.status(400).json(wrapError('Sub-Category name cannot be empty'));
     }
 
     if (category_id !== undefined) {
       const parent = await BusinessCategory.findById(category_id);
       if (!parent) {
-        return res.status(404).json(wrapError(404, 'Parent Category not found', 'Parent Category not found or inactive'));
+        return res.status(404).json(wrapError('Parent Category not found'));
       }
     }
 
@@ -333,14 +348,22 @@ exports.updateSubCategory = async (req, res, next) => {
     if (sub_category_name !== undefined || category_id !== undefined) {
       const existingSubs = await BusinessSubCategory.findAll({ category_id: targetCategoryId });
       if (existingSubs.some(s => s.sub_category_name.toLowerCase() === targetName.toLowerCase() && s.id !== id)) {
-        return res.status(409).json(wrapError(409, 'Duplicate Sub-Category name under same parent',
-          `A sub-category named '${targetName}' already exists under this parent category`));
+        return res.status(409).json(wrapError('Duplicate Sub-Category name under same parent'));
+      }
+    }
+
+    let status;
+    if (isActive !== undefined) {
+      status = isActive ? 'Active' : 'Inactive';
+      if (subcategory.status === status) {
+        return res.status(400).json(wrapError(`Sub-Category is already ${status}`));
       }
     }
 
     const updated = await BusinessSubCategory.update(id, {
       ...(sub_category_name !== undefined && { sub_category_name: sub_category_name.trim() }),
       ...(category_id !== undefined && { category_id }),
+      ...(status !== undefined && { status }),
     });
 
     await AuditLog.create({
@@ -358,7 +381,7 @@ exports.updateSubCategory = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json(wrapSuccess(200, 'Sub-Category updated successfully', updated));
+    res.json(wrapSuccess('Sub-Category updated successfully', updated));
   } catch (error) {
     next(error);
   }
@@ -371,19 +394,15 @@ exports.deleteSubCategory = async (req, res, next) => {
 
     const subcategory = await BusinessSubCategory.findById(id);
     if (!subcategory) {
-      return res.status(404).json(wrapError(404, 'Sub-Category not found', 'Sub-Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Sub-Category not found'));
     }
 
     const inUse = await BusinessSubCategory.isInUse(id);
     if (inUse) {
       return res.status(409).json({
-        status: 'error',
-        status_code: 409,
-        message: 'Sub-Category is in use and cannot be deleted',
-        body: {
-          error: 'Sub-Category is linked to active leads. Deactivate instead.',
-          inUse: true,
-        },
+        success: false,
+        message: 'Sub-Category is linked to active leads. Deactivate instead.',
+        data: { inUse: true },
       });
     }
 
@@ -401,7 +420,21 @@ exports.deleteSubCategory = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json(wrapSuccess(200, 'Sub-Category deleted successfully', { id }));
+    res.json(wrapSuccess('Sub-Category deleted successfully', { id }));
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.checkSubCategoryInUse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const subcategory = await BusinessSubCategory.findById(id);
+    if (!subcategory) {
+      return res.status(404).json(wrapError('Sub-Category not found'));
+    }
+    const inUse = await BusinessSubCategory.isInUse(id);
+    res.json(wrapSuccess('Sub-Category in-use status checked', { inUse }));
   } catch (error) {
     next(error);
   }
@@ -414,16 +447,16 @@ exports.patchSubCategoryStatus = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!status || !['Active', 'Inactive'].includes(status)) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'Status must be Active or Inactive'));
+      return res.status(400).json(wrapError('Status must be Active or Inactive'));
     }
 
     const subcategory = await BusinessSubCategory.findById(id);
     if (!subcategory) {
-      return res.status(404).json(wrapError(404, 'Sub-Category not found', 'Sub-Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Sub-Category not found'));
     }
 
     if (subcategory.status === status) {
-      return res.status(400).json(wrapError(400, `Sub-Category is already ${status}`, 'Requested status matches current status'));
+      return res.status(400).json(wrapError(`Sub-Category is already ${status}`));
     }
 
     const updated = await BusinessSubCategory.update(id, { status });
@@ -441,7 +474,7 @@ exports.patchSubCategoryStatus = async (req, res, next) => {
     });
 
     const actionLabel = status === 'Inactive' ? 'deactivated' : 'activated';
-    res.json(wrapSuccess(200, `Sub-Category ${actionLabel} successfully`, updated));
+    res.json(wrapSuccess(`Sub-Category ${actionLabel} successfully`, updated));
   } catch (error) {
     next(error);
   }
@@ -452,7 +485,7 @@ exports.patchSubCategoryStatus = async (req, res, next) => {
 exports.getActiveCategories = async (req, res, next) => {
   try {
     const categories = await BusinessCategory.findAllForDropdown();
-    res.json(wrapSuccess(200, 'Active categories fetched successfully', {
+    res.json(wrapSuccess('Active categories fetched successfully', {
       data: categories,
       count: categories.length,
     }));
@@ -466,16 +499,16 @@ exports.getActiveSubCategories = async (req, res, next) => {
     const { category_id, categoryId } = req.query;
     const id = category_id || categoryId;
     if (!id) {
-      return res.status(400).json(wrapError(400, 'Validation failed', 'A valid category_id query parameter is required'));
+      return res.status(400).json(wrapError('A valid category_id query parameter is required'));
     }
 
     const parent = await BusinessCategory.findById(id);
     if (!parent) {
-      return res.status(404).json(wrapError(404, 'Category not found', 'Category with the specified ID does not exist'));
+      return res.status(404).json(wrapError('Category not found'));
     }
 
     const subcategories = await BusinessSubCategory.findAllActiveByCategory(id);
-    res.json(wrapSuccess(200, 'Active sub-categories fetched successfully', {
+    res.json(wrapSuccess('Active sub-categories fetched successfully', {
       category_id: id,
       data: subcategories,
       count: subcategories.length,
@@ -495,7 +528,7 @@ exports.seedDefaultTaxonomy = async (req, res, next) => {
     const existingNames = new Set(existing.map(c => c.category_name.toLowerCase()));
 
     if (existing.length > 0) {
-      return res.status(409).json(wrapError(409, 'Default taxonomy already seeded', 'System default categories have already been loaded'));
+      return res.status(409).json(wrapError('Default taxonomy already been loaded'));
     }
 
     const defaults = [
@@ -537,7 +570,7 @@ exports.seedDefaultTaxonomy = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json(wrapSuccess(200, 'Default taxonomy seeded', {
+    res.json(wrapSuccess('Default taxonomy seeded', {
       categoriesCreated,
       subCategoriesCreated,
     }));
@@ -569,7 +602,7 @@ exports.getCategoryAuditLog = async (req, res, next) => {
       changes: log.details ? tryParseJson(log.details) : undefined,
     }));
 
-    res.json(wrapSuccess(200, 'Audit log fetched successfully', {
+    res.json(wrapSuccess('Audit log fetched successfully', {
       page: filters.page,
       totalPages: result.pagination.totalPages,
       totalCount: result.pagination.totalRecords,

@@ -177,7 +177,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Won' });
       expect(res.status).toBe(422);
-      expect(res.body.error).toBe("Invalid stage transition from 'New Lead' to 'Won'. Allowed transitions: Contacted, Hold, Lost");
+      expect(res.body.message).toBe("Invalid stage transition from 'New Lead' to 'Won'. Allowed transitions: Contacted, Hold, Lost");
     });
 
     test('test-ep-2.4.1-009 (Negative): Illegal transition from New Lead directly to Meeting Scheduled', async () => {
@@ -190,7 +190,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Meeting Scheduled' });
       expect(res.status).toBe(422);
-      expect(res.body.error).toBe("Invalid stage transition from 'New Lead' to 'Meeting Scheduled'. Allowed transitions: Contacted, Hold, Lost");
+      expect(res.body.message).toBe("Invalid stage transition from 'New Lead' to 'Meeting Scheduled'. Allowed transitions: Contacted, Hold, Lost");
     });
 
     test('test-ep-2.4.1-010 (Negative): Illegal transition from Contacted directly to Won', async () => {
@@ -203,7 +203,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Won' });
       expect(res.status).toBe(422);
-      expect(res.body.error).toContain("Allowed transitions");
+      expect(res.body.message).toContain("Allowed transitions");
     });
 
     test('test-ep-2.4.1-011 (Negative): Backwards transition from Negotiation to New Lead', async () => {
@@ -228,7 +228,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Contacted' });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('This lead is closed. Contact Admin to reopen.');
+      expect(res.body.message).toBe('This lead is closed. Contact Admin to reopen.');
     });
 
     test('test-ep-2.4.1-013 (Negative): ME attempts to update stage on a Lost lead', async () => {
@@ -241,7 +241,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Contacted' });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('This lead is closed. Contact Admin to reopen.');
+      expect(res.body.message).toBe('This lead is closed. Contact Admin to reopen.');
     });
 
     test('test-ep-2.4.1-014 (Negative): Missing stage field in request body', async () => {
@@ -304,7 +304,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Contacted' });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Access denied. Lead not assigned to you.');
+      expect(res.body.message).toBe('Access denied. Lead not assigned to you.');
     });
 
     test('test-ep-2.4.1-018 (Negative): Non-existent lead ID', async () => {
@@ -317,7 +317,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Contacted' });
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Lead not found');
+      expect(res.body.message).toBe('Lead not found');
     });
 
     test('test-ep-2.4.1-051 (Negative): Non-UUID lead ID in stage transition request', async () => {
@@ -377,7 +377,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Contacted' });
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Lead not found');
+      expect(res.body.message).toBe('Lead not found');
     });
   });
 
@@ -484,7 +484,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Lost', lost_reason: 'Budget' });
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('This lead is closed. Contact Admin to reopen.');
+      expect(res.body.message).toBe('This lead is closed. Contact Admin to reopen.');
     });
 
     test('test-ep-2.4.1-027 (Negative): Unauthenticated request to close as Lost', async () => {
@@ -634,7 +634,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`)
         .send({ stage: 'Won', final_deal_value: 50000, closure_date: '2026-07-15' });
       expect(res.status).toBe(422);
-      expect(res.body.error).toBe("Cannot close as Won from stage 'Contacted'. Lead must be in 'Negotiation' stage.");
+      expect(res.body.message).toBe("Cannot close as Won from stage 'Contacted'. Lead must be in 'Negotiation' stage.");
     });
 
     test('test-ep-2.4.1-036 (Negative): Unauthenticated request to close as Won', async () => {
@@ -913,7 +913,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .get(`/api/marketing/leads/${leadId}/lead-history`)
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Access denied. Lead not assigned to you.');
+      expect(res.body.message).toBe('Access denied. Lead not assigned to you.');
     });
 
     test('test-ep-2.4.1-049 (Negative): History immutability — no update/delete endpoint exists', async () => {
