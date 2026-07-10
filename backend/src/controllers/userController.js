@@ -97,11 +97,13 @@ exports.createUser = async (req, res, next) => {
       data: {
         id: user.id,
         employee_id: user.employee_id,
+        employee_name: user.name,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
         role: user.role,
         status: user.status,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -279,7 +281,17 @@ exports.updateUser = async (req, res, next) => {
     res.json({
       success: true,
       message: 'User updated successfully.',
-      data: User.toSafeUser(updated),
+      data: {
+        id: updated.id,
+        employee_id: updated.employee_id,
+        employee_name: updated.name,
+        name: updated.name,
+        email: updated.email,
+        mobile: updated.mobile,
+        role: updated.role,
+        status: updated.accountStatus || updated.status,
+        updatedAt: updated.updatedAt,
+      },
     });
   } catch (error) {
     if (error.code === '23505') {
@@ -339,6 +351,20 @@ exports.deleteUser = async (req, res, next) => {
     });
 
     res.json({ success: true, message: 'User deleted successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getDeactivatedUsers = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status
+       FROM users
+       WHERE "accountStatus" = 'inactive'
+       ORDER BY "createdAt" DESC`
+    );
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     next(error);
   }

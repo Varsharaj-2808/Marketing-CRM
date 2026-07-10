@@ -60,7 +60,7 @@ const mockController = (methods) => {
   return obj;
 };
 
-jest.mock("../controllers/userController",          () => mockController(["createUser","getUsers","reindexUsers","getUser","updateUser","deleteUser"]));
+jest.mock("../controllers/userController",          () => mockController(["createUser","getUsers","getDeactivatedUsers","reindexUsers","getUser","updateUser","deleteUser"]));
 jest.mock("../controllers/auditLogController",       () => mockController(["getAuditLogs","getAuditLog","exportAuditLogs","archiveAuditLogs"]));
 jest.mock("../controllers/systemSettingController",  () => mockController(["getSettings","updateSetting","getAuditRetention","updateAuditRetention"]));
 jest.mock("../controllers/savedViewController",     () => mockController(["createSavedView","updateSavedView","deleteSavedView"]));
@@ -69,7 +69,8 @@ jest.mock("../controllers/assignController",         () => mockController(["assi
 jest.mock("../controllers/categoryController",       () => mockController([
   "getActiveCategories","getActiveSubCategories","getCategoryAuditLog","seedDefaultTaxonomy",
   "getCategories","createCategory","getCategory","updateCategory","deleteCategory","patchCategoryStatus",
-  "getSubCategories","createSubCategory","getSubCategory","updateSubCategory","deleteSubCategory","patchSubCategoryStatus"
+  "getSubCategories","createSubCategory","getSubCategory","updateSubCategory","deleteSubCategory","patchSubCategoryStatus",
+  "createSubCategoryForCategory","updateSubCategoryByCategoryAndId"
 ]));
 
 // ── Express app ───────────────────────────────────────────────

@@ -109,11 +109,14 @@ describe('TASK-3.2.1-01: Category/Sub-Category filter on Lead List', () => {
       .get(`/api/admin/leads?category=${CATEGORY_UUID}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data.length).toBeGreaterThanOrEqual(1);
-    expect(res.body.data[0]).toHaveProperty('category', CATEGORY_UUID);
-    expect(res.body.data[0]).toHaveProperty('company_name');
-    expect(res.body.data[0]).toHaveProperty('lead_id');
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('page');
+    expect(res.body.data).toHaveProperty('totalCount');
+    expect(Array.isArray(res.body.data.data)).toBe(true);
+    expect(res.body.data.data.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.data.data[0]).toHaveProperty('category', CATEGORY_UUID);
+    expect(res.body.data.data[0]).toHaveProperty('company_name');
+    expect(res.body.data.data[0]).toHaveProperty('lead_id');
   });
 
   test('BE-TC-3.2.1-02: Marketing Lead List filtered by Category & Sub-Category — 200', async () => {

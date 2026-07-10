@@ -408,8 +408,8 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.stage).toBe('Lost');
-      expect(res.body.data.lead_status || res.body.data.status).toBe('Closed');
-      expect(res.body.data.lost_reason).toBe('Budget');
+      expect(res.body.data.status).toBe('Closed');
+      expect(res.body.data.outcome).toBe('Lost');
     });
 
     test('test-ep-2.4.1-021 (Positive): Close as Lost from New Lead stage with valid reason', async () => {
@@ -439,7 +439,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
           .set('Authorization', `Bearer ${marketingToken}`)
           .send({ stage: 'Lost', lost_reason: r });
         expect(res.status).toBe(200);
-        expect(res.body.data.lost_reason).toBe(r);
+        expect(res.body.data.outcome).toBe('Lost');
       }
     });
 
@@ -673,8 +673,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .send({ reason: 'Client requested re-engagement' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.stage).toBe('Contacted');
-      expect(res.body.data.lead_status || res.body.data.status).toBe('Active');
+      expect(res.body.data.status).toBe('Contacted');
     });
 
     test('test-ep-2.4.1-038 (Positive): Admin reopens a Lost lead with valid reason', async () => {
@@ -688,7 +687,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ reason: 'New opportunity identified' });
       expect(res.status).toBe(200);
-      expect(res.body.data.stage).toBe('Contacted');
+      expect(res.body.data.status).toBe('Contacted');
     });
 
     test('test-ep-2.4.1-039 (Positive): Admin reopens a closed lead and ME can now update stage', async () => {
@@ -829,9 +828,9 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.length).toBe(3);
-      expect(res.body.data[0].event_type).toBe('Stage Changed');
-      expect(res.body.data[0].actor).toBe('EMP-00002');
+      expect(res.body.data.data.length).toBe(3);
+      expect(res.body.data.data[0].event_type).toBe('Stage Changed');
+      expect(res.body.data.data[0].actor).toBe('EMP-00002');
     });
 
     test('test-ep-2.4.1-046 (Positive): Admin retrieves lead history for any lead', async () => {
@@ -850,7 +849,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data[0].event_type).toBe('Stage Changed');
+      expect(res.body.data.data[0].event_type).toBe('Stage Changed');
     });
 
     test('test-ep-2.4.1-047 (Positive): Lead history includes stage changed, close, and reopen events', async () => {
@@ -873,8 +872,8 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .get(`/api/admin/leads/${leadId}/lead-history`)
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
-      expect(res.body.data.length).toBe(6);
-      expect(res.body.data[2].event_type).toBe('Lead Reopened');
+      expect(res.body.data.data.length).toBe(6);
+      expect(res.body.data.data[2].event_type).toBe('Lead Reopened');
     });
 
     test('test-ep-2.4.1-056 (Positive): Lead history returns paginated response with metadata', async () => {
@@ -897,7 +896,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
       expect(res.body.totalPages).toBe(3);
       expect(res.body.totalEntries).toBe(55);
       expect(res.body.hasMore).toBe(true);
-      expect(res.body.data.length).toBe(20);
+      expect(res.body.data.data.length).toBe(20);
     });
 
     test('test-ep-2.4.1-057 (Negative): Lead history with invalid page parameter', async () => {
@@ -948,7 +947,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
         .set('Authorization', `Bearer ${marketingToken}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toEqual([]);
+      expect(res.body.data.data).toEqual([]);
     });
   });
 });

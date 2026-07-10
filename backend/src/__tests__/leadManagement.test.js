@@ -190,7 +190,7 @@ describe('API-2: GET /marketing/leads/check-mobile', () => {
       .get('/api/marketing/leads/check-mobile?mobile=9876543210')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(false);
+    expect(res.body.data.isDuplicate).toBe(false);
   });
 
   test('TEST-EP2-LEADS-006: Duplicate found — 200', async () => {
@@ -203,8 +203,8 @@ describe('API-2: GET /marketing/leads/check-mobile', () => {
       .get('/api/marketing/leads/check-mobile?mobile=9998887776')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(true);
-    expect(res.body.leadId).toBe('LD-2026-00001');
+    expect(res.body.data.isDuplicate).toBe(true);
+    expect(res.body.data.leadId).toBe('LD-2026-00001');
   });
 });
 
@@ -219,7 +219,7 @@ describe('API-3: GET /marketing/leads/check-email', () => {
       .get('/api/marketing/leads/check-email?email=unique@company.com')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(false);
+    expect(res.body.data.isDuplicate).toBe(false);
   });
 
   test('TEST-EP2-LEADS-008: Duplicate found — 200', async () => {
@@ -232,8 +232,8 @@ describe('API-3: GET /marketing/leads/check-email', () => {
       .get('/api/marketing/leads/check-email?email=existing@company.com')
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.isDuplicate).toBe(true);
-    expect(res.body.leadId).toBe('LD-2026-00001');
+    expect(res.body.data.isDuplicate).toBe(true);
+    expect(res.body.data.leadId).toBe('LD-2026-00001');
   });
 });
 
@@ -255,7 +255,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBe(2);
-    expect(res.body.data[0].name).toBe('Website');
+    expect(res.body.data[0].source_name).toBe('Website');
   });
 
   test('TEST-EP2-LEADS-010: GET /admin/categories — 200', async () => {
@@ -310,7 +310,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data[0].name).toBe('App Development');
+    expect(res.body.data[0].service_name).toBe('App Development');
   });
 });
 
@@ -350,7 +350,7 @@ describe('API-8: GET /marketing/leads/:id', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.lead_id).toBe('LD-2026-00005');
+    expect(res.body.data.leadId).toBe('LD-2026-00005');
     expect(res.body.data.company_name).toBe('Supabase Systems');
     expect(res.body.data.priority).toBe('Hot');
     expect(res.body.data.stage).toBe('New Lead');
@@ -388,10 +388,10 @@ describe('API-9: GET /marketing/leads/:id/lead-history', () => {
       .set('Authorization', `Bearer ${marketingToken}`);
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data.length).toBeGreaterThan(0);
-    expect(res.body.data[0].field_name).toBe('lead_created');
-    expect(res.body.data[0].change_summary).toContain('Lead Created by');
+    expect(Array.isArray(res.body.data.data)).toBe(true);
+    expect(res.body.data.data.length).toBeGreaterThan(0);
+    expect(res.body.data.data[0].field_name).toBe('lead_created');
+    expect(res.body.data.data[0].change_summary).toContain('Lead Created by');
   });
 });
 

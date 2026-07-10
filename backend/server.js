@@ -35,6 +35,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/marketing', marketingRoutes);
 
+const { protect } = require('./src/middleware/auth');
+const notificationController = require('./src/controllers/notificationController');
+app.get('/api/notifications', protect, notificationController.getNotifications);
+app.get('/api/notifications/count', protect, notificationController.getNotificationCount);
+
 app.use(errorHandler);
 
 process.on('uncaughtException', (err) => {

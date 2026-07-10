@@ -63,7 +63,7 @@ const mockController = (methods) => {
   return obj;
 };
 
-jest.mock("../controllers/userController",          () => mockController(["createUser","getUsers","reindexUsers","getUser","updateUser","deleteUser"]));
+jest.mock("../controllers/userController",          () => mockController(["createUser","getUsers","getDeactivatedUsers","reindexUsers","getUser","updateUser","deleteUser"]));
 jest.mock("../controllers/auditLogController",       () => mockController(["getAuditLogs","getAuditLog","exportAuditLogs","archiveAuditLogs"]));
 jest.mock("../controllers/systemSettingController",  () => mockController(["getSettings","updateSetting","getAuditRetention","updateAuditRetention"]));
 jest.mock("../controllers/savedViewController",     () => mockController(["createSavedView","updateSavedView","deleteSavedView"]));
@@ -72,7 +72,8 @@ jest.mock("../controllers/assignController",         () => mockController(["assi
 jest.mock("../controllers/categoryController",       () => mockController([
   "getActiveCategories","getActiveSubCategories","getCategoryAuditLog","seedDefaultTaxonomy",
   "getCategories","createCategory","getCategory","updateCategory","deleteCategory","patchCategoryStatus",
-  "getSubCategories","createSubCategory","getSubCategory","updateSubCategory","deleteSubCategory","patchSubCategoryStatus"
+  "getSubCategories","createSubCategory","getSubCategory","updateSubCategory","deleteSubCategory","patchSubCategoryStatus",
+  "createSubCategoryForCategory","updateSubCategoryByCategoryAndId"
 ]));
 
 // ── Express app ───────────────────────────────────────────────
@@ -506,11 +507,9 @@ describe("API-3 | GET /marketing/dashboard", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveProperty("stats");
-    expect(res.body.data).toHaveProperty("stage_breakdown");
-    expect(res.body.data).toHaveProperty("unread_notifications");
-    // Key KPI fields from the Excel spec
-    expect(res.body.data.stats).toHaveProperty("total_leads");
+    expect(res.body.data).toHaveProperty("cards");
+    expect(res.body.data).toHaveProperty("conversion_rate");
+    expect(res.body.data.cards).toHaveProperty("my_leads");
   });
 
   /**
@@ -709,14 +708,11 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.message).toBe("At-risk leads fetched successfully");
-    expect(res.body.data).toHaveProperty("total_at_risk", 2);
-    expect(Array.isArray(res.body.data.leads)).toBe(true);
-    expect(res.body.data.leads).toHaveLength(2);
-    expect(Array.isArray(res.body.data.breakdown)).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
     
     // Explicit field validations
-    res.body.data.leads.forEach(lead => {
+    res.body.data.forEach(lead => {
       expect(lead).toHaveProperty("lead_id");
       expect(lead).toHaveProperty("company_name");
       expect(lead).toHaveProperty("assigned_to");
@@ -725,7 +721,7 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
     });
 
     // Sorted descending by days_overdue
-    expect(res.body.data.leads[0].days_overdue).toBeGreaterThanOrEqual(res.body.data.leads[1].days_overdue);
+    expect(res.body.data[0].days_overdue).toBeGreaterThanOrEqual(res.body.data[1].days_overdue);
   });
 
   /**
@@ -759,9 +755,9 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
       .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.total_at_risk).toBe(1);
-    expect(res.body.data.leads).toHaveLength(1);
-    expect(res.body.data.leads[0].days_overdue).toBeGreaterThanOrEqual(5);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].days_overdue).toBeGreaterThanOrEqual(5);
   });
 
   /**

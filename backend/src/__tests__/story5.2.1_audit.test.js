@@ -667,7 +667,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .send({ email: 'admin@company.com', password: 'password123' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.token).toBeDefined();
+      expect(res.body.data.token).toBeDefined();
 
       const auditCalls = loginQuery.mock.calls.filter(c => c[0].includes('INSERT INTO audit_logs'));
       expect(auditCalls.length).toBeGreaterThanOrEqual(1);
@@ -1040,7 +1040,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ category_name: 'IT Services' });
       expect(res.status).toBe(201);
-      expect(res.body.status).toBe('success');
+      expect(res.body.success).toBe(true);
 
       const auditCalls = query.mock.calls.filter(c => c[0].includes('INSERT INTO audit_logs'));
       expect(auditCalls.length).toBeGreaterThanOrEqual(1);
@@ -1083,7 +1083,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ category_name: 'Software Development' });
       expect(res.status).toBe(200);
-      expect(res.body.status).toBe('success');
+      expect(res.body.success).toBe(true);
 
       const auditCalls = query.mock.calls.filter(c => c[0].includes('INSERT INTO audit_logs'));
       expect(auditCalls.length).toBeGreaterThanOrEqual(1);
@@ -1126,7 +1126,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
         .delete(`/api/admin/categories/${CAT_ID}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
-      expect(res.body.status).toBe('success');
+      expect(res.body.success).toBe(true);
 
       const auditCalls = query.mock.calls.filter(c => c[0].includes('INSERT INTO audit_logs'));
       expect(auditCalls.length).toBeGreaterThanOrEqual(1);

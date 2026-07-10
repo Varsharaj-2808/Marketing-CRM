@@ -17,11 +17,13 @@ router.get('/leads/:id/field-history/export', protect, authorize('Admin'), leadH
 router.get('/leads/:id/field-history', protect, authorize('Admin'), leadHistoryController.getFieldHistory);
 router.all('/leads/:id/field-history', protect, authorize('Admin'), leadHistoryController.rejectMutation);
 router.get('/leads/:id/lead-history', protect, authorize('Admin'), leadController.getLeadHistory);
+router.get('/leads/export/history/:id/download', protect, authorize('Admin'), leadHistoryController.exportFieldHistory);
 
 const followupController = require('../controllers/followupController');
 
 router.post('/users', protect, authorize('Admin'), userController.createUser);
 router.get('/users', protect, authorize('Admin'), userController.getUsers);
+router.get('/users/deactivated', protect, authorize('Admin'), userController.getDeactivatedUsers);
 router.get('/users/reindex', protect, authorize('Admin'), userController.reindexUsers);
 router.get('/users/:id', protect, userController.getUser);
 router.put('/users/:id', protect, authorize('Admin'), userController.updateUser);
@@ -99,6 +101,9 @@ router.post('/categories/seed-defaults', protect, authorize('Admin'), categoryCo
 router.get('/categories', protect, authorize('Admin'), categoryController.getCategories);
 router.post('/categories', protect, authorize('Admin'), categoryController.createCategory);
 router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin'), adminController.getBusinessSubCategories);
+router.post('/categories/:categoryId/sub-categories', protect, authorize('Admin'), categoryController.createSubCategoryForCategory);
+router.get('/categories/:categoryId/sub-categories/:subCategoryId/in-use', protect, authorize('Admin'), adminController.checkSubCategoryInUse);
+router.get('/categories/:id/in-use', protect, authorize('Admin'), adminController.checkCategoryInUse);
 router.get('/categories/:id', protect, authorize('Admin'), categoryController.getCategory);
 router.put('/categories/:id', protect, authorize('Admin'), categoryController.updateCategory);
 router.delete('/categories/:id', protect, authorize('Admin'), categoryController.deleteCategory);
@@ -112,6 +117,7 @@ router.get('/subcategories/:id', protect, authorize('Admin'), categoryController
 router.put('/subcategories/:id', protect, authorize('Admin'), categoryController.updateSubCategory);
 router.delete('/subcategories/:id', protect, authorize('Admin'), categoryController.deleteSubCategory);
 router.patch('/subcategories/:id/status', protect, authorize('Admin'), categoryController.patchSubCategoryStatus);
+router.put('/categories/:categoryId/sub-categories/:subCategoryId', protect, authorize('Admin'), categoryController.updateSubCategoryByCategoryAndId);
 
 // ── STORY-4.2.1 | API-6 ─────────────────────────────────────
 router.get('/dashboard/at-risk', protect, authorize('Admin'), adminController.getAtRiskLeads);

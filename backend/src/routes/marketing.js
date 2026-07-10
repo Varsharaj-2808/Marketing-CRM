@@ -22,6 +22,7 @@ router.post('/leads', protect, authorize('Admin', 'Marketing Executive'), leadCo
 router.get('/leads', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeads);
 router.get('/leads/check-mobile', protect, authorize('Admin', 'Marketing Executive'), leadController.checkMobile);
 router.get('/leads/check-email', protect, authorize('Admin', 'Marketing Executive'), leadController.checkEmail);
+router.post('/leads/check-duplicate', protect, authorize('Admin', 'Marketing Executive'), leadController.checkDuplicate);
 router.put('/leads/:id/status', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.updateLeadStage);
 router.put('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLead);
 router.post('/leads/:id/close', protectStageManagement, authorizeStageManagement('Admin', 'Marketing Executive'), leadController.closeLead);

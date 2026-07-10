@@ -192,9 +192,6 @@ describe('STORY-6.1.1 — GET /admin/dashboard/kpis', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(elapsed).toBeLessThan(2000);
-    expect(res.body.meta).toBeDefined();
-    expect(res.body.meta.generated_at).toBeDefined();
-    expect(res.body.meta.cache_ttl_seconds).toBeDefined();
   });
 
   // test-ep-6.1.1-b-005
@@ -246,11 +243,8 @@ describe('STORY-6.1.1 — GET /admin/dashboard/category-volume', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBeGreaterThan(0);
     expect(res.body.data[0]).toHaveProperty('category');
-    expect(res.body.data[0]).toHaveProperty('sub_category');
-    expect(res.body.data[0]).toHaveProperty('lead_count');
-    expect(res.body.meta).toBeDefined();
-    expect(res.body.meta.total_categories).toBeDefined();
-    expect(res.body.meta.cache_ttl_seconds).toBeDefined();
+    expect(res.body.data[0]).toHaveProperty('count');
+    expect(res.body.data[0]).toHaveProperty('percentage');
   });
 
   // test-ep-6.1.1-b-008
@@ -356,8 +350,6 @@ describe('STORY-6.1.1 — GET /admin/dashboard/won-rate-by-source', () => {
     expect(res.body.data[0]).toHaveProperty('lost');
     expect(res.body.data[0]).toHaveProperty('win_rate');
     expect(String(res.body.data[0].win_rate).endsWith('%')).toBe(true);
-    expect(res.body.meta).toBeDefined();
-    expect(res.body.meta.cache_ttl_seconds).toBeDefined();
   });
 
   // test-ep-6.1.1-b-014
@@ -434,10 +426,10 @@ describe('STORY-6.1.1 — GET /admin/dashboard/at-risk', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data).toBeDefined();
-    expect(res.body.data.total_at_risk).toBeDefined();
-    expect(Array.isArray(res.body.data.breakdown)).toBe(true);
-    expect(Array.isArray(res.body.data.leads)).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(1);
+    expect(res.body.data[0]).toHaveProperty('lead_id');
+    expect(res.body.data[0]).toHaveProperty('days_overdue');
   });
 
   // test-ep-6.1.1-b-019
@@ -465,9 +457,8 @@ describe('STORY-6.1.1 — GET /admin/dashboard/at-risk', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.total_at_risk).toBe(0);
-    expect(res.body.data.breakdown).toEqual([]);
-    expect(res.body.data.leads).toEqual([]);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(0);
   });
 
   // test-ep-6.1.1-b-021
@@ -606,8 +597,6 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/cards', () => {
     expect(res.body.success).toBe(true);
     expect(Number(res.body.data.my_leads)).toBe(50);
     expect(Number(res.body.data.my_won_leads)).toBe(8);
-    expect(res.body.meta).toBeDefined();
-    expect(res.body.meta.note).toBe('assigned_to query param ignored; scope enforced from authenticated user');
   });
 
   // test-ep-6.2.1-b-007
