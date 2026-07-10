@@ -350,6 +350,8 @@ exports.deleteUser = async (req, res, next) => {
       }, client);
     });
 
+    await algolia.deleteUser(id).catch(err => console.error('[deleteUser] Algolia deletion skipped:', err.message));
+
     res.json({ success: true, message: 'User deleted successfully.' });
   } catch (error) {
     next(error);
@@ -365,6 +367,22 @@ exports.getDeactivatedUsers = async (req, res, next) => {
        ORDER BY "createdAt" DESC`
     );
     res.json({ success: true, data: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.reindexUsers = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT id, employee_id, name, email, mobile, role, "accountStatus" as status, "createdAt", "updatedAt" FROM users WHERE "accountStatus" != 'deleted'`
+    );
+    const users = result.rows;
+    if (!users.length) {
+      return res.json({ success: true, message: 'No users found to index.', count: 0 });
+    }
+    await algolia.indexAllUsers(users);
+    return res.json({ success: true, message: `Re-indexed ${users.length} users to Algolia.`, count: users.length });
   } catch (error) {
     next(error);
   }

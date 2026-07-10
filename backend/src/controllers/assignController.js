@@ -4,6 +4,8 @@ const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const { query, getClient } = require('../config/db');
+const algolia = require('../utils/algoliaService');
+const { sendLeadAssignedEmail } = require('../utils/emailService');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -149,7 +151,20 @@ exports.assignLead = async (req, res, next) => {
       console.error('Notification creation failed (non-blocking):', notifError.message);
     }
 
+    // Send notification email (non-blocking)
+    if (targetUser.email) {
+      sendLeadAssignedEmail(
+        targetUser.email,
+        targetUser.name || targetUser.email,
+        finalLead || updatedLead,
+        req.user.name || req.user.email
+      ).catch(err => console.error('[assignLead] Email notification skipped:', err.message));
+    }
+
     const finalLead = await Lead.findById(id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[assignLead] Algolia indexing skipped:', err.message));
+    }
 
     res.json({
       success: true,

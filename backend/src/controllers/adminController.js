@@ -1,5 +1,5 @@
 const { query, getClient } = require('../config/db');
-const { sendDailyReminderEmail } = require('../utils/emailService');
+const { sendDailyReminderEmail, sendEmail } = require('../utils/emailService');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const algolia = require('../utils/algoliaService');
@@ -316,6 +316,11 @@ exports.reopenLead = async (req, res, next) => {
       throw err;
     } finally {
       if (client) client.release();
+    }
+
+    const finalLead = await Lead.findById(updatedLead.id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[reopenLead] Algolia indexing skipped:', err.message));
     }
 
     return res.status(200).json({
@@ -1080,6 +1085,72 @@ exports.sendDailyReminders = async (req, res, next) => {
       message:        'Daily reminders processed successfully',
       reminders_sent: due.length,
       breakdown:      Object.values(map),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.reindexLeads = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT l.*, u.name as assigned_to_name
+       FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
+       WHERE l.is_deleted = false OR l.is_deleted IS NULL`
+    );
+    const leads = result.rows;
+    if (!leads.length) {
+      return res.json({ success: true, message: 'No leads found to index.', count: 0 });
+    }
+    await algolia.indexAllLeads(leads);
+    return res.json({ success: true, message: `Re-indexed ${leads.length} leads to Algolia.`, count: leads.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.testEmail = async (req, res, next) => {
+  try {
+    const { to, subject, message } = req.body;
+
+    if (!to || !to.trim()) {
+      return res.status(400).json({ success: false, message: '"to" email address is required.' });
+    }
+    if (!subject || !subject.trim()) {
+      return res.status(400).json({ success: false, message: '"subject" is required.' });
+    }
+
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPort = process.env.SMTP_PORT;
+
+    if (!smtpHost || !smtpUser) {
+      return res.status(503).json({
+        success: false,
+        message: 'SMTP is not configured. Set SMTP_HOST and SMTP_USER in your .env file.',
+        smtp_configured: false,
+      });
+    }
+
+    const body = message || `This is a test email from your CRM system.\n\nSMTP Configuration:\n- Host: ${smtpHost}\n- Port: ${smtpPort}\n- User: ${smtpUser}\n\nIf you received this email, your SMTP is working correctly!`;
+
+    await sendEmail({
+      to: to.trim(),
+      subject: subject.trim(),
+      text: body,
+      html: `<p>${body.replace(/\n/g, '<br/>')}</p>`,
+    });
+
+    return res.json({
+      success: true,
+      message: `Test email sent successfully to ${to}`,
+      smtp_configured: true,
+      smtp_host: smtpHost,
+      smtp_port: smtpPort,
+      smtp_user: smtpUser,
+      sent_from: process.env.SMTP_FROM_EMAIL || smtpUser,
+      sent_to: to,
     });
   } catch (error) {
     next(error);

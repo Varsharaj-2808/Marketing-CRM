@@ -6,6 +6,7 @@ const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
+const algolia = require('../utils/algoliaService');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -169,6 +170,14 @@ exports.bulkAssign = async (req, res, next) => {
       userAgent,
       result: 'Success',
     });
+
+    const finalLeadsResult = await query(
+      `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id IN (${leadPlaceholders})`,
+      uniqueIds
+    );
+    if (algolia && typeof algolia.indexAllLeads === 'function') {
+      await algolia.indexAllLeads(finalLeadsResult.rows).catch(err => console.error('[bulkAssign] Algolia indexing skipped:', err.message));
+    }
 
     res.json({
       assigned: true,

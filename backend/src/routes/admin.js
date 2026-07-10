@@ -78,6 +78,7 @@ const authorizeReopen = (req, res, next) => {
 router.put('/leads/:id/reopen', protect, authorizeReopen, adminController.reopenLead);
 router.post('/leads/:id/reopen', protect, authorizeReopen, adminController.reopenLead);
 router.get('/leads/export', protect, authorize('Admin', { message: 'Export is restricted to Admin role' }), adminController.exportAdminLeads);
+router.get('/leads/reindex', protect, authorize('Admin'), adminController.reindexLeads);
 router.get('/leads', protect, authorize('Admin'), leadController.getAdminLeads);
 
 // Dashboard routes
@@ -132,5 +133,8 @@ router.get('/leads/:id/timeline', protect, authorize('Admin'), followupControlle
 router.put('/leads/:id/timeline/:eventId',    protect, authorize('Admin'), followupController.rejectTimelineMutation);
 router.patch('/leads/:id/timeline/:eventId',  protect, authorize('Admin'), followupController.rejectTimelineMutation);
 router.delete('/leads/:id/timeline/:eventId', protect, authorize('Admin'), followupController.rejectTimelineMutation);
+
+// ── SMTP Test ─────────────────────────────────────────────────
+router.post('/test-email', protect, authorize('Admin'), adminController.testEmail);
 
 module.exports = router;
