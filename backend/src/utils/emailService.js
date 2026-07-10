@@ -27,7 +27,9 @@ const sendEmail = async ({ to, subject, text, html }) => {
   try {
     const t = getTransporter();
     const info = await t.sendMail({
-      from: process.env.EMAIL_FROM || 'noreply@crm.com',
+      from: process.env.SMTP_FROM_EMAIL
+        ? `"${process.env.SMTP_FROM_NAME || 'CRM'}" <${process.env.SMTP_FROM_EMAIL}>`
+        : (process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@crm.com'),
       to,
       subject,
       text,
@@ -66,4 +68,104 @@ const sendDailyReminderEmail = async (to, name, companyName, priority) => {
   await sendEmail({ to, subject, text, html });
 };
 
-module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail };
+const sendLeadAssignedEmail = async (to, recipientName, lead, assignedByName) => {
+  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const subject = `New Lead Assigned: ${lead.company_name}`;
+  const leadUrl = `${appUrl}/leads/${lead.id}`;
+
+  const text = [
+    `Hello ${recipientName},`,
+    ``,
+    `A new lead has been assigned to you by ${assignedByName || 'Admin'}.`,
+    ``,
+    `Lead Details:`,
+    `  Company   : ${lead.company_name}`,
+    `  Contact   : ${lead.contact_person || 'N/A'}`,
+    `  Mobile    : ${lead.mobile_number || 'N/A'}`,
+    `  Priority  : ${lead.priority || 'N/A'}`,
+    `  Lead ID   : ${lead.lead_id || 'N/A'}`,
+    ``,
+    `View Lead: ${leadUrl}`,
+    ``,
+    `Best regards,`,
+    `CRM System`,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
+      <h2 style="color:#1e3a5f;margin-bottom:8px;">📋 New Lead Assigned</h2>
+      <p style="color:#374151;">Hello <strong>${recipientName}</strong>,</p>
+      <p style="color:#374151;">A new lead has been assigned to you by <strong>${assignedByName || 'Admin'}</strong>.</p>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:16px 0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:6px 0;color:#6b7280;width:120px;">Company</td><td style="padding:6px 0;color:#111827;font-weight:600;">${lead.company_name}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Contact</td><td style="padding:6px 0;color:#111827;">${lead.contact_person || 'N/A'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Mobile</td><td style="padding:6px 0;color:#111827;">${lead.mobile_number || 'N/A'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Priority</td><td style="padding:6px 0;"><span style="background:${lead.priority === 'Hot' ? '#fee2e2' : lead.priority === 'Warm' ? '#fef3c7' : '#dbeafe'};color:${lead.priority === 'Hot' ? '#991b1b' : lead.priority === 'Warm' ? '#92400e' : '#1e40af'};padding:2px 10px;border-radius:9999px;font-size:13px;">${lead.priority || 'N/A'}</span></td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Lead ID</td><td style="padding:6px 0;color:#111827;">${lead.lead_id || 'N/A'}</td></tr>
+        </table>
+      </div>
+      <a href="${leadUrl}" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View Lead →</a>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System · This is an automated notification.</p>
+    </div>
+  `;
+
+  await sendEmail({ to, subject, text, html });
+};
+
+const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByName) => {
+  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const count = leads.length;
+  const subject = `${count} Lead${count > 1 ? 's' : ''} Assigned to You`;
+
+  const leadRows = leads.slice(0, 10).map(l =>
+    `  - ${l.lead_id || 'N/A'} | ${l.company_name} | ${l.priority || 'N/A'}`
+  ).join('\n');
+  const extra = count > 10 ? `\n  ... and ${count - 10} more` : '';
+
+  const text = [
+    `Hello ${recipientName},`,
+    ``,
+    `${count} lead${count > 1 ? 's have' : ' has'} been bulk-assigned to you by ${assignedByName || 'Admin'}.`,
+    ``,
+    `Leads:`,
+    leadRows + extra,
+    ``,
+    `View your leads: ${appUrl}/leads`,
+    ``,
+    `Best regards,`,
+    `CRM System`,
+  ].join('\n');
+
+  const leadHtmlRows = leads.slice(0, 10).map(l => `
+    <tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;color:#111827;">${l.lead_id || 'N/A'}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;color:#111827;">${l.company_name}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;"><span style="background:${l.priority === 'Hot' ? '#fee2e2' : l.priority === 'Warm' ? '#fef3c7' : '#dbeafe'};color:${l.priority === 'Hot' ? '#991b1b' : l.priority === 'Warm' ? '#92400e' : '#1e40af'};padding:2px 8px;border-radius:9999px;font-size:12px;">${l.priority || 'N/A'}</span></td>
+    </tr>`).join('');
+  const extraHtml = count > 10 ? `<tr><td colspan="3" style="padding:8px;color:#6b7280;font-style:italic;">... and ${count - 10} more</td></tr>` : '';
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
+      <h2 style="color:#1e3a5f;">📋 ${count} Lead${count > 1 ? 's' : ''} Assigned to You</h2>
+      <p style="color:#374151;">Hello <strong>${recipientName}</strong>,</p>
+      <p style="color:#374151;"><strong>${count}</strong> lead${count > 1 ? 's have' : ' has'} been bulk-assigned to you by <strong>${assignedByName || 'Admin'}</strong>.</p>
+      <table style="width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:6px;border-collapse:collapse;margin:16px 0;">
+        <thead>
+          <tr style="background:#f3f4f6;">
+            <th style="padding:8px;text-align:left;color:#6b7280;font-size:13px;">Lead ID</th>
+            <th style="padding:8px;text-align:left;color:#6b7280;font-size:13px;">Company</th>
+            <th style="padding:8px;text-align:left;color:#6b7280;font-size:13px;">Priority</th>
+          </tr>
+        </thead>
+        <tbody>${leadHtmlRows}${extraHtml}</tbody>
+      </table>
+      <a href="${appUrl}/leads" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View My Leads →</a>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System · This is an automated notification.</p>
+    </div>
+  `;
+
+  await sendEmail({ to, subject, text, html });
+};
+
+module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail };

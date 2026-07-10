@@ -3,6 +3,7 @@ const LeadHistory = require('../models/LeadHistory');
 const AuditLog = require('../models/AuditLog');
 const { query, getClient } = require('../config/db');
 const PDFDocument = require('pdfkit');
+const algolia = require('../utils/algoliaService');
 
 const VALID_PRIORITIES = ['Hot', 'Warm', 'Cold'];
 
@@ -67,6 +68,11 @@ exports.createLead = async (req, res, next) => {
       userAgent,
       result: 'Success',
     });
+
+    const finalLead = await Lead.findById(lead.id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[createLead] Algolia indexing skipped:', err.message));
+    }
 
     res.status(201).json({
       success: true,
@@ -216,6 +222,52 @@ exports.getLeads = async (req, res, next) => {
     const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
 
+    if (algolia && typeof algolia.searchLeads === 'function' && (resolvedSearch || resolvedPriority || resolvedStage || resolvedStatus || resolvedCategory || resolvedSubCategory || resolvedFromDate || resolvedToDate)) {
+      const algoliaResult = await algolia.searchLeads(
+        resolvedSearch || '',
+        {
+          priority: resolvedPriority,
+          stage: resolvedStage,
+          status: resolvedStatus,
+          category: resolvedCategory,
+          sub_category: resolvedSubCategory,
+          from_date: resolvedFromDate,
+          to_date: resolvedToDate
+        },
+        parseInt(page) || 1,
+        parseInt(limit) || 20,
+        isAdmin,
+        req.user.id
+      );
+
+      if (algoliaResult) {
+        let hits = algoliaResult.hits;
+        if (resolvedSortBy) {
+          const sortField = resolvedSortBy;
+          const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
+          hits.sort((a, b) => {
+            const valA = a[sortField];
+            const valB = b[sortField];
+            if (valA === valB) return 0;
+            if (valA === null || valA === undefined) return 1;
+            if (valB === null || valB === undefined) return -1;
+            if (typeof valA === 'string') {
+              return valA.localeCompare(valB) * sortDir;
+            }
+            return (valA - valB) * sortDir;
+          });
+        }
+
+        return res.json({
+          success: true,
+          data: hits,
+          page: parseInt(page) || 1,
+          totalPages: algoliaResult.nbPages,
+          totalCount: algoliaResult.nbHits,
+        });
+      }
+    }
+
     const result = await Lead.findAll({
       userId: req.user.id,
       isAdmin,
@@ -292,6 +344,57 @@ exports.getAdminLeads = async (req, res, next) => {
 
     if (resolvedFromDate && resolvedToDate && new Date(resolvedFromDate) > new Date(resolvedToDate)) {
       return res.status(400).json({ from_date: 'from_date cannot be greater than to_date' });
+    }
+
+    if (algolia && typeof algolia.searchLeads === 'function' && (resolvedSearch || resolvedStatus || resolvedPriority || resolvedStage || resolvedSource || resolvedCategory || resolvedSubCategory || resolvedAssignedTo || resolvedFromDate || resolvedToDate)) {
+      const algoliaResult = await algolia.searchLeads(
+        resolvedSearch || '',
+        {
+          priority: resolvedPriority,
+          stage: resolvedStage,
+          status: resolvedStatus,
+          category: resolvedCategory,
+          sub_category: resolvedSubCategory,
+          lead_source: resolvedSource,
+          assigned_to: resolvedAssignedTo,
+          from_date: resolvedFromDate,
+          to_date: resolvedToDate
+        },
+        pageNum,
+        limitNum,
+        true,
+        null
+      );
+
+      if (algoliaResult) {
+        let hits = algoliaResult.hits;
+        if (resolvedSortBy) {
+          const sortField = resolvedSortBy;
+          const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
+          hits.sort((a, b) => {
+            const valA = a[sortField];
+            const valB = b[sortField];
+            if (valA === valB) return 0;
+            if (valA === null || valA === undefined) return 1;
+            if (valB === null || valB === undefined) return -1;
+            if (typeof valA === 'string') {
+              return valA.localeCompare(valB) * sortDir;
+            }
+            return (valA - valB) * sortDir;
+          });
+        }
+
+        return res.json({
+          success: true,
+          data: {
+            page: pageNum,
+            totalPages: algoliaResult.nbPages,
+            totalCount: algoliaResult.nbHits,
+            limit: limitNum,
+            data: hits,
+          },
+        });
+      }
     }
 
     const result = await Lead.findAllAdmin({
@@ -556,6 +659,11 @@ exports.updateLeadStage = async (req, res, next) => {
       ...historyLogged,
       changed_by: { id: historyLogged.changed_by }
     } : {};
+    const finalLead = await Lead.findById(updatedLead.id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[updateLeadStage] Algolia indexing skipped:', err.message));
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Lead stage updated',
@@ -659,6 +767,11 @@ exports.closeLeadLost = async (req, res, next) => {
       userAgent: req.headers['user-agent'] || '',
       result: 'Success'
     });
+
+    const finalLead = await Lead.findById(updatedLead.id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[closeLeadLost] Algolia indexing skipped:', err.message));
+    }
 
     const responseLead = {
       id: updatedLead.id,
@@ -800,6 +913,11 @@ exports.closeLeadWon = async (req, res, next) => {
       userAgent: req.headers['user-agent'] || '',
       result: 'Success'
     });
+
+    const finalLead = await Lead.findById(updatedLead.id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[closeLeadWon] Algolia indexing skipped:', err.message));
+    }
 
     const responseLead = {
       id: updatedLead.id,
@@ -1079,6 +1197,11 @@ exports.closeLead = async (req, res, next) => {
       if (client) {
         client.release();
       }
+    }
+
+    const finalLead = await Lead.findById(updatedLead.id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[closeLead] Algolia indexing skipped:', err.message));
     }
 
     const responseLead = {
