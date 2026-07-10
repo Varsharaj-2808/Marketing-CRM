@@ -8868,8 +8868,27 @@
           "rulesOperator": "OR",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "default": true,
+          "default": false,
           "databucketID": "",
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "02f81126-e12e-473f-bacb-9b150b378470",
+          "body": "{{\"success\":true,\"data\":{\"id\":\"LD-2026-00002\",\"leadId\":\"LD-2026-00002\",\"companyName\":\"GrowthMark Agency\",\"contactPerson\":\"Bob Smith\",\"mobileNumber\":\"8765432109\",\"email\":\"bob@growthmark.com\",\"website\":\"growthmark.com\",\"city\":\"Delhi\",\"status\":\"New\",\"stage\":\"New Lead\",\"source\":\"Referral\",\"category\":{\"id\":\"cat-002\",\"name\":\"Digital Marketing\"},\"businessCategory\":{\"id\":\"cat-002\",\"name\":\"Digital Marketing\"},\"subCategory\":{\"id\":\"sub-005\",\"name\":\"SEO Services\"},\"businessSubCategory\":{\"id\":\"sub-005\",\"name\":\"SEO Services\"},\"priority\":\"Warm\",\"estimatedValue\":250000,\"assignedTo\":{\"employee_id\":\"EMP-00002\",\"name\":\"Executive User\"},\"createdAt\":\"2026-07-01T10:00:00.000Z\",\"updatedAt\":\"2026-07-01T10:00:00.000Z\",\"createdBy\":{\"id\":\"EMP-00001\",\"name\":\"Admin User\"}}}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
           "crudKey": "id",
           "callbacks": []
         }

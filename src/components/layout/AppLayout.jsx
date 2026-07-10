@@ -1,4 +1,4 @@
-﻿import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import { toDisplayText } from '../../utils/leadDisplay';
@@ -7,7 +7,6 @@ const NAV_ITEMS = [
   { path: '/app/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/app/leads', label: 'My Leads', icon: 'group' },
   { path: '/app/followups', label: 'Follow-ups', icon: 'event_note' },
-  { path: '/app/reports', label: 'Reports', icon: 'assessment' },
 ];
 
 export default function AppLayout() {
@@ -85,11 +84,6 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-y-1.5">
-          <div className="h-px bg-outline-variant/20 my-1.5"></div>
-          <button className="flex items-center gap-x-2.5 px-3 py-1.5 text-on-surface-variant hover:bg-surface-container-high/50 rounded-xl transition-all">
-            <span className="material-symbols-outlined">help</span>
-            <span className="font-label-md text-label-md">Support</span>
-          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-x-2.5 px-3 py-1.5 text-error hover:bg-error-container/20 rounded-xl transition-all"

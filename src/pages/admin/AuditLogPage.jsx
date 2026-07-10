@@ -8,6 +8,7 @@ const PAGE_SIZE = 10;
 
 const ACTION_OPTIONS = [
   '',
+  'lead.exported',
   'lead.assigned',
   'user.role_changed',
   'user.deactivated',
@@ -15,6 +16,31 @@ const ACTION_OPTIONS = [
   'lead.status_changed',
   'lead.field_updated'
 ];
+
+const ACTION_LABEL_MAP = {
+  'lead.exported': 'Lead Exported',
+  'lead.assigned': 'Lead Assigned',
+  'user.activated': 'User Activated',
+  'user.deactivated': 'User Deactivated',
+  'user.role_changed': 'User Role Changed',
+  'lead.status_changed': 'Lead Status Changed',
+  'lead.field_updated': 'Lead Field Updated',
+};
+
+function formatActionType(actionType) {
+  if (!actionType) return '-';
+  return ACTION_LABEL_MAP[actionType] || actionType;
+}
+
+function formatResult(res) {
+  if (!res) return '-';
+  return res.charAt(0).toUpperCase() + res.slice(1);
+}
+
+function formatEntity(entity) {
+  if (!entity) return '-';
+  return entity.charAt(0).toUpperCase() + entity.slice(1);
+}
 
 function AuditLogSkeleton() {
   return (
@@ -220,7 +246,7 @@ export default function AuditLogPage() {
           >
             <option value="">All Action Types</option>
             {ACTION_OPTIONS.filter(Boolean).map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+              <option key={opt} value={opt}>{formatActionType(opt)}</option>
             ))}
           </select>
         </div>
@@ -315,10 +341,10 @@ export default function AuditLogPage() {
                         : '-'}
                     </td>
                     <td className="py-3 px-3 text-on-surface-variant">
-                      {entry.actor?.name || (typeof entry.actor === 'string' ? entry.actor : '') || entry.user_name || entry.email || entry.user || '-'}
+                      {entry.actor?.name || entry.performed_by?.name || (typeof entry.actor === 'string' ? entry.actor : '') || entry.user_name || entry.email || entry.user || '-'}
                     </td>
                     <td className="py-3 px-3 text-on-surface-variant">
-                      {entry.actor?.role || '-'}
+                      {entry.actor?.role || entry.performed_by?.role || '-'}
                     </td>
                     <td className="py-3 px-3">
                       <span className="font-semibold text-primary">{entry.action_type || entry.action || '-'}</span>
@@ -404,13 +430,30 @@ export default function AuditLogPage() {
               <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
                 <span className="text-label-sm font-semibold text-on-surface-variant">Actor:</span>
                 <span className="col-span-2 font-semibold">
-                  {selectedEntry.actor?.name || selectedEntry.actor || '-'} ({selectedEntry.actor?.role || '-'})
+                  {(() => {
+                    const actorName = selectedEntry.actor?.name || selectedEntry.performed_by?.name || (typeof selectedEntry.actor === 'string' ? selectedEntry.actor : '') || selectedEntry.user_name || selectedEntry.email || selectedEntry.user || '';
+                    const actorRole = selectedEntry.actor?.role || selectedEntry.performed_by?.role || '';
+                    return actorName ? `${actorName}${actorRole ? ` (${actorRole})` : ''}` : '-';
+                  })()}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
                 <span className="text-label-sm font-semibold text-on-surface-variant">Action Type:</span>
                 <span className="col-span-2 text-primary font-bold">
-                  {selectedEntry.action_type || selectedEntry.action || '-'}
+                  {formatActionType(selectedEntry.action_type || selectedEntry.action)}
+                  <span style={{ display: 'none' }}>{selectedEntry.action_type || selectedEntry.action}</span>
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
+                <span className="text-label-sm font-semibold text-on-surface-variant">Entity:</span>
+                <span className="col-span-2 font-semibold">
+                  {formatEntity(selectedEntry.entity_affected || selectedEntry.entity || selectedEntry.resource || selectedEntry.resource_type)}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
+                <span className="text-label-sm font-semibold text-on-surface-variant">Result:</span>
+                <span className="col-span-2 font-semibold">
+                  {formatResult(selectedEntry.result)}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">

@@ -3,6 +3,31 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAuditLogEntry } from '../../services/leadService';
 import Skeleton from '../../components/common/Skeleton';
 
+const ACTION_LABEL_MAP = {
+  'lead.exported': 'Lead Exported',
+  'lead.assigned': 'Lead Assigned',
+  'user.activated': 'User Activated',
+  'user.deactivated': 'User Deactivated',
+  'user.role_changed': 'User Role Changed',
+  'lead.status_changed': 'Lead Status Changed',
+  'lead.field_updated': 'Lead Field Updated',
+};
+
+function formatActionType(actionType) {
+  if (!actionType) return '-';
+  return ACTION_LABEL_MAP[actionType] || actionType;
+}
+
+function formatResult(res) {
+  if (!res) return '-';
+  return res.charAt(0).toUpperCase() + res.slice(1);
+}
+
+function formatEntity(entity) {
+  if (!entity) return '-';
+  return entity.charAt(0).toUpperCase() + entity.slice(1);
+}
+
 export default function AuditLogDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -93,21 +118,33 @@ export default function AuditLogDetailPage() {
 
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Action</dt>
-            <dd className="font-body-md text-body-md text-on-surface">{entry.action}</dd>
+            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Action Type</dt>
+            <dd className="font-body-md text-body-md text-on-surface">{formatActionType(entry.action_type || entry.action)}</dd>
           </div>
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Resource</dt>
-            <dd className="font-body-md text-body-md text-on-surface">{entry.resource || entry.resource_type || '-'}</dd>
+            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Entity</dt>
+            <dd className="font-body-md text-body-md text-on-surface">{formatEntity(entry.entity_affected || entry.entity || entry.resource || entry.resource_type)}</dd>
           </div>
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Resource ID</dt>
-            <dd className="font-body-md text-body-md text-on-surface">{entry.resource_id || entry.resourceId || '-'}</dd>
+            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Entity ID</dt>
+            <dd className="font-body-md text-body-md text-on-surface">{entry.entity_id || entry.entityId || entry.resource_id || entry.resourceId || '-'}</dd>
           </div>
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">User</dt>
-            <dd className="font-body-md text-body-md text-on-surface">{entry.user_name || entry.email || entry.user || '-'}</dd>
+            <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Actor</dt>
+            <dd className="font-body-md text-body-md text-on-surface">
+              {(() => {
+                const actorName = entry.actor?.name || entry.performed_by?.name || (typeof entry.actor === 'string' ? entry.actor : '') || entry.user_name || entry.email || entry.user || '';
+                const actorRole = entry.actor?.role || entry.performed_by?.role || '';
+                return actorName ? `${actorName}${actorRole ? ` (${actorRole})` : ''}` : '-';
+              })()}
+            </dd>
           </div>
+          {entry.result && (
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+              <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">Result</dt>
+              <dd className="font-body-md text-body-md text-on-surface">{formatResult(entry.result)}</dd>
+            </div>
+          )}
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
             <dt className="text-label-sm font-label-sm text-on-surface-variant mb-1">IP Address</dt>
             <dd className="font-body-md text-body-md text-on-surface">{entry.ip_address || entry.ip || '-'}</dd>

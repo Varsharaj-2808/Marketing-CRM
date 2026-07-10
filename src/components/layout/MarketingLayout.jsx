@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { path: '/marketing/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/marketing/leads', label: 'My Leads', icon: 'group' },
   { path: '/marketing/followups', label: 'Follow-ups', icon: 'event_note' },
-  { path: '/marketing/reports', label: 'Reports', icon: 'assessment' },
 ];
 
 export default function MarketingLayout() {
@@ -83,11 +82,6 @@ export default function MarketingLayout() {
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-y-1.5">
-          <div className="h-px bg-outline-variant/20 my-1.5"></div>
-          <button className="flex items-center gap-x-2.5 px-3 py-1.5 text-on-surface-variant hover:bg-surface-container-high/50 rounded-xl transition-all">
-            <span className="material-symbols-outlined">help</span>
-            <span className="font-label-md text-label-md">Support</span>
-          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-x-2.5 px-3 py-1.5 text-error hover:bg-error-container/20 rounded-xl transition-all"

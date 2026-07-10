@@ -13,7 +13,6 @@ const NAV_ITEMS = [
   { path: '/admin/audit-log', label: 'Audit Log', icon: 'receipt_long' },
   { path: '/admin/system-settings/audit-retention', label: 'System Settings', icon: 'settings' },
   { path: '/admin/security', label: 'Security Policy', icon: 'security' },
-  { path: '/admin/reports', label: 'Reports', icon: 'assessment' },
 ];
 
 export default function AdminLayout() {
@@ -83,19 +82,6 @@ export default function AdminLayout() {
             </button>
           ))}
         </nav>
-        <div className="mt-auto flex flex-col gap-1">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-primary to-secondary text-white mb-3 shadow-lg shadow-primary/20">
-            <p className="text-label-sm font-bold opacity-90 uppercase tracking-wider">Storage Usage</p>
-            <div className="mt-1.5 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-white w-3/4"></div>
-            </div>
-            <button className="mt-3 w-full py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg text-label-sm font-bold transition-colors">Upgrade Plan</button>
-          </div>
-          <button className="flex items-center gap-2.5 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high/50 rounded-xl transition-all">
-            <span className="material-symbols-outlined">help</span>
-            <span className="font-label-md">Support</span>
-          </button>
-        </div>
       </aside>
       <main className="lg:ml-56 p-4 sm:p-6 pt-16 sm:pt-16 h-screen overflow-y-auto">
         <div className="max-w-[1400px] mx-auto">
