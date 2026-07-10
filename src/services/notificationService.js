@@ -55,6 +55,9 @@ function getSeedNotifications(now) {
 
 export async function fetchNotifications() {
   try {
+    if (typeof fetch !== 'function') {
+      throw new Error('fetch is not defined');
+    }
     const rawToken = localStorage.getItem('crm_access_token') || sessionStorage.getItem('crm_access_token');
     let token = null;
     if (rawToken) {
@@ -69,7 +72,7 @@ export async function fetchNotifications() {
       headers
     });
     
-    if (res.ok) {
+    if (res?.ok) {
       const json = await res.json();
       if (json?.data) {
         writeStoredNotifications(json.data);
@@ -77,7 +80,10 @@ export async function fetchNotifications() {
       }
     }
   } catch (err) {
-    console.error('Fetch notifications failed:', err);
+    // only log actual network errors, not missing global fetch in tests
+    if (err.message !== 'fetch is not defined') {
+      console.error('Fetch notifications failed:', err);
+    }
   }
 
   const stored = readStoredNotifications();

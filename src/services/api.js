@@ -2,23 +2,12 @@ import { API_BASE_URL } from '../constants';
 import { userService } from './userService';
 
 const DEMO_ACCOUNTS = {
-  'admin@company.com': { password: 'Admin@123', role: 'Admin', name: 'Admin User', employee_id: 'EMP-00001', status: 'Active' },
-  'executive@company.com': { password: 'Executive@123', role: 'Marketing Executive', name: 'Executive User', employee_id: 'EMP-00002', status: 'Active' },
+  'admin@company.com': { id: 'usr_0001', password: 'Admin@123', role: 'Admin', name: 'Admin User', employee_id: 'EMP-00001', status: 'Active' },
+  'executive@company.com': { id: 'usr_0002', password: 'Executive@123', role: 'Marketing Executive', name: 'Executive User', employee_id: 'EMP-00002', status: 'Active' },
 };
 
 export const api = {
   async login(email, password) {
-    const demo = DEMO_ACCOUNTS[email];
-    if (demo && demo.password === password) {
-      return {
-        success: true,
-        status: 200,
-        token: `demo_token_${email}_${Date.now()}`,
-        user: { email, name: demo.name, role: demo.role, employee_id: demo.employee_id, status: demo.status },
-        redirect: '/dashboard',
-      };
-    }
-
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login?_=${Date.now()}`, {
         method: 'POST',
@@ -53,6 +42,17 @@ export const api = {
       }
     } catch (e) {
       console.error('Login API network error:', e);
+    }
+
+    const demo = DEMO_ACCOUNTS[email];
+    if (demo && demo.password === password) {
+      return {
+        success: true,
+        status: 200,
+        token: `demo_token_${email}_${Date.now()}`,
+        user: { id: demo.id, email, name: demo.name, role: demo.role, employee_id: demo.employee_id, status: demo.status },
+        redirect: '/dashboard',
+      };
     }
 
     return { success: false, status: 401, message: 'Invalid email or password' };

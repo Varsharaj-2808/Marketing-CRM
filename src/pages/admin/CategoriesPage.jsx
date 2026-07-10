@@ -56,11 +56,13 @@ async function fetchSubCategoriesDirect(categoryId) {
     if (res.ok) {
       const json = await res.json();
       if (json?.body?.data) {
-        const filtered = json.body.data.filter(s => s.category_id === categoryId);
+        const list = Array.isArray(json.body.data) ? json.body.data : [];
+        const filtered = list.filter(s => s.category_id === categoryId);
         return { success: true, data: filtered };
       }
       if (json?.data) {
-        const filtered = json.data.filter(s => s.category_id === categoryId);
+        const list = Array.isArray(json.data) ? json.data : (json.data.data && Array.isArray(json.data.data) ? json.data.data : []);
+        const filtered = list.filter(s => s.category_id === categoryId);
         return { success: true, data: filtered };
       }
     }

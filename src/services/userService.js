@@ -90,7 +90,8 @@ export const userService = {
     if (isTestEnv()) return this.getUsersSync(params);
     const res = await apiRequest('/admin/users');
     if (res?.success && res.data) {
-      const normalized = (res.data || []).map(normalizeUser);
+      const list = Array.isArray(res.data) ? res.data : (res.data.data && Array.isArray(res.data.data) ? res.data.data : []);
+      const normalized = list.map(normalizeUser);
       const filtered = filterUsers(normalized, params);
       const { data, pagination } = paginate(filtered, params);
       return { success: true, data, pagination };

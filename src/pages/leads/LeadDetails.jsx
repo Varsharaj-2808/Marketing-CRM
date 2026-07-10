@@ -38,6 +38,36 @@ const TIMELINE_INITIAL_COUNT = 20;
 const TIMELINE_LOAD_MORE_COUNT = 20;
 const SUBMIT_TIMEOUT_MS = 10000;
 
+function normalizeLeadDetail(leadData) {
+  if (!leadData) return null;
+  const progressStages = ['New', 'Contacted', 'Qualified', 'Meeting', 'Proposal', 'Negotiation', 'Closed', 'New Lead'];
+  let status = leadData.status || '';
+  let stage = leadData.stage || leadData.leadStage || leadData.lead_stage || '';
+  
+  if (progressStages.includes(status) && !stage) {
+    stage = status;
+    status = '';
+  }
+  if (status === 'New Lead') {
+    stage = 'New';
+    status = '';
+  }
+  if (stage === 'New Lead') {
+    stage = 'New';
+  }
+  if (status !== 'Won' && status !== 'Lost') {
+    status = '';
+  }
+  
+  return {
+    ...leadData,
+    status,
+    stage: stage || 'New',
+    servicesInterested: leadData.servicesInterested || leadData.services_interested || [],
+    assignedTo: leadData.assignedTo ?? leadData.assigned_to ?? null,
+  };
+}
+
 export default function LeadDetails() {
   const { leadId } = useParams();
   const navigate = useNavigate();
@@ -99,7 +129,7 @@ export default function LeadDetails() {
     leadFetcher(leadId, cacheBuster)
       .then((res) => {
         const leadData = res?.data || res?.lead || res || null;
-        setLead(leadData);
+        setLead(normalizeLeadDetail(leadData));
         loadTimeline(1, true, activeFilter);
       })
       .catch((err) => {
@@ -138,7 +168,15 @@ export default function LeadDetails() {
       if (controller.signal.aborted) return;
       const body = res?.body || res?.data || {};
       const newItems = body.timeline || body.data || [];
-      const pagination = body.pagination || { page: 1, totalPages: 1, has_more: false };
+      
+      const rawPagination = res?.pagination || body.pagination;
+      const pagination = {
+        page: rawPagination?.page ?? 1,
+        totalPages: rawPagination?.totalPages ?? rawPagination?.total_pages ?? 1,
+        totalCount: rawPagination?.totalCount ?? rawPagination?.total_count ?? 0,
+        has_more: rawPagination?.has_more ?? rawPagination?.hasMore ?? false
+      };
+      
       if (replace) {
         setTimelineItems(newItems);
       } else {

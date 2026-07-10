@@ -74,7 +74,15 @@ export async function fetchCategories(params = {}) {
     });
     const json = await safeJson(res);
     if (json?.body?.data) return { success: true, data: json.body.data };
-    if (json?.data) return json;
+    if (json?.data) {
+      if (Array.isArray(json.data)) {
+        return json;
+      }
+      if (json.data.data && Array.isArray(json.data.data)) {
+        return { ...json, data: json.data.data };
+      }
+      return json;
+    }
   } catch {}
   return { success: true, data: FALLBACK_CATEGORIES };
 }
@@ -106,7 +114,7 @@ export async function fetchSubCategories(categoryId, params = {}) {
       return { success: true, data: filtered };
     }
     if (json?.data) {
-      const list = Array.isArray(json.data) ? json.data : [];
+      const list = Array.isArray(json.data) ? json.data : (json.data.data && Array.isArray(json.data.data) ? json.data.data : []);
       const filtered = categoryId && useNewPath ? list.filter(s => s.category_id === categoryId) : list;
       return { success: true, data: filtered };
     }
@@ -1393,7 +1401,20 @@ export async function reopenLeadAdmin(leadId, reason) {
 export async function fetchCategoryVolume(params = {}) {
   try {
     const query = appendCacheBuster(params);
-    return await requestJson(`${API_BASE_URL}/admin/dashboard/category-volume?${query}`);
+    const res = await requestJson(`${API_BASE_URL}/admin/dashboard/category-volume?${query}`);
+    if (res?.success && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+      const flat = res.data;
+      const stages = ['new', 'contacted', 'qualified', 'meeting', 'proposal', 'negotiation', 'won', 'lost', 'hold'];
+      const mapped = stages
+        .filter(stage => flat[stage] !== undefined)
+        .map(stage => ({
+          category: stage.charAt(0).toUpperCase() + stage.slice(1),
+          sub_category: 'Stage',
+          lead_count: Number(flat[stage] || 0)
+        }));
+      return { success: true, data: mapped };
+    }
+    return res;
   } catch (err) {
     if (err?.status && err.status !== 502 && err.status !== 404) throw err;
     return {

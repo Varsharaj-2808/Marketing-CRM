@@ -31,17 +31,36 @@ const EMPTY_FILTERS = {
 
 function normalizeLead(lead) {
   const id = getLeadField(lead, ['id', '_id', 'leadId', 'lead_id'], '');
+  let status = getLeadField(lead, ['status'], '');
+  let stage = getLeadField(lead, ['stage', 'leadStage', 'lead_stage'], '');
+
+  const progressStages = ['New', 'Contacted', 'Qualified', 'Meeting', 'Proposal', 'Negotiation', 'Closed', 'New Lead'];
+  if (progressStages.includes(status) && !stage) {
+    stage = status;
+    status = '';
+  }
+  if (status === 'New Lead') {
+    stage = 'New';
+    status = '';
+  }
+  if (stage === 'New Lead') {
+    stage = 'New';
+  }
+  if (status !== 'Won' && status !== 'Lost') {
+    status = '';
+  }
+
   return {
     id,
     leadId: getLeadField(lead, ['leadId', 'lead_id', 'id'], 'LD-0000'),
     companyName: getLeadField(lead, ['companyName', 'company_name', 'company'], '-'),
     contactPerson: getLeadField(lead, ['contactPerson', 'contact_person', 'contactName'], '-'),
     mobileNumber: getLeadField(lead, ['mobileNumber', 'mobile_number', 'mobile', 'phone'], '-'),
-    status: getLeadField(lead, ['status'], '-'),
-    stage: getLeadField(lead, ['stage', 'leadStage', 'lead_stage'], '-'),
+    status,
+    stage: stage || 'New',
     source: getLeadField(lead, ['source', 'leadSource', 'lead_source'], '-'),
     category: getLeadField(lead, ['category', 'businessCategory', 'business_category'], '-'),
-    priority: getLeadField(lead, ['priority'], '-'),
+    priority: lead.priority || lead.quality || lead.lead_quality || '-',
     assignedTo: lead.assignedTo ?? lead.assigned_to ?? null,
     assignedToName: toDisplayText(lead.assignedTo ?? lead.assigned_to, 'Unassigned'),
     createdAt: getLeadField(lead, ['createdAt', 'created_at', 'createdDate', 'created_date'], ''),
@@ -52,18 +71,23 @@ function normalizeLead(lead) {
 }
 
 function normalizeListResponse(response) {
-  const data = response?.data || response?.leads || response?.results || [];
+  const rawData = response?.data || response?.leads || response?.results || [];
+  const data = Array.isArray(rawData) ? rawData : (rawData?.data || []);
   const pagination = response?.pagination || {};
   const total = Number(
     pagination.total ??
     pagination.totalRecords ??
+    pagination.total_records ??
     response?.total ??
     response?.totalCount ??
+    response?.total_count ??
     data.length
   );
   const totalPages = Number(
     pagination.totalPages ??
+    pagination.total_pages ??
     response?.totalPages ??
+    response?.total_pages ??
     Math.max(1, Math.ceil(total / PAGE_SIZE))
   );
 
