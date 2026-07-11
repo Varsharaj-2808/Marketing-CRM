@@ -296,7 +296,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -343,7 +343,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     expect(screen.queryByRole('button', { name: /next/i })).not.toBeInTheDocument();
   });
 
-  it('test-ep-2.2.1-044: API error uses offline fallback data', async () => {
+  it('test-ep-2.2.1-044: API error shows error message', async () => {
     setUser(adminUser);
     global.fetch = vi
       .fn()
@@ -352,7 +352,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     renderLeadList('/admin/leads');
 
     await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load leads.')).toBeInTheDocument();
     });
   });
 

@@ -85,9 +85,9 @@ export default function MarketingDashboardPage() {
     }
     try {
       const res = await fetchTodayFollowups({ page, limit: 20 });
-      if (res.success || res.status === 'success') {
-        const payload = res.data || res.body?.data || [];
-        const pag = res.pagination || res.body?.pagination || { page: 1, total_pages: 1 };
+      if (res.success) {
+        const payload = res.data || [];
+        const pag = res.pagination || { page: 1, total_pages: 1 };
         
         // Sort quality order: Hot -> Warm -> Cold
         const qualityOrder = { Hot: 1, Warm: 2, Cold: 3, High: 1, Medium: 2, Low: 3 };

@@ -23,8 +23,8 @@ const MOCK_USERS = [
 ];
 
 const MOCK_SUB_CATEGORIES = [
-  { id: 'sub-001', name: 'Web Development' },
-  { id: 'sub-002', name: 'Mobile App Development' },
+  { id: 'sub-001', name: 'Web Development', category_id: 'cat-001' },
+  { id: 'sub-002', name: 'Mobile App Development', category_id: 'cat-001' },
 ];
 
 beforeEach(() => {
@@ -60,13 +60,10 @@ describe('leadService', () => {
       expect(result.data[0].name).toBe('IT Services');
     });
 
-    it('TEST-EP2-LEAD-UNIT-002: falls back to default categories on fetch error', async () => {
+    it('TEST-EP2-LEAD-UNIT-002: throws on fetch error', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await fetchCategories();
-      expect(result.success).toBe(true);
-      expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data[0].name).toBe('IT Services');
+      await expect(fetchCategories()).rejects.toThrow();
     });
   });
 
@@ -96,8 +93,12 @@ describe('leadService', () => {
       const result = await fetchSubCategories('cat-001');
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/admin/categories/cat-001/sub_categories'),
-        expect.any(Object)
+        expect.stringContaining('/admin/subcategories'),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer mock-token',
+          }),
+        })
       );
       expect(result.data).toHaveLength(2);
       expect(result.data[0].name).toBe('Web Development');
@@ -113,7 +114,7 @@ describe('leadService', () => {
       const result = await checkDuplicateLead('9876543210');
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/marketing/leads/check_duplicate'),
+        expect.stringContaining('/marketing/leads/check-duplicate'),
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ mobileNumber: '9876543210' }),
@@ -216,14 +217,11 @@ describe('leadService', () => {
       expect(result.data.companyName).toBe('Test Corp');
     });
 
-    it('TEST-EP2-LEAD-UNIT-011: returns the local fallback lead when network fails', async () => {
+    it('TEST-EP2-LEAD-UNIT-011: throws when network fails', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await fetchLeadById('LD-2026-00003');
-
+      await expect(fetchLeadById('LD-2026-00003')).rejects.toThrow();
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(result.success).toBe(true);
-      expect(result.data.leadId).toBe('LD-2026-00003');
     });
   });
 });

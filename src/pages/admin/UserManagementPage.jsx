@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
@@ -40,7 +40,6 @@ function UserManagementSkeleton() {
 export default function UserManagementPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const initialData = useRef(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,15 +75,6 @@ export default function UserManagementPage() {
     if (!isAuthenticated) {
       navigate('/app/login', { replace: true });
       return;
-    }
-    if (!initialData.current) {
-      initialData.current = true;
-      const sync = userService.getUsersSync({ page: userPage, pageSize: USER_PAGE_SIZE, search: searchQuery, role: roleFilter, status: statusFilter });
-      if (sync.success) {
-        setUsers(sync.data);
-        setUserTotal(sync.pagination.total);
-        setLoading(false);
-      }
     }
     const load = async () => {
       await fetchUsers();
@@ -186,8 +176,8 @@ export default function UserManagementPage() {
         <div className="p-5 border-b border-outline-variant/10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h4 className="font-headline-md text-headline-md text-on-surface">All Users</h4>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-              <div className="relative w-full sm:w-56">
+            <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="relative col-span-2 sm:col-span-1 sm:w-56">
                 <span className="material-symbols-outlined text-on-surface-variant/50 text-[18px] absolute left-3 top-1/2 -translate-y-1/2">search</span>
                 <input
                   value={searchQuery}
@@ -199,7 +189,7 @@ export default function UserManagementPage() {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any</option>
                 <option value="Admin">Admin</option>
@@ -208,7 +198,7 @@ export default function UserManagementPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any</option>
                 <option value="Active">Active</option>

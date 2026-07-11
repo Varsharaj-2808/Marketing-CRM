@@ -30,15 +30,15 @@ const MOCK_CATEGORIES = [
 
 const MOCK_SUBS = {
   'cat-001': [
-    { id: 'sub-001', name: 'Web Development', isActive: true },
-    { id: 'sub-002', name: 'Mobile App Development', isActive: true },
+    { id: 'sub-001', name: 'Web Development', isActive: true, category_id: 'cat-001' },
+    { id: 'sub-002', name: 'Mobile App Development', isActive: true, category_id: 'cat-001' },
   ],
   'cat-002': [
-    { id: 'sub-005', name: 'SEO Services', isActive: true },
-    { id: 'sub-006', name: 'Social Media Management', isActive: false },
+    { id: 'sub-005', name: 'SEO Services', isActive: true, category_id: 'cat-002' },
+    { id: 'sub-006', name: 'Social Media Management', isActive: false, category_id: 'cat-002' },
   ],
   'cat-003': [],
-  'cat-004': [{ id: 'sub-009', name: 'Business Strategy', isActive: true }],
+  'cat-004': [{ id: 'sub-009', name: 'Business Strategy', isActive: true, category_id: 'cat-004' }],
 };
 
 function findExpandButton(categoryName) {
@@ -54,33 +54,44 @@ function setupMockFetch() {
     const url = typeof input === 'string' ? input : input.toString();
     const method = init?.method || 'GET';
 
-    if (url.includes('/admin/categories/') && url.includes('/audit_log')) {
+    if (url.includes('/admin/categories/') && url.includes('/audit-log')) {
       return mockRes({
         success: true,
         data: [
-          { id: 'log-1', action: 'CATEGORY_CREATED', details: 'Category "IT Services" created', createdAt: '2026-06-15T10:00:00.000Z' },
+          { id: 'log-1', action: 'CATEGORY_CREATED', entityId: 'cat-001', details: 'Category "IT Services" created', createdAt: '2026-06-15T10:00:00.000Z' },
         ],
       });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/in_use')) {
-      const id = url.match(/\/admin\/categories\/([^/]+)\/in_use/)?.[1];
+    if (url.includes('/admin/categories/') && url.includes('/in-use')) {
+      const id = url.match(/\/admin\/categories\/([^/]+)\/in-use/)?.[1];
       if (id === 'cat-001') {
         return mockRes({ inUse: true, leads: [{ id: 'lead-001', companyName: 'Acme Corp' }] });
       }
       return mockRes({ inUse: false, leads: [] });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/sub_categories/') && url.includes('/in_use')) {
-      const subId = url.match(/\/sub_categories\/([^/]+)\/in_use/)?.[1];
+    if (url.includes('/admin/categories/') && url.includes('/sub-categories/') && url.includes('/in-use')) {
+      const subId = url.match(/\/sub-categories\/([^/]+)\/in-use/)?.[1];
       if (subId === 'sub-001') {
         return mockRes({ inUse: true, leads: [{ id: 'lead-001', companyName: 'Acme Corp' }] });
       }
       return mockRes({ inUse: false, leads: [] });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/sub_categories')) {
-      const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/)?.[1];
+    if (url.includes('/admin/subcategories') && !url.includes('/admin/categories/')) {
+      const categoryId = url.match(/category_id=([^&]+)/)?.[1];
+      return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
+    }
+
+    if (url.includes('/admin/categories/') && url.includes('/sub-categories/active')) {
+      const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/)?.[1];
+      const subs = MOCK_SUBS[categoryId] || [];
+      return mockRes({ success: true, data: subs.filter(s => s.isActive !== false) });
+    }
+
+    if (url.includes('/admin/categories/') && url.includes('/sub-categories')) {
+      const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/)?.[1];
       return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
     }
 
@@ -238,12 +249,17 @@ describe('CategoriesPage — TASK-3.1.1-02 (Sub-Category Master Screen)', () => 
       const url = typeof input === 'string' ? input : input.toString();
       const method = init?.method || 'GET';
 
-      if (url.includes('/admin/categories/') && url.includes('/sub_categories') && method === 'POST') {
+      if (url.includes('/admin/categories/') && url.includes('/sub-categories') && method === 'POST') {
         return mockRes({ success: true, data: { id: 'sub-020', name: 'New Sub Cat', isActive: true }, message: 'Sub-category created successfully.' }, 201);
       }
 
-      if (url.includes('/admin/categories/') && url.includes('/sub_categories') && method === 'GET') {
-        const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/)?.[1];
+      if (url.includes('/admin/subcategories') && !url.includes('/admin/categories/') && method === 'GET') {
+        const categoryId = url.match(/category_id=([^&]+)/)?.[1];
+        return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
+      }
+
+      if (url.includes('/admin/categories/') && url.includes('/sub-categories') && method === 'GET') {
+        const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/)?.[1];
         return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
       }
 
@@ -294,12 +310,17 @@ describe('CategoriesPage — TASK-3.1.1-02 (Sub-Category Master Screen)', () => 
       const url = typeof input === 'string' ? input : input.toString();
       const method = init?.method || 'GET';
 
-      if (url.includes('/admin/categories/') && url.includes('/sub_categories') && method === 'PUT') {
+      if (url.includes('/admin/categories/') && url.includes('/sub-categories') && method === 'PUT') {
         return mockRes({ success: true, data: { id: 'sub-001', name: 'Updated Web Dev', isActive: true }, message: 'Sub-category updated successfully.' });
       }
 
-      if (url.includes('/admin/categories/') && url.includes('/sub_categories') && method === 'GET') {
-        const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/)?.[1];
+      if (url.includes('/admin/subcategories') && !url.includes('/admin/categories/') && method === 'GET') {
+        const categoryId = url.match(/category_id=([^&]+)/)?.[1];
+        return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
+      }
+
+      if (url.includes('/admin/categories/') && url.includes('/sub-categories') && method === 'GET') {
+        const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/)?.[1];
         return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
       }
 

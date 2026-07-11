@@ -73,19 +73,22 @@ function normalizeLead(lead) {
 function normalizeListResponse(response) {
   const rawData = response?.data || response?.leads || response?.results || [];
   const data = Array.isArray(rawData) ? rawData : (rawData?.data || []);
-  const pagination = response?.pagination || {};
+  const pagination = response?.pagination || rawData?.pagination || {};
   const total = Number(
     pagination.total ??
     pagination.totalRecords ??
     pagination.total_records ??
+    rawData?.totalCount ??
+    rawData?.total_count ??
     response?.total ??
     response?.totalCount ??
-    response?.total_count ??
     data.length
   );
   const totalPages = Number(
     pagination.totalPages ??
     pagination.total_pages ??
+    rawData?.totalPages ??
+    rawData?.total_pages ??
     response?.totalPages ??
     response?.total_pages ??
     Math.max(1, Math.ceil(total / PAGE_SIZE))

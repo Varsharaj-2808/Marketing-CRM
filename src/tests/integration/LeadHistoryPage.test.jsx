@@ -53,7 +53,7 @@ describe('LeadHistoryPage', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [
           {
             action: 'Status Changed',
@@ -78,7 +78,7 @@ describe('LeadHistoryPage', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({ success: true, data: {
@@ -97,14 +97,12 @@ describe('LeadHistoryPage', () => {
     expect(screen.getByText(/10-Jun-2026/)).toBeInTheDocument();
   });
 
-  it('falls back to local data when the lead history API fails', async () => {
+  it('shows error when the lead history API fails', async () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockRejectedValue(new Error('Network failed'));
 
     renderLeadHistory('/marketing/leads/lead-003/lead-history');
 
-    await waitFor(() => expect(screen.getByText('Lead Created')).toBeInTheDocument());
-    expect(screen.getByText(/By:\s*Admin User/i)).toBeInTheDocument();
-    expect(screen.getByText('LD-2026-00003')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Failed to load lead history.')).toBeInTheDocument());
   });
 });

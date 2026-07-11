@@ -166,10 +166,10 @@ export default function LeadDetails() {
       }
       const res = await fetchTimeline(leadId, queryParams);
       if (controller.signal.aborted) return;
-      const body = res?.body || res?.data || {};
-      const newItems = body.timeline || body.data || [];
+      const data = res?.data || {};
+      const newItems = data.timeline || [];
       
-      const rawPagination = res?.pagination || body.pagination;
+      const rawPagination = res?.pagination || data.pagination;
       const pagination = {
         page: rawPagination?.page ?? 1,
         totalPages: rawPagination?.totalPages ?? rawPagination?.total_pages ?? 1,
@@ -490,7 +490,7 @@ export default function LeadDetails() {
         <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#4f46e5] via-[#712ae2] to-[#8b5cf6] bg-[length:200%_100%] animate-shimmer" />
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <h2 className="font-headline-md text-headline-md text-on-surface">
                 Lead Details
@@ -499,7 +499,7 @@ export default function LeadDetails() {
                 {getLeadField(lead, ['leadId', 'lead_id', 'id'], `LD-${leadId}`)}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Badge variant={STATUS_MAP[leadStatus] || 'new'}>
                 {leadStatus}
               </Badge>
@@ -618,14 +618,15 @@ export default function LeadDetails() {
           )}
 
           <div className="mt-8 pt-6 border-t border-outline-variant/30">
-            <div className="flex items-center gap-6 border-b border-outline-variant/20 mb-4" role="tablist" aria-label="Lead detail tabs">
+            <div className="overflow-x-auto">
+              <div className="flex items-center gap-4 sm:gap-6 border-b border-outline-variant/20 mb-4 min-w-max" role="tablist" aria-label="Lead detail tabs">
               <button
                 role="tab"
                 id="tab-timeline"
                 aria-selected={activeTab === 'timeline'}
                 aria-controls="panel-timeline"
                 onClick={() => setActiveTab('timeline')}
-                className={`pb-2 text-label-md font-label-md transition-colors relative ${activeTab === 'timeline' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                className={`pb-2 text-label-md font-label-md transition-colors relative whitespace-nowrap ${activeTab === 'timeline' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
               >
                 Timeline
                 {activeTab === 'timeline' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
@@ -636,20 +637,21 @@ export default function LeadDetails() {
                 aria-selected={activeTab === 'history'}
                 aria-controls="panel-history"
                 onClick={() => setActiveTab('history')}
-                className={`pb-2 text-label-md font-label-md transition-colors relative ${activeTab === 'history' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                className={`pb-2 text-label-md font-label-md transition-colors relative whitespace-nowrap ${activeTab === 'history' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
               >
                 History
                 {activeTab === 'history' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
               </button>
             </div>
+            </div>
 
             <div role="tabpanel" id="panel-timeline" aria-labelledby="tab-timeline" className={activeTab !== 'timeline' ? 'hidden' : ''}>
               <div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                   <h3 className="font-headline-md text-headline-md text-on-surface">
                     Timeline
                   </h3>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {isClosedLead && !isReadOnly && (isLeadOwner() || isAdmin) && (
                       <span
                         className="text-label-sm text-on-surface-variant/50"

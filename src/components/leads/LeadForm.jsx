@@ -211,7 +211,8 @@ export default function LeadForm({ onSuccess, onViewLead }) {
   const performCreate = async () => {
     setSaving(true);
     try {
-      const payload = {
+      const { mapLeadFields } = await import('../../utils/fieldMapping');
+      const rawPayload = {
         companyName: formData.companyName.trim(),
         website: formData.website.trim(),
         businessCategory: formData.businessCategory,
@@ -226,6 +227,7 @@ export default function LeadForm({ onSuccess, onViewLead }) {
         estimatedValue: formData.estimatedValue.trim(),
         assignedTo: user?.id || user?._id || '',
       };
+      const payload = mapLeadFields(rawPayload);
 
       const res = await createLead(payload);
       if (res?.success || res?.data) {

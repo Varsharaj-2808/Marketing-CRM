@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Skeleton from '../../components/common/Skeleton';
@@ -226,7 +226,7 @@ export default function SecurityPage() {
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="min-w-[600px] w-full text-left">
               <thead>
                 <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
                   <th className="py-2.5 px-3 font-semibold">Event</th>

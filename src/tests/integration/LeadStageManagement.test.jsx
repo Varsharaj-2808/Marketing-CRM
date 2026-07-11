@@ -75,7 +75,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -105,7 +105,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -135,7 +135,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -164,7 +164,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
     setUser(marketingUser);
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/close')) return mockRes({ message: 'Server error' }, 500);
       return mockRes({
         success: true,
@@ -196,7 +196,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
     setUser(marketingUser);
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/close')) return mockRes({ message: 'Server error' }, 500);
       return mockRes({
         success: true,
@@ -228,7 +228,7 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
     let resolveClose;
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/close')) return new Promise((resolve) => { resolveClose = resolve; });
       return mockRes({
         success: true,
@@ -262,31 +262,27 @@ describe('STORY-2.4.1 Lead Stage Management — Won/Lost Closure', () => {
 
   it('test-ep-2.4.1-020: Won closure with valid data calls API and shows success', async () => {
     setUser(marketingUser);
+    let closeCalled = false;
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
-      if (url.includes('/close')) return mockRes({ success: true, data: { status: 'Won' } });
-      if (url.includes('/marketing/leads/lead-206') && url.includes('?_')) {
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/close')) {
+        closeCalled = true;
+        return mockRes({ success: true, data: { status: 'Won' } });
+      }
+      if (url.includes('/marketing/leads/lead-206')) {
         return mockRes({
           success: true,
           data: {
             id: 'lead-206', leadId: 'LD-206', companyName: 'TestCorp',
             contactPerson: 'Grace', mobileNumber: '9000000106',
-            status: 'Won', stage: 'Closed', priority: 'High',
+            status: closeCalled ? 'Won' : '', stage: closeCalled ? 'Closed' : 'Negotiation', priority: 'High',
+            assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
             createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
           },
         });
       }
-      return mockRes({
-        success: true,
-        data: {
-          id: 'lead-206', leadId: 'LD-206', companyName: 'TestCorp',
-          contactPerson: 'Grace', mobileNumber: '9000000106',
-          status: '', stage: 'Negotiation', priority: 'High',
-          assignedTo: { id: 'ME-001', employee_id: 'ME-001', name: 'Maya Executive' },
-          createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
-        },
-      });
+      return mockRes({ success: true, data: {} });
     });
     global.fetch = fetchMock;
 
@@ -320,7 +316,7 @@ describe('STORY-2.4.1 Lead Stage Management — Reopen Flow & Role Lock', () => 
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -347,7 +343,7 @@ describe('STORY-2.4.1 Lead Stage Management — Reopen Flow & Role Lock', () => 
     setUser(adminUser);
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/reopen')) return mockRes({ message: 'Server error' }, 500);
       return mockRes({
         success: true,
@@ -378,7 +374,7 @@ describe('STORY-2.4.1 Lead Stage Management — Reopen Flow & Role Lock', () => 
     let resolveReopen;
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/reopen')) return new Promise((resolve) => { resolveReopen = resolve; });
       return mockRes({
         success: true,
@@ -412,7 +408,7 @@ describe('STORY-2.4.1 Lead Stage Management — Reopen Flow & Role Lock', () => 
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -449,7 +445,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -478,7 +474,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -506,7 +502,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -534,7 +530,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     let resolveClose;
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/close')) return new Promise((resolve) => { resolveClose = resolve; });
       return mockRes({
         success: true,
@@ -570,7 +566,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     let resolveStatus;
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/status')) return new Promise((resolve) => { resolveStatus = resolve; });
       return mockRes({
         success: true,
@@ -602,7 +598,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transition & History', () 
     let resolveClose;
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/close')) return new Promise((resolve) => { resolveClose = resolve; });
       return mockRes({
         success: true,
@@ -650,7 +646,7 @@ describe('STORY-2.4.1 Lead History — Append-Only / Read-Only', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({
           success: true,
           data: [
@@ -682,7 +678,7 @@ describe('STORY-2.4.1 Lead History — Append-Only / Read-Only', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({
           success: true,
           data: [
@@ -709,14 +705,17 @@ describe('STORY-2.4.1 Lead History — Append-Only / Read-Only', () => {
 
   it('test-ep-2.4.1-029: stage change through API appends new timeline entry', async () => {
     setUser(marketingUser);
+    let statusUpdated = false;
+
     const timelineEntries = [
       { action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-20T10:00:00.000Z' },
     ];
 
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: timelineEntries });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: timelineEntries });
       if (url.includes('/status')) {
+        statusUpdated = true;
         timelineEntries.push({
           action: 'Stage Updated',
           message: 'Lead moved to Contacted',
@@ -725,13 +724,13 @@ describe('STORY-2.4.1 Lead History — Append-Only / Read-Only', () => {
         });
         return mockRes({ success: true, data: { stage: 'Contacted' } });
       }
-      if (url.includes('/marketing/leads/lead-219') && url.includes('?_')) {
+      if (url.includes('/marketing/leads/lead-219')) {
         return mockRes({
           success: true,
           data: {
             id: 'lead-219', leadId: 'LD-219', companyName: 'TestCorp',
             contactPerson: 'Rachel', mobileNumber: '9000000119',
-            status: '', stage: 'Contacted', priority: 'High',
+            status: '', stage: statusUpdated ? 'Contacted' : 'New', priority: 'High',
             createdAt: '2026-06-20T10:00:00.000Z', createdBy: { name: 'Admin User' },
             timeline: [...timelineEntries],
           },
@@ -777,7 +776,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transitions', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -806,7 +805,7 @@ describe('STORY-2.4.1 Lead Stage Management — Stage Transitions', () => {
     setUser(marketingUser);
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -848,7 +847,7 @@ describe('STORY-2.4.1 Lead Stage Management — Access Control', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -873,19 +872,21 @@ describe('STORY-2.4.1 Lead Stage Management — Access Control', () => {
 
   it('test-ep-2.4.1-039: Admin can reopen Lost closed lead', async () => {
     setUser(adminUser);
+    let reopenCalled = false;
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/reopen')) {
+        reopenCalled = true;
         return mockRes({ success: true, data: { status: '', stage: 'Contacted' } });
       }
-      if (url.includes('/admin/leads/lead-223') && url.includes('?_')) {
+      if (url.includes('/admin/leads/lead-223')) {
         return mockRes({
           success: true,
           data: {
             id: 'lead-223', leadId: 'LD-223', companyName: 'TestCorp',
             contactPerson: 'Victor', mobileNumber: '9000000123',
-            status: '', stage: 'Contacted', priority: 'Medium',
+            status: reopenCalled ? '' : 'Lost', stage: reopenCalled ? 'Contacted' : 'Closed', priority: 'Medium',
             createdAt: '2026-06-25T10:00:00.000Z', createdBy: { name: 'Admin User' },
           },
         });
@@ -954,7 +955,7 @@ describe('STORY-2.4.1 Timeline Loading and Full History', () => {
 
     expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
 
-    resolveHistory(mockRes({ success: true, body: { timeline: [{ action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-25T10:00:00.000Z' }], pagination: { page: 1, totalPages: 1, has_more: false } } }));
+    resolveHistory(mockRes({ success: true, data: { timeline: [{ action: 'Lead Created', message: 'Lead Created', user: 'Admin User', timestamp: '2026-06-25T10:00:00.000Z' }], pagination: { page: 1, totalPages: 1, has_more: false } } }));
 
     await waitFor(() => {
       expect(screen.queryByTestId('timeline-loading')).not.toBeInTheDocument();
@@ -985,7 +986,7 @@ describe('STORY-2.4.1 Timeline Loading and Full History', () => {
 
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: historyEntries });
       }
       return mockRes({
@@ -1033,7 +1034,7 @@ describe('STORY-2.4.1 Additional — Admin Reopen & Stage Selector', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -1054,7 +1055,7 @@ describe('STORY-2.4.1 Additional — Admin Reopen & Stage Selector', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -1076,7 +1077,7 @@ describe('STORY-2.4.1 Additional — Admin Reopen & Stage Selector', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({
         success: true,
         data: {
@@ -1097,22 +1098,11 @@ describe('STORY-2.4.1 Additional — Admin Reopen & Stage Selector', () => {
     expect(screen.queryByRole('button', { name: /Close as Won/i })).not.toBeInTheDocument();
   });
 
-  it('test-ep-2.4.1-043: Admin reopen succeeds locally despite 502 API error', async () => {
+  it('test-ep-2.4.1-043: Admin reopen shows error when API returns 502', async () => {
     setUser(adminUser);
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
-      if (url.includes('/admin/leads/lead-043') && url.includes('?_')) {
-        return mockRes({
-          success: true,
-          data: {
-            id: 'lead-043', leadId: 'LD-043', companyName: 'FailCorp',
-            contactPerson: 'ReopenFail', mobileNumber: '9000000043',
-            status: '', stage: 'Contacted', priority: 'Medium',
-            createdAt: '2026-06-15T10:00:00.000Z', createdBy: { name: 'Admin User' },
-          },
-        });
-      }
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/reopen')) return mockRes({ message: 'Bad Gateway' }, 502);
       return mockRes({
         success: true,
@@ -1136,7 +1126,7 @@ describe('STORY-2.4.1 Additional — Admin Reopen & Stage Selector', () => {
     fireEvent.click(screen.getByRole('button', { name: /Confirm Reopen/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Lead reopened successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to reopen lead/i)).toBeInTheDocument();
     });
   });
 });
@@ -1175,7 +1165,7 @@ describe('STORY-2.4.1 Lead History — Load More Pagination', () => {
 
     global.fetch = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: manyEntries });
       }
       return mockRes({

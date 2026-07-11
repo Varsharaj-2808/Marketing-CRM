@@ -55,13 +55,8 @@ async function fetchSubCategoriesDirect(categoryId) {
     });
     if (res.ok) {
       const json = await res.json();
-      if (json?.body?.data) {
-        const list = Array.isArray(json.body.data) ? json.body.data : [];
-        const filtered = list.filter(s => s.category_id === categoryId);
-        return { success: true, data: filtered };
-      }
       if (json?.data) {
-        const list = Array.isArray(json.data) ? json.data : (json.data.data && Array.isArray(json.data.data) ? json.data.data : []);
+        const list = Array.isArray(json.data) ? json.data : (Array.isArray(json.data?.data) ? json.data.data : []);
         const filtered = list.filter(s => s.category_id === categoryId);
         return { success: true, data: filtered };
       }
@@ -76,15 +71,11 @@ async function fetchCategoryAuditLogDirect(categoryId) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/audit_log?category_id=${categoryId}&_=${Date.now()}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/categories/audit-log?category_id=${categoryId}&_=${Date.now()}`, {
       headers: getAuthHeadersLocal(),
     });
     if (res.ok) {
       const json = await res.json();
-      if (json?.body?.data) {
-        const filtered = json.body.data.filter(entry => entry.entityId === categoryId);
-        return { success: true, data: filtered };
-      }
       if (json?.data) {
         const filtered = json.data.filter(entry => entry.entityId === categoryId);
         return { success: true, data: filtered };
@@ -255,7 +246,7 @@ export default function CategoriesPage() {
   };
 
   const handleToggleCatStatus = async (cat) => {
-    const isActive = cat.status === 'Active' || cat.isActive !== false;
+    const isActive = cat.status ? cat.status === 'Active' : cat.isActive !== false;
     const newStatus = !isActive;
     const res = await toggleCategoryStatus(cat.id, newStatus);
     if (res.success) {
@@ -335,7 +326,7 @@ export default function CategoriesPage() {
   };
 
   const handleToggleSubStatus = async (categoryId, sub) => {
-    const isActive = sub.status === 'Active' || sub.isActive !== false;
+    const isActive = sub.status ? sub.status === 'Active' : sub.isActive !== false;
     const newStatus = !isActive;
     const res = await toggleSubCategoryStatus(categoryId, sub.id, newStatus);
     if (res.success) {
@@ -351,7 +342,7 @@ export default function CategoriesPage() {
     setAuditTarget(cat);
     const res = await fetchCategoryAuditLogDirect(cat.id);
     if (res.success) {
-      setAuditLogs(res.body?.data || res.data || []);
+      setAuditLogs(res.data || []);
     } else {
       setAuditLogs([]);
     }
@@ -421,14 +412,14 @@ export default function CategoriesPage() {
           <h4 className="font-headline-md text-headline-md text-on-surface">All Categories</h4>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left" role="table">
+          <table className="min-w-[500px] w-full text-left" role="table">
             <thead>
               <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
                 <th className="py-2.5 px-3 font-semibold w-16">#</th>
                 <th className="py-2.5 px-3 font-semibold">Category Name</th>
                 <th className="py-2.5 px-3 font-semibold">Status</th>
                 <th className="py-2.5 px-3 font-semibold w-32">Sub-Categories</th>
-                <th className="py-2.5 px-3 font-semibold w-72">Actions</th>
+                <th className="py-2.5 px-3 font-semibold w-[360px]">Actions</th>
               </tr>
             </thead>
             <tbody className="text-body-md text-on-surface">
@@ -441,7 +432,7 @@ export default function CategoriesPage() {
                 </tr>
               ) : (
                 categories.map((cat, index) => {
-                  const isInactive = cat.status === 'Inactive' || cat.isActive === false;
+                  const isInactive = cat.status ? cat.status === 'Inactive' : cat.isActive === false;
                   return (
                     <Fragment key={cat.id}>
                       <tr className={`border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors ${isInactive ? 'opacity-50' : ''}`}>
@@ -468,34 +459,38 @@ export default function CategoriesPage() {
                           </button>
                         </td>
                         <td className="py-3 px-3">
-                          <div className="flex items-center gap-1 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
                             <button
                               onClick={() => openCreateSub(cat.id)}
-                              className="px-2.5 py-1 text-label-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              className="px-2 py-0.5 text-label-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                             >
                               Add Sub
                             </button>
+                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => openEditCat(cat)}
-                              className="px-2.5 py-1 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                              className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
                             >
                               Edit
                             </button>
+                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => handleToggleCatStatus(cat)}
-                              className={`px-2.5 py-1 text-label-sm font-medium rounded-lg transition-colors ${isInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                              className={`px-2 py-0.5 text-label-sm font-medium rounded-lg transition-colors ${isInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
                             >
                               {isInactive ? 'Activate' : 'Deactivate'}
                             </button>
+                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => handleDeleteCat(cat)}
-                              className="px-2.5 py-1 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                              className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
                             >
                               Delete
                             </button>
+                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => openAuditLog(cat)}
-                              className="px-2.5 py-1 text-label-sm font-medium text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors"
+                              className="px-2 py-0.5 text-label-sm font-medium text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors"
                             >
                               Audit
                             </button>
@@ -509,57 +504,61 @@ export default function CategoriesPage() {
                               {(!subMap[cat.id] || subMap[cat.id].length === 0) ? (
                                 <p className="px-10 py-4 text-label-sm text-on-surface-variant italic">No sub-categories yet.</p>
                               ) : (
-                                <table className="w-full text-left">
-                                  <thead>
-                                    <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider">
-                                      <th className="py-2 px-10 font-semibold w-16">#</th>
-                                      <th className="py-2 px-3 font-semibold">Sub-Category Name</th>
-                                      <th className="py-2 px-3 font-semibold w-24">Status</th>
-                                      <th className="py-2 px-3 font-semibold w-72">Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {subMap[cat.id].map((sub, subIdx) => {
-                                      const subInactive = sub.status === 'Inactive' || sub.isActive === false;
-                                      return (
-                                        <tr key={sub.id} className={`border-t border-outline-variant/5 hover:bg-primary/[0.02] transition-colors ${subInactive ? 'opacity-50' : ''}`}>
-                                          <td className="py-2 px-10 text-on-surface-variant">{subIdx + 1}</td>
-                                          <td className="py-2 px-3 text-on-surface">
-                                            {sub.sub_category_name || sub.name}
-                                            {subInactive && <span className="ml-2 text-label-sm text-error">(Inactive)</span>}
-                                          </td>
-                                          <td className="py-2 px-3">
-                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold ${subInactive ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-600'}`}>
-                                              {subInactive ? 'Inactive' : 'Active'}
-                                            </span>
-                                          </td>
-                                          <td className="py-2 px-3">
-                                            <div className="flex items-center gap-1">
-                                              <button
-                                                onClick={() => openEditSub(cat.id, sub)}
-                                                className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                              >
-                                                Edit
-                                              </button>
-                                              <button
-                                                onClick={() => handleToggleSubStatus(cat.id, sub)}
-                                                className={`px-2 py-0.5 text-label-sm font-medium rounded-lg transition-colors ${subInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
-                                              >
-                                                {subInactive ? 'Activate' : 'Deactivate'}
-                                              </button>
-                                              <button
-                                                onClick={() => handleDeleteSub(cat.id, sub)}
-                                                className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
-                                              >
-                                                Delete
-                                              </button>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-[420px] w-full text-left">
+                                    <thead>
+                                      <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider">
+                                        <th className="py-2 px-10 font-semibold w-16">#</th>
+                                        <th className="py-2 px-3 font-semibold">Sub-Category Name</th>
+                                        <th className="py-2 px-3 font-semibold w-24">Status</th>
+                                        <th className="py-2 px-3 font-semibold w-[280px]">Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {subMap[cat.id].map((sub, subIdx) => {
+                                        const subInactive = sub.status ? sub.status === 'Inactive' : sub.isActive === false;
+                                        return (
+                                          <tr key={sub.id} className={`border-t border-outline-variant/5 hover:bg-primary/[0.02] transition-colors ${subInactive ? 'opacity-50' : ''}`}>
+                                            <td className="py-2 px-10 text-on-surface-variant">{subIdx + 1}</td>
+                                            <td className="py-2 px-3 text-on-surface">
+                                              {sub.sub_category_name || sub.name}
+                                              {subInactive && <span className="ml-2 text-label-sm text-error">(Inactive)</span>}
+                                            </td>
+                                            <td className="py-2 px-3">
+                                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold ${subInactive ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                                {subInactive ? 'Inactive' : 'Active'}
+                                              </span>
+                                            </td>
+                                            <td className="py-2 px-3">
+                                              <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+                                                <button
+                                                  onClick={() => openEditSub(cat.id, sub)}
+                                                  className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                >
+                                                  Edit
+                                                </button>
+                                                <span className="text-outline-variant/35 text-label-xs select-none">|</span>
+                                                <button
+                                                  onClick={() => handleToggleSubStatus(cat.id, sub)}
+                                                  className={`px-2 py-0.5 text-label-sm font-medium rounded-lg transition-colors ${subInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                                                >
+                                                  {subInactive ? 'Activate' : 'Deactivate'}
+                                                </button>
+                                                <span className="text-outline-variant/35 text-label-xs select-none">|</span>
+                                                <button
+                                                  onClick={() => handleDeleteSub(cat.id, sub)}
+                                                  className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                                                >
+                                                  Delete
+                                                </button>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
                               )}
                             </div>
                           </td>

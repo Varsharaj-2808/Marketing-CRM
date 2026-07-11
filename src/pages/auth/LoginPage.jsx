@@ -69,9 +69,9 @@ export default function LoginPage() {
 
     if (result.success) {
       return;
-    } else if (result.status === 429) {
+    } else if (result.httpStatus === 429) {
       setError(result.message || 'Account temporarily locked. Please try again after 15 minutes.');
-    } else if (result.status === 403) {
+    } else if (result.httpStatus === 403) {
       setError('Account is inactive. Contact your administrator.');
     } else {
       setError(result.message || 'Invalid email or password');

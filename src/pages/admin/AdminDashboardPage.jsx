@@ -321,7 +321,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="mt-4 space-y-6">
       {/* Header Section with Title, Export Buttons, and Date Picker */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-outline-variant/15 pb-4">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b border-outline-variant/15 pb-4">
         <div>
           <h1 className="font-display-lg text-display-md md:text-display-lg text-primary mb-1">
             Lead Segment Insights
@@ -331,47 +331,51 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => handleExportReport('category-breakdown')}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-on-surface border border-outline-variant rounded-xl font-label-md text-label-md hover:bg-surface-container-low transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-          >
-            <span className="material-symbols-outlined text-[18px]">download</span>
-            Export Segment Report
-          </button>
-          <button
-            onClick={() => handleExportReport('lead-conversion')}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-white rounded-xl font-label-md text-label-md hover:bg-primary/95 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-primary/25 hover:shadow-lg"
-          >
-            <span className="material-symbols-outlined text-[18px]">download_2</span>
-            Export Conversion Report
-          </button>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-end gap-3 w-full lg:w-auto">
+          <div className="flex flex-row items-center gap-2 shrink-0">
+            <button
+              onClick={() => handleExportReport('category-breakdown')}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white text-on-surface border border-outline-variant rounded-xl font-label-md text-label-md hover:bg-surface-container-low transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              <span className="hidden sm:inline">Export Segment Report</span>
+              <span className="sm:hidden">Segment</span>
+            </button>
+            <button
+              onClick={() => handleExportReport('lead-conversion')}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary text-white rounded-xl font-label-md text-label-md hover:bg-primary/95 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-primary/25 hover:shadow-lg whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[18px]">download_2</span>
+              <span className="hidden sm:inline">Export Conversion Report</span>
+              <span className="sm:hidden">Conversion</span>
+            </button>
+          </div>
 
           {/* Date Range Picker form */}
           <form onSubmit={handleApplyDateRange} className="flex flex-wrap items-end gap-3 bg-white/70 backdrop-blur-md p-3 rounded-2xl border border-outline-variant/20 shadow-sm">
-            <label className="flex flex-col gap-1 text-[11px] font-bold text-on-surface-variant">
+            <label className="flex flex-col gap-1 text-[11px] font-bold text-on-surface-variant flex-1 min-w-[130px]">
               From Date
               <input
                 type="date"
                 aria-label="From Date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="h-10 rounded-xl border border-outline-variant bg-white px-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                className="h-10 w-full rounded-xl border border-outline-variant bg-white px-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
               />
             </label>
-            <label className="flex flex-col gap-1 text-[11px] font-bold text-on-surface-variant">
+            <label className="flex flex-col gap-1 text-[11px] font-bold text-on-surface-variant flex-1 min-w-[130px]">
               To Date
               <input
                 type="date"
                 aria-label="To Date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="h-10 rounded-xl border border-outline-variant bg-white px-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                className="h-10 w-full rounded-xl border border-outline-variant bg-white px-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
               />
             </label>
             <button
               type="submit"
-              className="h-10 px-5 rounded-xl bg-primary text-white text-label-md font-bold hover:bg-primary/95 transition-colors focus:ring-2 focus:ring-primary/20"
+              className="h-10 px-5 rounded-xl bg-primary text-white text-label-md font-bold hover:bg-primary/95 transition-colors focus:ring-2 focus:ring-primary/20 self-end"
             >
               Apply
             </button>

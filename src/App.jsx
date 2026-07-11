@@ -50,7 +50,6 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: 'dashboard', element: <AdminDashboardPage /> },
       { path: 'users', element: <UserManagementPage /> },
-      { path: 'security', element: <SecurityPage /> },
       { path: 'audit-log', element: <AuditLogPage /> },
       { path: 'audit-logs', element: <Navigate to="/admin/audit-log" replace /> },
       { path: 'system-settings/audit-retention', element: <SystemSettingsPage /> },

@@ -127,10 +127,10 @@ function setupFetchForLead(lead, extraMocks = {}) {
     if (url.includes('/admin/users')) {
       return mockRes({ success: true, data: mockUsers });
     }
-    if (url.includes('/lead_history')) {
+    if (url.includes('/lead-history')) {
       return mockRes({ success: true, data: extraMocks.history || lead.timeline || [] });
     }
-    if (url.includes('/admin/leads/bulk_assign')) {
+    if (url.includes('/admin/leads/bulk-assign')) {
       return extraMocks.bulkAssign || mockRes({ assigned: true, count: 2 }, 200);
     }
     if (url.includes('/leads/') && url.includes('/assign')) {
@@ -199,7 +199,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
       if (url.includes('/admin/users')) {
         return mockRes({ success: true, data: mockUsers });
       }
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/leads/') && url.includes('/assign')) {
@@ -207,10 +207,13 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
         return mockRes({ success: true }, 200);
       }
       if (url.includes('/admin/leads/lead-001') && (url.includes('?_') || url.includes('_='))) {
-        return mockRes({
-          success: true,
-          data: { ...unownedLead, assignedTo: 'EMP-00002', assignedAt: new Date().toISOString() },
-        });
+        if (assignCalled) {
+          return mockRes({
+            success: true,
+            data: { ...unownedLead, assignedTo: 'EMP-00002', assignedAt: new Date().toISOString() },
+          });
+        }
+        return mockRes({ success: true, data: unownedLead });
       }
       return mockRes({ success: true, data: unownedLead });
     });
@@ -239,7 +242,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
       if (url.includes('/admin/users')) {
         return mockRes({ success: true, data: mockUsers });
       }
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/leads/') && url.includes('/assign')) {
@@ -274,13 +277,20 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
 
   it('test-ep-2.3.1-005: owner field updates immediately after assignment', async () => {
     setUser(adminUser);
+    let assignCalled = false;
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
-      if (url.includes('/leads/') && url.includes('/assign')) return mockRes({ success: true }, 200);
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/leads/') && url.includes('/assign')) {
+        assignCalled = true;
+        return mockRes({ success: true }, 200);
+      }
       if (url.includes('/admin/leads/lead-001') && (url.includes('?_') || url.includes('_='))) {
-        return mockRes({ success: true, data: { ...unownedLead, assignedTo: 'EMP-00002', assignedAt: new Date().toISOString() } });
+        if (assignCalled) {
+          return mockRes({ success: true, data: { ...unownedLead, assignedTo: 'EMP-00002', assignedAt: new Date().toISOString() } });
+        }
+        return mockRes({ success: true, data: unownedLead });
       }
       return mockRes({ success: true, data: unownedLead });
     });
@@ -307,7 +317,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) {
         return new Promise((resolve) => { resolveAssign = resolve; });
       }
@@ -337,7 +347,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) return mockRes({ message: 'Server error' }, 500);
       return mockRes({ success: true, data: unownedLead });
     });
@@ -360,7 +370,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       if (url.includes('/leads/') && url.includes('/assign')) return mockRes({ message: 'Not found' }, 404);
       return mockRes({ success: true, data: unownedLead });
     });
@@ -399,7 +409,7 @@ describe('STORY-2.3.1 Lead Detail — Assign/Reassign Action', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: [] });
-      if (url.includes('/lead_history')) return mockRes({ success: true, data: [] });
+      if (url.includes('/lead-history')) return mockRes({ success: true, data: [] });
       return mockRes({ success: true, data: unownedLead });
     });
 
@@ -563,7 +573,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk_assign')) {
+      if (url.includes('/admin/leads/bulk-assign')) {
         bulkAssignCalled = true;
         return mockRes({ assigned: true, count: 2 }, 200);
       }
@@ -599,7 +609,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk_assign')) {
+      if (url.includes('/admin/leads/bulk-assign')) {
         bulkAssignCalled = true;
         return mockRes({ assigned: true, count: 1 }, 200);
       }
@@ -633,7 +643,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk_assign')) {
+      if (url.includes('/admin/leads/bulk-assign')) {
         return mockRes({ message: 'Reassignment reason required' }, 400);
       }
       return mockRes(mockLeadsResponse([leads[0], leads[1]]));
@@ -691,7 +701,7 @@ describe('STORY-2.3.1 Lead List — Bulk Assign Action', () => {
     const fetchMock = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/admin/leads/bulk_assign')) return mockRes({ message: 'Server error' }, 500);
+      if (url.includes('/admin/leads/bulk-assign')) return mockRes({ message: 'Server error' }, 500);
       return mockRes(mockLeadsResponse([leads[0], leads[1]]));
     });
     global.fetch = fetchMock;
@@ -803,6 +813,7 @@ describe('STORY-2.3.1 Notifications — New Owner Notification', () => {
   it('test-ep-2.3.1-026: Notification bell shows unread badge after lead assignment', async () => {
     const { fetchNotifications } = await import('../../services/notificationService');
     clearNotifications();
+    seedNotifications([makeNotif({ read: false })]);
     const result = await fetchNotifications();
     expect(result.success).toBe(true);
     expect(Array.isArray(result.data)).toBe(true);
@@ -814,6 +825,7 @@ describe('STORY-2.3.1 Notifications — New Owner Notification', () => {
   it('test-ep-2.3.1-027: Notification dropdown displays assignment notification', async () => {
     const { fetchNotifications } = await import('../../services/notificationService');
     clearNotifications();
+    seedNotifications([makeNotif({ read: false })]);
     const result = await fetchNotifications();
     const assignmentNotif = result.data.find((n) => n.type === 'assignment');
     expect(assignmentNotif.message).toMatch(/assigned/i);
@@ -823,6 +835,7 @@ describe('STORY-2.3.1 Notifications — New Owner Notification', () => {
   it('test-ep-2.3.1-028: Clicking notification navigates to the assigned lead', async () => {
     const { fetchNotifications } = await import('../../services/notificationService');
     clearNotifications();
+    seedNotifications([makeNotif({ read: false })]);
     const result = await fetchNotifications();
     const notif = result.data[0];
     expect(notif.createdAt).toBeDefined();
@@ -1069,7 +1082,7 @@ describe('STORY-2.3.1 Timeline — Assignment Event Display', () => {
     global.fetch = vi.fn((input) => {
       const url = String(input);
       if (url.includes('/admin/users')) return mockRes({ success: true, data: mockUsers });
-      if (url.includes('/timeline')) return mockRes({ success: true, body: { timeline: [assignmentEntry], pagination: { page: 1, totalPages: 1, has_more: false } } });
+      if (url.includes('/timeline')) return mockRes({ success: true, data: { timeline: [assignmentEntry], pagination: { page: 1, totalPages: 1, has_more: false } } });
       return mockRes({ success: true, data: leadWithAssignment });
     });
 

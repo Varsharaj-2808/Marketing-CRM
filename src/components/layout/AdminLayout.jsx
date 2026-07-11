@@ -12,7 +12,6 @@ const NAV_ITEMS = [
   { path: '/admin/lead-sources', label: 'Lead Sources', icon: 'source' },
   { path: '/admin/audit-log', label: 'Audit Log', icon: 'receipt_long' },
   { path: '/admin/system-settings/audit-retention', label: 'System Settings', icon: 'settings' },
-  { path: '/admin/security', label: 'Security Policy', icon: 'security' },
 ];
 
 export default function AdminLayout() {
@@ -36,7 +35,7 @@ export default function AdminLayout() {
       <div className="bg-mesh" />
       <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-white/10 shadow-md h-16 flex justify-between items-center px-4 sm:px-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg hover:bg-surface-container-high transition-colors">
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg hover:bg-surface-container-high transition-colors" aria-label="Open menu">
             <span className="material-symbols-outlined text-on-surface-variant">menu</span>
           </button>
           <span className="font-display-lg text-headline-md tracking-tight text-primary">ApexCRM</span>
@@ -45,14 +44,14 @@ export default function AdminLayout() {
             <input className="bg-transparent border-none focus:ring-0 text-label-md w-64 text-on-surface" placeholder="Search..." type="text" />
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <NotificationBell />
-          <button className="p-1.5 rounded-full bg-primary/5 text-primary border border-primary/10">
+          <button className="p-1.5 rounded-full bg-primary/5 text-primary border border-primary/10" aria-label="Settings">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button onClick={handleLogout} className="flex items-center gap-1 px-2.5 py-1.5 text-label-md text-error hover:bg-error/5 rounded-xl transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-label-md text-error hover:bg-error/5 rounded-xl transition-colors" aria-label="Sign out">
             <span className="material-symbols-outlined text-[18px]">logout</span>
-            Sign Out
+            <span className="hidden sm:inline">Sign Out</span>
           </button>
         </div>
       </header>
@@ -61,8 +60,19 @@ export default function AdminLayout() {
         <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`fixed left-0 top-0 h-full w-56 z-40 bg-white/80 backdrop-blur-xl border-r border-white/10 shadow-xl shadow-slate-900/5 flex flex-col p-4 pt-20 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:z-40`}>
-        <div className="mb-3 px-1">
+      <aside className={`fixed left-0 top-0 h-full w-64 sm:w-56 z-40 bg-white/80 backdrop-blur-xl border-r border-white/10 shadow-xl shadow-slate-900/5 flex flex-col p-4 pt-20 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:z-40`}>
+        {/* Mobile close button */}
+        <div className="flex items-center justify-between mb-4 lg:hidden">
+          <span className="font-headline-md text-primary">Menu</span>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors"
+            aria-label="Close menu"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant">close</span>
+          </button>
+        </div>
+        <div className="mb-3 px-1 hidden lg:block">
           <h2 className="font-headline-md text-primary">Admin Portal</h2>
           <p className="font-label-sm text-on-surface-variant opacity-70">Enterprise Tier</p>
         </div>
@@ -83,7 +93,7 @@ export default function AdminLayout() {
           ))}
         </nav>
       </aside>
-      <main className="lg:ml-56 p-4 sm:p-6 pt-16 sm:pt-16 h-screen overflow-y-auto">
+      <main className="lg:ml-56 pt-20 pb-4 px-4 sm:pt-20 sm:pb-6 sm:px-6 h-screen overflow-y-auto">
         <div className="max-w-[1400px] mx-auto">
           <Outlet />
         </div>

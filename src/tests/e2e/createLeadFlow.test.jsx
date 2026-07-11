@@ -38,12 +38,12 @@ const MOCK_USERS = [
 
 const MOCK_SUB_CATEGORIES = {
   'cat-001': [
-    { id: 'sub-001', name: 'Web Development' },
-    { id: 'sub-002', name: 'Mobile App Development' },
+    { id: 'sub-001', name: 'Web Development', category_id: 'cat-001' },
+    { id: 'sub-002', name: 'Mobile App Development', category_id: 'cat-001' },
   ],
   'cat-002': [
-    { id: 'sub-005', name: 'SEO Services' },
-    { id: 'sub-006', name: 'Social Media Management' },
+    { id: 'sub-005', name: 'SEO Services', category_id: 'cat-002' },
+    { id: 'sub-006', name: 'Social Media Management', category_id: 'cat-002' },
   ],
 };
 
@@ -55,8 +55,8 @@ function setupE2eMocks(options = {}) {
   global.fetch = vi.fn().mockImplementation((input, init) => {
     const url = typeof input === 'string' ? input : input.toString();
 
-    if (url.includes('/admin/categories/') && url.includes('/sub_categories')) {
-      const match = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/);
+    if (url.includes('/admin/categories/') && url.includes('/sub-categories')) {
+      const match = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/);
       const categoryId = match?.[1];
       return mockRes({ success: true, data: MOCK_SUB_CATEGORIES[categoryId] || [] });
     }
@@ -69,7 +69,7 @@ function setupE2eMocks(options = {}) {
       return mockRes({ success: true, data: MOCK_USERS });
     }
 
-    if (url.includes('/marketing/leads/check_duplicate')) {
+    if (url.includes('/marketing/leads/check-duplicate')) {
       const body = JSON.parse(init?.body || '{}');
       if (duplicateMobile && body.mobileNumber === duplicateMobile) {
         return mockRes({ duplicate: true, leadId: 'LD-0042' });
@@ -77,7 +77,7 @@ function setupE2eMocks(options = {}) {
       return mockRes({ duplicate: false });
     }
 
-    if (url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST') {
+    if (url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST') {
       leadCreateCounter++;
       const leadId = `LD-${String(leadCreateCounter).padStart(4, '0')}`;
       const id = `lead-${String(leadCreateCounter).padStart(4, '0')}`;
@@ -206,21 +206,21 @@ describe('E2E: Create Lead — Full User Flow', () => {
     });
 
     const postCreateCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
     );
     expect(postCreateCalls.length).toBe(1);
 
     const sentPayload = JSON.parse(postCreateCalls[0][1].body);
-    expect(sentPayload.companyName).toBe('TechCorp Solutions');
-    expect(sentPayload.contactPerson).toBe('Alice Johnson');
-    expect(sentPayload.mobileNumber).toBe('9876543210');
+    expect(sentPayload.company_name).toBe('TechCorp Solutions');
+    expect(sentPayload.contact_person).toBe('Alice Johnson');
+    expect(sentPayload.mobile_number).toBe('9876543210');
     expect(sentPayload.email).toBe('alice@techcorp.com');
-    expect(sentPayload.businessCategory).toBe('cat-001');
-    expect(sentPayload.businessSubCategory).toBe('sub-001');
-    expect(sentPayload.leadSource).toBe('Website');
-    expect(sentPayload.servicesInterested).toContain('Web Development');
+    expect(sentPayload.category).toBe('cat-001');
+    expect(sentPayload.sub_category).toBe('sub-001');
+    expect(sentPayload.lead_source).toBe('Website');
+    expect(sentPayload.service_interested).toContain('Web Development');
     expect(sentPayload.priority).toBe('Hot');
-    expect(sentPayload.assignedTo).toBe('EMP-00002');
+    expect(sentPayload.assigned_to).toBe('EMP-00002');
   });
 
   it('TEST-EP2-LEAD-E2E-002: created lead has creator as Assigned To', async () => {
@@ -244,10 +244,10 @@ describe('E2E: Create Lead — Full User Flow', () => {
     });
 
     const postCreateCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
     );
     const sentPayload = JSON.parse(postCreateCalls[0][1].body);
-    expect(sentPayload.assignedTo).toBe('EMP-00002');
+    expect(sentPayload.assigned_to).toBe('EMP-00002');
   });
 
   it('TEST-EP2-LEAD-E2E-003: lead timeline includes "Lead Created" entry on creation', async () => {
@@ -268,10 +268,10 @@ describe('E2E: Create Lead — Full User Flow', () => {
     });
 
     const postCreateCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
     );
     const sentPayload = JSON.parse(postCreateCalls[0][1].body);
-    expect(sentPayload.companyName).toBeTruthy();
+    expect(sentPayload.company_name).toBeTruthy();
   });
 });
 
@@ -352,7 +352,7 @@ describe('E2E: Create Lead — Validation Flow', () => {
     });
 
     const postCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
     );
     expect(postCalls.length).toBe(0);
   });
@@ -388,7 +388,7 @@ describe('E2E: Create Lead — Duplicate Mobile Flow', () => {
     });
 
     const postCalls = fetch.mock.calls.filter(
-      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check_duplicate') && init?.method === 'POST'
+      ([url, init]) => url.includes('/marketing/leads') && !url.includes('/check-duplicate') && init?.method === 'POST'
     );
     expect(postCalls.length).toBe(1);
   });

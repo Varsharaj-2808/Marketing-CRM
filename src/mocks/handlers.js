@@ -368,19 +368,19 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/categories/:id/in_use`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:id/in-use`, ({ params }) => {
     const { id } = params;
     const leads = mockLeadsStore.filter(lead => lead.businessCategory === id);
     return HttpResponse.json({ inUse: leads.length > 0, leads });
   }),
 
-  http.get(`${BASE}/admin/categories/:id/audit_log`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:id/audit-log`, ({ params }) => {
     const { id } = params;
     const log = auditLogs.filter(e => e.resource === 'Category' && e.resourceId === id);
     return HttpResponse.json({ success: true, data: log });
   }),
 
-  http.post(`${BASE}/admin/categories/:categoryId/sub_categories`, async ({ params, request }) => {
+  http.post(`${BASE}/admin/categories/:categoryId/sub-categories`, async ({ params, request }) => {
     const { categoryId } = params;
     const body = await request.json();
     if (!categoriesStore.find(c => c.id === categoryId)) {
@@ -410,7 +410,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: newSub, message: 'Sub-category created successfully.' }, { status: 201 });
   }),
 
-  http.put(`${BASE}/admin/categories/:categoryId/sub_categories/:subId`, async ({ params, request }) => {
+  http.put(`${BASE}/admin/categories/:categoryId/sub-categories/:subId`, async ({ params, request }) => {
     const { categoryId, subId } = params;
     const body = await request.json();
     const subs = subCategoriesStore[categoryId];
@@ -439,7 +439,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: subs[idx], message: 'Sub-category updated successfully.' });
   }),
 
-  http.delete(`${BASE}/admin/categories/:categoryId/sub_categories/:subId`, ({ params }) => {
+  http.delete(`${BASE}/admin/categories/:categoryId/sub-categories/:subId`, ({ params }) => {
     const { categoryId, subId } = params;
     const subs = subCategoriesStore[categoryId];
     if (!subs) return HttpResponse.json({ success: false, message: 'Category not found.' }, { status: 404 });
@@ -466,7 +466,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, message: 'Sub-category deleted successfully.' });
   }),
 
-  http.get(`${BASE}/admin/categories/:categoryId/sub_categories/active`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:categoryId/sub-categories/active`, ({ params }) => {
     const { categoryId } = params;
     const subs = subCategoriesStore[categoryId] || [];
     return HttpResponse.json({
@@ -475,7 +475,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/categories/:categoryId/sub_categories/:subId/in-use`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:categoryId/sub-categories/:subId/in-use`, ({ params }) => {
     const { categoryId, subId } = params;
     const leads = mockLeadsStore.filter(lead => lead.businessSubCategory === subId);
     return HttpResponse.json({ inUse: leads.length > 0, leads });
@@ -610,7 +610,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: usersStore[idx], message: 'User deactivated successfully.' });
   }),
 
-  http.get(`${BASE}/admin/audit_log`, () => {
+  http.get(`${BASE}/admin/audit-log`, () => {
     return HttpResponse.json({
       success: true,
       data: auditLogs,
@@ -618,7 +618,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/categories/:categoryId/sub_categories`, ({ params }) => {
+  http.get(`${BASE}/admin/categories/:categoryId/sub-categories`, ({ params }) => {
     const { categoryId } = params;
     const subs = subCategoriesStore[categoryId] || [];
     return HttpResponse.json({
@@ -637,7 +637,7 @@ export const handlers = [
     return HttpResponse.json({ duplicate: false, exists: false });
   }),
 
-  http.get(`${BASE}/marketing/leads/:leadId/lead_history`, ({ params }) => {
+  http.get(`${BASE}/marketing/leads/:leadId/lead-history`, ({ params }) => {
     try {
       const leadId = params?.leadId;
       if (!leadId) {
@@ -663,7 +663,7 @@ export const handlers = [
     }
   }),
 
-  http.post(`${BASE}/marketing/leads/check_duplicate`, async ({ request }) => {
+  http.post(`${BASE}/marketing/leads/check-duplicate`, async ({ request }) => {
     const body = await request.json();
     const { mobileNumber } = body;
 
@@ -739,7 +739,7 @@ export const handlers = [
     });
   }),
 
-  http.post(`${BASE}/auth/forgot_password`, async ({ request }) => {
+  http.post(`${BASE}/auth/forgot-password`, async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json({
       success: true,
@@ -747,14 +747,14 @@ export const handlers = [
     });
   }),
 
-  http.post(`${BASE}/auth/reset_password`, async () => {
+  http.post(`${BASE}/auth/reset-password`, async () => {
     return HttpResponse.json({
       success: true,
       message: 'Password has been reset successfully.',
     });
   }),
 
-  http.post(`${BASE}/auth/refresh_token`, async () => {
+  http.post(`${BASE}/auth/refresh-token`, async () => {
     return HttpResponse.json({
       success: true,
       data: { token: 'mock-jwt-token-' + Date.now(), refreshToken: 'mock-refresh-token' },
@@ -829,7 +829,7 @@ export const handlers = [
     });
   }),
 
-  http.patch(`${BASE}/leads/:leadId/assign`, async ({ params, request }) => {
+  http.patch(`${BASE}/admin/leads/:leadId/assign`, async ({ params, request }) => {
     const { leadId } = params;
     const body = await request.json();
     const { assignedTo, reason } = body;
@@ -891,7 +891,7 @@ export const handlers = [
     });
   }),
 
-  http.post(`${BASE}/admin/leads/bulk_assign`, async ({ request }) => {
+  http.post(`${BASE}/admin/leads/bulk-assign`, async ({ request }) => {
     const body = await request.json();
     const { leadIds, assignedTo, reason } = body;
 
@@ -951,36 +951,51 @@ export const handlers = [
     });
   }),
 
-    http.get(`${BASE}/notifications`, () => {
+    http.get(`${BASE}/marketing/notifications`, () => {
     return HttpResponse.json({
       success: true,
-      status_code: 200,
       message: "Notifications fetched successfully",
-      unread_count: 3,
+      unread_count: 4,
       data: [
         {
           id: 'notif-001',
-          type: 'lead_reminder',
-          message: 'Reminder: Follow-up is due today for TechCorp Solutions.',
-          reference_id: 'lead-00001',
+          type: 'assignment',
+          message: 'Lead LD-2026-00001 has been assigned to Ravi Executive',
+          reference_id: 'lead-001',
+          leadId: 'lead-001',
           read: false,
-          created_at: new Date(Date.now() - 3600000).toISOString()
+          created_at: new Date(Date.now() - 1800000).toISOString(),
+          createdAt: new Date(Date.now() - 1800000).toISOString()
         },
         {
           id: 'notif-002',
           type: 'lead_reminder',
-          message: 'Reminder: Follow-up is overdue for GrowthMark Agency.',
-          reference_id: 'lead-00002',
+          message: 'Reminder: Follow-up is due today for TechCorp Solutions.',
+          reference_id: 'lead-00001',
+          leadId: 'lead-00001',
           read: false,
-          created_at: new Date(Date.now() - 7200000).toISOString()
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+          createdAt: new Date(Date.now() - 3600000).toISOString()
         },
         {
           id: 'notif-003',
           type: 'lead_reminder',
+          message: 'Reminder: Follow-up is overdue for GrowthMark Agency.',
+          reference_id: 'lead-00002',
+          leadId: 'lead-00002',
+          read: false,
+          created_at: new Date(Date.now() - 7200000).toISOString(),
+          createdAt: new Date(Date.now() - 7200000).toISOString()
+        },
+        {
+          id: 'notif-004',
+          type: 'lead_reminder',
           message: 'Reminder: Follow-up is due today for MediCare Group.',
           reference_id: 'lead-00003',
+          leadId: 'lead-00003',
           read: false,
-          created_at: new Date(Date.now() - 86400000).toISOString()
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          createdAt: new Date(Date.now() - 86400000).toISOString()
         }
       ]
     });
@@ -994,7 +1009,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/lead_history/:leadId`, ({ params }) => {
+  http.get(`${BASE}/lead-history/:leadId`, ({ params }) => {
     const { leadId } = params;
     const lead = mockLeadsStore.find(
       (l) => l.id === leadId || l.leadId === leadId
@@ -1167,7 +1182,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/dashboard/category/won_rate`, ({ request }) => {
+  http.get(`${BASE}/admin/dashboard/category/won-rate`, ({ request }) => {
     const url = new URL(request.url);
     const category_id = url.searchParams.get('category_id');
     let leads = [...mockLeadsStore];
@@ -1202,7 +1217,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/dashboard/category/lead_volume`, ({ request }) => {
+  http.get(`${BASE}/admin/dashboard/category/lead-volume`, ({ request }) => {
     const url = new URL(request.url);
     const filtered = getFilteredLeads(mockLeadsStore, url);
     
@@ -1248,7 +1263,6 @@ export const handlers = [
     if (!authHeader) {
       return HttpResponse.json({
         success: false,
-        status_code: 401,
         message: "Authentication required. Invalid or missing token",
         data: null
       }, { status: 401 });
@@ -1258,7 +1272,6 @@ export const handlers = [
     if (authHeader.includes('me-002-token') && assignedTo === 'me-001') {
       return HttpResponse.json({
         success: false,
-        status_code: 403,
         message: "Access denied. Cannot fetch today's follow-ups for another user",
         data: null
       }, { status: 403 });
@@ -1267,7 +1280,6 @@ export const handlers = [
     // Default response returning 3 leads
     return HttpResponse.json({
       success: true,
-      status_code: 200,
       message: "Today's follow-ups retrieved successfully",
       data: [
         {
@@ -1306,7 +1318,6 @@ export const handlers = [
     if (!authHeader) {
       return HttpResponse.json({
         success: false,
-        status_code: 401,
         message: "Authentication required. Invalid or missing token",
         data: null
       }, { status: 401 });
@@ -1316,7 +1327,6 @@ export const handlers = [
     if (authHeader.includes('me-002-token') && assignedTo === 'me-001') {
       return HttpResponse.json({
         success: false,
-        status_code: 403,
         message: "Access denied. Cannot fetch overdue follow-ups for another user",
         data: null
       }, { status: 403 });
@@ -1324,7 +1334,6 @@ export const handlers = [
 
     return HttpResponse.json({
       success: true,
-      status_code: 200,
       message: "Overdue follow-ups retrieved successfully",
       data: [
         {
@@ -1349,7 +1358,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${BASE}/admin/dashboard/at_risk`, ({ request }) => {
+  http.get(`${BASE}/admin/dashboard/at-risk`, ({ request }) => {
     const url = new URL(request.url);
     const overdueDays = parseInt(url.searchParams.get('overdue_days')) || 3;
     
@@ -1358,7 +1367,6 @@ export const handlers = [
       // ME role is forbidden from calling Admin At-Risk escalation API
       return HttpResponse.json({
         success: false,
-        status_code: 403,
         message: "Access denied. Admin role required.",
         data: null
       }, { status: 403 });
@@ -1367,7 +1375,6 @@ export const handlers = [
     if (overdueDays >= 5) {
       return HttpResponse.json({
         success: true,
-        status_code: 200,
         message: "At-risk leads fetched successfully",
         data: {
           total_at_risk: 1,
@@ -1389,7 +1396,6 @@ export const handlers = [
 
     return HttpResponse.json({
       success: true,
-      status_code: 200,
       message: "At-risk leads fetched successfully",
       data: {
         total_at_risk: 2,
@@ -1423,7 +1429,6 @@ export const handlers = [
       // ME role is forbidden from running daily reminders cron
       return HttpResponse.json({
         success: false,
-        status_code: 403,
         message: "Access denied. Admin role required.",
         data: null
       }, { status: 403 });
@@ -1433,9 +1438,8 @@ export const handlers = [
     if (date === 'not-a-date') {
       return HttpResponse.json({
         success: false,
-        status_code: 400,
         message: "Validation failed",
-        body: {
+        data: {
           error: "Invalid date format. Use YYYY-MM-DD"
         }
       }, { status: 400 });
@@ -1443,7 +1447,6 @@ export const handlers = [
 
     return HttpResponse.json({
       success: true,
-      status_code: 200,
       message: "Daily reminders processed successfully",
       reminders_sent: 2,
       breakdown: [

@@ -30,7 +30,7 @@ export default function MarketingLayout() {
     <div className="min-h-screen bg-background">
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center px-4 sm:px-6 h-16">
         <div className="flex items-center gap-x-3">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg hover:bg-surface-container-high transition-colors">
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1.5 rounded-lg hover:bg-surface-container-high transition-colors" aria-label="Open menu">
             <span className="material-symbols-outlined text-on-surface-variant">menu</span>
           </button>
           <span className="font-display-lg text-headline-md tracking-tight text-primary">ApexCRM</span>
@@ -39,9 +39,9 @@ export default function MarketingLayout() {
             <input className="bg-transparent border-none focus:ring-0 text-label-md w-64 placeholder:text-outline-variant" placeholder="Search insights..." type="text" />
           </div>
         </div>
-        <div className="flex items-center gap-x-3">
+        <div className="flex items-center gap-x-2 sm:gap-x-3">
           <NotificationBell />
-          <button className="p-1.5 rounded-full hover:bg-primary/5 transition-colors">
+          <button className="p-1.5 rounded-full hover:bg-primary/5 transition-colors" aria-label="Settings">
             <span className="material-symbols-outlined text-on-surface-variant">settings</span>
           </button>
           <div className="flex items-center gap-1.5">
@@ -60,8 +60,19 @@ export default function MarketingLayout() {
         <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`fixed left-0 top-0 h-full w-56 z-40 bg-white/80 backdrop-blur-xl border-r border-white/10 shadow-xl shadow-slate-900/5 flex flex-col p-4 pt-20 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:z-40`}>
-        <div className="mb-3">
+      <aside className={`fixed left-0 top-0 h-full w-64 sm:w-56 z-40 bg-white/80 backdrop-blur-xl border-r border-white/10 shadow-xl shadow-slate-900/5 flex flex-col p-4 pt-20 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:z-40`}>
+        {/* Mobile close button */}
+        <div className="flex items-center justify-between mb-4 lg:hidden">
+          <span className="font-headline-md text-primary">Menu</span>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors"
+            aria-label="Close menu"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant">close</span>
+          </button>
+        </div>
+        <div className="mb-3 hidden lg:block">
           <h2 className="font-headline-md text-headline-md text-primary">Marketing Portal</h2>
           <p className="text-label-sm text-on-surface-variant opacity-70">Marketing Team</p>
         </div>
@@ -91,8 +102,8 @@ export default function MarketingLayout() {
           </button>
         </div>
       </aside>
-      <main className="lg:pl-56 pt-16 h-screen overflow-y-auto">
-        <div className="p-4 sm:p-6 max-w-[1400px] mx-auto">
+      <main className="lg:ml-56 pt-20 pb-4 px-4 sm:pt-20 sm:pb-6 sm:px-6 h-screen overflow-y-auto">
+        <div className="max-w-[1400px] mx-auto">
           <Outlet />
         </div>
       </main>

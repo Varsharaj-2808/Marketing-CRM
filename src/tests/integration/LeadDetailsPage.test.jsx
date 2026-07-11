@@ -61,7 +61,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -97,7 +97,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -132,7 +132,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -166,7 +166,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -198,7 +198,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -274,12 +274,14 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
 
   it('test-ep-2.4.1-008: updates stage after selecting a valid next stage', async () => {
     setUser(marketingUser);
+    let stageUpdated = false;
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/status')) {
+        stageUpdated = true;
         return mockRes({ success: true, data: { stage: 'Contacted' } });
       }
       if (url.includes('/marketing/leads/lead-107')) {
@@ -292,7 +294,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
             contactPerson: 'Gordon Freeman',
             mobileNumber: '9000000006',
             status: '',
-            stage: url.includes('?_') ? 'Contacted' : 'New',
+            stage: stageUpdated ? 'Contacted' : 'New',
             priority: 'High',
             createdAt: '2026-06-07T10:00:00.000Z',
             createdBy: { name: 'Admin User' },
@@ -318,7 +320,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/status')) {
@@ -354,7 +356,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -384,15 +386,17 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
 
   it('test-ep-2.4.1-015: closes lead as Lost after selecting reason', async () => {
     setUser(marketingUser);
+    let closeCalled = false;
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/close')) {
+        closeCalled = true;
         return mockRes({ success: true, data: { status: 'Lost' } });
       }
-      if (url.includes('?_')) {
+      if (url.includes('/marketing/leads/lead-110')) {
         return mockRes({
           success: true,
           data: {
@@ -401,29 +405,15 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
             companyName: 'Oceanic',
             contactPerson: 'Kate Austen',
             mobileNumber: '9000000009',
-            status: 'Lost',
-            stage: 'Closed',
+            status: closeCalled ? 'Lost' : '',
+            stage: closeCalled ? 'Closed' : 'Negotiation',
             priority: 'Medium',
             createdAt: '2026-06-10T10:00:00.000Z',
             createdBy: { name: 'Admin User' },
           },
         });
       }
-      return mockRes({
-        success: true,
-        data: {
-          id: 'lead-110',
-          leadId: 'LD-110',
-          companyName: 'Oceanic',
-          contactPerson: 'Kate Austen',
-          mobileNumber: '9000000009',
-          status: '',
-          stage: 'Negotiation',
-          priority: 'Medium',
-          createdAt: '2026-06-10T10:00:00.000Z',
-          createdBy: { name: 'Admin User' },
-        },
-      });
+      return mockRes({ success: true, data: {} });
     });
     global.fetch = fetchMock;
 
@@ -443,7 +433,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -475,7 +465,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(marketingUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -508,7 +498,7 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
     setUser(adminUser);
     global.fetch = vi.fn().mockImplementation((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       return mockRes({
@@ -537,15 +527,17 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
 
   it('test-ep-2.4.1-036: reopens a closed lead successfully', async () => {
     setUser(adminUser);
+    let reopenCalled = false;
     const fetchMock = vi.fn((input) => {
       const url = String(input);
-      if (url.includes('/lead_history')) {
+      if (url.includes('/lead-history')) {
         return mockRes({ success: true, data: [] });
       }
       if (url.includes('/reopen')) {
+        reopenCalled = true;
         return mockRes({ success: true, data: { status: '', stage: 'Contacted' } });
       }
-      if (url.includes('/admin/leads/lead-114') && url.includes('?_')) {
+      if (url.includes('/admin/leads/lead-114')) {
         return mockRes({
           success: true,
           data: {
@@ -554,29 +546,15 @@ describe('LeadDetailsPage - STORY-2.4.1 lead stage management', () => {
             companyName: 'Tyrell',
             contactPerson: 'Ellen Ripley',
             mobileNumber: '9000000013',
-            status: '',
-            stage: 'Contacted',
+            status: reopenCalled ? '' : 'Won',
+            stage: reopenCalled ? 'Contacted' : 'Closed',
             priority: 'High',
             createdAt: '2026-06-14T10:00:00.000Z',
             createdBy: { name: 'Admin User' },
           },
         });
       }
-      return mockRes({
-        success: true,
-        data: {
-          id: 'lead-114',
-          leadId: 'LD-114',
-          companyName: 'Tyrell',
-          contactPerson: 'Ellen Ripley',
-          mobileNumber: '9000000013',
-          status: 'Won',
-          stage: 'Closed',
-          priority: 'High',
-          createdAt: '2026-06-14T10:00:00.000Z',
-          createdBy: { name: 'Admin User' },
-        },
-      });
+      return mockRes({ success: true, data: {} });
     });
     global.fetch = fetchMock;
 
@@ -606,8 +584,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
   };
 
   const FOUR_EVENTS_TIMELINE = {
-    status: 'success',
-    body: {
+    success: true,
+    data: {
       timeline: [
         { id: '1', action: 'Lead Created', message: 'Lead Created', created_at: '2026-07-06T10:00:00Z', type: 'created', created_by: { name: 'Admin User' } },
         { id: '2', action: 'Lead Assigned', message: 'Lead Assigned to Maya', created_at: '2026-07-06T11:00:00Z', type: 'assigned', created_by: { name: 'Admin User' } },
@@ -695,8 +673,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
     setUser(marketingUser);
     const longNotes = 'A'.repeat(150);
     const longTimeline = {
-      status: 'success',
-      body: {
+      success: true,
+      data: {
         timeline: [
           { id: '1', action: 'Follow-up Logged', followup_type: 'Call', notes: longNotes, created_at: '2026-07-06T10:00:00Z', type: 'followup', created_by: { name: 'Maya Executive' } }
         ],
@@ -751,9 +729,9 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
       if (url.includes('/timeline')) {
         if (url.includes('type=followup')) {
           return mockRes({
-            status: 'success',
-            body: {
-              timeline: FOUR_EVENTS_TIMELINE.body.timeline.filter(e => e.type === 'followup'),
+            success: true,
+            data: {
+              timeline: FOUR_EVENTS_TIMELINE.data.timeline.filter(e => e.type === 'followup'),
               pagination: { page: 1, totalPages: 1, has_more: false }
             }
           });
@@ -792,9 +770,9 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
       if (url.includes('/timeline')) {
         if (url.includes('type=followup')) {
           return mockRes({
-            status: 'success',
-            body: {
-              timeline: FOUR_EVENTS_TIMELINE.body.timeline.filter(e => e.type === 'followup'),
+            success: true,
+            data: {
+              timeline: FOUR_EVENTS_TIMELINE.data.timeline.filter(e => e.type === 'followup'),
               pagination: { page: 1, totalPages: 1, has_more: false }
             }
           });
@@ -881,8 +859,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
   it('test-ep-4.3.1-f-011: Verify Load More button is visible when has_more: true', async () => {
     setUser(marketingUser);
     const paginatedTimeline = {
-      status: 'success',
-      body: {
+      success: true,
+      data: {
         timeline: [
           { id: '1', action: 'Lead Created', created_at: '2026-07-06T10:00:00Z', type: 'created' }
         ],
@@ -903,8 +881,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
   it('test-ep-4.3.1-f-012: Verify clicking Load More queries second page from server', async () => {
     setUser(marketingUser);
     const paginatedTimeline = {
-      status: 'success',
-      body: {
+      success: true,
+      data: {
         timeline: [
           { id: '1', action: 'Lead Created', created_at: '2026-07-06T10:00:00Z', type: 'created' }
         ],
@@ -1009,7 +987,7 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
     fireEvent.change(screen.getByLabelText(/Outcome/i), { target: { value: 'Interested' } });
 
     const nextDateInput = screen.getByLabelText(/Next Follow-up Date/i);
-    fireEvent.change(nextDateInput, { target: { value: '2026-07-10' } });
+    fireEvent.change(nextDateInput, { target: { value: '2026-12-31' } });
 
     const submitBtn = screen.getByRole('button', { name: 'Submit' });
     fireEvent.click(submitBtn);
@@ -1110,9 +1088,9 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
             id: 'assign-5', action: 'Lead Assigned', message: 'Lead reassigned from Maya Executive to Jane Smith', created_at: '2026-07-06T14:00:00Z', type: 'assigned', created_by: { name: 'Maya Executive' }
           };
           return mockRes({
-            status: 'success',
-            body: {
-              timeline: [assignEntry, ...FOUR_EVENTS_TIMELINE.body.timeline],
+            success: true,
+            data: {
+              timeline: [assignEntry, ...FOUR_EVENTS_TIMELINE.data.timeline],
               pagination: { page: 1, totalPages: 1, has_more: false }
             }
           });
@@ -1153,8 +1131,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
   it('test-ep-4.3.1-f-021: Verify empty timeline displays "No history found for this lead."', async () => {
     setUser(marketingUser);
     const emptyTimeline = {
-      status: 'success',
-      body: {
+      success: true,
+      data: {
         timeline: [],
         pagination: { page: 1, totalPages: 1, has_more: false }
       }
@@ -1173,8 +1151,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
   it('test-ep-4.3.1-f-022: Verify keyboard focus shifts to the first card of new batch after Load More', async () => {
     setUser(marketingUser);
     const timelinePage1 = {
-      status: 'success',
-      body: {
+      success: true,
+      data: {
         timeline: Array.from({ length: 20 }, (_, i) => ({
           id: `p1-${i}`,
           action: `Event ${i}`,
@@ -1185,8 +1163,8 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
       }
     };
     const timelinePage2 = {
-      status: 'success',
-      body: {
+      success: true,
+      data: {
         timeline: [
           { id: 'p2-0', action: 'Newest Event', created_at: '2026-07-06T11:00:00Z', type: 'followup' }
         ],
@@ -1244,23 +1222,23 @@ describe('LeadDetailsPage - STORY-4.3.1 Lead Activity Timeline', () => {
         if (url.includes('type=followup')) {
           return new Promise((resolve) => {
             setTimeout(() => resolve(mockRes({
-              status: 'success',
-              body: { timeline: [{ id: 'fup-1', action: 'Follow-up Call', created_at: '2026-07-06T10:00:00Z', type: 'followup', created_by: { name: 'Maya' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
+              success: true,
+              data: { timeline: [{ id: 'fup-1', action: 'Follow-up Call', created_at: '2026-07-06T10:00:00Z', type: 'followup', created_by: { name: 'Maya' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
             })), 200);
           });
         }
         if (url.includes('type=status_change')) {
           return new Promise((resolve) => {
             setTimeout(() => resolve(mockRes({
-              status: 'success',
-              body: { timeline: [{ id: 'sc-1', action: 'Stage Changed', created_at: '2026-07-06T10:00:00Z', type: 'status_change', created_by: { name: 'Maya' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
+              success: true,
+              data: { timeline: [{ id: 'sc-1', action: 'Stage Changed', created_at: '2026-07-06T10:00:00Z', type: 'status_change', created_by: { name: 'Maya' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
             })), 100);
           });
         }
         if (url.includes('type=assigned')) {
           return mockRes({
-            status: 'success',
-            body: { timeline: [{ id: 'as-1', action: 'Lead Assigned to Jane', created_at: '2026-07-06T10:00:00Z', type: 'assigned', created_by: { name: 'Admin' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
+            success: true,
+            data: { timeline: [{ id: 'as-1', action: 'Lead Assigned to Jane', created_at: '2026-07-06T10:00:00Z', type: 'assigned', created_by: { name: 'Admin' } }], pagination: { page: 1, totalPages: 1, has_more: false } }
           });
         }
         return mockRes(FOUR_EVENTS_TIMELINE);

@@ -53,14 +53,26 @@ const MOCK_USERS = [
   { id: 'EMP-00002', name: 'John Executive', email: 'executive@company.com', role: 'Marketing Executive' },
 ];
 
+const MOCK_LEAD_SOURCES = [
+  { id: 'Website', name: 'Website' },
+  { id: 'Referral', name: 'Referral' },
+  { id: 'Cold Call', name: 'Cold Call' },
+];
+
+const MOCK_SERVICES = [
+  { id: 'svc-001', name: 'Web Development' },
+  { id: 'svc-002', name: 'Mobile App Development' },
+  { id: 'svc-003', name: 'SEO Services' },
+];
+
 const MOCK_SUB_CATEGORIES = {
   'cat-001': [
-    { id: 'sub-001', name: 'Web Development' },
-    { id: 'sub-002', name: 'Mobile App Development' },
+    { id: 'sub-001', name: 'Web Development', category_id: 'cat-001' },
+    { id: 'sub-002', name: 'Mobile App Development', category_id: 'cat-001' },
   ],
   'cat-002': [
-    { id: 'sub-005', name: 'SEO Services' },
-    { id: 'sub-006', name: 'Social Media Management' },
+    { id: 'sub-005', name: 'SEO Services', category_id: 'cat-002' },
+    { id: 'sub-006', name: 'Social Media Management', category_id: 'cat-002' },
   ],
 };
 
@@ -73,8 +85,8 @@ function setupMockFetch(options = {}) {
   global.fetch = vi.fn().mockImplementation((input, init) => {
     const url = typeof input === 'string' ? input : input.toString();
 
-    if (url.includes('/admin/categories/') && url.includes('/sub_categories')) {
-      const match = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/);
+    if (url.includes('/admin/categories/') && url.includes('/sub-categories')) {
+      const match = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/);
       const categoryId = match?.[1];
       return mockRes({ success: true, data: MOCK_SUB_CATEGORIES[categoryId] || [] });
     }
@@ -87,7 +99,15 @@ function setupMockFetch(options = {}) {
       return mockRes({ success: true, data: MOCK_USERS });
     }
 
-    if (url.includes('/marketing/leads/check_duplicate')) {
+    if (url.includes('/admin/lead_sources')) {
+      return mockRes({ success: true, data: MOCK_LEAD_SOURCES });
+    }
+
+    if (url.includes('/admin/services')) {
+      return mockRes({ success: true, data: MOCK_SERVICES });
+    }
+
+    if (url.includes('/marketing/leads/check-duplicate')) {
       if (duplicateMobile) {
         return mockRes({ duplicate: true, leadId: 'LD-0001' });
       }
@@ -454,7 +474,7 @@ describe('CreateLeadPage — TASK-2.1.1 (Successful Creation)', () => {
     expect(screen.getByText('Admin User')).toBeInTheDocument();
   });
 
-  it('TEST-EP2-LEAD-023: uses offline fallback when API fails', async () => {
+  it('TEST-EP2-LEAD-023: shows error when API fails to create lead', async () => {
     setupMockFetch({ createFails: true });
     renderCreateLead();
     await waitForFormLoad();
@@ -463,7 +483,9 @@ describe('CreateLeadPage — TASK-2.1.1 (Successful Creation)', () => {
     fireEvent.click(screen.getByRole('button', { name: /save lead/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Lead created successfully.')).toBeInTheDocument();
+      expect(screen.getByText('Failed to create lead. Please try again.')).toBeInTheDocument();
     }, { timeout: 5000 });
   });
+
+
 });

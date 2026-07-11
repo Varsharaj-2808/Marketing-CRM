@@ -102,9 +102,10 @@ export default function AuditLogPage() {
     try {
       const res = await fetchAuditLogEntries(params);
       if (res?.success) {
-        setAuditLog(res.data || []);
-        const pagination = res.pagination || {};
-        setTotal(pagination.total_records || res.data?.length || 0);
+        const logData = res.data?.logs || res.data || [];
+        setAuditLog(Array.isArray(logData) ? logData : []);
+        const pagination = res.data?.pagination || res.pagination || {};
+        setTotal(pagination.total_records || pagination.totalRecords || logData.length || 0);
       } else {
         setError('Failed to load audit logs. Please try again later.');
       }
@@ -223,7 +224,7 @@ export default function AuditLogPage() {
       )}
 
       {/* Filters Form */}
-      <div className="flex flex-wrap items-end gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3 mb-4">
         <div>
           <label htmlFor="filter-actor" className="block text-label-xs text-on-surface-variant mb-1 font-semibold">Actor</label>
           <input
@@ -232,7 +233,7 @@ export default function AuditLogPage() {
             value={actor}
             onChange={(e) => setActor(e.target.value)}
             placeholder="Filter by Actor..."
-            className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none w-44"
+            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none lg:w-44"
           />
         </div>
         <div>
@@ -242,7 +243,7 @@ export default function AuditLogPage() {
             id="filter-action-type"
             value={actionType}
             onChange={(e) => setActionType(e.target.value)}
-            className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
           >
             <option value="">All Action Types</option>
             {ACTION_OPTIONS.filter(Boolean).map((opt) => (
@@ -259,7 +260,7 @@ export default function AuditLogPage() {
             value={from}
             onChange={(e) => setFrom(e.target.value)}
             placeholder="YYYY-MM-DD"
-            className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
           />
         </div>
         <div>
@@ -271,7 +272,7 @@ export default function AuditLogPage() {
             value={to}
             onChange={(e) => setTo(e.target.value)}
             placeholder="YYYY-MM-DD"
-            className="bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
           />
         </div>
         <button
@@ -315,15 +316,15 @@ export default function AuditLogPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
-                  <th className="py-2.5 px-3 font-semibold">Seq</th>
+                  <th className="hidden sm:table-cell py-2.5 px-3 font-semibold">Seq</th>
                   <th className="py-2.5 px-3 font-semibold">Timestamp</th>
                   <th className="py-2.5 px-3 font-semibold">Actor</th>
-                  <th className="py-2.5 px-3 font-semibold">Role</th>
+                  <th className="hidden md:table-cell py-2.5 px-3 font-semibold">Role</th>
                   <th className="py-2.5 px-3 font-semibold">Action Type</th>
-                  <th className="py-2.5 px-3 font-semibold">Entity Affected</th>
-                  <th className="py-2.5 px-3 font-semibold">Entity ID</th>
+                  <th className="hidden md:table-cell py-2.5 px-3 font-semibold">Entity Affected</th>
+                  <th className="hidden lg:table-cell py-2.5 px-3 font-semibold">Entity ID</th>
                   <th className="py-2.5 px-3 font-semibold">Result</th>
-                  <th className="py-2.5 px-3 font-semibold">IP Address</th>
+                  <th className="hidden lg:table-cell py-2.5 px-3 font-semibold">IP Address</th>
                   <th className="py-2.5 px-3 font-semibold">Actions/Details</th>
                 </tr>
               </thead>
@@ -334,7 +335,7 @@ export default function AuditLogPage() {
                     className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors cursor-pointer"
                     onClick={() => setSelectedEntry(entry)}
                   >
-                    <td className="py-3 px-3 font-semibold">{entry.seq || '-'}</td>
+                    <td className="hidden sm:table-cell py-3 px-3 font-semibold">{entry.seq || '-'}</td>
                     <td className="py-3 px-3 text-on-surface-variant whitespace-nowrap">
                       {entry.created_at || entry.timestamp || entry.createdAt
                         ? new Date(entry.created_at || entry.timestamp || entry.createdAt).toLocaleString()
@@ -343,16 +344,16 @@ export default function AuditLogPage() {
                     <td className="py-3 px-3 text-on-surface-variant">
                       {entry.actor?.name || entry.performed_by?.name || (typeof entry.actor === 'string' ? entry.actor : '') || entry.user_name || entry.email || entry.user || '-'}
                     </td>
-                    <td className="py-3 px-3 text-on-surface-variant">
+                    <td className="hidden md:table-cell py-3 px-3 text-on-surface-variant">
                       {entry.actor?.role || entry.performed_by?.role || '-'}
                     </td>
                     <td className="py-3 px-3">
                       <span className="font-semibold text-primary">{entry.action_type || entry.action || '-'}</span>
                     </td>
-                    <td className="py-3 px-3 text-on-surface-variant">
+                    <td className="hidden md:table-cell py-3 px-3 text-on-surface-variant">
                       {entry.entity_affected || entry.entity || entry.resource || entry.resource_type || '-'}
                     </td>
-                    <td className="py-3 px-3 text-on-surface-variant font-mono">
+                    <td className="hidden lg:table-cell py-3 px-3 text-on-surface-variant font-mono">
                       {entry.entity_id || entry.entityId || entry.resource_id || entry.resourceId || '-'}
                     </td>
                     <td className="py-3 px-3">
@@ -366,7 +367,7 @@ export default function AuditLogPage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-on-surface-variant font-mono text-label-sm">
+                    <td className="hidden lg:table-cell py-3 px-3 text-on-surface-variant font-mono text-label-sm">
                       {entry.ip_address || entry.ip || '-'}
                     </td>
                     <td className="py-3 px-3">
@@ -394,16 +395,20 @@ export default function AuditLogPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1.5 rounded-lg border border-outline-variant/30 text-label-md disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-high transition-colors"
+                className="px-2 sm:px-3 py-1.5 rounded-lg border border-outline-variant/30 text-label-md disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-high transition-colors flex items-center gap-1"
+                aria-label="Previous page"
               >
-                Previous Page
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                <span className="hidden sm:inline">Previous</span>
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="px-3 py-1.5 rounded-lg border border-outline-variant/30 text-label-md disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-high transition-colors"
+                className="px-2 sm:px-3 py-1.5 rounded-lg border border-outline-variant/30 text-label-md disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-high transition-colors flex items-center gap-1"
+                aria-label="Next page"
               >
-                Next Page
+                <span className="hidden sm:inline">Next</span>
+                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
               </button>
             </div>
           </div>

@@ -77,7 +77,7 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
   const allVisibleSelected = leads.length > 0 && leads.every((l) => selectedIds.has(l.id));
   return (
     <div className="overflow-x-auto rounded-lg border border-outline-variant/40 bg-white/30">
-      <table className="min-w-[1550px] w-full table-fixed">
+      <table className="min-w-[700px] w-full table-auto">
         <thead className="bg-white/55">
           <tr className="border-b border-outline-variant/40">
             {isAdmin && (
@@ -93,17 +93,17 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
             )}
             <th className="w-[100px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Lead ID</th>
             <th className="w-[180px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Company Name</th>
-            <th className="w-[160px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Contact Person</th>
-            <th className="w-[130px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Mobile Number</th>
+            <th className="hidden md:table-cell w-[160px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Contact Person</th>
+            <th className="hidden md:table-cell w-[130px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Mobile Number</th>
             <SortableTableHeader label="Status" sortKey="status" currentSort={sort} onSort={onSort} className="w-[110px]" />
-            <th className="w-[90px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Stage</th>
-            <SortableTableHeader label="Source" sortKey="source" currentSort={sort} onSort={onSort} className="w-[120px]" />
-            <SortableTableHeader label="Category" sortKey="category" currentSort={sort} onSort={onSort} className="w-[130px]" />
+            <th className="hidden lg:table-cell w-[90px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Stage</th>
+            <SortableTableHeader label="Source" sortKey="source" currentSort={sort} onSort={onSort} className="hidden lg:table-cell w-[120px]" />
+            <SortableTableHeader label="Category" sortKey="category" currentSort={sort} onSort={onSort} className="hidden lg:table-cell w-[130px]" />
             <SortableTableHeader label="Priority" sortKey="priority" currentSort={sort} onSort={onSort} className="w-[110px]" />
-            {isAdmin && <th className="w-[150px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Assigned To</th>}
+            {isAdmin && <th className="hidden md:table-cell w-[150px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Assigned To</th>}
             <SortableTableHeader label="Created Date" sortKey="createdAt" currentSort={sort} onSort={onSort} className="w-[130px]" />
-            <th className="w-[165px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Next Follow-up</th>
-            <SortableTableHeader label="Estimated Value" sortKey="estimatedValue" currentSort={sort} onSort={onSort} align="right" className="w-[140px]" />
+            <th className="hidden lg:table-cell w-[165px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Next Follow-up</th>
+            <SortableTableHeader label="Estimated Value" sortKey="estimatedValue" currentSort={sort} onSort={onSort} align="right" className="hidden lg:table-cell w-[140px]" />
           </tr>
         </thead>
         <tbody>
@@ -133,24 +133,24 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
               )}
               <td className="truncate px-3 py-3 text-label-md font-label-md text-primary" title={toDisplayText(lead.leadId, '-')}>{toDisplayText(lead.leadId, '-')}</td>
               <td className="truncate px-3 py-3 text-body-sm text-on-surface" title={toDisplayText(lead.companyName)}>{toDisplayText(lead.companyName, '-')}</td>
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface" title={toDisplayText(lead.contactPerson)}>{toDisplayText(lead.contactPerson, '-')}</td>
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.mobileNumber)}>{toDisplayText(lead.mobileNumber, '-')}</td>
+              <td className="hidden md:table-cell truncate px-3 py-3 text-body-sm text-on-surface" title={toDisplayText(lead.contactPerson)}>{toDisplayText(lead.contactPerson, '-')}</td>
+              <td className="hidden md:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.mobileNumber)}>{toDisplayText(lead.mobileNumber, '-')}</td>
               <td className="px-3 py-3 text-center">
                 <Badge variant={STATUS_VARIANTS[toDisplayText(lead.status)] || 'new'}>{toDisplayText(lead.status, '-')}</Badge>
               </td>
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.stage)}>{toDisplayText(lead.stage, '-')}</td>
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.source)}>{toDisplayText(lead.source, '-')}</td>
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.category)}>{toDisplayText(lead.category, '-')}</td>
+              <td className="hidden lg:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.stage)}>{toDisplayText(lead.stage, '-')}</td>
+              <td className="hidden lg:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.source)}>{toDisplayText(lead.source, '-')}</td>
+              <td className="hidden lg:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.category)}>{toDisplayText(lead.category, '-')}</td>
               <td className="px-3 py-3 text-center">
                 <Badge variant={PRIORITY_VARIANTS[toDisplayText(lead.priority)] || 'new'}>{toDisplayText(lead.priority, '-')}</Badge>
               </td>
               {isAdmin && (
-                <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.assignedToName)}>
+                <td className="hidden md:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.assignedToName)}>
                   {toDisplayText(lead.assignedToName, '-')}
                 </td>
               )}
               <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant whitespace-nowrap" title={formatDate(lead.createdAt)}>{formatDate(lead.createdAt)}</td>
-              <td className="px-3 py-3 text-left text-body-sm whitespace-nowrap">
+              <td className="hidden lg:table-cell px-3 py-3 text-left text-body-sm whitespace-nowrap">
                 {isOverdue ? (
                   <div className="flex flex-col items-start gap-1">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
@@ -165,7 +165,7 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
                   </span>
                 )}
               </td>
-              <td className="truncate px-3 py-3 text-right text-body-sm font-semibold text-on-surface whitespace-nowrap" title={formatCurrency(lead.estimatedValue)}>{formatCurrency(lead.estimatedValue)}</td>
+              <td className="hidden lg:table-cell truncate px-3 py-3 text-right text-body-sm font-semibold text-on-surface whitespace-nowrap" title={formatCurrency(lead.estimatedValue)}>{formatCurrency(lead.estimatedValue)}</td>
             </tr>);
           })}
         </tbody>

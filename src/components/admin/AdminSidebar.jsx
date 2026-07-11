@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { path: '/admin/services', label: 'Services', icon: 'handyman' },
   { path: '/admin/lead-sources', label: 'Lead Sources', icon: 'source' },
   { path: '/admin/audit-logs', label: 'Audit Logs', icon: 'receipt_long' },
-  { path: '/admin/security', label: 'Security Policy', icon: 'security' },
 ];
 
 export default function AdminSidebar() {

@@ -90,7 +90,7 @@ const DEFAULT_LEAD = {
   },
 };
 
-const EMPTY_TIMELINE = { success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } };
+const EMPTY_TIMELINE = { success: true, data: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } };
 
 function buildFetchMock(leadData = DEFAULT_LEAD, timelineRes = EMPTY_TIMELINE, followUpRes = null, statusRes = null) {
   return vi.fn((input) => {
@@ -148,7 +148,7 @@ function makeTimelineEntry(overrides = {}) {
 
 const TIMELINE_WITH_ENTRIES = {
   success: true,
-  body: {
+  data: {
     timeline: [
       makeTimelineEntry({
         id: 'tl-003', followup_type: 'Proposal Discussion', outcome: 'Proposal Requested', proposal_amount: 75000, created_at: '2026-07-06T09:00:00.000Z', notes: 'Discussed the proposal details with the client.',
@@ -1309,7 +1309,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     const longNotes = 'A'.repeat(150);
     const timelineWithLongNotes = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',
@@ -1348,9 +1348,9 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
       const url = String(input);
       if (url.includes('/timeline')) {
         pageCount++;
-        if (pageCount === 1) return mockRes({ success: true, body: { timeline: page1Items, pagination: { page: 1, totalPages: 3, has_more: true } } });
-        if (pageCount === 2) return mockRes({ success: true, body: { timeline: page2Items, pagination: { page: 2, totalPages: 3, has_more: true } } });
-        return mockRes({ success: true, body: { timeline: page3Items, pagination: { page: 3, totalPages: 3, has_more: false } } });
+        if (pageCount === 1) return mockRes({ success: true, data: { timeline: page1Items, pagination: { page: 1, totalPages: 3, has_more: true } } });
+        if (pageCount === 2) return mockRes({ success: true, data: { timeline: page2Items, pagination: { page: 2, totalPages: 3, has_more: true } } });
+        return mockRes({ success: true, data: { timeline: page3Items, pagination: { page: 3, totalPages: 3, has_more: false } } });
       }
       return mockRes(DEFAULT_LEAD);
     });
@@ -1382,7 +1382,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
 
   it('test-ep-4.1.1-f-046: Verify empty timeline shows no follow-up activity message', async () => {
     setUser(marketingUser);
-    const emptyTimeline = { success: true, body: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } };
+    const emptyTimeline = { success: true, data: { timeline: [], pagination: { page: 1, totalPages: 1, has_more: false } } };
     global.fetch = buildFetchMock(DEFAULT_LEAD, emptyTimeline);
     renderLeadDetails('/marketing/leads/lead-100');
 
@@ -1423,7 +1423,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     const sameTimestamp = '2026-07-06T10:00:00.000Z';
     const timelineWithSameTs = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({ id: 'tl-003', followup_type: 'Demo', outcome: 'Decision Pending', created_at: sameTimestamp }),
           makeTimelineEntry({ id: 'tl-002', followup_type: 'WhatsApp', outcome: 'Need More Info', created_at: sameTimestamp }),
@@ -1499,7 +1499,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     setUser(marketingUser);
     const timelineOwn = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',
@@ -1526,7 +1526,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     setUser(marketingUser);
     const timelineOwn = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',
@@ -1564,7 +1564,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     });
     const timelineData = {
       success: true,
-      body: {
+      data: {
         timeline: [timelineEntry],
         pagination: { page: 1, totalPages: 1, has_more: false },
       },
@@ -1577,8 +1577,8 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
       if (url.includes('/timeline')) {
         return mockRes({
           ...timelineData,
-          body: {
-            ...timelineData.body,
+          data: {
+            ...timelineData.data,
             timeline: [{
               ...timelineEntry,
               correction_notes: 'Updated the contact number.',
@@ -1619,7 +1619,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     setUser(marketingUser);
     const timelineOwn = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',
@@ -1650,7 +1650,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     setUser(marketingUser);
     const timelineOwn = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',
@@ -1757,7 +1757,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     const xssPayload = '<script>alert("XSS")</script>';
     const timelineXSS = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',
@@ -1788,7 +1788,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     const sqlPayload = "1; DROP TABLE leads; --";
     const timelineSQL = {
       success: true,
-      body: {
+      data: {
         timeline: [
           makeTimelineEntry({
             id: 'tl-001',

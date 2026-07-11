@@ -24,31 +24,31 @@ const MOCK_CATEGORIES = [
 
 const MOCK_SUBS = {
   'cat-001': [
-    { id: 'sub-001', name: 'Web Development', isActive: true },
-    { id: 'sub-002', name: 'Mobile App Development', isActive: true },
-    { id: 'sub-003', name: 'Cloud Solutions', isActive: true },
-    { id: 'sub-004', name: 'IT Support', isActive: true },
+    { id: 'sub-001', name: 'Web Development', isActive: true, category_id: 'cat-001' },
+    { id: 'sub-002', name: 'Mobile App Development', isActive: true, category_id: 'cat-001' },
+    { id: 'sub-003', name: 'Cloud Solutions', isActive: true, category_id: 'cat-001' },
+    { id: 'sub-004', name: 'IT Support', isActive: true, category_id: 'cat-001' },
   ],
   'cat-002': [
-    { id: 'sub-005', name: 'SEO Services', isActive: true },
-    { id: 'sub-006', name: 'Social Media Management', isActive: true },
-    { id: 'sub-007', name: 'Email Marketing', isActive: true },
-    { id: 'sub-008', name: 'Content Marketing', isActive: true },
+    { id: 'sub-005', name: 'SEO Services', isActive: true, category_id: 'cat-002' },
+    { id: 'sub-006', name: 'Social Media Management', isActive: true, category_id: 'cat-002' },
+    { id: 'sub-007', name: 'Email Marketing', isActive: true, category_id: 'cat-002' },
+    { id: 'sub-008', name: 'Content Marketing', isActive: true, category_id: 'cat-002' },
   ],
   'cat-003': [
-    { id: 'sub-009', name: 'Business Strategy', isActive: true },
-    { id: 'sub-010', name: 'Management Consulting', isActive: true },
-    { id: 'sub-011', name: 'Financial Advisory', isActive: true },
+    { id: 'sub-009', name: 'Business Strategy', isActive: true, category_id: 'cat-003' },
+    { id: 'sub-010', name: 'Management Consulting', isActive: true, category_id: 'cat-003' },
+    { id: 'sub-011', name: 'Financial Advisory', isActive: true, category_id: 'cat-003' },
   ],
   'cat-004': [
-    { id: 'sub-012', name: 'Residential', isActive: true },
-    { id: 'sub-013', name: 'Commercial', isActive: true },
-    { id: 'sub-014', name: 'Industrial', isActive: true },
+    { id: 'sub-012', name: 'Residential', isActive: true, category_id: 'cat-004' },
+    { id: 'sub-013', name: 'Commercial', isActive: true, category_id: 'cat-004' },
+    { id: 'sub-014', name: 'Industrial', isActive: true, category_id: 'cat-004' },
   ],
   'cat-005': [
-    { id: 'sub-015', name: 'Medical Equipment', isActive: true },
-    { id: 'sub-016', name: 'Pharmaceuticals', isActive: true },
-    { id: 'sub-017', name: 'Healthcare Consulting', isActive: true },
+    { id: 'sub-015', name: 'Medical Equipment', isActive: true, category_id: 'cat-005' },
+    { id: 'sub-016', name: 'Pharmaceuticals', isActive: true, category_id: 'cat-005' },
+    { id: 'sub-017', name: 'Healthcare Consulting', isActive: true, category_id: 'cat-005' },
   ],
 };
 
@@ -65,8 +65,8 @@ function setupMockFetch() {
     const url = typeof input === 'string' ? input : input.toString();
     const method = init?.method || 'GET';
 
-    if (url.includes('/admin/categories/') && url.includes('/sub_categories') && method === 'GET') {
-      const categoryId = url.match(/\/admin\/categories\/([^/]+)\/sub_categories/)?.[1];
+    if (url.includes('/admin/subcategories') && method === 'GET') {
+      const categoryId = new URL(url, 'http://localhost').searchParams.get('category_id');
       return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
     }
 
@@ -83,11 +83,11 @@ function setupMockFetch() {
       return mockRes({ success: true, message: 'Category deleted successfully.' });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/in_use')) {
+    if (url.includes('/admin/categories/') && url.includes('/in-use')) {
       return mockRes({ inUse: false, leads: [] });
     }
 
-    if (url.includes('/admin/categories/') && url.includes('/audit_log')) {
+    if (url.includes('/admin/categories/') && url.includes('/audit-log')) {
       return mockRes({ success: true, data: [] });
     }
 
