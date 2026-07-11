@@ -1,50 +1,14 @@
-# Dependencies
 node_modules/
-
-# Environment files
 .env
-.env.local
-.env.*.local
+
+# Generated exports
+exports/
 
 # Logs
-logs/
 *.log
-npm-debug.log*
 
-# Runtime
-pids/
-*.pid
-*.seed
-*.pid.lock
+# Test result artifacts
+*-results.json
+test-results*.json
+all-tests-results*.json
 
-# Coverage
-coverage/
-.nyc_output/
-
-# Build
-dist/
-build/
-
-# Uploads
-backend/src/uploads/*
-!backend/src/uploads/.gitkeep
-
-# OS
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-
-# IDE
-.idea/
-*.iml
-.vscode/settings.json
-
-# Docker
-docker-compose.override.yml
-
-# Database backups
-database/backup/*
-!database/backup/.gitkeep
-# Kimi project memory
-.kimi-memory/

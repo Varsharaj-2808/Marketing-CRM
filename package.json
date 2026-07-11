@@ -1,16 +1,33 @@
 {
-  "name": "marketing-crm",
+  "name": "marketing-crm-backend",
   "version": "1.0.0",
-  "private": true,
-  "description": "Marketing CRM - Documentation sync from Jira",
+  "description": "Marketing CRM Backend API (Supabase)",
+  "main": "server.js",
   "scripts": {
-    "jira:sync": "node scripts/jira-sync.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "lint": "eslint src/"
   },
   "dependencies": {
-    "axios": "^1.7.0",
-    "dotenv": "^16.4.0"
+    "@supabase/supabase-js": "^2.110.0",
+    "algoliasearch": "^5.55.1",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.3",
+    "nodemailer": "^9.0.1",
+    "pdfkit": "^0.19.1",
+    "pg": "^8.22.0",
+    "xlsx": "^0.18.5"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }
