@@ -13,6 +13,24 @@ const getIpAndAgent = (req) => ({
   userAgent: req.headers['user-agent'] || '',
 });
 
+const addOverdueFlag = (lead) => {
+  if (!lead.next_followup_date) {
+    return { ...lead, is_overdue: false };
+  }
+  const isClosed = lead.stage === 'Won' || lead.stage === 'Lost';
+  if (isClosed) {
+    return { ...lead, is_overdue: false };
+  }
+  const nextDate = new Date(lead.next_followup_date);
+  const today = new Date();
+  
+  const nextDateStr = nextDate.toISOString().slice(0, 10);
+  const todayStr = today.toISOString().slice(0, 10);
+  
+  const isPast = nextDateStr < todayStr;
+  return { ...lead, is_overdue: isPast };
+};
+
 const MOBILE_REGEX = /^\d{10}$/;
 
 exports.createLead = async (req, res, next) => {
@@ -262,15 +280,14 @@ exports.getLeads = async (req, res, next) => {
           });
         }
 
+        const arrayData = hits.map(addOverdueFlag);
         return res.json({
           success: true,
           message: 'Leads fetched successfully',
-          data: {
-            page: parseInt(page) || 1,
-            totalPages: algoliaResult.nbPages,
-            totalCount: algoliaResult.nbHits,
-            data: hits,
-          },
+          data: arrayData,
+          page: parseInt(page) || 1,
+          totalPages: algoliaResult.nbPages,
+          totalCount: algoliaResult.nbHits,
         });
       }
     }
@@ -293,15 +310,14 @@ exports.getLeads = async (req, res, next) => {
       limit: parseInt(limit) || 20,
     });
 
+    const arrayData = result.data.map(addOverdueFlag);
     res.json({
       success: true,
       message: 'Leads fetched successfully',
-      data: {
-        page: result.page,
-        totalPages: result.totalPages,
-        totalCount: result.totalCount,
-        data: result.data,
-      },
+      data: arrayData,
+      page: result.page,
+      totalPages: result.totalPages,
+      totalCount: result.totalCount,
     });
   } catch (error) {
     next(error);

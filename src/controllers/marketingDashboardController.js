@@ -1,4 +1,4 @@
-﻿/**
+/**
  * marketingDashboardController.js
  * STORY-6.2.1 ΓÇö Marketing Executive Dashboard
  * All endpoints are scoped server-side to req.user.id (JWT).
@@ -156,6 +156,7 @@ exports.getCombinedDashboard = async (req, res, next) => {
            COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
            COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
            COUNT(*) FILTER (WHERE stage = 'Lost') AS lost_leads,
+           COUNT(*) FILTER (WHERE DATE(next_followup_date) = CURRENT_DATE AND stage NOT IN ('Won', 'Lost')) AS my_followups_today,
            COALESCE(SUM(estimated_value), 0) AS total_estimated_value
          FROM leads WHERE ${filterClause}`,
         filterValues
@@ -297,14 +298,12 @@ exports.getTodayFollowups = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Today's follow-ups retrieved successfully",
-      data: {
-        followups: rows,
-        applied_filters: {
-          assigned_to: isAdmin && assignedTo ? assignedTo : 'current_user',
-          next_followup_date: 'today',
-        },
-        pagination: { page, total_pages, total_records },
+      data: rows,
+      applied_filters: {
+        assigned_to: isAdmin && assignedTo ? assignedTo : 'current_user',
+        next_followup_date: 'today',
       },
+      pagination: { page, total_pages, total_records },
     });
   } catch (error) {
     next(error);

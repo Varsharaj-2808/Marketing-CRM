@@ -1,4 +1,4 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 
 const VALID_FOLLOWUP_TYPES = ['Call', 'WhatsApp', 'Email', 'Online Meeting', 'Client Meeting', 'Demo', 'Proposal Discussion'];
 const VALID_OUTCOMES = ['Interested', 'Need More Info', 'Proposal Requested', 'Budget Discussion', 'Decision Pending', 'Not Interested'];
@@ -43,9 +43,12 @@ const Followup = {
 
   async findById(id) {
     const result = await query(
-      `SELECT f.*, u.name as created_by_name, u.id as created_by_id
+      `SELECT f.*, 
+              u.name as created_by_name, u.id as created_by_id,
+              uc.name as correction_by_name, uc.id as correction_by_id
        FROM followups f
        LEFT JOIN users u ON f.created_by = u.id
+       LEFT JOIN users uc ON f.correction_by = uc.id
        WHERE f.id = $1`,
       [id]
     );
@@ -54,9 +57,12 @@ const Followup = {
 
   async findByLeadId(leadId) {
     const result = await query(
-      `SELECT f.*, u.name as created_by_name, u.id as created_by_id
+      `SELECT f.*, 
+              u.name as created_by_name, u.id as created_by_id,
+              uc.name as correction_by_name, uc.id as correction_by_id
        FROM followups f
        LEFT JOIN users u ON f.created_by = u.id
+       LEFT JOIN users uc ON f.correction_by = uc.id
        WHERE f.lead_id = $1
        ORDER BY f.created_at DESC`,
       [leadId]
@@ -91,7 +97,10 @@ const Followup = {
       },
       created_at: followup.created_at,
       correction_notes: followup.correction_notes || null,
-      correction_by: followup.correction_by || null,
+      correction_by: followup.correction_by_id ? {
+        id: followup.correction_by_id,
+        name: followup.correction_by_name || null,
+      } : (followup.correction_by ? { id: followup.correction_by } : null),
       correction_at: followup.correction_at || null,
     };
   },

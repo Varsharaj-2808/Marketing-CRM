@@ -1,4 +1,4 @@
-﻿const { query, getClient } = require('../config/db');
+const { query, getClient } = require('../config/db');
 const { sendDailyReminderEmail, sendEmail } = require('../utils/emailService');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
@@ -1230,25 +1230,29 @@ exports.getAtRiskLeads = async (req, res, next) => {
       thresholdValues
     );
 
+    const leads = leadsResult.rows.map(row => ({
+      id: row.id,
+      lead_id: row.lead_id,
+      company_name: row.company_name,
+      assigned_to: row.assigned_to,
+      days_overdue: row.days_overdue,
+    }));
+
+    const breakdown = breakdownResult.rows.map(row => ({
+      user_id: row.user_id,
+      user_name: row.user_name,
+      at_risk_count: row.at_risk_count,
+      oldest_overdue_days: row.oldest_overdue_days,
+    }));
+
     return res.json({
       success: true,
       message: 'At-risk leads fetched successfully',
-      data: {
-        total_at_risk: leadsResult.rows.length,
-        breakdown: breakdownResult.rows.map(row => ({
-          user_id: row.user_id,
-          user_name: row.user_name,
-          at_risk_count: row.at_risk_count,
-          oldest_overdue_days: row.oldest_overdue_days,
-        })),
-        leads: leadsResult.rows.map(row => ({
-          id: row.id,
-          lead_id: row.lead_id,
-          company_name: row.company_name,
-          assigned_to: row.assigned_to,
-          days_overdue: row.days_overdue,
-        })),
-      },
+      data: leads,
+      total_at_risk: leads.length,
+      breakdown: breakdown,
+      // For backward compatibility:
+      leads: leads,
     });
   } catch (error) {
     next(error);
@@ -1269,7 +1273,7 @@ exports.sendDailyReminders = async (req, res, next) => {
     const { date } = req.body;
 
     if (!date || !YYYYMMDD.test(date) || isNaN(new Date(date).getTime())) {
-      return res.status(400).json(wrapError('Invalid date format. Use YYYY-MM-DD'));
+      return res.status(400).json({ success: false, message: 'Validation failed' });
     }
 
     // Find active leads due on date that are NOT yet notified today (idempotency)
@@ -1292,7 +1296,13 @@ exports.sendDailyReminders = async (req, res, next) => {
     const due = leadsResult.rows;
 
     if (due.length === 0) {
-      return res.json(wrapSuccess('Daily reminders processed successfully', { reminders_sent: 0, breakdown: [] }));
+      return res.json({
+        success: true,
+        message: 'Daily reminders processed successfully',
+        reminders_sent: 0,
+        breakdown: [],
+        data: { reminders_sent: 0, breakdown: [] }
+      });
     }
 
     const map = {};
@@ -1319,7 +1329,13 @@ exports.sendDailyReminders = async (req, res, next) => {
       map[lead.user_id].leads_reminded += 1;
     }
 
-    return res.json(wrapSuccess('Daily reminders processed successfully', { reminders_sent: due.length, breakdown: Object.values(map) }));
+    return res.json({
+      success: true,
+      message: 'Daily reminders processed successfully',
+      reminders_sent: due.length,
+      breakdown: Object.values(map),
+      data: { reminders_sent: due.length, breakdown: Object.values(map) }
+    });
   } catch (error) {
     next(error);
   }
