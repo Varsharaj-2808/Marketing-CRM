@@ -16,7 +16,6 @@ export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
             <th className="py-3.5 px-6 font-semibold">Employee Name</th>
             <th className="py-3.5 px-6 font-semibold">Email</th>
             <th className="py-3.5 px-6 font-semibold">Mobile</th>
-            <th className="py-3.5 px-6 font-semibold">Department</th>
             <th className="py-3.5 px-6 font-semibold">Role</th>
             <th className="py-3.5 px-6 font-semibold">Status</th>
             <th className="py-3.5 px-6 font-semibold">Actions</th>
@@ -35,7 +34,6 @@ export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
                 <td className="py-4 px-6 font-semibold text-slate-900">{toDisplayText(user.employee_name, '-')}</td>
                 <td className="py-4 px-6 text-slate-650">{toDisplayText(user.email, '-')}</td>
                 <td className="py-4 px-6 text-slate-500">{toDisplayText(user.mobile, '-')}</td>
-                <td className="py-4 px-6 text-slate-650 font-medium">{toDisplayText(user.department, '-')}</td>
                 <td className="py-4 px-6">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                     isAdmin ? 'bg-primary/5 text-primary border-primary/10' : 'bg-indigo-50 text-indigo-700 border-indigo-150'
