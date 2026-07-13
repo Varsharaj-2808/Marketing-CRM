@@ -601,7 +601,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     await screen.findByRole('heading', { name: /Audit Logs/i });
 
     const actionSelect = screen.getByLabelText('Action');
-    fireEvent.change(actionSelect, { target: { value: 'lead.status_changed' } });
+    fireEvent.change(actionSelect, { target: { value: 'lead.stage_changed' } });
 
     const fromInput = screen.getByLabelText('From');
     fireEvent.change(fromInput, { target: { value: '2026-06-01' } });
@@ -620,7 +620,7 @@ describe('LeadFieldHistory - STORY-5.1.1', () => {
     const lastCallUrl = fetchSpy.mock.calls
       .filter(c => String(c[0]).includes('/audit-log?'))
       .pop()[0];
-    expect(String(lastCallUrl)).toContain('action_type=lead.status_changed');
+    expect(String(lastCallUrl)).toContain('action_type=lead.stage_changed');
     expect(String(lastCallUrl)).toContain('from=2026-06-01');
     expect(String(lastCallUrl)).toContain('to=2026-06-26');
   });

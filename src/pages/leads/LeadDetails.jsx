@@ -41,22 +41,17 @@ const SUBMIT_TIMEOUT_MS = 10000;
 function normalizeLeadDetail(leadData) {
   if (!leadData) return null;
   const progressStages = ['New', 'Contacted', 'Qualified', 'Meeting', 'Proposal', 'Negotiation', 'Closed', 'New Lead'];
-  let status = leadData.status || '';
+  let status = leadData.lead_status || leadData.status || '';
   let stage = leadData.stage || leadData.leadStage || leadData.lead_stage || '';
   
   if (progressStages.includes(status) && !stage) {
     stage = status;
-    status = '';
   }
   if (status === 'New Lead') {
     stage = 'New';
-    status = '';
   }
   if (stage === 'New Lead') {
     stage = 'New';
-  }
-  if (status !== 'Won' && status !== 'Lost') {
-    status = '';
   }
   
   return {
@@ -65,6 +60,8 @@ function normalizeLeadDetail(leadData) {
     stage: stage || 'New',
     servicesInterested: leadData.servicesInterested || leadData.services_interested || [],
     assignedTo: leadData.assignedTo ?? leadData.assigned_to ?? null,
+    categoryName: leadData.category_name || leadData.category || null,
+    subCategoryName: leadData.sub_category_name || leadData.subCategory || leadData.sub_category || null,
   };
 }
 
@@ -116,6 +113,30 @@ export default function LeadDetails() {
     setToastType(type);
     setToastShow(true);
   }
+
+  const [categoriesMap, setCategoriesMap] = useState({});
+  const [usersMap, setUsersMap] = useState({});
+
+  useEffect(() => {
+    import('../../services/leadService').then(({ fetchCategories, fetchUsers }) => {
+      fetchCategories().then(res => {
+        const list = res?.data?.categories || res?.data || [];
+        if (Array.isArray(list)) {
+          const map = {};
+          list.forEach(c => map[c.id] = c.category_name || c.name);
+          setCategoriesMap(map);
+        }
+      }).catch(() => {});
+      fetchUsers().then(res => {
+        const list = res?.data?.users || res?.data || [];
+        if (Array.isArray(list)) {
+          const map = {};
+          list.forEach(u => map[u.id] = u);
+          setUsersMap(map);
+        }
+      }).catch(() => {});
+    });
+  }, []);
 
   function loadLeadData(fromMutation) {
     setLoading(true);
@@ -446,7 +467,7 @@ export default function LeadDetails() {
     setFollowUpServerError('');
   }
 
-  const leadStatus = getLeadField(lead, ['status'], 'New');
+  const leadStatus = getLeadField(lead, ['lead_status', 'status'], 'New');
   const leadPriority = getLeadField(lead, ['priority'], '-');
   const leadStage = getLeadField(lead, ['stage'], 'New');
   const servicesInterested = Array.isArray(lead?.servicesInterested)
@@ -455,10 +476,35 @@ export default function LeadDetails() {
       ? lead.services_interested
       : [];
 
-  const assignedToDisplay = toDisplayText(lead?.assignedTo ?? lead?.assigned_to, 'Unassigned');
+  const assignedToName = getLeadField(lead, ['assigned_to_name', 'assignedToName'], '');
+  const assignedEmployeeId = getLeadField(lead, ['assigned_employee_id', 'assignedEmployeeId'], '');
+  let assignedToDisplay = 'Unassigned';
+  if (assignedEmployeeId && assignedToName) {
+    assignedToDisplay = `${assignedEmployeeId} (${assignedToName})`;
+  } else if (assignedEmployeeId) {
+    assignedToDisplay = assignedEmployeeId;
+  } else if (assignedToName) {
+    assignedToDisplay = assignedToName;
+  } else if (lead?.assignedTo && typeof lead.assignedTo === 'object') {
+    assignedToDisplay = lead.assignedTo.name || lead.assignedTo.employee_name || 'Unassigned';
+  } else if (lead?.assigned_to && typeof lead.assigned_to === 'object') {
+    assignedToDisplay = lead.assigned_to.name || lead.assigned_to.employee_name || 'Unassigned';
+  } else if (typeof lead?.assignedTo === 'string') {
+    const user = usersMap[lead.assignedTo];
+    if (user && user.employee_id) assignedToDisplay = `${user.employee_id} (${user.name})`;
+    else if (user) assignedToDisplay = user.name;
+    else assignedToDisplay = lead.assignedTo;
+  } else if (typeof lead?.assigned_to === 'string') {
+    const user = usersMap[lead.assigned_to];
+    if (user && user.employee_id) assignedToDisplay = `${user.employee_id} (${user.name})`;
+    else if (user) assignedToDisplay = user.name;
+    else assignedToDisplay = lead.assigned_to;
+  }
   const assignedAtVal = lead?.assignedAt || lead?.assigned_at || lead?.updatedAt || lead?.updated_at || '';
 
   const isClosedLead = lead?.status === 'Won' || lead?.status === 'Lost' || lead?.stage === 'Closed' || lead?.stage === 'Won' || lead?.stage === 'Lost';
+  
+  const resolvedCategory = categoriesMap[getLeadField(lead, ['categoryName', 'category_name', 'category', 'businessCategory'], '')] || getLeadField(lead, ['categoryName', 'category_name', 'category', 'businessCategory'], '-');
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -519,7 +565,7 @@ export default function LeadDetails() {
           {isReadOnly && !isLeadOwner() && lead?.assignedTo && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <p className="font-label-sm text-label-sm text-amber-800">
-                Read-only access: This lead is assigned to {toDisplayText(lead.assignedTo, 'another user')}.
+                Read-only access: This lead is assigned to {getLeadField(lead, ['assigned_to_name', 'assignedToName', 'assignedTo', 'assigned_to'], 'another user')}.
               </p>
             </div>
           )}
@@ -527,7 +573,7 @@ export default function LeadDetails() {
           {!isLeadOwner() && !isAdmin && !isReadOnly && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <p className="font-label-sm text-label-sm text-amber-800">
-                Read-only access: This lead is assigned to {toDisplayText(lead.assignedTo, 'another user')}.
+                Read-only access: This lead is assigned to {getLeadField(lead, ['assigned_to_name', 'assignedToName', 'assignedTo', 'assigned_to'], 'another user')}.
               </p>
             </div>
           )}
@@ -535,7 +581,7 @@ export default function LeadDetails() {
           <div className="mb-6">
             <StageControl
               currentStage={leadStage}
-              currentStatus={getLeadField(lead, ['status'], '')}
+              currentStatus={getLeadField(lead, ['lead_status', 'status'], '')}
               isAdmin={isAdmin}
               isLeadOwner={isLeadOwner()}
               onStageChange={handleStageChange}
@@ -574,6 +620,14 @@ export default function LeadDetails() {
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Lead Source</p>
               <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['source', 'leadSource', 'lead_source'], '-')}</p>
+            </div>
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+              <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Category</p>
+              <p className="font-body-md text-body-md text-on-surface">{resolvedCategory}</p>
+            </div>
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+              <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Sub-Category</p>
+              <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['subCategoryName', 'sub_category_name', 'subCategory', 'businessSubCategory'], '-')}</p>
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Priority</p>
@@ -719,6 +773,29 @@ export default function LeadDetails() {
                 leadId={leadId}
                 isAdminRoute={isAdminRoute}
                 visible={activeTab === 'history'}
+                valueResolvers={{
+                  category: (val) => {
+                    if (!val) return null;
+                    const id = String(val);
+                    return lead?.category_name || lead?.categoryName || (lead?.category === id ? lead?.category : null) || id;
+                  },
+                  sub_category: (val) => {
+                    if (!val) return null;
+                    const id = String(val);
+                    return lead?.sub_category_name || lead?.subCategoryName || (lead?.sub_category === id ? lead?.sub_category : null) || id;
+                  },
+                  assigned_to: (val) => {
+                    if (!val) return null;
+                    const id = String(val);
+                    const name = lead?.assigned_to_name || (lead?.assignedTo === id ? 'Current User' : null) || id;
+                    const empId = lead?.assigned_employee_id || lead?.assignedEmployeeId || '';
+                    if (empId && name && name !== id && name !== 'Current User') {
+                      return `${empId} (${name})`;
+                    }
+                    if (empId) return empId;
+                    return name;
+                  },
+                }}
               />
             </div>
           </div>
@@ -752,7 +829,7 @@ export default function LeadDetails() {
         onClose={() => setReopenModalOpen(false)}
         onConfirm={handleReopenConfirm}
         loading={stageLoading}
-        closedStage={getLeadField(lead, ['status'], 'Closed')}
+        closedStage={getLeadField(lead, ['lead_status', 'status'], 'Closed')}
       />
 
       <FollowUpModal

@@ -29,11 +29,31 @@ function filterUsers(list, params) {
 
 export const userService = {
   async getUsers(params = {}) {
+    const apiParams = {};
+    if (params.search) apiParams.search = params.search;
+    if (params.role && params.role !== 'All') apiParams.role = params.role;
+    if (params.status && params.status !== 'All') apiParams.status = params.status;
+    if (params.department && params.department !== 'All') apiParams.department = params.department;
+    if (params.page) apiParams.page = params.page;
+    if (params.pageSize) apiParams.limit = params.pageSize;
+
+    const hasApiParams = Object.keys(apiParams).length > 0;
+
+    if (hasApiParams) {
+      const res = await apiClient('/admin/users', { params: apiParams });
+      const payload = res?.data || res || {};
+      const list = Array.isArray(payload) ? payload : (payload.users && Array.isArray(payload.users) ? payload.users : (payload.data && Array.isArray(payload.data) ? payload.data : []));
+      const normalized = list.map(normalizeUser);
+      const pagination = payload.pagination 
+        ? { ...payload.pagination, total: payload.pagination.totalRecords || payload.pagination.total }
+        : { page: params.page || 1, total: res?.data?.pagination?.totalRecords || normalized.length, totalPages: res?.data?.pagination?.totalPages || 1 };
+      return { success: true, data: normalized, pagination };
+    }
+
     const res = await apiClient('/admin/users');
     const list = Array.isArray(res.data) ? res.data : (res.data.data && Array.isArray(res.data.data) ? res.data.data : []);
     const normalized = list.map(normalizeUser);
-    const filtered = filterUsers(normalized, params);
-    const { data, pagination } = paginate(filtered, params);
+    const { data, pagination } = paginate(normalized, params);
     return { success: true, data, pagination };
   },
 

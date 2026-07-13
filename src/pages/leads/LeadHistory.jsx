@@ -28,10 +28,17 @@ function formatDate(dateStr) {
 
 function getTimelineMeta(action) {
   const lower = (action || '').toLowerCase();
-  if (lower.includes('created')) return { icon: 'add_circle', bg: 'bg-green-500/10', color: 'text-green-600' };
-  if (lower.includes('status') || lower.includes('changed')) return { icon: 'sync', bg: 'bg-amber-500/10', color: 'text-amber-600' };
-  if (lower.includes('note') || lower.includes('comment')) return { icon: 'note', bg: 'bg-blue-500/10', color: 'text-blue-600' };
-  if (lower.includes('assign')) return { icon: 'assignment', bg: 'bg-purple-500/10', color: 'text-purple-600' };
+  if (lower.includes('created') || lower.includes('lead_created')) return { icon: 'add_circle', bg: 'bg-green-500/10', color: 'text-green-600' };
+  if (lower.includes('assigned') || lower.includes('assigned_to') || lower.includes('reassigned')) return { icon: 'assignment_ind', bg: 'bg-purple-500/10', color: 'text-purple-600' };
+  if (lower.includes('stage')) return { icon: 'linear_scale', bg: 'bg-amber-500/10', color: 'text-amber-600' };
+  if (lower.includes('status') || lower.includes('won') || lower.includes('lost')) return { icon: 'flag', bg: 'bg-orange-500/10', color: 'text-orange-600' };
+  if (lower.includes('follow') || lower.includes('call') || lower.includes('meeting') || lower.includes('whatsapp') || lower.includes('email')) return { icon: 'phone_in_talk', bg: 'bg-blue-500/10', color: 'text-blue-600' };
+  if (lower.includes('note') || lower.includes('comment') || lower.includes('remark')) return { icon: 'sticky_note_2', bg: 'bg-cyan-500/10', color: 'text-cyan-600' };
+  if (lower.includes('priority')) return { icon: 'priority_high', bg: 'bg-red-500/10', color: 'text-red-600' };
+  if (lower.includes('category')) return { icon: 'category', bg: 'bg-teal-500/10', color: 'text-teal-600' };
+  if (lower.includes('source')) return { icon: 'source', bg: 'bg-indigo-500/10', color: 'text-indigo-600' };
+  if (lower.includes('updated') || lower.includes('changed')) return { icon: 'edit', bg: 'bg-amber-500/10', color: 'text-amber-600' };
+  if (lower.includes('deleted') || lower.includes('removed')) return { icon: 'delete', bg: 'bg-red-500/10', color: 'text-red-600' };
   return { icon: 'history', bg: 'bg-primary/5', color: 'text-primary' };
 }
 
@@ -61,18 +68,27 @@ export default function LeadHistory() {
         setLead(leadData);
 
         const historyRes = await fetchLeadHistory(leadId);
-        const historyData = historyRes?.data || [];
+        const rawHistory = historyRes?.data;
+        let historyData = [];
+        if (Array.isArray(rawHistory)) {
+          historyData = rawHistory;
+        } else if (Array.isArray(rawHistory?.data)) {
+          historyData = rawHistory.data;
+        } else if (Array.isArray(historyRes?.data?.data)) {
+          historyData = historyRes.data.data;
+        }
         if (historyData.length > 0) {
           setTimeline(historyData);
-        } else if (leadData?.createdAt) {
+        } else if (leadData?.createdAt || leadData?.created_at) {
+          const createdDate = leadData.createdAt || leadData.created_at;
           const userName = typeof leadData.createdBy === 'object' ? leadData.createdBy?.name : leadData.createdBy;
           setTimeline([{
             action: 'Lead Created',
             message: 'Lead Created',
             user: userName || '',
             createdBy: leadData.createdBy,
-            createdAt: leadData.createdAt,
-            timestamp: leadData.createdAt,
+            createdAt: createdDate,
+            timestamp: createdDate,
           }]);
         }
       } catch {
@@ -95,7 +111,7 @@ export default function LeadHistory() {
   });
   const visibleTimeline = sortedTimeline.slice(0, visibleCount);
   const hasMore = visibleCount < sortedTimeline.length;
-  const leadStatus = getLeadField(lead, ['status'], '');
+  const leadStatus = getLeadField(lead, ['lead_status', 'status'], '');
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -137,9 +153,12 @@ export default function LeadHistory() {
           {visibleTimeline.length > 0 ? (
             <div className="space-y-3">
               {visibleTimeline.map((entry, idx) => {
-                const entryAction = toDisplayText(entry.action || entry.message || entry.description, 'Lead Updated');
-                const entryUser = toDisplayText(entry.user || entry.createdBy, '');
-                const entryTime = toDisplayText(entry.timestamp || entry.createdAt, '');
+                const entryAction = toDisplayText(entry.action || entry.event_type || entry.message || entry.field_name || 'Lead Updated', 'Lead Updated');
+                const entryUser = toDisplayText(entry.user || entry.actor_name || entry.changed_by_name || entry.createdBy, '');
+                const entryTime = toDisplayText(entry.timestamp || entry.created_at || entry.createdAt, '');
+                const summary = entry.change_summary || entry.description || '';
+                const prevVal = entry.previous_stage || entry.old_value || '';
+                const newVal = entry.new_stage || entry.new_value || '';
                 const meta = getTimelineMeta(entryAction);
                 return (
                   <div
@@ -155,6 +174,18 @@ export default function LeadHistory() {
                       <p className="font-body-md text-body-md text-on-surface">
                         {entryAction}
                       </p>
+                      {summary && (
+                        <p className="text-body-sm text-on-surface-variant/80 mt-0.5">
+                          {summary}
+                        </p>
+                      )}
+                      {(prevVal || newVal) && (
+                        <p className="text-label-sm text-on-surface-variant/60 mt-0.5">
+                          {prevVal && <span className="line-through text-red-500/70">{prevVal}</span>}
+                          {prevVal && newVal && <span className="mx-1">&rarr;</span>}
+                          {newVal && <span className="text-green-600/80">{newVal}</span>}
+                        </p>
+                      )}
                       <p className="text-label-sm text-label-sm text-on-surface-variant/70 mt-0.5">
                         {entryUser && (
                           <>By: {entryUser}</>

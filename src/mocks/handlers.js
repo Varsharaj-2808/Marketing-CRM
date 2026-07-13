@@ -98,9 +98,10 @@ function getFilteredLeads(leads, url) {
   const search = url.searchParams.get('search')?.toLowerCase() || '';
   const status = url.searchParams.get('status') || '';
   const stage = url.searchParams.get('stage') || '';
-  const assignedTo = url.searchParams.get('assignedTo') || '';
+  const assignedTo = url.searchParams.get('assignedTo') || url.searchParams.get('assigned_to') || '';
   const category_id = url.searchParams.get('category_id') || '';
   const sub_category_id = url.searchParams.get('sub_category_id') || '';
+  const source = url.searchParams.get('source') || url.searchParams.get('lead_source') || '';
   const quality = url.searchParams.get('quality') || url.searchParams.get('priority') || '';
   const dateFrom = url.searchParams.get('dateFrom') || url.searchParams.get('from') || '';
   const dateTo = url.searchParams.get('dateTo') || url.searchParams.get('to') || '';
@@ -148,13 +149,18 @@ function getFilteredLeads(leads, url) {
     filtered = filtered.filter((l) => l.priority === quality);
   }
 
+  if (source) {
+    filtered = filtered.filter((l) => l.leadSource === source || l.source === source);
+  }
+
   if (dateFrom) {
     const fromTime = new Date(dateFrom).getTime();
     filtered = filtered.filter((l) => l.createdAt && new Date(l.createdAt).getTime() >= fromTime);
   }
 
   if (dateTo) {
-    const toTime = new Date(dateTo).getTime();
+    const toDateStr = dateTo.includes('T') ? dateTo : `${dateTo}T23:59:59.999Z`;
+    const toTime = new Date(toDateStr).getTime();
     filtered = filtered.filter((l) => l.createdAt && new Date(l.createdAt).getTime() <= toTime);
   }
 
@@ -1453,6 +1459,113 @@ export const handlers = [
         { user_id: "me-001", leads_reminded: 1 },
         { user_id: "me-002", leads_reminded: 1 }
       ]
+    });
+  }),
+
+  // Subcategories by category (flat route for leadService.fetchSubCategories)
+  http.get(`${BASE}/subcategories`, ({ request }) => {
+    const url = new URL(request.url);
+    const categoryId = url.searchParams.get('category_id') || '';
+    const status = url.searchParams.get('status') || '';
+    if (!categoryId) {
+      const allSubs = Object.values(subCategoriesStore).flat();
+      const filtered = status === 'Active' ? allSubs.filter(s => s.isActive !== false) : allSubs;
+      return HttpResponse.json({ success: true, data: filtered });
+    }
+    const subs = subCategoriesStore[categoryId] || [];
+    const filtered = status === 'Active' ? subs.filter(s => s.isActive !== false) : subs;
+    return HttpResponse.json({ success: true, data: filtered });
+  }),
+
+  http.get(`${BASE}/subcategories/active`, ({ request }) => {
+    const url = new URL(request.url);
+    const categoryId = url.searchParams.get('category_id') || '';
+    if (!categoryId) {
+      const allSubs = Object.values(subCategoriesStore).flat().filter(s => s.isActive !== false);
+      return HttpResponse.json({ success: true, data: allSubs });
+    }
+    const subs = (subCategoriesStore[categoryId] || []).filter(s => s.isActive !== false);
+    return HttpResponse.json({ success: true, data: subs });
+  }),
+
+  // Global Search endpoint
+  http.get(`${BASE}/search/global`, ({ request }) => {
+    const url = new URL(request.url);
+    const q = (url.searchParams.get('q') || '').toLowerCase().trim();
+    if (!q || q.length < 2) {
+      return HttpResponse.json({ success: true, data: { users: [], leads: [], categories: [], services: [], notifications: [], auditLogs: [], followups: [] } });
+    }
+
+    const matchText = (text) => text && String(text).toLowerCase().includes(q);
+
+    const matchedUsers = usersStore.filter(u =>
+      matchText(u.name) || matchText(u.email) || matchText(u.employee_id) || matchText(u.role)
+    ).map(u => ({
+      id: u.employee_id || u.id,
+      title: u.name,
+      subtitle: u.role,
+      module: 'Users',
+      icon: 'person',
+    }));
+
+    const matchedLeads = mockLeadsStore.filter(l =>
+      matchText(l.leadId) || matchText(l.companyName) || matchText(l.contactPerson) ||
+      matchText(l.email) || matchText(l.mobileNumber) || matchText(l.city) ||
+      matchText(l.leadSource) || matchText(l.priority) || matchText(l.stage) || matchText(l.status)
+    ).map(l => ({
+      id: l.leadId || l.id,
+      title: l.companyName || l.leadId,
+      subtitle: `${l.contactPerson || ''} ${l.leadSource ? '· ' + l.leadSource : ''}`.trim(),
+      module: 'Leads',
+      icon: 'leaderboard',
+    }));
+
+    const matchedCategories = categoriesStore.filter(c =>
+      matchText(c.name) || matchText(c.category_name)
+    ).map(c => ({
+      id: c.id,
+      title: c.category_name || c.name,
+      subtitle: c.isActive !== false ? 'Active' : 'Inactive',
+      module: 'Categories',
+      icon: 'category',
+    }));
+
+    const matchedServices = servicesStore.filter(s =>
+      matchText(s.name)
+    ).map(s => ({
+      id: s.id,
+      title: s.name,
+      subtitle: 'Service',
+      module: 'Services',
+      icon: 'handyman',
+    }));
+
+    const matchedNotifications = [
+      { id: 'notif-001', title: 'Lead Assigned', subtitle: 'Lead LD-2026-00001 has been assigned', module: 'Notifications', icon: 'notifications' },
+      { id: 'notif-002', title: 'Follow-up Reminder', subtitle: 'Follow-up is due today for TechCorp Solutions', module: 'Notifications', icon: 'notifications' },
+    ].filter(n => matchText(n.title) || matchText(n.subtitle));
+
+    const matchedAuditLogs = auditLogs.filter(a =>
+      matchText(a.action) || matchText(a.details) || matchText(a.resource)
+    ).map(a => ({
+      id: a.id,
+      title: a.action?.replace(/_/g, ' '),
+      subtitle: a.details || a.resource,
+      module: 'Audit Logs',
+      icon: 'receipt_long',
+    }));
+
+    return HttpResponse.json({
+      success: true,
+      data: {
+        users: matchedUsers,
+        leads: matchedLeads,
+        categories: matchedCategories,
+        services: matchedServices,
+        notifications: matchedNotifications,
+        auditLogs: matchedAuditLogs,
+        followups: [],
+      },
     });
   }),
 ];

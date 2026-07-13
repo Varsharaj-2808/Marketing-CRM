@@ -65,8 +65,9 @@ function setupMockFetch() {
     const url = typeof input === 'string' ? input : input.toString();
     const method = init?.method || 'GET';
 
-    if (url.includes('/admin/subcategories') && method === 'GET') {
-      const categoryId = new URL(url, 'http://localhost').searchParams.get('category_id');
+    if (url.includes('/admin/categories/') && url.includes('/sub-categories') && method === 'GET') {
+      const catMatch = url.match(/\/admin\/categories\/([^/]+)\/sub-categories/);
+      const categoryId = catMatch ? catMatch[1] : null;
       return mockRes({ success: true, data: MOCK_SUBS[categoryId] || [] });
     }
 

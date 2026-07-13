@@ -5,7 +5,7 @@ const DEFAULT_SAVED_VIEWS = [
   {
     id: 'my-hot-leads',
     name: 'My Hot Leads',
-    filters: { priority: 'High' },
+    filters: { priority: 'Hot' },
     sort: { sortBy: 'createdAt', sortOrder: 'desc' },
     search: '',
   },

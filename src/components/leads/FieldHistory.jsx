@@ -29,11 +29,15 @@ function SystemBadge() {
   );
 }
 
-function TruncatableCell({ value }) {
+function TruncatableCell({ value, fieldName, resolvers }) {
   const [expanded, setExpanded] = useState(false);
   if (value === null || value === undefined) return <span className="text-on-surface-variant/50">—</span>;
-  const strValue = String(value);
-  const { text, isTruncated, fullText } = truncateText(strValue, 100);
+  let displayValue = String(value);
+  if (resolvers && fieldName && resolvers[fieldName]) {
+    const resolved = resolvers[fieldName](value);
+    if (resolved) displayValue = resolved;
+  }
+  const { text, isTruncated, fullText } = truncateText(displayValue, 100);
   return (
     <span>
       {expanded ? fullText : text}
@@ -58,7 +62,7 @@ function determineUniqueFieldNames(history) {
   return Array.from(names).sort();
 }
 
-export default function FieldHistory({ leadId, isAdminRoute, visible = false }) {
+export default function FieldHistory({ leadId, isAdminRoute, visible = false, valueResolvers = {} }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
   const [history, setHistory] = useState([]);
@@ -291,10 +295,10 @@ export default function FieldHistory({ leadId, isAdminRoute, visible = false }) 
                 <tr key={entry.changed_at + entry.field + idx} className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors">
                   <td className="py-3 px-3 font-medium">{toHumanReadableFieldName(entry.field)}</td>
                   <td className="py-3 px-3 text-on-surface-variant max-w-[200px]">
-                    <TruncatableCell value={entry.old_value} />
+                    <TruncatableCell value={entry.old_value} fieldName={entry.field} resolvers={valueResolvers} />
                   </td>
                   <td className="py-3 px-3 text-on-surface-variant max-w-[200px]">
-                    <TruncatableCell value={entry.new_value} />
+                    <TruncatableCell value={entry.new_value} fieldName={entry.field} resolvers={valueResolvers} />
                   </td>
                   <td className="py-3 px-3">
                     {entry.source === 'system' ? (

@@ -1,16 +1,14 @@
-import { useEffect, useState } from 'react';
-import { fetchCategories, fetchSubCategories } from '../../services/leadService';
+import { useEffect, useState, useCallback } from 'react';
+import { fetchCategories, fetchActiveSubCategories, fetchUsers } from '../../services/leadService';
 
 const FILTER_OPTIONS = {
   status: ['Won', 'Lost'],
-  stage: ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Follow-up', 'Negotiation', 'Demo Scheduled', 'Closed'],
-  source: ['Website', 'Referral', 'Social Media', 'Email Campaign', 'Cold Call', 'Event'],
-  priority: ['High', 'Medium', 'Low', 'Hot', 'Warm', 'Cold'],
+  stage: ['New', 'Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Hold', 'Closed'],
+  source: ['Website', 'Referral', 'Social Media', 'Email Campaign', 'Phone Inquiry', 'Walk-in', 'Partner', 'Other'],
+  priority: ['Hot', 'Warm', 'Cold'],
 };
 
-const ORIGINAL_CATEGORIES = ['IT Services', 'Digital Marketing', 'Consulting', 'Real Estate', 'Healthcare'];
-
-function SelectFilter({ id, label, value, options, onChange, disabled, onFocus, onClick }) {
+function SelectFilter({ id, label, value, options, onChange, disabled, onFocus }) {
   return (
     <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
       {label}
@@ -20,7 +18,6 @@ function SelectFilter({ id, label, value, options, onChange, disabled, onFocus, 
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onFocus={onFocus}
-        onClick={onClick}
         disabled={disabled}
         className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -40,43 +37,74 @@ function SelectFilter({ id, label, value, options, onChange, disabled, onFocus, 
 export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
   const [categoriesList, setCategoriesList] = useState([]);
   const [subCategoriesList, setSubCategoriesList] = useState([]);
+  const [usersList, setUsersList] = useState([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false);
 
-  const loadCategoriesLazy = async () => {
+  const loadCategories = useCallback(async () => {
     if (categoriesLoaded) return;
     try {
-      const res = await fetchCategories({ status: 'Active' });
+      const res = await fetchCategories();
       if (res.success) {
-        setCategoriesList(res.data || []);
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setCategoriesList(list);
         setCategoriesLoaded(true);
       }
     } catch (err) {
       console.error('Error fetching categories in filter panel', err);
     }
+  }, [categoriesLoaded]);
+
+  const loadUsers = useCallback(async () => {
+    if (usersLoaded) return;
+    try {
+      const res = await fetchUsers();
+      if (res.success) {
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setUsersList(list);
+        setUsersLoaded(true);
+      }
+    } catch (err) {
+      console.error('Error fetching users in filter panel', err);
+    }
+  }, [usersLoaded]);
+
+  const [categoriesFetched, setCategoriesFetched] = useState(false);
+  const [usersFetched, setUsersFetched] = useState(false);
+
+  const ensureCategories = () => {
+    if (!categoriesFetched) {
+      setCategoriesFetched(true);
+      loadCategories();
+    }
   };
 
-  useEffect(() => {
-    if (filters.category && !categoriesLoaded) {
-      loadCategoriesLazy();
+  const ensureUsers = () => {
+    if (!usersFetched) {
+      setUsersFetched(true);
+      loadUsers();
     }
-  }, [filters.category, categoriesLoaded]);
+  };
 
   useEffect(() => {
     if (!filters.category) {
       setSubCategoriesList([]);
       return;
     }
+    let cancelled = false;
     async function loadSubCategories() {
       try {
-        const res = await fetchSubCategories(filters.category, { status: 'Active' });
-        if (res.success) {
-          setSubCategoriesList(res.data || []);
+        const res = await fetchActiveSubCategories(filters.category);
+        if (!cancelled && res.success) {
+          const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+          setSubCategoriesList(list);
         }
       } catch (err) {
         console.error('Error fetching sub-categories in filter panel', err);
       }
     }
     loadSubCategories();
+    return () => { cancelled = true; };
   }, [filters.category]);
 
   const update = (key, value) => onChange({ ...filters, [key]: value });
@@ -89,17 +117,19 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
     });
   };
 
-  const categoryOptions = [
-    ...ORIGINAL_CATEGORIES.map(cat => ({ value: cat, label: cat })),
-    ...categoriesList.map(cat => ({
-      value: cat.id,
-      label: cat.category_name || cat.name
-    }))
-  ];
+  const categoryOptions = categoriesList.map(cat => ({
+    value: cat.id,
+    label: cat.category_name || cat.name,
+  }));
 
   const subCategoryOptions = subCategoriesList.map(sub => ({
     value: sub.id,
-    label: sub.sub_category_name || sub.name
+    label: sub.sub_category_name || sub.name,
+  }));
+
+  const userOptions = usersList.map(u => ({
+    value: u.employee_id || u.id,
+    label: u.name,
   }));
 
   return (
@@ -107,7 +137,7 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
       <SelectFilter id="status-filter" label="Status" value={filters.status} options={FILTER_OPTIONS.status} onChange={(value) => update('status', value)} />
       <SelectFilter id="stage-filter" label="Stage" value={filters.stage} options={FILTER_OPTIONS.stage} onChange={(value) => update('stage', value)} />
       <SelectFilter id="source-filter" label="Source" value={filters.source} options={FILTER_OPTIONS.source} onChange={(value) => update('source', value)} />
-      <SelectFilter id="category-filter" label="Category" value={filters.category} options={categoryOptions} onChange={handleCategoryChange} onFocus={loadCategoriesLazy} onClick={loadCategoriesLazy} />
+      <SelectFilter id="category-filter" label="Category" value={filters.category} options={categoryOptions} onChange={handleCategoryChange} onFocus={ensureCategories} />
       <SelectFilter
         id="subcategory-filter"
         label="Sub-Category"
@@ -118,16 +148,14 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
       />
       <SelectFilter id="priority-filter" label="Priority" value={filters.priority} options={FILTER_OPTIONS.priority} onChange={(value) => update('priority', value)} />
       {isAdmin && (
-        <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
-          Assigned To
-          <input
-            aria-label="Assigned To"
-            value={filters.assignedTo}
-            onChange={(event) => update('assignedTo', event.target.value)}
-            placeholder="Name or employee ID"
-            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150"
-          />
-        </label>
+        <SelectFilter
+          id="assignedto-filter"
+          label="Assigned To"
+          value={filters.assignedTo}
+          options={userOptions}
+          onChange={(value) => update('assignedTo', value)}
+          onFocus={ensureUsers}
+        />
       )}
       <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
         From Date

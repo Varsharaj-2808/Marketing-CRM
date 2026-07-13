@@ -1,5 +1,6 @@
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
@@ -22,12 +23,22 @@ import ServicesPage from './pages/admin/ServicesPage';
 import LeadSourcesPage from './pages/admin/LeadSourcesPage';
 import ExportHistoryPage from './pages/admin/ExportHistoryPage';
 
+function LeadRedirect() {
+  const { leadId } = useParams();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+  const target = isAdmin ? `/admin/leads/${leadId}` : `/marketing/leads/${leadId}`;
+  return <Navigate to={target} replace />;
+}
+
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app/login" replace /> },
 
   { path: '/app/login', element: <LoginPage /> },
   { path: '/app/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/app/reset-password', element: <ResetPasswordPage /> },
+
+  { path: '/leads/:leadId', element: <LeadRedirect /> },
 
   {
     path: '/marketing',

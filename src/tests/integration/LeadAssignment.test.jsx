@@ -998,11 +998,11 @@ describe('STORY-2.3.1 Lead Owner — Reassignment Updates', () => {
     };
 
     global.fetch = vi.fn((input) => {
-      callCount++;
-      if (callCount === 1) {
-        return mockRes(mockLeadsResponse([myLead, otherLead]));
+      const url = String(input);
+      if (url.includes('search=zz')) {
+        return mockRes(mockLeadsResponse([otherLead]));
       }
-      return mockRes(mockLeadsResponse([otherLead]));
+      return mockRes(mockLeadsResponse([myLead, otherLead]));
     });
     setUser(meUser);
 

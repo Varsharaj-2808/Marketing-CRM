@@ -231,13 +231,19 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteCat = async (cat) => {
-    const inUseRes = await checkCategoryInUse(cat.id);
-    if (inUseRes.inUse) {
-      setErrorDialog({
-        isOpen: true,
-        message: `Cannot delete "${cat.category_name || cat.name}". It is currently in use by ${inUseRes.leads?.length ?? 0} lead(s). Deactivate it instead.`
-      });
-      return;
+    try {
+      const inUseRes = await checkCategoryInUse(cat.id);
+      const inUse = inUseRes?.inUse ?? inUseRes?.data?.in_use;
+      if (inUse) {
+        const leadCount = inUseRes?.leads?.length ?? inUseRes?.data?.lead_count ?? 0;
+        setErrorDialog({
+          isOpen: true,
+          message: `Cannot delete "${cat.category_name || cat.name}". It is currently in use by ${leadCount} lead(s). Deactivate it instead.`
+        });
+        return;
+      }
+    } catch {
+      // If in-use check fails, proceed to let backend enforce
     }
     setConfirmDialog({ isOpen: true, target: cat, type: 'category' });
   };
@@ -331,13 +337,19 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteSub = async (categoryId, sub) => {
-    const inUseRes = await checkSubCategoryInUse(categoryId, sub.id);
-    if (inUseRes.inUse) {
-      setErrorDialog({
-        isOpen: true,
-        message: `Cannot delete "${sub.sub_category_name || sub.name}". It is currently in use by ${inUseRes.leads?.length ?? 0} lead(s). Deactivate it instead.`
-      });
-      return;
+    try {
+      const inUseRes = await checkSubCategoryInUse(categoryId, sub.id);
+      const inUse = inUseRes?.inUse ?? inUseRes?.data?.in_use;
+      if (inUse) {
+        const leadCount = inUseRes?.leads?.length ?? inUseRes?.data?.lead_count ?? 0;
+        setErrorDialog({
+          isOpen: true,
+          message: `Cannot delete "${sub.sub_category_name || sub.name}". It is currently in use by ${leadCount} lead(s). Deactivate it instead.`
+        });
+        return;
+      }
+    } catch {
+      // If in-use check fails (e.g. connection issue), proceed to let backend enforce
     }
     setConfirmDialog({ isOpen: true, target: { ...sub, categoryId }, type: 'subcategory' });
   };

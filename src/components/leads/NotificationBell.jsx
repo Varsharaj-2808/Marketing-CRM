@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchNotifications, markNotificationRead } from '../../services/notificationService';
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../../services/notificationService';
 import { toDisplayText } from '../../utils/leadDisplay';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -18,6 +18,10 @@ function formatDate(dateStr) {
   return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
 }
 
+function isUnread(n) {
+  return n.is_read === false || n.read === false;
+}
+
 export default function NotificationBell() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
@@ -25,7 +29,7 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => isUnread(n)).length;
 
   useEffect(() => {
     fetchNotifications().then((res) => {
@@ -48,7 +52,6 @@ export default function NotificationBell() {
 
   useEffect(() => {
     if (dropdownOpen) {
-      // Focus the first notification button in dropdown
       setTimeout(() => {
         const firstBtn = dropdownRef.current?.querySelector('button.notification-item');
         if (firstBtn) {
@@ -59,19 +62,25 @@ export default function NotificationBell() {
   }, [dropdownOpen]);
 
   async function handleNotificationClick(notification) {
-    const leadId = notification.leadId || notification.lead_id || notification.resourceId || notification.reference_id;
+    const leadId = notification.leadId || notification.lead_id || notification.lead_business_id || notification.resourceId || notification.reference_id;
     if (leadId) {
-      // Let's decide admin path based on window location or notification role
       const isAdminRoute = window.location.pathname.startsWith('/admin') || notification.role === 'Admin';
       navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}`);
     }
-    if (!notification.read) {
+    if (isUnread(notification)) {
       await markNotificationRead(notification.id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true, read: true } : n))
       );
     }
     setDropdownOpen(false);
+  }
+
+  async function handleMarkAllRead() {
+    await markAllNotificationsRead();
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, is_read: true, read: true }))
+    );
   }
 
   const handleKeyDown = (e) => {
@@ -110,8 +119,17 @@ export default function NotificationBell() {
 
       {dropdownOpen && (
         <div className="fixed md:absolute top-16 md:top-auto left-4 right-4 md:left-auto md:right-0 mt-2 w-auto md:w-[340px] lg:w-[380px] max-h-[70vh] md:max-h-[480px] overflow-y-auto overflow-x-hidden rounded-2xl bg-white shadow-xl border border-outline-variant/20 z-50 animate-fade-in-scale">
-          <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-outline-variant/10 px-5 py-3.5 z-10">
+          <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-outline-variant/10 px-5 py-3.5 flex items-center justify-between z-10">
             <h3 className="font-headline-md text-headline-md text-on-surface">Notifications</h3>
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                aria-label="Mark all as read"
+              >
+                Mark all read
+              </button>
+            )}
           </div>
           {notifications.length === 0 ? (
             <div className="px-5 py-10 text-center">
@@ -122,35 +140,36 @@ export default function NotificationBell() {
             <div className="divide-y divide-outline-variant/10">
               {notifications.map((n) => {
                 const actionText = toDisplayText(n.message || n.action || n.description, '');
+                const unread = isUnread(n);
                 return (
                   <button
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
                     className={`w-full text-left px-5 py-4 transition-colors hover:bg-primary/5 notification-item ${
-                      !n.read ? 'bg-primary/[0.03]' : ''
+                      unread ? 'bg-primary/[0.03]' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3.5">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                        !n.read ? 'bg-primary/10' : 'bg-surface-container-high'
+                        unread ? 'bg-primary/10' : 'bg-surface-container-high'
                       }`}>
                         <span className={`material-symbols-outlined text-[18px] ${
-                          !n.read ? 'text-primary' : 'text-on-surface-variant'
+                          unread ? 'text-primary' : 'text-on-surface-variant'
                         }`}>
-                          {n.type === 'assignment' ? 'assignment' : 'notifications'}
+                          {n.notification_type === 'assignment' ? 'assignment' : 'notifications'}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`font-body-md text-body-md leading-relaxed whitespace-normal break-words ${
-                          !n.read ? 'text-on-surface font-semibold' : 'text-on-surface-variant'
+                          unread ? 'text-on-surface font-semibold' : 'text-on-surface-variant'
                         }`}>
                           {actionText || 'Notification'}
                         </p>
                         <p className="font-label-sm text-label-sm text-on-surface-variant/60 mt-1 whitespace-normal">
-                          {formatDate(n.createdAt || n.timestamp)}
+                          {formatDate(n.created_at || n.createdAt || n.timestamp)}
                         </p>
                       </div>
-                      {!n.read && (
+                      {unread && (
                         <span className="w-2.5 h-2.5 rounded-full bg-error shrink-0 mt-2" />
                       )}
                     </div>

@@ -5,6 +5,9 @@ import { toDisplayText } from '../../utils/leadDisplay';
 const STATUS_VARIANTS = {
   Won: 'converted',
   Lost: 'lost',
+  Active: 'qualified',
+  Closed: 'lost',
+  'New Lead': 'new'
 };
 
 const PRIORITY_VARIANTS = {

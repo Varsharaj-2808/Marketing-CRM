@@ -113,7 +113,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       expect(screen.getAllByText('1').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Admin User').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Admin').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('lead.assigned').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Lead Assigned').length).toBeGreaterThan(0);
       expect(screen.getAllByText('lead').length).toBeGreaterThan(0);
       expect(screen.getAllByText('lead-uuid-1').length).toBeGreaterThan(0);
       expect(screen.getAllByText('203.0.113.45').length).toBeGreaterThan(0);

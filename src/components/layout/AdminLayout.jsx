@@ -2,6 +2,7 @@ import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useState } from 'react';
 import NotificationBell from '../leads/NotificationBell';
+import GlobalSearch from '../common/GlobalSearch';
 
 const NAV_ITEMS = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -39,9 +40,8 @@ export default function AdminLayout() {
             <span className="material-symbols-outlined text-on-surface-variant">menu</span>
           </button>
           <span className="font-display-lg text-headline-md tracking-tight text-primary">ApexCRM</span>
-          <div className="hidden md:flex items-center bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant/30">
-            <span className="material-symbols-outlined text-on-surface-variant mr-1.5">search</span>
-            <input className="bg-transparent border-none focus:ring-0 text-label-md w-64 text-on-surface" placeholder="Search..." type="text" />
+          <div className="hidden md:block">
+            <GlobalSearch variant="admin" />
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">

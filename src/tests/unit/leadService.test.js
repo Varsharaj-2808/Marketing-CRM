@@ -93,7 +93,7 @@ describe('leadService', () => {
       const result = await fetchSubCategories('cat-001');
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/admin/subcategories'),
+        expect.stringContaining('/admin/categories/cat-001/sub-categories'),
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: 'Bearer mock-token',

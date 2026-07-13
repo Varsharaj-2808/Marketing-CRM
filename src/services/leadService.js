@@ -18,19 +18,28 @@ export async function fetchUsers() {
   return await apiClient("/admin/users");
 }
 export async function fetchSubCategories(categoryId, params = {}) {
-  const json = await apiClient("/admin/subcategories", {
-    params: { ...params, category_id: categoryId },
-  });
+  if (categoryId) {
+    const json = await apiClient(`/admin/categories/${categoryId}/sub-categories`, {
+      params,
+    });
+    if (json?.data) {
+      const list = Array.isArray(json.data)
+        ? json.data
+        : Array.isArray(json.data?.data)
+          ? json.data.data
+          : [];
+      return { success: true, data: list };
+    }
+    return json;
+  }
+  const json = await apiClient("/subcategories", { params });
   if (json?.data) {
     const list = Array.isArray(json.data)
       ? json.data
       : Array.isArray(json.data?.data)
         ? json.data.data
         : [];
-    const filtered = categoryId
-      ? list.filter((s) => s.category_id === categoryId)
-      : list;
-    return { success: true, data: filtered };
+    return { success: true, data: list };
   }
   return json;
 }

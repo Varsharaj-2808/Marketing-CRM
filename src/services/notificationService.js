@@ -23,29 +23,54 @@ export async function fetchNotifications() {
   try {
     const json = await apiClient('/marketing/notifications');
     if (json?.data) {
-      writeStoredNotifications(json.data);
-      return json;
+      const payload = json.data;
+      if (payload.notifications && Array.isArray(payload.notifications)) {
+        writeStoredNotifications(payload.notifications);
+        return { success: true, data: payload.notifications, unread_count: payload.unread_count || 0 };
+      }
+      if (Array.isArray(payload)) {
+        writeStoredNotifications(payload);
+        return { success: true, data: payload, unread_count: json.unread_count || 0 };
+      }
     }
   } catch {}
 
   const stored = readStoredNotifications();
   if (stored) {
-    return { success: true, data: stored, unread_count: stored.filter(n => !n.read).length };
+    return { success: true, data: stored, unread_count: stored.filter(n => !n.is_read && !n.read).length };
   }
 
   return { success: true, data: [], unread_count: 0 };
 }
 
 export async function markNotificationRead(notificationId) {
+  try {
+    await apiClient(`/notifications/${notificationId}/read`, { method: 'PUT' });
+  } catch {}
+
   const stored = readStoredNotifications();
-  if (!stored) {
-    return { success: true };
+  if (stored) {
+    const next = stored.map((notification) => (
+      notification.id === notificationId ? { ...notification, is_read: true, read: true } : notification
+    ));
+    writeStoredNotifications(next);
+    return { success: true, data: next };
   }
-  const next = stored.map((notification) => (
-    notification.id === notificationId ? { ...notification, read: true } : notification
-  ));
-  writeStoredNotifications(next);
-  return { success: true, data: next };
+  return { success: true };
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    await apiClient('/notifications/read-all', { method: 'PUT' });
+  } catch {}
+
+  const stored = readStoredNotifications();
+  if (stored) {
+    const next = stored.map((n) => ({ ...n, is_read: true, read: true }));
+    writeStoredNotifications(next);
+    return { success: true, data: next };
+  }
+  return { success: true };
 }
 
 export async function addNotification(notification) {

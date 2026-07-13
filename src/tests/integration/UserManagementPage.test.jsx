@@ -362,8 +362,8 @@ describe('UserManagementPage — STORY-1.2.1 Access Control & Authorization', ()
     expect(screen.getByText(/employee name/i)).toBeInTheDocument();
     expect(screen.getByText(/email/i)).toBeInTheDocument();
     expect(screen.getByText(/mobile/i)).toBeInTheDocument();
-    expect(screen.getByText(/role/i)).toBeInTheDocument();
-    expect(screen.getByText(/status/i)).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /role/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /status/i })).toBeInTheDocument();
   });
 
   it('TEST-EP1-USER-051: password column not visible in table', async () => {

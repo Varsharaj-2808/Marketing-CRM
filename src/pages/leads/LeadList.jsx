@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView, exportLeads } from '../../services/leadService';
+import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView, exportLeads, fetchCategories } from '../../services/leadService';
 import EmptyState from '../../components/common/EmptyState';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import SkeletonTable from '../../components/common/SkeletonTable';
@@ -31,23 +31,18 @@ const EMPTY_FILTERS = {
 
 function normalizeLead(lead) {
   const id = getLeadField(lead, ['id', '_id', 'leadId', 'lead_id'], '');
-  let status = getLeadField(lead, ['status'], '');
+  let status = getLeadField(lead, ['lead_status', 'status'], '');
   let stage = getLeadField(lead, ['stage', 'leadStage', 'lead_stage'], '');
 
   const progressStages = ['New', 'Contacted', 'Qualified', 'Meeting', 'Proposal', 'Negotiation', 'Closed', 'New Lead'];
   if (progressStages.includes(status) && !stage) {
     stage = status;
-    status = '';
   }
   if (status === 'New Lead') {
     stage = 'New';
-    status = '';
   }
   if (stage === 'New Lead') {
     stage = 'New';
-  }
-  if (status !== 'Won' && status !== 'Lost') {
-    status = '';
   }
 
   return {
@@ -59,10 +54,26 @@ function normalizeLead(lead) {
     status,
     stage: stage || 'New',
     source: getLeadField(lead, ['source', 'leadSource', 'lead_source'], '-'),
-    category: getLeadField(lead, ['category', 'businessCategory', 'business_category'], '-'),
+    category: getLeadField(lead, ['category_name', 'category', 'businessCategory', 'business_category'], '-'),
+    subCategory: getLeadField(lead, ['sub_category_name', 'subCategory', 'businessSubCategory', 'business_sub_category'], '-'),
     priority: lead.priority || lead.quality || lead.lead_quality || '-',
     assignedTo: lead.assignedTo ?? lead.assigned_to ?? null,
-    assignedToName: toDisplayText(lead.assignedTo ?? lead.assigned_to, 'Unassigned'),
+    assignedToName: (() => {
+      const name = getLeadField(lead, ['assigned_to_name', 'assignedToName'], '');
+      const empId = getLeadField(lead, ['assigned_employee_id', 'assignedEmployeeId'], '');
+      if (empId && name) return `${empId} (${name})`;
+      if (empId) return empId;
+      if (name) return name;
+      if (lead?.assignedTo && typeof lead.assignedTo === 'object') {
+        return lead.assignedTo.name || lead.assignedTo.employee_name || 'Unassigned';
+      }
+      if (lead?.assigned_to && typeof lead.assigned_to === 'object') {
+        return lead.assigned_to.name || lead.assigned_to.employee_name || 'Unassigned';
+      }
+      if (typeof lead?.assignedTo === 'string') return lead.assignedTo;
+      if (typeof lead?.assigned_to === 'string') return lead.assigned_to;
+      return 'Unassigned';
+    })(),
     createdAt: getLeadField(lead, ['createdAt', 'created_at', 'createdDate', 'created_date'], ''),
     estimatedValue: getLeadField(lead, ['estimatedValue', 'estimated_value', 'value'], ''),
     nextFollowupDate: lead.next_followup_date || lead.nextFollowupDate || '',
@@ -104,9 +115,15 @@ function normalizeListResponse(response) {
 function buildQuery({ page, search, filters, sort }) {
   const query = { page, limit: PAGE_SIZE };
   if (search.trim().length >= 2) query.search = search.trim();
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value) query[key] = value;
-  });
+  if (filters.status) query.status = filters.status;
+  if (filters.stage) query.stage = filters.stage;
+  if (filters.source) query.source = filters.source;
+  if (filters.priority) query.priority = filters.priority;
+  if (filters.category) query.category_id = filters.category;
+  if (filters.subCategory) query.sub_category_id = filters.subCategory;
+  if (filters.assignedTo) query.assigned_to = filters.assignedTo;
+  if (filters.dateFrom) query.from = filters.dateFrom;
+  if (filters.dateTo) query.to = filters.dateTo;
   if (sort.sortBy) {
     query.sortBy = sort.sortBy;
     query.sortOrder = sort.sortOrder;
@@ -144,6 +161,18 @@ export default function LeadList() {
   const [exporting, setExporting] = useState(false);
 
   const accessDenied = isAdminRoute && !isAdmin;
+  const [categoriesMap, setCategoriesMap] = useState({});
+
+  useEffect(() => {
+    fetchCategories().then((res) => {
+      const list = res?.data?.categories || res?.data || [];
+      if (Array.isArray(list)) {
+        const map = {};
+        list.forEach((c) => { map[c.id] = c.category_name || c.name; });
+        setCategoriesMap(map);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -350,12 +379,13 @@ export default function LeadList() {
       const q = buildQuery({ page: 1, search: activeSearch, filters, sort });
       const exportParams = {
         format: format || (isAdmin ? 'csv' : 'excel'),
-        category_id: q.category || '',
-        sub_category_id: q.subCategory || '',
+        category_id: q.category_id || '',
+        sub_category_id: q.sub_category_id || '',
         status: q.status || '',
         quality: q.priority || '',
-        from: q.dateFrom || '',
-        to: q.dateTo || '',
+        stage: q.stage || '',
+        from: q.from || '',
+        to: q.to || '',
       };
       
       const blob = await exportLeads(exportParams, isAdmin);
@@ -564,6 +594,7 @@ export default function LeadList() {
           isOpen={exportModalOpen}
           onClose={() => !exporting && setExportModalOpen(false)}
           activeFilters={filters}
+          filterLabels={{ category: categoriesMap }}
           onExport={async (format) => {
             await handleExportFiltered(format);
             setExportModalOpen(false);

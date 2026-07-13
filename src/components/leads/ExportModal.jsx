@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function ExportModal({ isOpen, onClose, activeFilters, onExport, loading }) {
+export default function ExportModal({ isOpen, onClose, activeFilters, filterLabels, onExport, loading }) {
   const [format, setFormat] = useState('csv');
 
   if (!isOpen) return null;
@@ -12,8 +12,9 @@ export default function ExportModal({ isOpen, onClose, activeFilters, onExport, 
     if (activeFilters.stage) summary.push(`Stage: ${activeFilters.stage}`);
     if (activeFilters.source) summary.push(`Source: ${activeFilters.source}`);
     if (activeFilters.category) {
-      // Find category name or use id
-      summary.push(`Category: ${activeFilters.category}`);
+      const labelMap = filterLabels?.category || {};
+      const name = labelMap[activeFilters.category] || activeFilters.category;
+      summary.push(`Category: ${name}`);
     }
     if (activeFilters.priority) summary.push(`Quality: ${activeFilters.priority}`);
     if (activeFilters.dateFrom || activeFilters.dateTo) {
