@@ -1,4 +1,4 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 const Followup = require('../models/Followup');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
@@ -124,7 +124,13 @@ exports.createFollowup = async (req, res, next) => {
       createdBy: req.user.id,
     });
 
-    // ΓöÇΓöÇ Update lead proposal_value if needed ΓöÇΓöÇ
+    // Update lead's next_followup_date (always update it so lead-level queries are correct)
+    await query(
+      `UPDATE leads SET next_followup_date = $1, updated_at = NOW() WHERE id = $2`,
+      [next_followup_date || null, id]
+    );
+
+    // – Update lead proposal_value if needed –
     let leadUpdated = null;
     if (parsedProposalAmount !== null) {
       await query(
@@ -132,17 +138,17 @@ exports.createFollowup = async (req, res, next) => {
         [parsedProposalAmount, id]
       );
       leadUpdated = { proposal_value: parsedProposalAmount };
-
-      // Sync updated lead to Algolia after proposal_value change
-      try {
-        const LeadModel = require('../models/Lead');
-        const algoliaSvc = require('../utils/algoliaService');
-        const updatedLead = await LeadModel.findById(id);
-        if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
-          await algoliaSvc.saveLead(updatedLead).catch(() => {});
-        }
-      } catch (_) { /* non-critical */ }
     }
+
+    // Sync updated lead to Algolia
+    try {
+      const LeadModel = require('../models/Lead');
+      const algoliaSvc = require('../utils/algoliaService');
+      const updatedLead = await LeadModel.findById(id);
+      if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
+        await algoliaSvc.saveLead(updatedLead).catch(() => {});
+      }
+    } catch (_) { /* non-critical */ }
 
     // ΓöÇΓöÇ Lead history entry ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     try {
@@ -339,6 +345,21 @@ exports.getTimeline = async (req, res, next) => {
         description: desc,
         created_at: f.created_at,
         actor: actorName,
+        followup_type: f.followup_type,
+        outcome: f.outcome,
+        notes: f.notes,
+        proposal_amount: f.proposal_amount,
+        stage_at_log: f.stage_at_log,
+        created_by: {
+          id: f.created_by_id || f.created_by,
+          name: f.created_by_name,
+        },
+        correction_notes: f.correction_notes,
+        correction_by: f.correction_by_id ? {
+          id: f.correction_by_id,
+          name: f.correction_by_name,
+        } : (f.correction_by ? { id: f.correction_by } : null),
+        correction_at: f.correction_at,
       };
     });
 
@@ -388,6 +409,15 @@ exports.getTimeline = async (req, res, next) => {
           hasMore: page < totalPages,
           has_more: page < totalPages,
         },
+      },
+      pagination: {
+        page,
+        totalPages,
+        total_pages: totalPages,
+        totalCount,
+        total_count: totalCount,
+        hasMore: page < totalPages,
+        has_more: page < totalPages,
       },
     });
   } catch (error) {

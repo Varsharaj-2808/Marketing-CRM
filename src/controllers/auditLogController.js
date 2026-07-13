@@ -1,4 +1,4 @@
-﻿const AuditLog = require('../models/AuditLog');
+const AuditLog = require('../models/AuditLog');
 const SystemSetting = require('../models/SystemSetting');
 const { query } = require('../config/db');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
@@ -66,7 +66,19 @@ exports.getAuditLogs = async (req, res, next) => {
     }
 
     const filters = {};
-    if (userId) filters.userId = userId;
+    if (userId) {
+      if (UUID_REGEX.test(userId)) {
+        filters.userId = userId;
+      } else {
+        const usersResult = await query('SELECT id FROM users WHERE name ILIKE $1', [`%${userId}%`]);
+        const userIds = usersResult.rows.map(r => r.id);
+        if (userIds.length === 0) {
+          filters.userIds = ['00000000-0000-0000-0000-000000000000'];
+        } else {
+          filters.userIds = userIds;
+        }
+      }
+    }
     if (action) filters.action = action;
     if (entity) filters.resource = entity;
     if (from) filters.from = new Date(from);
@@ -87,7 +99,7 @@ exports.getAuditLogs = async (req, res, next) => {
       totalRecords: result.pagination.totalRecords,
     };
 
-    res.json({ success: true, message: 'Audit logs fetched successfully', data: { logs: data, pagination } });
+    res.json({ success: true, message: 'Audit logs fetched successfully', data: data, pagination });
   } catch (error) {
     next(error);
   }
@@ -142,7 +154,19 @@ exports.exportAuditLogs = async (req, res, next) => {
       to: new Date(to),
       limit: 100000
     };
-    if (actor) filters.userId = actor;
+    if (actor) {
+      if (UUID_REGEX.test(actor)) {
+        filters.userId = actor;
+      } else {
+        const usersResult = await query('SELECT id FROM users WHERE name ILIKE $1', [`%${actor}%`]);
+        const userIds = usersResult.rows.map(r => r.id);
+        if (userIds.length === 0) {
+          filters.userIds = ['00000000-0000-0000-0000-000000000000'];
+        } else {
+          filters.userIds = userIds;
+        }
+      }
+    }
     if (action_type) filters.action = action_type;
     if (entity_affected || entity) filters.resource = entity_affected || entity;
 
@@ -190,11 +214,13 @@ exports.archiveAuditLogs = async (req, res, next) => {
     );
 
     const row = result.rows[0];
-    res.json(wrapSuccess('Archival completed', {
+    res.json({
+      success: true,
+      message: 'Archival completed',
       archived_count: parseInt(row.archived_count),
       retention_months: row.retention_months,
       cutoff_date: row.cutoff_date,
-    }));
+    });
   } catch (error) {
     next(error);
   }

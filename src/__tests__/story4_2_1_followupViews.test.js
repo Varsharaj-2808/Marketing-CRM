@@ -1,4 +1,4 @@
-﻿
+
 
 /**
  * ============================================================
@@ -66,7 +66,7 @@ const mockController = (methods) => {
 jest.mock("../controllers/userController",          () => mockController(["createUser","getUsers","getDeactivatedUsers","reindexUsers","getUser","updateUser","deleteUser"]));
 jest.mock("../controllers/auditLogController",       () => mockController(["getAuditLogs","getAuditLog","exportAuditLogs","archiveAuditLogs"]));
 jest.mock("../controllers/systemSettingController",  () => mockController(["getSettings","updateSetting","getAuditRetention","updateAuditRetention"]));
-jest.mock("../controllers/savedViewController",     () => mockController(["createSavedView","updateSavedView","deleteSavedView"]));
+jest.mock("../controllers/savedViewController",     () => mockController(["getSavedViews","createSavedView","updateSavedView","deleteSavedView"]));
 jest.mock("../controllers/bulkOperationsController", () => mockController(["bulkSelect","bulkAssign","exportLeads"]));
 jest.mock("../controllers/assignController",         () => mockController(["assignLead"]));
 jest.mock("../controllers/categoryController",       () => mockController([

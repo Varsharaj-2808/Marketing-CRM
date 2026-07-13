@@ -1,11 +1,18 @@
-﻿const Notification = require('../models/Notification');
+const Notification = require('../models/Notification');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 exports.getNotifications = async (req, res, next) => {
   try {
     const data = await Notification.findByUser(req.user.id);
     const unreadCount = await Notification.getUnreadCount(req.user.id);
-    res.json({ success: true, message: 'Notifications fetched successfully', data: { notifications: data, unread_count: unreadCount } });
+    res.json({
+      success: true,
+      message: 'Notifications fetched successfully',
+      data: data,
+      unread_count: unreadCount,
+      // For backward compatibility:
+      notifications: data,
+    });
   } catch (error) {
     next(error);
   }
