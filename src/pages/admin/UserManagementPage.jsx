@@ -27,7 +27,7 @@ function UserManagementSkeleton() {
         <Skeleton width="110px" height="36px" rounded />
       </div>
 
-      <div className="glass-card overflow-hidden mb-6">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
         <div className="p-5 border-b border-outline-variant/10">
           <Skeleton width="80px" height="20px" rounded />
         </div>
@@ -144,19 +144,20 @@ export default function UserManagementPage() {
 
   return (
     <div className="mt-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
+      {/* Modern Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">
+          <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1.5">
             <span>Admin</span>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[14px] text-slate-400">chevron_right</span>
             <span className="text-primary font-bold">User Management</span>
           </nav>
-          <h1 className="font-headline-lg text-on-surface">User Management</h1>
-          <p className="font-body-md text-on-surface-variant mt-1">Create, edit, and manage user accounts and permissions.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">User Management</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Create, edit, and manage user accounts and permissions.</p>
         </div>
         <button
           onClick={() => { setEditingUser(null); setShowForm(true); }}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center gap-1.5"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           Add User
@@ -164,32 +165,32 @@ export default function UserManagementPage() {
       </div>
 
       {notification && (
-        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-sm ${
-          notification.type === 'error' ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-700'
+        <div className={`mb-3 px-4 py-3 rounded-lg flex items-center gap-2.5 text-sm font-medium shadow-xs border ${
+          notification.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-850 border-emerald-200'
         }`} style={{ animation: 'slide-up 0.3s ease' }}>
           <span className="material-symbols-outlined text-[18px]">{notification.type === 'error' ? 'error' : 'check_circle'}</span>
-          <span className="font-label-md">{notification.message}</span>
+          <span>{notification.message}</span>
         </div>
       )}
 
-      <div className="glass-card overflow-hidden mb-6">
-        <div className="p-5 border-b border-outline-variant/10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h4 className="font-headline-md text-headline-md text-on-surface">All Users</h4>
-            <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <div className="relative col-span-2 sm:col-span-1 sm:w-56">
-                <span className="material-symbols-outlined text-on-surface-variant/50 text-[18px] absolute left-3 top-1/2 -translate-y-1/2">search</span>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+        <div className="px-6 py-4.5 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h4 className="text-base font-semibold text-slate-900">All Users</h4>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative sm:w-56">
+                <span className="material-symbols-outlined text-slate-400 text-[18px] absolute left-3 top-1/2 -translate-y-1/2">search</span>
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search name, email, ID..."
-                  className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl pl-9 pr-4 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                  className="w-full h-10 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                 />
               </div>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full sm:w-auto bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any</option>
                 <option value="Admin">Admin</option>
@@ -198,7 +199,7 @@ export default function UserManagementPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full sm:w-auto bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any</option>
                 <option value="Active">Active</option>

@@ -34,7 +34,7 @@ export default function SelectField({
           required={required}
           className={`w-full bg-white/50 border rounded-xl py-3 ${
             icon ? 'pl-10' : 'pl-4'
-          } pr-10 font-body-md text-on-surface transition-all focus:outline-none input-focus-effect appearance-none cursor-pointer ${
+          } pr-10 font-body-md text-on-surface transition-all focus:outline-none input-focus-effect appearance-none bg-none cursor-pointer ${
             error ? 'border-error' : 'border-outline-variant'
           } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100/50' : ''}`}
         >

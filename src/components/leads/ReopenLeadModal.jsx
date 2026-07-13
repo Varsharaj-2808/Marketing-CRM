@@ -33,10 +33,11 @@ export default function ReopenLeadModal({ isOpen, onClose, onConfirm, loading, c
         <textarea
           value={reason}
           onChange={(e) => { setReason(e.target.value); setError(''); }}
+          disabled={loading}
           placeholder="Explain why this lead is being reopened"
           rows={4}
           maxLength={500}
-          className="w-full rounded-xl border border-outline-variant bg-white/50 px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+          className="w-full rounded-xl border border-outline-variant bg-white/50 px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none disabled:opacity-50"
           aria-label="Reopen reason"
         />
         {error && (
@@ -59,9 +60,16 @@ export default function ReopenLeadModal({ isOpen, onClose, onConfirm, loading, c
           type="button"
           onClick={handleConfirm}
           disabled={loading}
-          className="rounded-xl bg-primary px-4 py-2.5 text-white font-label-md text-label-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="rounded-xl bg-primary px-4 py-2.5 text-white font-label-md text-label-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
-          {loading ? 'Reopening...' : 'Confirm Reopen'}
+          {loading ? (
+            <>
+              <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+              <span>Reopening...</span>
+            </>
+          ) : (
+            'Confirm Reopen'
+          )}
         </button>
       </div>
     </Modal>

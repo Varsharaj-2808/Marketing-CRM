@@ -110,11 +110,18 @@ export default function SecurityPage() {
     }
   }, [isAuthenticated, navigate]);
 
+  const [saving, setSaving] = useState(false);
+
   if (!isAuthenticated || !user) return null;
 
   const handleSave = () => {
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    setSaving(true);
+    try {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -131,7 +138,20 @@ export default function SecurityPage() {
         </div>
         <div className="flex gap-3">
           <button onClick={() => navigate('/admin/dashboard')} className="px-4 py-2 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors">Cancel</button>
-          <button onClick={handleSave} className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all">Save Changes</button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                <span>Saving...</span>
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </button>
         </div>
       </div>
 

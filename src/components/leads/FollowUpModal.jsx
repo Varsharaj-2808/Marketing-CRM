@@ -451,11 +451,15 @@ export default function FollowUpModal({
                             }`}
                           >
                             <span className="material-symbols-outlined text-[18px] text-outline">{t.icon}</span>
-                            {t.label.split(new RegExp(`(${typeSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part, i) =>
-                              part.toLowerCase() === typeSearch.toLowerCase() && typeSearch ? (
-                                <mark key={i} className="bg-amber-200/60 px-0">{part}</mark>
-                              ) : (
-                                <span key={i}>{part}</span>
+                            {!typeSearch ? (
+                              <span>{t.label}</span>
+                            ) : (
+                              t.label.split(new RegExp(`(${typeSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part, i) =>
+                                part.toLowerCase() === typeSearch.toLowerCase() ? (
+                                  <mark key={i} className="bg-amber-200/60 px-0">{part}</mark>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                )
                               )
                             )}
                           </li>
@@ -536,23 +540,28 @@ export default function FollowUpModal({
                 <label htmlFor="fupDate" className="font-label-md text-label-md text-on-surface-variant ml-1">
                   Next Follow-up Date{nextDateRequired ? ' *' : ''}
                 </label>
-                <div className="relative">
-                  <input
-                    id="fupDate"
-                    type="date"
-                    value={nextDate}
-                    onChange={handleDateChange}
-                    onBlur={() => handleBlur('nextDate')}
-                    disabled={submitting}
-                    min={getTodayString()}
-                    className={`w-full bg-white/50 border rounded-xl py-3 pl-4 pr-10 font-body-md text-body-md text-on-surface transition-all focus:outline-none input-focus-effect ${
-                      errors.nextDate ? 'border-error' : 'border-outline-variant'
-                    } ${submitting ? 'opacity-50 cursor-not-allowed bg-gray-100/50' : ''}`}
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-outline">
-                    <span className="material-symbols-outlined text-[20px]">calendar_today</span>
-                  </div>
-                </div>
+                <input
+                  id="fupDate"
+                  type="date"
+                  value={nextDate}
+                  onChange={handleDateChange}
+                  onBlur={() => handleBlur('nextDate')}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Tab') {
+                      e.preventDefault();
+                    }
+                  }}
+                  onClick={(e) => {
+                    try {
+                      e.target.showPicker();
+                    } catch (err) {}
+                  }}
+                  disabled={submitting}
+                  min={getTodayString()}
+                  className={`w-full bg-white/50 border rounded-xl py-3 px-4 font-body-md text-body-md text-on-surface transition-all focus:outline-none input-focus-effect ${
+                    errors.nextDate ? 'border-error' : 'border-outline-variant'
+                  } ${submitting ? 'opacity-50 cursor-not-allowed bg-gray-100/50' : ''}`}
+                />
                 {errors.nextDate && (
                   <p className="text-label-sm font-label-sm text-error mt-1 ml-1" role="alert">{errors.nextDate}</p>
                 )}

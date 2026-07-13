@@ -152,9 +152,16 @@ export default function SystemSettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving || !!loadError}
-                className="px-5 py-2.5 bg-primary text-white rounded-xl font-label-sm shadow hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:pointer-events-none transition-all"
+                className="px-5 py-2.5 bg-primary text-white rounded-xl font-label-sm shadow hover:bg-primary-hover active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:pointer-events-none transition-all flex items-center justify-center gap-1.5"
               >
-                {saving ? 'Saving...' : 'Save Configuration'}
+                {saving ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  'Save Configuration'
+                )}
               </button>
             </div>
           </div>

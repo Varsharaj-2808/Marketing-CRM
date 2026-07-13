@@ -55,9 +55,16 @@ export default function LostClosureModal({ isOpen, onClose, onConfirm, loading }
           type="button"
           onClick={handleConfirm}
           disabled={loading}
-          className="rounded-xl bg-error px-4 py-2.5 text-white font-label-md text-label-md hover:bg-red-700 transition-colors disabled:opacity-50"
+          className="rounded-xl bg-error px-4 py-2.5 text-white font-label-md text-label-md hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
-          {loading ? 'Closing...' : 'Confirm'}
+          {loading ? (
+            <>
+              <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+              <span>Closing...</span>
+            </>
+          ) : (
+            'Confirm'
+          )}
         </button>
       </div>
     </Modal>

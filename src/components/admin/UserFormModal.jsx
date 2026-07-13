@@ -12,6 +12,7 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
     status: 'Active',
   });
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -38,9 +39,20 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
 
   const validate = () => {
     const errs = {};
-    if (!formData.employee_name.trim()) errs.employee_name = 'Employee Name is required';
-    else if (formData.employee_name.length > 100) errs.employee_name = 'Employee Name exceeds maximum length of 100 characters';
-    if (!formData.mobile.trim()) errs.mobile = 'Mobile Number is required';
+    if (!formData.employee_name.trim()) {
+      errs.employee_name = 'Employee Name is required';
+    } else if (formData.employee_name.length > 100) {
+      errs.employee_name = 'Employee Name exceeds maximum length of 100 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.employee_name)) {
+      errs.employee_name = 'Employee Name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
+    if (!formData.mobile.trim()) {
+      errs.mobile = 'Mobile Number is required';
+    } else if (!/^\d+$/.test(formData.mobile)) {
+      errs.mobile = 'Mobile Number must contain digits only';
+    }
+
     if (!formData.email.trim()) errs.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Invalid email format';
     if (!formData.role) errs.role = 'Role is required';
@@ -54,17 +66,28 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
-      onSave(formData);
+      setSubmitting(true);
+      try {
+        await onSave(formData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let cleanVal = value;
+    if (field === 'mobile') {
+      cleanVal = value.replace(/\D/g, '');
+    }
+    setFormData((prev) => ({ ...prev, [field]: cleanVal }));
     setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
@@ -94,7 +117,8 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
               id="emp-name"
               value={formData.employee_name}
               onChange={(e) => handleChange('employee_name', e.target.value)}
-              className={`w-full bg-surface-container-low/50 border ${errors.employee_name ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none`}
+              disabled={submitting}
+              className={`w-full bg-surface-container-low/50 border ${errors.employee_name ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50`}
               placeholder="Enter employee name"
             />
             {errors.employee_name && <p className="text-label-sm text-error mt-1">{errors.employee_name}</p>}
@@ -105,7 +129,8 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
               id="emp-mobile"
               value={formData.mobile}
               onChange={(e) => handleChange('mobile', e.target.value)}
-              className={`w-full bg-surface-container-low/50 border ${errors.mobile ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none`}
+              disabled={submitting}
+              className={`w-full bg-surface-container-low/50 border ${errors.mobile ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50`}
               placeholder="Enter mobile number"
             />
             {errors.mobile && <p className="text-label-sm text-error mt-1">{errors.mobile}</p>}
@@ -116,7 +141,8 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
               id="emp-email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              className={`w-full bg-surface-container-low/50 border ${errors.email ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none`}
+              disabled={submitting}
+              className={`w-full bg-surface-container-low/50 border ${errors.email ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50`}
               placeholder="Enter email address"
             />
             {errors.email && <p className="text-label-sm text-error mt-1">{errors.email}</p>}
@@ -128,7 +154,8 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
                 id="emp-role"
                 value={formData.role}
                 onChange={(e) => handleChange('role', e.target.value)}
-                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                disabled={submitting}
+                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
               >
                 <option value="">Select role</option>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -141,7 +168,8 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
                 id="emp-status"
                 value={formData.status}
                 onChange={(e) => handleChange('status', e.target.value)}
-                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                disabled={submitting}
+                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
               >
                 <option value="">Select status</option>
                 {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -153,15 +181,24 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3.5 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors"
+              disabled={submitting}
+              className="flex-1 py-3.5 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+              disabled={submitting}
+              className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
-              Save
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                'Save'
+              )}
             </button>
           </div>
         </form>

@@ -51,6 +51,8 @@ export default function SavedViewsPanel({
     setIsModalOpen(true);
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedView(null);
@@ -58,71 +60,85 @@ export default function SavedViewsPanel({
     setError('');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmed = draftName.trim();
     if (!trimmed) {
       setError('View name is required.');
       return;
     }
 
-    if (modalMode === 'edit' && selectedView) {
-      onUpdateView?.(selectedView.id, trimmed);
-    } else {
-      onSaveView?.(trimmed);
+    setSubmitting(true);
+    try {
+      if (modalMode === 'edit' && selectedView) {
+        await onUpdateView?.(selectedView.id, trimmed);
+      } else {
+        await onSaveView?.(trimmed);
+      }
+      closeModal();
+    } catch (err) {
+      setError(err?.message || 'Failed to save view');
+    } finally {
+      setSubmitting(false);
     }
-    closeModal();
   };
 
   const confirmDelete = (viewId) => {
     setDeleteViewId(viewId);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deleteViewId) {
-      onDeleteView?.(deleteViewId);
+      setSubmitting(true);
+      try {
+        await onDeleteView?.(deleteViewId);
+        setDeleteViewId('');
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSubmitting(false);
+      }
     }
-    setDeleteViewId('');
   };
 
   return (
-    <section className="rounded-lg border border-outline-variant/40 bg-white/40 p-3">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-label-lg font-label-lg text-on-surface">Saved Views</h2>
-          <p className="text-label-sm text-on-surface-variant">Fast filters for repeated lead reviews.</p>
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Saved Views</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Fast filters for repeated lead reviews.</p>
         </div>
         <button
           type="button"
           onClick={openCreateModal}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-label-sm font-label-sm text-white transition-colors hover:bg-primary/90"
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-container text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
         >
-          <span className="material-symbols-outlined text-[17px]">bookmark_add</span>
+          <span className="material-symbols-outlined text-[16px]">bookmark_add</span>
           Save Current View
         </button>
       </div>
 
       {views.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-outline-variant bg-white/45 p-4 text-center">
-          <p className="text-body-sm text-on-surface-variant">No saved views yet. Create your first view.</p>
+        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 p-4 text-center">
+          <p className="text-xs text-slate-500">No saved views yet. Create your first view.</p>
           <button
             type="button"
             onClick={openCreateModal}
-            className="mt-3 rounded-lg border border-primary/30 px-3 py-2 text-label-sm font-label-sm text-primary hover:bg-primary/5"
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary/20 text-primary bg-white hover:bg-primary/5 text-xs font-semibold rounded-lg transition-colors"
           >
             Create View
           </button>
         </div>
       ) : (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-3 overflow-x-auto pb-1.5">
           {views.map((view) => {
             const isDefault = DEFAULT_SAVED_VIEWS.some((defaultView) => defaultView.id === view.id);
             return (
               <div
                 key={view.id}
-                className={`flex min-w-[220px] items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors ${
+                className={`flex min-w-[220px] items-center justify-between gap-2 rounded-lg border px-3.5 py-2.5 transition-colors ${
                   activeViewId === view.id
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-outline-variant/40 bg-white/55 text-on-surface hover:bg-white/75'
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-slate-200 bg-slate-50/50 text-slate-800 hover:bg-slate-50'
                 }`}
               >
                 <button
@@ -132,8 +148,8 @@ export default function SavedViewsPanel({
                   title={view.name}
                   aria-label={`Apply ${view.name}`}
                 >
-                  <span className="block truncate text-label-md font-label-md">{view.name}</span>
-                  <span className="block truncate text-label-sm text-on-surface-variant">
+                  <span className="block truncate text-xs font-bold text-slate-900">{view.name}</span>
+                  <span className="block truncate text-[10px] text-slate-500 mt-0.5">
                     {Object.entries(view.filters || {})
                       .filter(([, value]) => value)
                       .map(([key, value]) => `${key}: ${value}`)
@@ -144,21 +160,21 @@ export default function SavedViewsPanel({
                   <button
                     type="button"
                     onClick={() => openEditModal(view)}
-                    className="rounded-md p-1 text-on-surface-variant hover:bg-primary/10 hover:text-primary"
+                    className="rounded-md p-1 text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors"
                     aria-label="Edit view"
                     title={`Edit ${view.name}`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
                   </button>
                   {!isDefault && (
                     <button
                       type="button"
                       onClick={() => confirmDelete(view.id)}
-                      className="rounded-md p-1 text-on-surface-variant hover:bg-error/10 hover:text-error"
+                      className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                       aria-label={`Delete ${view.name}`}
                       title="Delete view"
                     >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
                     </button>
                   )}
                 </div>
@@ -168,9 +184,9 @@ export default function SavedViewsPanel({
         </div>
       )}
 
-      <Modal isOpen={isModalOpen} onClose={closeModal} title={modalMode === 'edit' ? 'Edit Saved View' : 'Save Current View'}>
+      <Modal isOpen={isModalOpen} onClose={() => !submitting && closeModal()} title={modalMode === 'edit' ? 'Edit Saved View' : 'Save Current View'}>
         <div className="space-y-4">
-          <label className="block text-label-md font-label-md text-on-surface-variant" htmlFor="saved-view-name">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider" htmlFor="saved-view-name">
             View name
           </label>
           <input
@@ -181,23 +197,52 @@ export default function SavedViewsPanel({
               setDraftName(event.target.value);
               if (error) setError('');
             }}
+            disabled={submitting}
             placeholder="Enter a view name"
-            className="h-10 w-full rounded-lg border border-outline-variant bg-white/70 px-3 text-body-sm text-on-surface placeholder:text-outline focus:outline-none input-focus-effect"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150 disabled:opacity-50"
           />
-          {error ? <p className="text-label-sm text-error">{error}</p> : null}
+          {error ? <p className="text-xs text-red-600 font-semibold">{error}</p> : null}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={closeModal} className="rounded-lg border border-outline-variant px-3 py-2 text-label-sm font-label-sm text-on-surface">Cancel</button>
-            <button type="button" onClick={handleSubmit} className="rounded-lg bg-primary px-3 py-2 text-label-sm font-label-sm text-white">Save View</button>
+            <button type="button" onClick={closeModal} disabled={submitting} className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">Cancel</button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="rounded-lg bg-primary hover:bg-primary-container px-3.5 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                'Save View'
+              )}
+            </button>
           </div>
         </div>
       </Modal>
 
-      <Modal isOpen={Boolean(deleteViewId)} onClose={() => setDeleteViewId('')} title="Delete Saved View">
+      <Modal isOpen={Boolean(deleteViewId)} onClose={() => !submitting && setDeleteViewId('')} title="Delete Saved View">
         <div className="space-y-4">
-          <p className="text-body-sm text-on-surface-variant">This saved view will be removed from your list.</p>
+          <p className="text-sm text-slate-500">This saved view will be removed from your list.</p>
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setDeleteViewId('')} className="rounded-lg border border-outline-variant px-3 py-2 text-label-sm font-label-sm text-on-surface">Cancel</button>
-            <button type="button" onClick={handleDeleteConfirm} className="rounded-lg bg-error px-3 py-2 text-label-sm font-label-sm text-white">Delete</button>
+            <button type="button" onClick={() => setDeleteViewId('')} disabled={submitting} className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">Cancel</button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={submitting}
+              className="rounded-lg bg-red-600 hover:bg-red-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {submitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                'Delete'
+              )}
+            </button>
           </div>
         </div>
       </Modal>

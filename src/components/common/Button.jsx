@@ -1,4 +1,4 @@
-export default function Button({ children, type = 'submit', disabled, loading, onClick, className = '' }) {
+export default function Button({ children, type = 'submit', disabled, loading, loadingText = 'Authenticating...', onClick, className = '' }) {
   return (
     <button
       type={type}
@@ -9,7 +9,7 @@ export default function Button({ children, type = 'submit', disabled, loading, o
       {loading && (
         <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
       )}
-      <span>{loading ? 'Authenticating...' : children}</span>
+      <span>{loading ? loadingText : children}</span>
       {!loading && (
         <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">
           arrow_forward

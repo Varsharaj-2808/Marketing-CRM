@@ -1,4 +1,4 @@
-export default function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
+export default function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel, loading }) {
   if (!isOpen) return null;
 
   return (
@@ -12,11 +12,18 @@ export default function ConfirmDialog({ isOpen, title, message, onConfirm, onCan
           <p className="text-body-md text-on-surface-variant">{message}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors">
+          <button onClick={onCancel} disabled={loading} className="flex-1 py-3 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-50">
             Cancel
           </button>
-          <button onClick={onConfirm} className="flex-1 py-3 rounded-xl bg-error text-white font-label-md shadow-lg shadow-error/20 hover:shadow-error/40 active:scale-95 transition-all">
-            Confirm
+          <button onClick={onConfirm} disabled={loading} className="flex-1 py-3 rounded-xl bg-error text-white font-label-md shadow-lg shadow-error/20 hover:shadow-error/40 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+            {loading ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                <span>Deleting...</span>
+              </>
+            ) : (
+              'Confirm'
+            )}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function ExportModal({ isOpen, onClose, activeFilters, onExport }) {
+export default function ExportModal({ isOpen, onClose, activeFilters, onExport, loading }) {
   const [format, setFormat] = useState('csv');
 
   if (!isOpen) return null;
@@ -91,16 +91,25 @@ export default function ExportModal({ isOpen, onClose, activeFilters, onExport }
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-outline-variant text-label-md font-label-md text-on-surface hover:bg-surface-container-low transition-colors"
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl border border-outline-variant text-label-md font-label-md text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               data-testid="confirm-export-btn"
-              className="px-5 py-2.5 rounded-xl bg-primary text-label-md font-label-md text-white hover:bg-primary/95 transition-colors shadow-sm"
+              disabled={loading}
+              className="px-5 py-2.5 rounded-xl bg-primary text-label-md font-label-md text-white hover:bg-primary/95 transition-colors shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
-              Export
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                'Export'
+              )}
             </button>
           </div>
         </form>

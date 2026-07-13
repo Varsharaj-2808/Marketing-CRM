@@ -43,6 +43,7 @@ export default function WonClosureModal({ isOpen, onClose, onConfirm, loading })
           onChange={(e) => { setFinalDealValue(e.target.value); setErrors((prev) => ({ ...prev, finalDealValue: '' })); }}
           placeholder="Enter amount"
           error={errors.finalDealValue}
+          disabled={loading}
           required
         />
         <InputField
@@ -52,6 +53,7 @@ export default function WonClosureModal({ isOpen, onClose, onConfirm, loading })
           value={closureDate}
           onChange={(e) => { setClosureDate(e.target.value); setErrors((prev) => ({ ...prev, closureDate: '' })); }}
           error={errors.closureDate}
+          disabled={loading}
           required
         />
       </div>
@@ -68,9 +70,16 @@ export default function WonClosureModal({ isOpen, onClose, onConfirm, loading })
           type="button"
           onClick={handleConfirm}
           disabled={loading}
-          className="rounded-xl bg-emerald-600 px-4 py-2.5 text-white font-label-md text-label-md hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          className="rounded-xl bg-emerald-600 px-4 py-2.5 text-white font-label-md text-label-md hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
-          {loading ? 'Closing...' : 'Confirm'}
+          {loading ? (
+            <>
+              <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+              <span>Closing...</span>
+            </>
+          ) : (
+            'Confirm'
+          )}
         </button>
       </div>
     </Modal>

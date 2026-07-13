@@ -76,37 +76,37 @@ function getDaysOverdue(dateStr) {
 export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, selectedIds, onToggleSelect, onSelectAll }) {
   const allVisibleSelected = leads.length > 0 && leads.every((l) => selectedIds.has(l.id));
   return (
-    <div className="overflow-x-auto rounded-lg border border-outline-variant/40 bg-white/30">
-      <table className="min-w-[700px] w-full table-auto">
-        <thead className="bg-white/55">
-          <tr className="border-b border-outline-variant/40">
+    <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <table className="min-w-[700px] w-full border-collapse">
+        <thead>
+          <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
             {isAdmin && (
-              <th className="w-[48px] px-2 py-3 text-center">
+              <th className="w-[48px] px-4 py-3.5 text-center">
                 <input
                   type="checkbox"
                   checked={allVisibleSelected}
                   onChange={onSelectAll}
-                  className="h-4 w-4 cursor-pointer rounded border-outline-variant text-primary focus:ring-primary"
+                  className="h-4 w-4 cursor-pointer rounded border-slate-300 text-primary focus:ring-primary"
                   aria-label="Select all leads"
                 />
               </th>
             )}
-            <th className="w-[100px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Lead ID</th>
-            <th className="w-[180px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Company Name</th>
-            <th className="hidden md:table-cell w-[160px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Contact Person</th>
-            <th className="hidden md:table-cell w-[130px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Mobile Number</th>
+            <th className="w-[100px] px-4 py-3.5 text-left whitespace-nowrap">Lead ID</th>
+            <th className="w-[180px] px-4 py-3.5 text-left whitespace-nowrap">Company Name</th>
+            <th className="hidden md:table-cell w-[160px] px-4 py-3.5 text-left whitespace-nowrap">Contact Person</th>
+            <th className="hidden md:table-cell w-[130px] px-4 py-3.5 text-left whitespace-nowrap">Mobile Number</th>
             <SortableTableHeader label="Status" sortKey="status" currentSort={sort} onSort={onSort} className="w-[110px]" />
-            <th className="hidden lg:table-cell w-[90px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Stage</th>
+            <th className="hidden lg:table-cell w-[90px] px-4 py-3.5 text-left whitespace-nowrap">Stage</th>
             <SortableTableHeader label="Source" sortKey="source" currentSort={sort} onSort={onSort} className="hidden lg:table-cell w-[120px]" />
             <SortableTableHeader label="Category" sortKey="category" currentSort={sort} onSort={onSort} className="hidden lg:table-cell w-[130px]" />
             <SortableTableHeader label="Priority" sortKey="priority" currentSort={sort} onSort={onSort} className="w-[110px]" />
-            {isAdmin && <th className="hidden md:table-cell w-[150px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Assigned To</th>}
+            {isAdmin && <th className="hidden md:table-cell w-[150px] px-4 py-3.5 text-left whitespace-nowrap">Assigned To</th>}
             <SortableTableHeader label="Created Date" sortKey="createdAt" currentSort={sort} onSort={onSort} className="w-[130px]" />
-            <th className="hidden lg:table-cell w-[165px] px-3 py-3 text-left text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Next Follow-up</th>
+            <th className="hidden lg:table-cell w-[165px] px-4 py-3.5 text-left whitespace-nowrap">Next Follow-up</th>
             <SortableTableHeader label="Estimated Value" sortKey="estimatedValue" currentSort={sort} onSort={onSort} align="right" className="hidden lg:table-cell w-[140px]" />
           </tr>
         </thead>
-        <tbody>
+        <tbody className="text-sm text-slate-700">
           {leads.map((lead) => {
             const isSelected = selectedIds.has(lead.id);
             const isClosed = lead.status === 'Won' || lead.status === 'Lost' || lead.stage === 'Won' || lead.stage === 'Lost';
@@ -116,56 +116,56 @@ export default function LeadTable({ leads, isAdmin, sort, onSort, onOpenLead, se
               key={lead.id}
               data-testid="lead-row"
               onClick={() => onOpenLead(lead.id)}
-              className={`cursor-pointer border-b border-outline-variant/20 transition-colors hover:bg-white/55 ${
+              className={`cursor-pointer border-b border-slate-150 hover:bg-slate-50/50 transition-colors duration-150 ${
                 isSelected ? 'bg-primary/5' : ''
-              } ${isClosed ? 'opacity-60 text-on-surface-variant/80' : ''}`}
+              } ${isClosed ? 'opacity-60 text-slate-400' : ''}`}
             >
               {isAdmin && (
-                <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => onToggleSelect(lead.id)}
-                    className="h-4 w-4 cursor-pointer rounded border-outline-variant text-primary focus:ring-primary"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-primary focus:ring-primary"
                     aria-label={`Select lead ${lead.leadId}`}
                   />
                 </td>
               )}
-              <td className="truncate px-3 py-3 text-label-md font-label-md text-primary" title={toDisplayText(lead.leadId, '-')}>{toDisplayText(lead.leadId, '-')}</td>
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface" title={toDisplayText(lead.companyName)}>{toDisplayText(lead.companyName, '-')}</td>
-              <td className="hidden md:table-cell truncate px-3 py-3 text-body-sm text-on-surface" title={toDisplayText(lead.contactPerson)}>{toDisplayText(lead.contactPerson, '-')}</td>
-              <td className="hidden md:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.mobileNumber)}>{toDisplayText(lead.mobileNumber, '-')}</td>
-              <td className="px-3 py-3 text-center">
+              <td className="truncate px-4 py-4 text-sm font-semibold text-primary" title={toDisplayText(lead.leadId, '-')}>{toDisplayText(lead.leadId, '-')}</td>
+              <td className="truncate px-4 py-4 font-semibold text-slate-900" title={toDisplayText(lead.companyName)}>{toDisplayText(lead.companyName, '-')}</td>
+              <td className="hidden md:table-cell truncate px-4 py-4 text-slate-700" title={toDisplayText(lead.contactPerson)}>{toDisplayText(lead.contactPerson, '-')}</td>
+              <td className="hidden md:table-cell truncate px-4 py-4 text-slate-500" title={toDisplayText(lead.mobileNumber)}>{toDisplayText(lead.mobileNumber, '-')}</td>
+              <td className="px-4 py-4 text-center">
                 <Badge variant={STATUS_VARIANTS[toDisplayText(lead.status)] || 'new'}>{toDisplayText(lead.status, '-')}</Badge>
               </td>
-              <td className="hidden lg:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.stage)}>{toDisplayText(lead.stage, '-')}</td>
-              <td className="hidden lg:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.source)}>{toDisplayText(lead.source, '-')}</td>
-              <td className="hidden lg:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.category)}>{toDisplayText(lead.category, '-')}</td>
-              <td className="px-3 py-3 text-center">
+              <td className="hidden lg:table-cell truncate px-4 py-4 text-slate-600" title={toDisplayText(lead.stage)}>{toDisplayText(lead.stage, '-')}</td>
+              <td className="hidden lg:table-cell truncate px-4 py-4 text-slate-600" title={toDisplayText(lead.source)}>{toDisplayText(lead.source, '-')}</td>
+              <td className="hidden lg:table-cell truncate px-4 py-4 text-slate-600" title={toDisplayText(lead.category)}>{toDisplayText(lead.category, '-')}</td>
+              <td className="px-4 py-4 text-center">
                 <Badge variant={PRIORITY_VARIANTS[toDisplayText(lead.priority)] || 'new'}>{toDisplayText(lead.priority, '-')}</Badge>
               </td>
               {isAdmin && (
-                <td className="hidden md:table-cell truncate px-3 py-3 text-body-sm text-on-surface-variant" title={toDisplayText(lead.assignedToName)}>
+                <td className="hidden md:table-cell truncate px-4 py-4 text-slate-600 font-medium" title={toDisplayText(lead.assignedToName)}>
                   {toDisplayText(lead.assignedToName, '-')}
                 </td>
               )}
-              <td className="truncate px-3 py-3 text-body-sm text-on-surface-variant whitespace-nowrap" title={formatDate(lead.createdAt)}>{formatDate(lead.createdAt)}</td>
-              <td className="hidden lg:table-cell px-3 py-3 text-left text-body-sm whitespace-nowrap">
+              <td className="truncate px-4 py-4 text-slate-500 whitespace-nowrap" title={formatDate(lead.createdAt)}>{formatDate(lead.createdAt)}</td>
+              <td className="hidden lg:table-cell px-4 py-4 text-left whitespace-nowrap">
                 {isOverdue ? (
                   <div className="flex flex-col items-start gap-1">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
                       <span className="sr-only">Warning: Lead is overdue</span>
                       Overdue {getDaysOverdue(lead.nextFollowupDate) > 0 ? `(${getDaysOverdue(lead.nextFollowupDate)}d)` : ''}
                     </span>
-                    <span className="text-[11px] text-on-surface-variant font-medium">{formatFollowupDate(lead.nextFollowupDate)}</span>
+                    <span className="text-[11px] text-slate-500 font-medium">{formatFollowupDate(lead.nextFollowupDate)}</span>
                   </div>
                 ) : (
-                  <span className={isClosed ? "text-on-surface-variant/40" : "text-on-surface-variant"}>
+                  <span className={isClosed ? "text-slate-400" : "text-slate-650"}>
                     {formatFollowupDate(lead.nextFollowupDate)}
                   </span>
                 )}
               </td>
-              <td className="hidden lg:table-cell truncate px-3 py-3 text-right text-body-sm font-semibold text-on-surface whitespace-nowrap" title={formatCurrency(lead.estimatedValue)}>{formatCurrency(lead.estimatedValue)}</td>
+              <td className="hidden lg:table-cell truncate px-4 py-4 text-right font-semibold text-slate-900 whitespace-nowrap" title={formatCurrency(lead.estimatedValue)}>{formatCurrency(lead.estimatedValue)}</td>
             </tr>);
           })}
         </tbody>

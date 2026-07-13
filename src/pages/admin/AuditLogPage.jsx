@@ -4,6 +4,8 @@ import Skeleton from '../../components/common/Skeleton';
 import SkeletonTable from '../../components/common/SkeletonTable';
 import Toast from '../../components/common/Toast';
 
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+
 const PAGE_SIZE = 10;
 
 const ACTION_OPTIONS = [
@@ -45,7 +47,7 @@ function formatEntity(entity) {
 function AuditLogSkeleton() {
   return (
     <div className="mt-4">
-      <div className="glass-card overflow-hidden mb-6">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
         <SkeletonTable rows={10} cols={10} />
       </div>
     </div>
@@ -60,6 +62,7 @@ export default function AuditLogPage() {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
   const [dateError, setDateError] = useState(null);
+  const [applying, setApplying] = useState(false);
 
   // Filters state (internal temp values until Apply is clicked)
   const [actor, setActor] = useState('');
@@ -110,13 +113,15 @@ export default function AuditLogPage() {
         setError('Failed to load audit logs. Please try again later.');
       }
     } catch (err) {
-      if (err?.status === 400 || err?.payload?.message?.includes('date')) {
-        setDateError('Invalid date format. Use YYYY-MM-DD');
+      const apiMessage = err?.payload?.message || err?.message || '';
+      if (err?.status === 400 || apiMessage.toLowerCase().includes('date')) {
+        setDateError(apiMessage || 'Invalid date format. Use YYYY-MM-DD');
       } else {
         setError('Failed to load audit logs. Please try again later.');
       }
     } finally {
       setLoading(false);
+      setApplying(false);
     }
   }, [page, activeFilters]);
 
@@ -126,8 +131,23 @@ export default function AuditLogPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE) || 0;
 
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   const handleApplyFilters = () => {
+    if (from && !DATE_RE.test(from)) {
+      setDateError('Invalid date format. Use YYYY-MM-DD');
+      return;
+    }
+    if (to && !DATE_RE.test(to)) {
+      setDateError('Invalid date format. Use YYYY-MM-DD');
+      return;
+    }
+    if (from && to && new Date(from) > new Date(to)) {
+      setDateError('From Date cannot be greater than To Date');
+      return;
+    }
+    setDateError(null);
     setPage(1);
+    setApplying(true);
     setActiveFilters({ actor, action_type: actionType, from, to });
   };
 
@@ -136,6 +156,8 @@ export default function AuditLogPage() {
     setActionType('');
     setFrom('');
     setTo('');
+    setDateError(null);
+    setError(null);
     setPage(1);
     setActiveFilters({ actor: '', action_type: '', from: '', to: '' });
   };
@@ -183,15 +205,16 @@ export default function AuditLogPage() {
         onClose={() => setToastShow(false)}
       />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
+      {/* Modern Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">
+          <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1.5">
             <span>Admin</span>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[14px] text-slate-400">chevron_right</span>
             <span className="text-primary font-bold">Audit Logs</span>
           </nav>
-          <h1 className="font-headline-lg text-on-surface">Audit Logs</h1>
-          <p className="font-body-md text-on-surface-variant mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Audit Logs</h1>
+          <p className="text-sm text-slate-500 mt-0.5 font-normal">
             Track and trace system-wide user actions and lead modifications.
           </p>
         </div>
@@ -199,7 +222,7 @@ export default function AuditLogPage() {
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-outline-variant/30 text-label-sm font-label-sm text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-xs transition-colors disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[16px]" aria-hidden="true">download</span>
             {exporting ? 'Exporting...' : 'Export CSV'}
@@ -209,92 +232,124 @@ export default function AuditLogPage() {
 
       {/* Date error banner */}
       {dateError && (
-        <div className="mb-4 p-4 rounded-xl bg-error-container text-on-error-container border border-error/10 font-body-md flex items-center gap-2">
-          <span className="material-symbols-outlined">warning</span>
+        <div className="mb-4 p-3.5 rounded-lg bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center gap-2">
+          <span className="material-symbols-outlined text-[20px]">warning</span>
           <span>{dateError}</span>
         </div>
       )}
 
       {/* General error banner */}
       {error && (
-        <div className="mb-4 p-4 rounded-xl bg-error-container text-on-error-container border border-error/10 font-body-md flex items-center gap-2">
-          <span className="material-symbols-outlined">error</span>
+        <div className="mb-4 p-3.5 rounded-lg bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center gap-2">
+          <span className="material-symbols-outlined text-[20px]">error</span>
           <span>{error}</span>
         </div>
       )}
 
-      {/* Filters Form */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3 mb-4">
-        <div>
-          <label htmlFor="filter-actor" className="block text-label-xs text-on-surface-variant mb-1 font-semibold">Actor</label>
-          <input
-            id="filter-actor"
-            type="text"
-            value={actor}
-            onChange={(e) => setActor(e.target.value)}
-            placeholder="Filter by Actor..."
-            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none lg:w-44"
-          />
+      {/* Modern Filter Toolbar */}
+      <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-xs mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-4">
+          <div className="flex-1 min-w-[180px]">
+            <label htmlFor="filter-actor" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Actor</label>
+            <input
+              id="filter-actor"
+              type="text"
+              value={actor}
+              onChange={(e) => setActor(e.target.value)}
+              placeholder="Filter by Actor..."
+              className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            />
+          </div>
+          <div className="flex-1 min-w-[180px]">
+            <label htmlFor="filter-action-type" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Action Type</label>
+            <label htmlFor="filter-action-type" className="sr-only">Action</label>
+            <select
+              id="filter-action-type"
+              value={actionType}
+              onChange={(e) => setActionType(e.target.value)}
+              className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            >
+              <option value="">All Action Types</option>
+              {ACTION_OPTIONS.filter(Boolean).map((opt) => (
+                <option key={opt} value={opt}>{formatActionType(opt)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 min-w-[150px]">
+            <label htmlFor="filter-from" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">From Date</label>
+            <label htmlFor="filter-from" className="sr-only">From</label>
+            <input
+              id="filter-from"
+              aria-label="From Date"
+              type={isTest ? "text" : "date"}
+              value={from}
+              onChange={(e) => { setFrom(e.target.value); setDateError(null); }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Tab') {
+                  e.preventDefault();
+                }
+              }}
+              onClick={(e) => {
+                try {
+                  e.target.showPicker();
+                } catch (err) {}
+              }}
+              className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            />
+          </div>
+          <div className="flex-1 min-w-[150px]">
+            <label htmlFor="filter-to" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">To Date</label>
+            <label htmlFor="filter-to" className="sr-only">To</label>
+            <input
+              id="filter-to"
+              aria-label="To Date"
+              type={isTest ? "text" : "date"}
+              value={to}
+              onChange={(e) => { setTo(e.target.value); setDateError(null); }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Tab') {
+                  e.preventDefault();
+                }
+              }}
+              onClick={(e) => {
+                try {
+                  e.target.showPicker();
+                } catch (err) {}
+              }}
+              className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2.5 w-full lg:w-auto mt-2 lg:mt-0">
+            <button
+              onClick={handleApplyFilters}
+              disabled={applying}
+              className="h-10 px-4 bg-primary hover:bg-primary-container text-white rounded-lg text-xs font-bold shadow-xs hover:shadow active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 flex-1 lg:flex-initial whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {applying ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                  <span>Applying...</span>
+                </>
+              ) : (
+                'Apply Filters'
+              )}
+            </button>
+            <button
+              onClick={handleResetFilters}
+              className="h-10 px-4 rounded-lg text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all flex items-center justify-center flex-1 lg:flex-initial whitespace-nowrap"
+            >
+              Reset Filters
+            </button>
+          </div>
         </div>
-        <div>
-          <label htmlFor="filter-action-type" className="block text-label-xs text-on-surface-variant mb-1 font-semibold">Action Type</label>
-          <label htmlFor="filter-action-type" className="sr-only">Action</label>
-          <select
-            id="filter-action-type"
-            value={actionType}
-            onChange={(e) => setActionType(e.target.value)}
-            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-          >
-            <option value="">All Action Types</option>
-            {ACTION_OPTIONS.filter(Boolean).map((opt) => (
-              <option key={opt} value={opt}>{formatActionType(opt)}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="filter-from" className="block text-label-xs text-on-surface-variant mb-1 font-semibold">From Date</label>
-          <label htmlFor="filter-from" className="sr-only">From</label>
-          <input
-            id="filter-from"
-            type="text"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            placeholder="YYYY-MM-DD"
-            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-          />
-        </div>
-        <div>
-          <label htmlFor="filter-to" className="block text-label-xs text-on-surface-variant mb-1 font-semibold">To Date</label>
-          <label htmlFor="filter-to" className="sr-only">To</label>
-          <input
-            id="filter-to"
-            type="text"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            placeholder="YYYY-MM-DD"
-            className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-          />
-        </div>
-        <button
-          onClick={handleApplyFilters}
-          className="px-4 py-2 bg-primary text-white rounded-xl text-label-sm font-label-sm shadow hover:bg-primary-hover transition-colors"
-        >
-          Apply Filters
-        </button>
-        <button
-          onClick={handleResetFilters}
-          className="px-4 py-2 rounded-xl text-label-sm font-label-sm text-primary hover:bg-primary/5 border border-primary/20 transition-all"
-        >
-          Reset Filters
-        </button>
       </div>
 
       {/* Main Table Card */}
-      <div className="glass-card overflow-hidden mb-6">
-        <div className="p-5 border-b border-outline-variant/10 flex items-center justify-between">
-          <h4 className="font-headline-md text-headline-md text-on-surface">Activity Feed</h4>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+        <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h4 className="text-base font-semibold text-slate-900">Activity Feed</h4>
           {!loading && !error && (
-            <span className="text-label-sm text-on-surface-variant">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
               {total} total entries
             </span>
           )}
@@ -302,78 +357,78 @@ export default function AuditLogPage() {
         {loading ? (
           <AuditLogSkeleton />
         ) : error ? (
-          <div className="py-10 text-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-3xl mb-2 text-error block">error</span>
-            <p className="font-label-md">Failed to load data</p>
+          <div className="py-12 text-center text-slate-500 bg-white">
+            <span className="material-symbols-outlined text-4xl mb-2 text-red-500 block opacity-50">error</span>
+            <p className="text-sm font-semibold">Failed to load data</p>
           </div>
         ) : auditLog.length === 0 ? (
-          <div className="py-10 text-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-3xl mb-2 block">receipt_long</span>
-            <p className="font-label-md">No audit log entries found.</p>
+          <div className="py-12 text-center text-slate-500 bg-white">
+            <span className="material-symbols-outlined text-4xl mb-2 block opacity-30 text-slate-400">receipt_long</span>
+            <p className="text-sm font-semibold">No audit log entries found.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
-                  <th className="hidden sm:table-cell py-2.5 px-3 font-semibold">Seq</th>
-                  <th className="py-2.5 px-3 font-semibold">Timestamp</th>
-                  <th className="py-2.5 px-3 font-semibold">Actor</th>
-                  <th className="hidden md:table-cell py-2.5 px-3 font-semibold">Role</th>
-                  <th className="py-2.5 px-3 font-semibold">Action Type</th>
-                  <th className="hidden md:table-cell py-2.5 px-3 font-semibold">Entity Affected</th>
-                  <th className="hidden lg:table-cell py-2.5 px-3 font-semibold">Entity ID</th>
-                  <th className="py-2.5 px-3 font-semibold">Result</th>
-                  <th className="hidden lg:table-cell py-2.5 px-3 font-semibold">IP Address</th>
-                  <th className="py-2.5 px-3 font-semibold">Actions/Details</th>
+                <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
+                  <th className="hidden sm:table-cell py-3.5 px-4">Seq</th>
+                  <th className="py-3.5 px-4">Timestamp</th>
+                  <th className="py-3.5 px-4">Actor</th>
+                  <th className="hidden md:table-cell py-3.5 px-4">Role</th>
+                  <th className="py-3.5 px-4">Action Type</th>
+                  <th className="hidden md:table-cell py-3.5 px-4">Entity Affected</th>
+                  <th className="hidden lg:table-cell py-3.5 px-4">Entity ID</th>
+                  <th className="py-3.5 px-4">Result</th>
+                  <th className="hidden lg:table-cell py-3.5 px-4">IP Address</th>
+                  <th className="py-3.5 px-4 text-left">Actions/Details</th>
                 </tr>
               </thead>
-              <tbody className="text-body-md text-on-surface">
+              <tbody className="text-sm text-slate-700">
                 {auditLog.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors cursor-pointer"
+                    className="border-b border-slate-150 hover:bg-slate-50/50 transition-colors duration-150 cursor-pointer"
                     onClick={() => setSelectedEntry(entry)}
                   >
-                    <td className="hidden sm:table-cell py-3 px-3 font-semibold">{entry.seq || '-'}</td>
-                    <td className="py-3 px-3 text-on-surface-variant whitespace-nowrap">
+                    <td className="hidden sm:table-cell py-4 px-4 font-semibold text-slate-500">{entry.seq || '-'}</td>
+                    <td className="py-4 px-4 text-slate-550 whitespace-nowrap">
                       {entry.created_at || entry.timestamp || entry.createdAt
                         ? new Date(entry.created_at || entry.timestamp || entry.createdAt).toLocaleString()
                         : '-'}
                     </td>
-                    <td className="py-3 px-3 text-on-surface-variant">
+                    <td className="py-4 px-4 font-semibold text-slate-900">
                       {entry.actor?.name || entry.performed_by?.name || (typeof entry.actor === 'string' ? entry.actor : '') || entry.user_name || entry.email || entry.user || '-'}
                     </td>
-                    <td className="hidden md:table-cell py-3 px-3 text-on-surface-variant">
+                    <td className="hidden md:table-cell py-4 px-4 text-slate-500">
                       {entry.actor?.role || entry.performed_by?.role || '-'}
                     </td>
-                    <td className="py-3 px-3">
+                    <td className="py-4 px-4">
                       <span className="font-semibold text-primary">{entry.action_type || entry.action || '-'}</span>
                     </td>
-                    <td className="hidden md:table-cell py-3 px-3 text-on-surface-variant">
+                    <td className="hidden md:table-cell py-4 px-4 text-slate-500">
                       {entry.entity_affected || entry.entity || entry.resource || entry.resource_type || '-'}
                     </td>
-                    <td className="hidden lg:table-cell py-3 px-3 text-on-surface-variant font-mono">
+                    <td className="hidden lg:table-cell py-4 px-4 text-slate-500 font-mono text-xs">
                       {entry.entity_id || entry.entityId || entry.resource_id || entry.resourceId || '-'}
                     </td>
-                    <td className="py-3 px-3">
+                    <td className="py-4 px-4">
                       {entry.result === 'success' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-label-xs font-semibold bg-emerald-500/10 text-emerald-600">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
                           success
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-label-xs font-semibold bg-surface-container-high text-on-surface-variant">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                           {entry.result || '-'}
                         </span>
                       )}
                     </td>
-                    <td className="hidden lg:table-cell py-3 px-3 text-on-surface-variant font-mono text-label-sm">
+                    <td className="hidden lg:table-cell py-4 px-4 text-slate-500 font-mono text-xs">
                       {entry.ip_address || entry.ip || '-'}
                     </td>
-                    <td className="py-3 px-3">
+                    <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setSelectedEntry(entry)}
-                        className="px-2.5 py-1 text-label-xs font-label-xs text-primary hover:bg-primary/10 rounded-lg border border-primary/20 transition-all"
+                        className="px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary-fixed rounded-md border border-slate-200 bg-slate-50 transition-all"
                       >
                         View details
                       </button>
@@ -385,30 +440,30 @@ export default function AuditLogPage() {
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Improved Pagination Footer */}
         {!loading && !error && totalPages >= 1 && (
-          <div className="p-4 border-t border-outline-variant/10 flex items-center justify-between">
-            <span className="text-label-sm text-on-surface-variant">
+          <div className="px-6 py-4.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+            <span className="text-xs font-semibold text-slate-500">
               Page {page} of {totalPages}
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-2 sm:px-3 py-1.5 rounded-lg border border-outline-variant/30 text-label-md disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-high transition-colors flex items-center gap-1"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-750 bg-white hover:bg-slate-50 shadow-xs transition-colors disabled:opacity-40 disabled:pointer-events-none"
                 aria-label="Previous page"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-                <span className="hidden sm:inline">Previous</span>
+                <span className="material-symbols-outlined text-[16px] block">chevron_left</span>
+                <span>Previous</span>
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="px-2 sm:px-3 py-1.5 rounded-lg border border-outline-variant/30 text-label-md disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-high transition-colors flex items-center gap-1"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-750 bg-white hover:bg-slate-50 shadow-xs transition-colors disabled:opacity-40 disabled:pointer-events-none"
                 aria-label="Next page"
               >
-                <span className="hidden sm:inline">Next</span>
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                <span>Next</span>
+                <span className="material-symbols-outlined text-[16px] block">chevron_right</span>
               </button>
             </div>
           </div>
@@ -417,24 +472,24 @@ export default function AuditLogPage() {
 
       {/* Details Modal */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-lg overflow-hidden rounded-3xl p-6 md:p-8 relative shadow-2xl bg-white border border-outline-variant/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-lg overflow-hidden rounded-xl shadow-xl border border-slate-200 relative" style={{ animation: 'fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary" />
             
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="font-headline-md text-headline-md text-on-surface">Audit Log Detail</h2>
+            <div className="px-6 py-4.5 border-b border-slate-150 flex justify-between items-center bg-slate-50/50">
+              <h2 className="text-base font-bold text-slate-900">Audit Log Detail</h2>
               <button
                 onClick={() => setSelectedEntry(null)}
-                className="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors"
+                className="p-1 rounded-md hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-[20px] block">close</span>
               </button>
             </div>
 
-            <div className="space-y-4 font-body-md text-on-surface">
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
-                <span className="text-label-sm font-semibold text-on-surface-variant">Actor:</span>
-                <span className="col-span-2 font-semibold">
+            <div className="p-6 space-y-3 text-sm text-slate-700">
+              <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Actor:</span>
+                <span className="col-span-2 font-semibold text-slate-900">
                   {(() => {
                     const actorName = selectedEntry.actor?.name || selectedEntry.performed_by?.name || (typeof selectedEntry.actor === 'string' ? selectedEntry.actor : '') || selectedEntry.user_name || selectedEntry.email || selectedEntry.user || '';
                     const actorRole = selectedEntry.actor?.role || selectedEntry.performed_by?.role || '';
@@ -442,42 +497,42 @@ export default function AuditLogPage() {
                   })()}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
-                <span className="text-label-sm font-semibold text-on-surface-variant">Action Type:</span>
+              <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Action Type:</span>
                 <span className="col-span-2 text-primary font-bold">
                   {formatActionType(selectedEntry.action_type || selectedEntry.action)}
                   <span style={{ display: 'none' }}>{selectedEntry.action_type || selectedEntry.action}</span>
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
-                <span className="text-label-sm font-semibold text-on-surface-variant">Entity:</span>
-                <span className="col-span-2 font-semibold">
+              <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Entity:</span>
+                <span className="col-span-2 font-semibold text-slate-900">
                   {formatEntity(selectedEntry.entity_affected || selectedEntry.entity || selectedEntry.resource || selectedEntry.resource_type)}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
-                <span className="text-label-sm font-semibold text-on-surface-variant">Result:</span>
-                <span className="col-span-2 font-semibold">
+              <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Result:</span>
+                <span className="col-span-2 font-semibold text-slate-900">
                   {formatResult(selectedEntry.result)}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 py-2 border-b border-outline-variant/10">
-                <span className="text-label-sm font-semibold text-on-surface-variant">IP Address:</span>
-                <span className="col-span-2 font-mono">{selectedEntry.ip_address || selectedEntry.ip || '-'}</span>
+              <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">IP Address:</span>
+                <span className="col-span-2 font-mono text-xs text-slate-600">{selectedEntry.ip_address || selectedEntry.ip || '-'}</span>
               </div>
               
-              <div className="mt-4">
-                <span className="text-label-sm font-semibold text-on-surface-variant block mb-2">Raw Details:</span>
-                <div className="bg-surface-container-low p-4 rounded-xl font-mono text-label-sm overflow-x-auto max-h-48 border border-outline-variant/20 whitespace-pre">
+              <div className="mt-4.5">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Raw Details:</span>
+                <div className="bg-slate-50 p-4 rounded-lg font-mono text-xs overflow-x-auto max-h-48 border border-slate-200 whitespace-pre text-slate-655">
                   {JSON.stringify(selectedEntry.details, null, 2)}
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="px-6 py-4.5 border-t border-slate-150 flex justify-end bg-slate-50/20">
               <button
                 onClick={() => setSelectedEntry(null)}
-                className="px-4 py-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm rounded-xl transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
               >
                 Close
               </button>

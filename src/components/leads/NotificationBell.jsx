@@ -109,12 +109,12 @@ export default function NotificationBell() {
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl bg-white shadow-xl border border-outline-variant/20 z-50 animate-fade-in-scale">
-          <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-outline-variant/10 px-4 py-3">
+        <div className="fixed md:absolute top-16 md:top-auto left-4 right-4 md:left-auto md:right-0 mt-2 w-auto md:w-[340px] lg:w-[380px] max-h-[70vh] md:max-h-[480px] overflow-y-auto overflow-x-hidden rounded-2xl bg-white shadow-xl border border-outline-variant/20 z-50 animate-fade-in-scale">
+          <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-outline-variant/10 px-5 py-3.5 z-10">
             <h3 className="font-headline-md text-headline-md text-on-surface">Notifications</h3>
           </div>
           {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center">
+            <div className="px-5 py-10 text-center">
               <span className="material-symbols-outlined text-[32px] text-on-surface-variant/30 mb-2">notifications_off</span>
               <p className="font-body-md text-body-md text-on-surface-variant/70">No notifications yet.</p>
             </div>
@@ -126,32 +126,32 @@ export default function NotificationBell() {
                   <button
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`w-full text-left px-4 py-3 transition-colors hover:bg-primary/5 notification-item ${
+                    className={`w-full text-left px-5 py-4 transition-colors hover:bg-primary/5 notification-item ${
                       !n.read ? 'bg-primary/[0.03]' : ''
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                    <div className="flex items-start gap-3.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                         !n.read ? 'bg-primary/10' : 'bg-surface-container-high'
                       }`}>
-                        <span className={`material-symbols-outlined text-[16px] ${
+                        <span className={`material-symbols-outlined text-[18px] ${
                           !n.read ? 'text-primary' : 'text-on-surface-variant'
                         }`}>
                           {n.type === 'assignment' ? 'assignment' : 'notifications'}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-body-md text-body-md ${
+                        <p className={`font-body-md text-body-md leading-relaxed whitespace-normal break-words ${
                           !n.read ? 'text-on-surface font-semibold' : 'text-on-surface-variant'
                         }`}>
                           {actionText || 'Notification'}
                         </p>
-                        <p className="font-label-sm text-label-sm text-on-surface-variant/60 mt-0.5">
+                        <p className="font-label-sm text-label-sm text-on-surface-variant/60 mt-1 whitespace-normal">
                           {formatDate(n.createdAt || n.timestamp)}
                         </p>
                       </div>
                       {!n.read && (
-                        <span className="w-2 h-2 rounded-full bg-error shrink-0 mt-1.5" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-error shrink-0 mt-2" />
                       )}
                     </div>
                   </button>

@@ -141,6 +141,7 @@ export default function LeadList() {
   const [toastShow, setToastShow] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const accessDenied = isAdminRoute && !isAdmin;
 
@@ -240,6 +241,9 @@ export default function LeadList() {
     };
     setSavedViews((prev) => [...prev, view]);
     setActiveViewId(view.id);
+    setToastMessage('Saved View created successfully.');
+    setToastType('success');
+    setToastShow(true);
   };
 
   const handleUpdateSavedView = async (viewId, nameOverride) => {
@@ -341,6 +345,7 @@ export default function LeadList() {
   };
 
   const handleExportFiltered = async (format) => {
+    setExporting(true);
     try {
       const q = buildQuery({ page: 1, search: activeSearch, filters, sort });
       const exportParams = {
@@ -368,6 +373,8 @@ export default function LeadList() {
       setToastMessage(err?.message || 'Failed to export leads.');
       setToastType('error');
       setToastShow(true);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -390,11 +397,11 @@ export default function LeadList() {
 
   return (
     <div className="mx-auto max-w-[1500px] px-2 py-4 sm:px-4 sm:py-6">
-      <div className="glass-card rounded-lg p-4 sm:p-5">
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 sm:p-6">
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pb-4 border-b border-slate-100">
           <div>
-            <h1 className="text-headline-md font-headline-md text-on-surface">{pageTitle}</h1>
-            <p className="mt-1 text-body-md text-on-surface-variant">{subtitle}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{pageTitle}</h1>
+            <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
           </div>
           <div className="flex w-full items-center gap-2 lg:max-w-xl">
             <div className="flex-1">
@@ -407,7 +414,7 @@ export default function LeadList() {
                     type="button"
                     onClick={() => handleExportFiltered('csv')}
                     style={{ display: 'none' }}
-                    className="h-10 rounded-lg border border-outline-variant bg-white/70 px-4 text-label-md font-label-md text-on-surface hover:bg-white transition-all whitespace-nowrap"
+                    className="h-10 rounded-lg border border-slate-200 bg-white/70 px-4 text-xs font-semibold text-slate-705 hover:bg-white transition-all whitespace-nowrap"
                   >
                     Export CSV
                   </button>
@@ -415,7 +422,7 @@ export default function LeadList() {
                     type="button"
                     id="export-filtered-btn"
                     onClick={() => setExportModalOpen(true)}
-                    className="h-10 rounded-lg border border-outline-variant bg-white/70 px-4 text-label-md font-label-md text-on-surface hover:bg-white transition-all whitespace-nowrap"
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shadow-xs"
                   >
                     Export
                   </button>
@@ -425,7 +432,7 @@ export default function LeadList() {
                 <button
                   type="button"
                   onClick={() => navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/create`)}
-                  className="btn-gradient h-10 rounded-lg px-4 text-label-md font-label-md text-white whitespace-nowrap"
+                  className="inline-flex items-center justify-center h-10 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-xs font-semibold hover:opacity-95 px-4 transition-colors whitespace-nowrap shadow-xs"
                 >
                   Create Lead
                 </button>
@@ -434,7 +441,7 @@ export default function LeadList() {
           </div>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-5">
           {isAdmin && (
             <div className="mb-4">
               <SavedViewsPanel
@@ -460,27 +467,27 @@ export default function LeadList() {
         </div>
 
         {loading ? (
-          <div className="rounded-lg border border-outline-variant/40 bg-white/35 px-4 py-8">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <LoadingSpinner text="Loading leads..." />
             <div className="mt-6">
               <SkeletonTable rows={5} cols={10} />
             </div>
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-error/20 bg-white/65 p-8 text-center">
-            <h2 className="text-headline-md font-headline-md text-error">{error}</h2>
+          <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center text-red-800 shadow-sm">
+            <h2 className="text-base font-bold uppercase tracking-wider text-red-900">{error}</h2>
             {error !== 'Access Denied' && (
               <button
                 type="button"
                 onClick={loadLeads}
-                className="mt-4 rounded-lg bg-primary px-4 py-2 text-label-md font-label-md text-white transition-colors hover:bg-primary/90"
+                className="mt-4 rounded-lg bg-red-600 hover:bg-red-750 px-4 py-2 text-xs font-semibold text-white transition-colors"
               >
                 Retry
               </button>
             )}
           </div>
         ) : leads.length === 0 ? (
-          <div className="rounded-lg border border-outline-variant/40 bg-white/35">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/50">
             <EmptyState
               icon="leaderboard"
               title="No Leads Found"
@@ -500,29 +507,29 @@ export default function LeadList() {
               onSelectAll={handleSelectAll}
             />
             {isAdmin && selectedCount > 0 && (
-              <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-                <span className="text-label-md font-label-md text-on-surface">
+              <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3.5 shadow-sm animate-slide-up">
+                <span className="text-sm font-semibold text-slate-800">
                   {selectedCount} lead{selectedCount > 1 ? 's' : ''} selected
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleBulkReassign}
-                    className="rounded-lg bg-primary px-4 py-2 text-label-sm font-label-sm text-white transition-colors hover:bg-primary/90"
+                    className="rounded-lg bg-primary hover:bg-primary-container px-4 py-2 text-xs font-semibold text-white transition-colors shadow-xs"
                   >
                     Reassign
                   </button>
                   <button
                     type="button"
                     onClick={handleBulkExport}
-                    className="rounded-lg border border-outline-variant bg-white px-4 py-2 text-label-sm font-label-sm text-on-surface transition-colors hover:bg-white/80"
+                    className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors shadow-xs"
                   >
                     Export CSV
                   </button>
                   <button
                     type="button"
                     onClick={handleClearSelection}
-                    className="rounded-lg px-3 py-2 text-label-sm font-label-sm text-on-surface-variant transition-colors hover:bg-white/60"
+                    className="rounded-lg px-3.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                   >
                     Clear
                   </button>
@@ -555,12 +562,13 @@ export default function LeadList() {
 
         <ExportModal
           isOpen={exportModalOpen}
-          onClose={() => setExportModalOpen(false)}
+          onClose={() => !exporting && setExportModalOpen(false)}
           activeFilters={filters}
-          onExport={(format) => {
+          onExport={async (format) => {
+            await handleExportFiltered(format);
             setExportModalOpen(false);
-            handleExportFiltered(format);
           }}
+          loading={exporting}
         />
 
         <Toast

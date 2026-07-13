@@ -96,7 +96,7 @@ function CategoriesSkeleton() {
         </div>
         <Skeleton width="110px" height="36px" rounded />
       </div>
-      <div className="glass-card overflow-hidden mb-6">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
         <div className="p-5 border-b border-outline-variant/10">
           <Skeleton width="120px" height="20px" rounded />
         </div>
@@ -128,6 +128,7 @@ export default function CategoriesPage() {
   const [auditTarget, setAuditTarget] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -201,24 +202,31 @@ export default function CategoriesPage() {
       setCatFormError('Name is required');
       return;
     }
-    let res;
-    if (editingCat) {
-      res = await updateCategory(editingCat.id, {
-        category_name: catFormName.trim(),
-        name: catFormName.trim()
-      });
-    } else {
-      res = await createCategory({
-        category_name: catFormName.trim(),
-        name: catFormName.trim()
-      });
-    }
-    if (res.success) {
-      await loadCategories();
-      showToast(res.message);
-      setShowCatForm(false);
-    } else {
-      showToast(res.message, 'error');
+    setSaving(true);
+    try {
+      let res;
+      if (editingCat) {
+        res = await updateCategory(editingCat.id, {
+          category_name: catFormName.trim(),
+          name: catFormName.trim()
+        });
+      } else {
+        res = await createCategory({
+          category_name: catFormName.trim(),
+          name: catFormName.trim()
+        });
+      }
+      if (res.success) {
+        await loadCategories();
+        showToast(res.message);
+        setShowCatForm(false);
+      } else {
+        showToast(res.message, 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Action failed', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -235,25 +243,39 @@ export default function CategoriesPage() {
   };
 
   const confirmDeleteCat = async () => {
-    const res = await deleteCategory(confirmDialog.target.id);
-    if (res.success) {
-      await loadCategories();
-      showToast(res.message);
-    } else {
-      showToast(res.message, 'error');
+    setSaving(true);
+    try {
+      const res = await deleteCategory(confirmDialog.target.id);
+      if (res.success) {
+        await loadCategories();
+        showToast(res.message);
+      } else {
+        showToast(res.message, 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Delete failed', 'error');
+    } finally {
+      setSaving(false);
+      setConfirmDialog({ isOpen: false, target: null, type: '' });
     }
-    setConfirmDialog({ isOpen: false, target: null, type: '' });
   };
 
   const handleToggleCatStatus = async (cat) => {
     const isActive = cat.status ? cat.status === 'Active' : cat.isActive !== false;
     const newStatus = !isActive;
-    const res = await toggleCategoryStatus(cat.id, newStatus);
-    if (res.success) {
-      await loadCategories();
-      showToast(res.message);
-    } else {
-      showToast(res.message, 'error');
+    setSaving(true);
+    try {
+      const res = await toggleCategoryStatus(cat.id, newStatus);
+      if (res.success) {
+        await loadCategories();
+        showToast(res.message);
+      } else {
+        showToast(res.message, 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Status toggle failed', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -278,26 +300,33 @@ export default function CategoriesPage() {
       setSubFormError('Name is required');
       return;
     }
-    let res;
-    if (editingSub) {
-      res = await updateSubCategory(subFormCategoryId, editingSub.id, {
-        sub_category_name: subFormName.trim(),
-        name: subFormName.trim()
-      });
-    } else {
-      res = await createSubCategory(subFormCategoryId, {
-        sub_category_name: subFormName.trim(),
-        name: subFormName.trim(),
-        category_id: subFormCategoryId,
-        parentCategoryId: subFormCategoryId
-      });
-    }
-    if (res.success) {
-      await loadSubs(subFormCategoryId);
-      showToast(res.message);
-      setShowSubForm(false);
-    } else {
-      showToast(res.message, 'error');
+    setSaving(true);
+    try {
+      let res;
+      if (editingSub) {
+        res = await updateSubCategory(subFormCategoryId, editingSub.id, {
+          sub_category_name: subFormName.trim(),
+          name: subFormName.trim()
+        });
+      } else {
+        res = await createSubCategory(subFormCategoryId, {
+          sub_category_name: subFormName.trim(),
+          name: subFormName.trim(),
+          category_id: subFormCategoryId,
+          parentCategoryId: subFormCategoryId
+        });
+      }
+      if (res.success) {
+        await loadSubs(subFormCategoryId);
+        showToast(res.message);
+        setShowSubForm(false);
+      } else {
+        showToast(res.message, 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Action failed', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -315,25 +344,39 @@ export default function CategoriesPage() {
 
   const confirmDeleteSub = async () => {
     const { categoryId, id } = confirmDialog.target;
-    const res = await deleteSubCategory(categoryId, id);
-    if (res.success) {
-      await loadSubs(categoryId);
-      showToast(res.message);
-    } else {
-      showToast(res.message, 'error');
+    setSaving(true);
+    try {
+      const res = await deleteSubCategory(categoryId, id);
+      if (res.success) {
+        await loadSubs(categoryId);
+        showToast(res.message);
+      } else {
+        showToast(res.message, 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Delete failed', 'error');
+    } finally {
+      setSaving(false);
+      setConfirmDialog({ isOpen: false, target: null, type: '' });
     }
-    setConfirmDialog({ isOpen: false, target: null, type: '' });
   };
 
   const handleToggleSubStatus = async (categoryId, sub) => {
     const isActive = sub.status ? sub.status === 'Active' : sub.isActive !== false;
     const newStatus = !isActive;
-    const res = await toggleSubCategoryStatus(categoryId, sub.id, newStatus);
-    if (res.success) {
-      await loadSubs(categoryId);
-      showToast(res.message);
-    } else {
-      showToast(res.message, 'error');
+    setSaving(true);
+    try {
+      const res = await toggleSubCategoryStatus(categoryId, sub.id, newStatus);
+      if (res.success) {
+        await loadSubs(categoryId);
+        showToast(res.message);
+      } else {
+        showToast(res.message, 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Status toggle failed', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -388,45 +431,47 @@ export default function CategoriesPage() {
         onClose={handleToastClose}
       />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6">
+      {/* Modern Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <nav className="flex items-center gap-1 text-label-sm text-on-surface-variant/60 mb-1">
+          <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1.5">
             <span>Admin</span>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[14px] text-slate-400">chevron_right</span>
             <span className="text-primary font-bold">Categories</span>
           </nav>
-          <h1 className="font-headline-lg text-on-surface">Categories</h1>
-          <p className="font-body-md text-on-surface-variant mt-1">Manage business categories and their sub-categories.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Categories</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Manage business categories and their sub-categories.</p>
         </div>
         <button
           onClick={openCreateCat}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center gap-1.5"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           Add Category
         </button>
       </div>
 
-      <div className="glass-card overflow-hidden mb-6">
-        <div className="p-5 border-b border-outline-variant/10">
-          <h4 className="font-headline-md text-headline-md text-on-surface">All Categories</h4>
+      {/* Main Table Card */}
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
+        <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h4 className="text-base font-semibold text-slate-900">All Categories</h4>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-[500px] w-full text-left" role="table">
+          <table className="min-w-[500px] w-full text-left border-collapse" role="table">
             <thead>
-              <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
-                <th className="py-2.5 px-3 font-semibold w-16">#</th>
-                <th className="py-2.5 px-3 font-semibold">Category Name</th>
-                <th className="py-2.5 px-3 font-semibold">Status</th>
-                <th className="py-2.5 px-3 font-semibold w-32">Sub-Categories</th>
-                <th className="py-2.5 px-3 font-semibold w-[360px]">Actions</th>
+              <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
+                <th className="py-3.5 px-6 w-16">#</th>
+                <th className="py-3.5 px-4">Category Name</th>
+                <th className="py-3.5 px-4 w-32">Status</th>
+                <th className="py-3.5 px-4 w-36">Sub-Categories</th>
+                <th className="py-3.5 px-6 w-[360px]">Actions</th>
               </tr>
             </thead>
-            <tbody className="text-body-md text-on-surface">
+            <tbody className="text-sm text-slate-700">
               {categories.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-on-surface-variant">
-                    <span className="material-symbols-outlined text-4xl block mb-2 opacity-40">category</span>
+                  <td colSpan={5} className="py-12 text-center text-slate-500 bg-white">
+                    <span className="material-symbols-outlined text-4xl block mb-2 opacity-30 text-slate-400">category</span>
                     No categories found. Click "Add Category" to create one.
                   </td>
                 </tr>
@@ -435,22 +480,22 @@ export default function CategoriesPage() {
                   const isInactive = cat.status ? cat.status === 'Inactive' : cat.isActive === false;
                   return (
                     <Fragment key={cat.id}>
-                      <tr className={`border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors ${isInactive ? 'opacity-50' : ''}`}>
-                        <td className="py-3 px-3 text-on-surface-variant">{index + 1}</td>
-                        <td className="py-3 px-3 font-medium text-on-surface">
+                      <tr className={`border-b border-slate-150 hover:bg-slate-50/50 transition-colors duration-150 ${isInactive ? 'opacity-60 bg-slate-50/30' : ''}`}>
+                        <td className="py-4 px-6 text-slate-500 font-medium">{index + 1}</td>
+                        <td className="py-4 px-4 font-semibold text-slate-900">
                           {cat.category_name || cat.name}
-                          {isInactive && <span className="ml-2 text-label-sm text-error">(Inactive)</span>}
+                          {isInactive && <span className="ml-2 text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">(Inactive)</span>}
                         </td>
-                        <td className="py-3 px-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold ${isInactive ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-600'}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isInactive ? 'bg-error' : 'bg-emerald-500'}`} />
+                        <td className="py-4 px-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${isInactive ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-755 border border-emerald-250'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isInactive ? 'bg-red-500' : 'bg-emerald-500'}`} />
                             {isInactive ? 'Inactive' : 'Active'}
                           </span>
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-4 px-4">
                           <button
                             onClick={() => toggleExpand(cat.id)}
-                            className="inline-flex items-center gap-1 text-label-sm font-medium text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-container bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-md border border-slate-200 transition-colors"
                           >
                             <span className={`material-symbols-outlined text-[16px] transition-transform ${expandedId === cat.id ? 'rotate-90' : ''}`}>
                               chevron_right
@@ -458,39 +503,35 @@ export default function CategoriesPage() {
                             {subMap[cat.id]?.length ?? 0}
                           </button>
                         </td>
-                        <td className="py-3 px-3">
-                          <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
                             <button
                               onClick={() => openCreateSub(cat.id)}
-                              className="px-2 py-0.5 text-label-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              className="px-2.5 py-1 text-xs font-semibold text-emerald-755 bg-emerald-50 hover:bg-emerald-100/80 rounded-md transition-colors"
                             >
                               Add Sub
                             </button>
-                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => openEditCat(cat)}
-                              className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                              className="px-2.5 py-1 text-xs font-semibold text-primary bg-primary-fixed hover:bg-primary-fixed-dim rounded-md transition-colors"
                             >
                               Edit
                             </button>
-                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => handleToggleCatStatus(cat)}
-                              className={`px-2 py-0.5 text-label-sm font-medium rounded-lg transition-colors ${isInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${isInactive ? 'text-emerald-755 bg-emerald-50 hover:bg-emerald-100/80' : 'text-amber-755 bg-amber-50 hover:bg-amber-100/80'}`}
                             >
                               {isInactive ? 'Activate' : 'Deactivate'}
                             </button>
-                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => handleDeleteCat(cat)}
-                              className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                              className="px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                             >
                               Delete
                             </button>
-                            <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                             <button
                               onClick={() => openAuditLog(cat)}
-                              className="px-2 py-0.5 text-label-sm font-medium text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors"
+                              className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
                             >
                               Audit
                             </button>
@@ -499,55 +540,58 @@ export default function CategoriesPage() {
                       </tr>
                       {expandedId === cat.id && (
                         <tr>
-                          <td colSpan={5} className="p-0">
-                            <div className="bg-surface-container-low/40 border-b border-outline-variant/10">
+                          <td colSpan={5} className="py-3 px-6 bg-slate-50/20">
+                            {/* Modern Nested Sub-category Card */}
+                            <div className="bg-[#FAFAFC] border border-slate-200 border-l-4 border-l-primary rounded-lg p-5 shadow-sm">
+                              <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3.5 flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-[16px] text-primary">subdirectory_arrow_right</span>
+                                Sub-categories for {cat.category_name || cat.name}
+                              </h5>
                               {(!subMap[cat.id] || subMap[cat.id].length === 0) ? (
-                                <p className="px-10 py-4 text-label-sm text-on-surface-variant italic">No sub-categories yet.</p>
+                                <p className="text-xs text-slate-400 italic py-2">No sub-categories yet.</p>
                               ) : (
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
                                   <table className="min-w-[420px] w-full text-left">
                                     <thead>
-                                      <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider">
-                                        <th className="py-2 px-10 font-semibold w-16">#</th>
-                                        <th className="py-2 px-3 font-semibold">Sub-Category Name</th>
-                                        <th className="py-2 px-3 font-semibold w-24">Status</th>
-                                        <th className="py-2 px-3 font-semibold w-[280px]">Actions</th>
+                                      <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200/80 sticky top-0">
+                                        <th className="py-2.5 px-4 w-16">#</th>
+                                        <th className="py-2.5 px-4">Sub-Category Name</th>
+                                        <th className="py-2.5 px-4 w-28">Status</th>
+                                        <th className="py-2.5 px-4 w-[280px]">Actions</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       {subMap[cat.id].map((sub, subIdx) => {
                                         const subInactive = sub.status ? sub.status === 'Inactive' : sub.isActive === false;
                                         return (
-                                          <tr key={sub.id} className={`border-t border-outline-variant/5 hover:bg-primary/[0.02] transition-colors ${subInactive ? 'opacity-50' : ''}`}>
-                                            <td className="py-2 px-10 text-on-surface-variant">{subIdx + 1}</td>
-                                            <td className="py-2 px-3 text-on-surface">
+                                          <tr key={sub.id} className={`border-b border-slate-100 hover:bg-slate-50/60 transition-colors duration-150 ${subInactive ? 'opacity-60 bg-slate-50/20' : ''}`}>
+                                            <td className="py-2.5 px-4 text-xs text-slate-400 font-medium">{subIdx + 1}</td>
+                                            <td className="py-2.5 px-4 text-sm text-slate-800 font-semibold">
                                               {sub.sub_category_name || sub.name}
-                                              {subInactive && <span className="ml-2 text-label-sm text-error">(Inactive)</span>}
+                                              {subInactive && <span className="ml-2 text-xs font-normal text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">(Inactive)</span>}
                                             </td>
-                                            <td className="py-2 px-3">
-                                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold ${subInactive ? 'bg-error-container text-on-error-container' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                            <td className="py-2.5 px-4 text-xs">
+                                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${subInactive ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-205'}`}>
                                                 {subInactive ? 'Inactive' : 'Active'}
                                               </span>
                                             </td>
-                                            <td className="py-2 px-3">
-                                              <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
+                                            <td className="py-2.5 px-4">
+                                              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
                                                 <button
                                                   onClick={() => openEditSub(cat.id, sub)}
-                                                  className="px-2 py-0.5 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                  className="px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary-fixed rounded-md transition-colors"
                                                 >
                                                   Edit
                                                 </button>
-                                                <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                                                 <button
                                                   onClick={() => handleToggleSubStatus(cat.id, sub)}
-                                                  className={`px-2 py-0.5 text-label-sm font-medium rounded-lg transition-colors ${subInactive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`}
+                                                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${subInactive ? 'text-emerald-750 hover:bg-emerald-50' : 'text-amber-750 hover:bg-amber-50'}`}
                                                 >
                                                   {subInactive ? 'Activate' : 'Deactivate'}
                                                 </button>
-                                                <span className="text-outline-variant/35 text-label-xs select-none">|</span>
                                                 <button
                                                   onClick={() => handleDeleteSub(cat.id, sub)}
-                                                  className="px-2 py-0.5 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                                                  className="px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-md transition-colors"
                                                 >
                                                   Delete
                                                 </button>
@@ -573,42 +617,53 @@ export default function CategoriesPage() {
         </div>
       </div>
 
+      {/* Modals section */}
       {showCatForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-            <div className="px-6 py-5 border-b border-outline-variant/10 flex items-center justify-between">
-              <h3 className="font-headline-md text-headline-md text-on-surface">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-slate-200" style={{ animation: 'fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div className="px-6 py-4.5 border-b border-slate-150 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-base font-bold text-slate-900">
                 {editingCat ? 'Edit Category' : 'Add Category'}
               </h3>
-              <button onClick={() => setShowCatForm(false)} className="p-1.5 hover:bg-surface-container-high rounded-xl transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              <button onClick={() => !saving && setShowCatForm(false)} disabled={saving} className="p-1 rounded-md hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600 disabled:opacity-50">
+                <span className="material-symbols-outlined text-[20px] block">close</span>
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSaveCat(); }} className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="font-label-md text-label-md text-on-surface block">Category Name</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide block">Category Name</label>
                 <input
                   value={catFormName}
                   onChange={(e) => { setCatFormName(e.target.value); setCatFormError(''); }}
-                  className={`w-full bg-surface-container-low/50 border ${catFormError ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none`}
+                  disabled={saving}
+                  className={`w-full bg-slate-50 border ${catFormError ? 'border-red-300 focus:ring-red-200' : 'border-slate-200 focus:ring-primary/20'} rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:border-primary transition-all outline-none disabled:opacity-50`}
                   placeholder="Enter category name"
                   autoFocus
                 />
-                {catFormError && <p className="text-label-sm text-error mt-1">{catFormError}</p>}
+                {catFormError && <p className="text-xs text-red-500 mt-1">{catFormError}</p>}
               </div>
-              <div className="flex items-center gap-3 pt-5 border-t border-outline-variant/10">
+              <div className="flex items-center gap-3 pt-4.5 border-t border-slate-150">
                 <button
                   type="button"
                   onClick={() => setShowCatForm(false)}
-                  className="flex-1 py-3.5 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors"
+                  disabled={saving}
+                  className="flex-1 py-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+                  disabled={saving}
+                  className="flex-1 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-white text-xs font-semibold shadow-sm hover:shadow active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  {editingCat ? 'Update' : 'Create'}
+                  {saving ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    editingCat ? 'Update' : 'Create'
+                  )}
                 </button>
               </div>
             </form>
@@ -617,41 +672,51 @@ export default function CategoriesPage() {
       )}
 
       {showSubForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-            <div className="px-6 py-5 border-b border-outline-variant/10 flex items-center justify-between">
-              <h3 className="font-headline-md text-headline-md text-on-surface">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-slate-200" style={{ animation: 'fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div className="px-6 py-4.5 border-b border-slate-150 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-base font-bold text-slate-900">
                 {editingSub ? 'Edit Sub-Category' : 'Add Sub-Category'}
               </h3>
-              <button onClick={() => setShowSubForm(false)} className="p-1.5 hover:bg-surface-container-high rounded-xl transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              <button onClick={() => !saving && setShowSubForm(false)} disabled={saving} className="p-1 rounded-md hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600 disabled:opacity-50">
+                <span className="material-symbols-outlined text-[20px] block">close</span>
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSaveSub(); }} className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="font-label-md text-label-md text-on-surface block">Sub-Category Name</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide block">Sub-Category Name</label>
                 <input
                   value={subFormName}
                   onChange={(e) => { setSubFormName(e.target.value); setSubFormError(''); }}
-                  className={`w-full bg-surface-container-low/50 border ${subFormError ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none`}
+                  disabled={saving}
+                  className={`w-full bg-slate-50 border ${subFormError ? 'border-red-300 focus:ring-red-200' : 'border-slate-200 focus:ring-primary/20'} rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:border-primary transition-all outline-none disabled:opacity-50`}
                   placeholder="Enter sub-category name"
                   autoFocus
                 />
-                {subFormError && <p className="text-label-sm text-error mt-1">{subFormError}</p>}
+                {subFormError && <p className="text-xs text-red-500 mt-1">{subFormError}</p>}
               </div>
-              <div className="flex items-center gap-3 pt-5 border-t border-outline-variant/10">
+              <div className="flex items-center gap-3 pt-4.5 border-t border-slate-150">
                 <button
                   type="button"
                   onClick={() => setShowSubForm(false)}
-                  className="flex-1 py-3.5 rounded-xl border border-outline-variant font-label-md text-on-surface hover:bg-surface-container-high transition-colors"
+                  disabled={saving}
+                  className="flex-1 py-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+                  disabled={saving}
+                  className="flex-1 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-white text-xs font-semibold shadow-sm hover:shadow active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  {editingSub ? 'Update' : 'Create'}
+                  {saving ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    editingSub ? 'Update' : 'Create'
+                  )}
                 </button>
               </div>
             </form>
@@ -665,21 +730,22 @@ export default function CategoriesPage() {
         message={`Are you sure you want to delete "${confirmDialog.target?.category_name || confirmDialog.target?.sub_category_name || confirmDialog.target?.name}"? This action cannot be undone.`}
         onConfirm={confirmAction}
         onCancel={() => setConfirmDialog({ isOpen: false, target: null, type: '' })}
+        loading={saving}
       />
 
       {errorDialog.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 p-6" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 overflow-hidden border border-slate-200" style={{ animation: 'fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div className="text-center mb-6">
-              <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-error">block</span>
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-150">
+                <span className="material-symbols-outlined text-red-650 text-[24px]">block</span>
               </div>
-              <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Cannot Delete</h3>
-              <p className="text-body-md text-on-surface-variant">{errorDialog.message}</p>
+              <h3 className="text-base font-bold text-slate-900 mb-2">Cannot Delete</h3>
+              <p className="text-xs text-slate-500">{errorDialog.message}</p>
             </div>
             <button
               onClick={() => setErrorDialog({ isOpen: false, message: '' })}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+              className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-sm hover:shadow active:scale-[0.98] transition-colors"
             >
               Got it
             </button>
@@ -688,52 +754,60 @@ export default function CategoriesPage() {
       )}
 
       {auditTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 p-6" style={{ animation: 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-headline-md text-headline-md text-on-surface">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 p-6 overflow-hidden border border-slate-200" style={{ animation: 'fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-150 bg-slate-50/20 -mx-6 px-6 -mt-6 py-4.5">
+              <h3 className="text-base font-bold text-slate-900">
                 Audit Log: {auditTarget.category_name || auditTarget.name}
               </h3>
-              <button onClick={() => setAuditTarget(null)} className="p-1.5 hover:bg-surface-container-high rounded-xl transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              <button onClick={() => setAuditTarget(null)} className="p-1 rounded-md hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600">
+                <span className="material-symbols-outlined text-[20px] block">close</span>
               </button>
             </div>
             {auditLoading ? (
               <div className="flex items-center justify-center py-8">
                 <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
-                <span className="ml-2 text-on-surface-variant">Loading audit log...</span>
+                <span className="ml-2 text-sm text-slate-500 font-medium">Loading audit log...</span>
               </div>
             ) : auditLogs.length === 0 ? (
-              <div className="text-center py-8 text-on-surface-variant">
+              <div className="text-center py-8 text-slate-400">
                 <span className="material-symbols-outlined text-3xl mb-2 block">receipt_long</span>
-                <p className="font-label-md">No audit entries yet for this category.</p>
+                <p className="text-xs font-medium">No audit entries yet for this category.</p>
               </div>
             ) : (
-              <div className="max-h-80 overflow-y-auto">
+              <div className="max-h-80 overflow-y-auto rounded-lg border border-slate-200">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-label-xs text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/10">
-                      <th className="py-2 px-2 font-semibold">Action</th>
-                      <th className="py-2 px-2 font-semibold">Details</th>
-                      <th className="py-2 px-2 font-semibold">Timestamp</th>
+                    <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
+                      <th className="py-2.5 px-4">Action</th>
+                      <th className="py-2.5 px-4">Details</th>
+                      <th className="py-2.5 px-4 w-48">Timestamp</th>
                     </tr>
                   </thead>
                   <tbody>
                     {auditLogs.map((entry) => (
-                      <tr key={entry.id} className="border-b border-outline-variant/5">
-                        <td className="py-2 px-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label-xs font-semibold bg-primary/10 text-primary">
+                      <tr key={entry.id} className="border-b border-slate-100 text-slate-700 text-xs">
+                        <td className="py-2.5 px-4">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold bg-primary/10 text-primary">
                             {entry.action}
                           </span>
                         </td>
-                        <td className="py-2 px-2 text-body-sm text-on-surface-variant">{getAuditEntryDetails(entry)}</td>
-                        <td className="py-2 px-2 text-body-sm text-on-surface-variant">{new Date(entry.timestamp || entry.createdAt).toLocaleString()}</td>
+                        <td className="py-2.5 px-4 text-slate-650">{getAuditEntryDetails(entry)}</td>
+                        <td className="py-2.5 px-4 text-slate-500">{new Date(entry.timestamp || entry.createdAt).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
+            <div className="mt-5 flex justify-end pt-4 border-t border-slate-150">
+              <button
+                onClick={() => setAuditTarget(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -12,7 +12,7 @@ const ORIGINAL_CATEGORIES = ['IT Services', 'Digital Marketing', 'Consulting', '
 
 function SelectFilter({ id, label, value, options, onChange, disabled, onFocus, onClick }) {
   return (
-    <label className="flex min-w-0 flex-col gap-1 text-label-sm font-label-sm text-on-surface-variant">
+    <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
       {label}
       <select
         id={id}
@@ -22,7 +22,7 @@ function SelectFilter({ id, label, value, options, onChange, disabled, onFocus, 
         onFocus={onFocus}
         onClick={onClick}
         disabled={disabled}
-        className="h-10 rounded-lg border border-outline-variant bg-white/70 px-3 text-body-sm text-on-surface focus:outline-none input-focus-effect disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">All</option>
         {options.map((option) => {
@@ -103,7 +103,7 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
   }));
 
   return (
-    <div className="grid grid-cols-1 gap-3 rounded-lg border border-outline-variant/40 bg-white/35 p-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 bg-slate-50 border border-slate-200 p-5 rounded-xl shadow-xs sm:grid-cols-2 lg:grid-cols-4">
       <SelectFilter id="status-filter" label="Status" value={filters.status} options={FILTER_OPTIONS.status} onChange={(value) => update('status', value)} />
       <SelectFilter id="stage-filter" label="Stage" value={filters.stage} options={FILTER_OPTIONS.stage} onChange={(value) => update('stage', value)} />
       <SelectFilter id="source-filter" label="Source" value={filters.source} options={FILTER_OPTIONS.source} onChange={(value) => update('source', value)} />
@@ -118,28 +118,38 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
       />
       <SelectFilter id="priority-filter" label="Priority" value={filters.priority} options={FILTER_OPTIONS.priority} onChange={(value) => update('priority', value)} />
       {isAdmin && (
-        <label className="flex min-w-0 flex-col gap-1 text-label-sm font-label-sm text-on-surface-variant">
+        <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
           Assigned To
           <input
             aria-label="Assigned To"
             value={filters.assignedTo}
             onChange={(event) => update('assignedTo', event.target.value)}
             placeholder="Name or employee ID"
-            className="h-10 rounded-lg border border-outline-variant bg-white/70 px-3 text-body-sm text-on-surface placeholder:text-outline focus:outline-none input-focus-effect"
+            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150"
           />
         </label>
       )}
-      <label className="flex min-w-0 flex-col gap-1 text-label-sm font-label-sm text-on-surface-variant">
+      <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
         From Date
         <input
           aria-label="From Date"
           type="date"
           value={filters.dateFrom}
           onChange={(event) => update('dateFrom', event.target.value)}
-          className="h-10 rounded-lg border border-outline-variant bg-white/70 px-3 text-body-sm text-on-surface focus:outline-none input-focus-effect"
+          onKeyDown={(e) => {
+            if (e.key !== 'Tab') {
+              e.preventDefault();
+            }
+          }}
+          onClick={(e) => {
+            try {
+              e.target.showPicker();
+            } catch (err) {}
+          }}
+          className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150"
         />
       </label>
-      <label className="flex min-w-0 flex-col gap-1 text-label-sm font-label-sm text-on-surface-variant">
+      <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
         To Date
         <input
           aria-label="To Date"
@@ -147,14 +157,24 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
           value={filters.dateTo}
           onChange={(event) => update('dateTo', event.target.value)}
           min={filters.dateFrom || undefined}
-          className="h-10 rounded-lg border border-outline-variant bg-white/70 px-3 text-body-sm text-on-surface focus:outline-none input-focus-effect"
+          onKeyDown={(e) => {
+            if (e.key !== 'Tab') {
+              e.preventDefault();
+            }
+          }}
+          onClick={(e) => {
+            try {
+              e.target.showPicker();
+            } catch (err) {}
+          }}
+          className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150"
         />
       </label>
       <div className="flex items-end">
         <button
           type="button"
           onClick={onClear}
-          className="h-10 w-full rounded-lg bg-primary px-3 text-label-md font-label-md text-white transition-colors hover:bg-primary/90"
+          className="h-10 w-full rounded-lg bg-primary hover:bg-primary-container text-white text-xs font-semibold shadow-sm transition-colors flex items-center justify-center"
         >
           Clear Filters
         </button>

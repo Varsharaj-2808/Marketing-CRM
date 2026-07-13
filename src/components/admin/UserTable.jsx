@@ -9,66 +9,74 @@ const STATUS_STYLES = {
 export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left" role="table">
+      <table className="w-full text-left border-collapse" role="table">
         <thead>
-          <tr className="text-label-sm text-primary uppercase tracking-widest border-b border-primary/20 bg-surface-container-low/60 backdrop-blur-sm">
-            <th className="py-2.5 px-3 font-semibold">Employee ID</th>
-            <th className="py-2.5 px-3 font-semibold">Employee Name</th>
-            <th className="py-2.5 px-3 font-semibold">Email</th>
-            <th className="py-2.5 px-3 font-semibold">Mobile</th>
-            <th className="py-2.5 px-3 font-semibold">Role</th>
-            <th className="py-2.5 px-3 font-semibold">Status</th>
-            <th className="py-2.5 px-3 font-semibold">Actions</th>
+          <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
+            <th className="py-3.5 px-6 font-semibold">Employee ID</th>
+            <th className="py-3.5 px-6 font-semibold">Employee Name</th>
+            <th className="py-3.5 px-6 font-semibold">Email</th>
+            <th className="py-3.5 px-6 font-semibold">Mobile</th>
+            <th className="py-3.5 px-6 font-semibold">Role</th>
+            <th className="py-3.5 px-6 font-semibold">Status</th>
+            <th className="py-3.5 px-6 font-semibold">Actions</th>
           </tr>
         </thead>
-        <tbody className="text-body-md text-on-surface">
-          {users.map((user) => (
-            <tr
-              key={user.employee_id || user.id || Math.random()}
-              className="border-b border-outline-variant/10 hover:bg-primary/[0.03] transition-colors group relative"
-            >
-              <td className="py-3 px-3 font-semibold text-on-surface">{toDisplayText(user.employee_id, '-')}</td>
-              <td className="py-3 px-3 text-on-surface">{toDisplayText(user.employee_name, '-')}</td>
-              <td className="py-3 px-3 text-on-surface-variant">{toDisplayText(user.email, '-')}</td>
-              <td className="py-3 px-3 text-on-surface-variant">{toDisplayText(user.mobile, '-')}</td>
-              <td className="py-3 px-3">
-                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-label-sm font-semibold">
-                  {toDisplayText(user.role, '-')}
-                </span>
-              </td>
-              <td className="py-3 px-3">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label-sm font-semibold ${STATUS_STYLES[toDisplayText(user.status)] || 'bg-surface-container-high text-on-surface-variant'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${toDisplayText(user.status) === 'Active' ? 'bg-emerald-500' : 'bg-error'}`}></span>
-                  {toDisplayText(user.status, '-')}
-                </span>
-              </td>
-              <td className="py-3 px-3">
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => onEdit(user)}
-                    className="px-2.5 py-1 text-label-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                  >
-                    Edit
-                  </button>
-                  {toDisplayText(user.status) === 'Active' ? (
+        <tbody className="text-sm text-slate-700">
+          {users.map((user) => {
+            const isActive = toDisplayText(user.status) === 'Active';
+            const isAdmin = toDisplayText(user.role) === 'Admin';
+            return (
+              <tr
+                key={user.employee_id || user.id || Math.random()}
+                className="border-b border-slate-150 hover:bg-slate-50/50 transition-colors duration-150"
+              >
+                <td className="py-4 px-6 text-slate-500 font-medium">{toDisplayText(user.employee_id, '-')}</td>
+                <td className="py-4 px-6 font-semibold text-slate-900">{toDisplayText(user.employee_name, '-')}</td>
+                <td className="py-4 px-6 text-slate-650">{toDisplayText(user.email, '-')}</td>
+                <td className="py-4 px-6 text-slate-500">{toDisplayText(user.mobile, '-')}</td>
+                <td className="py-4 px-6">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                    isAdmin ? 'bg-primary/5 text-primary border-primary/10' : 'bg-indigo-50 text-indigo-700 border-indigo-150'
+                  }`}>
+                    {toDisplayText(user.role, '-')}
+                  </span>
+                </td>
+                <td className="py-4 px-6">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                    isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-250' : 'bg-red-50 text-red-700 border-red-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                    {toDisplayText(user.status, '-')}
+                  </span>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => onDeactivate(user)}
-                      className="px-2.5 py-1 text-label-sm font-medium text-error hover:bg-error/10 rounded-lg transition-colors"
+                      onClick={() => onEdit(user)}
+                      className="px-2.5 py-1 text-xs font-semibold text-primary bg-primary-fixed hover:bg-primary-fixed-dim rounded-md transition-colors"
                     >
-                      Deactivate
+                      Edit
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => onActivate(user)}
-                      className="px-2.5 py-1 text-label-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                    >
-                      Activate
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
+                    {isActive ? (
+                      <button
+                        onClick={() => onDeactivate(user)}
+                        className="px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onActivate(user)}
+                        className="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors"
+                      >
+                        Activate
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
