@@ -102,7 +102,7 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       const headers = screen.getAllByRole('columnheader');
       const headerTexts = headers.map(h => h.textContent.trim());
       const expectedHeaders = [
-        'Seq', 'Timestamp', 'Actor', 'Role', 'Action Type', 
+        'Timestamp', 'Actor', 'Role', 'Action Type', 
         'Entity Affected', 'Entity ID', 'Result', 'IP Address', 'Actions/Details'
       ];
       expectedHeaders.forEach(eh => {
@@ -110,7 +110,6 @@ describe('STORY-5.2.1 Audit Log and Retention Settings UI Tests', () => {
       });
 
       // Verify values
-      expect(screen.getAllByText('1').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Admin User').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Admin').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Lead Assigned').length).toBeGreaterThan(0);

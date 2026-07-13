@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 
 const ROLES = ['Admin', 'Marketing Executive'];
-const STATUSES = ['Active', 'Inactive'];
 
 export default function UserFormModal({ isOpen, onClose, onSave, user, existingEmails, existingMobiles }) {
   const [formData, setFormData] = useState({
@@ -22,7 +21,6 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
         email: user.email || '',
         role: user.role || 'Marketing Executive',
         status: user.status || 'Active',
-        department: user.department || 'Sales',
       });
     } else {
       setFormData({
@@ -31,7 +29,6 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
         email: '',
         role: 'Marketing Executive',
         status: 'Active',
-        department: 'Sales',
       });
     }
     setErrors({});
@@ -58,7 +55,6 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
     if (!formData.email.trim()) errs.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errs.email = 'Invalid email format';
     if (!formData.role) errs.role = 'Role is required';
-    if (!formData.status) errs.status = 'Status is required';
     if (!errs.email && existingEmails?.includes(formData.email.toLowerCase()) && (!user || formData.email.toLowerCase() !== user.email.toLowerCase())) {
       errs.email = 'Email already registered';
     }
@@ -149,49 +145,19 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
             />
             {errors.email && <p className="text-label-sm text-error mt-1">{errors.email}</p>}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label htmlFor="emp-role" className="font-label-md text-label-md text-on-surface block">Role</label>
-              <select
-                id="emp-role"
-                value={formData.role}
-                onChange={(e) => handleChange('role', e.target.value)}
-                disabled={submitting}
-                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
-              >
-                <option value="">Select role</option>
-                {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-              {errors.role && <p className="text-label-sm text-error mt-1">{errors.role}</p>}
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="emp-department" className="font-label-md text-label-md text-on-surface block">Department</label>
-              <select
-                id="emp-department"
-                value={formData.department}
-                onChange={(e) => handleChange('department', e.target.value)}
-                disabled={submitting}
-                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
-              >
-                <option value="">Select department</option>
-                {['Sales', 'Marketing', 'Support', 'IT'].map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-              {errors.department && <p className="text-label-sm text-error mt-1">{errors.department}</p>}
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="emp-status" className="font-label-md text-label-md text-on-surface block">Status</label>
-              <select
-                id="emp-status"
-                value={formData.status}
-                onChange={(e) => handleChange('status', e.target.value)}
-                disabled={submitting}
-                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
-              >
-                <option value="">Select status</option>
-                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-              {errors.status && <p className="text-label-sm text-error mt-1">{errors.status}</p>}
-            </div>
+          <div className="space-y-1">
+            <label htmlFor="emp-role" className="font-label-md text-label-md text-on-surface block">Role</label>
+            <select
+              id="emp-role"
+              value={formData.role}
+              onChange={(e) => handleChange('role', e.target.value)}
+              disabled={submitting}
+              className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
+            >
+              <option value="">Select role</option>
+              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            {errors.role && <p className="text-label-sm text-error mt-1">{errors.role}</p>}
           </div>
           <div className="flex items-center gap-3 pt-5 border-t border-outline-variant/10">
             <button

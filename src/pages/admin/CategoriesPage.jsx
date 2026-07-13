@@ -71,13 +71,18 @@ async function fetchCategoryAuditLogDirect(categoryId) {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/admin/categories/audit-log?category_id=${categoryId}&_=${Date.now()}`, {
+    const res = await fetch(`${API_BASE_URL}/admin/audit-log?entity=category&limit=1000&_=${Date.now()}`, {
       headers: getAuthHeadersLocal(),
     });
     if (res.ok) {
       const json = await res.json();
       if (json?.data) {
-        const filtered = json.data.filter(entry => entry.entityId === categoryId);
+        const list = Array.isArray(json.data.logs)
+          ? json.data.logs
+          : Array.isArray(json.data)
+            ? json.data
+            : [];
+        const filtered = list.filter(entry => (entry.resourceId || entry.entity_id || entry.entityId) === categoryId);
         return { success: true, data: filtered };
       }
     }
@@ -410,25 +415,42 @@ export default function CategoriesPage() {
   };
 
   const getAuditEntryDetails = (entry) => {
-    if (entry.details) return entry.details;
+    let detailsObj = entry.details;
+    if (typeof detailsObj === 'string') {
+      try {
+        detailsObj = JSON.parse(detailsObj);
+      } catch (e) {
+        detailsObj = null;
+      }
+    }
+
+    const categoryName = entry.entityName || entry.details?.category_name || (detailsObj ? (detailsObj.category_name || (detailsObj.new?.category_name || detailsObj.old?.category_name)) : '') || '';
+    const user = entry.changedBy || entry.actor?.name || entry.performed_by?.name || entry.email || '';
     
-    const categoryName = entry.entityName || '';
-    const user = entry.changedBy || '';
-    
-    if (entry.action === 'CREATE') {
+    const action = (entry.action_type || entry.action || '').toUpperCase();
+
+    if (action.includes('CREATE') || action.includes('CREATED')) {
       return `Category "${categoryName}" created by ${user}`;
     }
-    if (entry.action === 'UPDATE' && entry.changes) {
-      const changesObj = entry.changes.category_name || entry.changes.name || entry.changes;
-      if (changesObj && (changesObj.old !== undefined || changesObj.new !== undefined)) {
-        return `Category renamed from "${changesObj.old}" to "${changesObj.new}" by ${user}`;
+    if (action.includes('UPDATE') || action.includes('UPDATED')) {
+      if (detailsObj) {
+        if (detailsObj.old?.category_name && detailsObj.new?.category_name) {
+          return `Category renamed from "${detailsObj.old.category_name}" to "${detailsObj.new.category_name}" by ${user}`;
+        }
+        if (detailsObj.old?.status && detailsObj.new?.status) {
+          return `Category status changed from "${detailsObj.old.status}" to "${detailsObj.new.status}" by ${user}`;
+        }
       }
       return `Category updated by ${user}`;
     }
-    if (entry.action === 'DELETE') {
+    if (action.includes('DELETE') || action.includes('DELETED')) {
       return `Category "${categoryName}" deleted by ${user}`;
     }
-    return `${entry.action} action performed on "${categoryName}" by ${user}`;
+    
+    if (detailsObj && typeof detailsObj === 'object') {
+      return JSON.stringify(detailsObj);
+    }
+    return entry.details || `${action} action performed on "${categoryName}" by ${user}`;
   };
 
   if (!isAuthenticated) return null;

@@ -166,17 +166,15 @@ export default function SavedViewsPanel({
                   >
                     <span className="material-symbols-outlined text-[16px]">edit</span>
                   </button>
-                  {!isDefault && (
-                    <button
-                      type="button"
-                      onClick={() => confirmDelete(view.id)}
-                      className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                      aria-label={`Delete ${view.name}`}
-                      title="Delete view"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => confirmDelete(view.id)}
+                    className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                    aria-label="Delete view"
+                    title="Delete view"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
                 </div>
               </div>
             );

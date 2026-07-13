@@ -108,7 +108,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
       expect(screen.getByText(/Supabase Labs/i)).toBeInTheDocument();
     });
 
-    const leadsCall = fetch.mock.calls.find(c => String(c[0]).includes('/admin/leads'));
+    const leadsCall = fetch.mock.calls.find(c => String(c[0]).includes('/admin/leads') && !String(c[0]).includes('saved-views'));
     expect(leadsCall).toBeDefined();
     expect(leadsCall[0]).toContain('page=1');
     expect(leadsCall[0]).toContain('limit=25');

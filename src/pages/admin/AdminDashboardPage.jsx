@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
 
   const [hoveredBar, setHoveredBar] = useState(null);
   const [applying, setApplying] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState(null);
 
   // Authentication check
   useEffect(() => {
@@ -291,9 +291,16 @@ export default function AdminDashboardPage() {
     setAppliedDateRange({ from: dateFrom, to: dateTo });
   };
 
+  const handleResetDateRange = () => {
+    setDateFrom('');
+    setDateTo('');
+    setApplying(true);
+    setAppliedDateRange({ from: '', to: '' });
+  };
+
   // Handle report exporting
   const handleExportReport = async (reportType) => {
-    setExporting(true);
+    setExporting(reportType);
     try {
       const params = {
         report: reportType,
@@ -311,7 +318,7 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error('Export report failed', err);
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   };
 
@@ -351,10 +358,10 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => handleExportReport('category-breakdown')}
-              disabled={exporting}
+              disabled={exporting !== null}
               className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-50 shadow-xs transition-all duration-150 active:scale-[0.98] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {exporting ? (
+              {exporting === 'category-breakdown' ? (
                 <>
                   <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
                   <span>Exporting...</span>
@@ -368,10 +375,10 @@ export default function AdminDashboardPage() {
             </button>
             <button
               onClick={() => handleExportReport('lead-conversion')}
-              disabled={exporting}
+              disabled={exporting !== null}
               className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary-container shadow-xs transition-all duration-150 active:scale-[0.98] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {exporting ? (
+              {exporting === 'lead-conversion' ? (
                 <>
                   <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
                   <span>Exporting...</span>
@@ -440,6 +447,14 @@ export default function AdminDashboardPage() {
               ) : (
                 'Apply'
               )}
+            </button>
+            <button
+              type="button"
+              onClick={handleResetDateRange}
+              disabled={applying || (!dateFrom && !dateTo && !appliedDateRange.from && !appliedDateRange.to)}
+              className="h-9 px-4 rounded-md bg-white border border-slate-200 text-slate-700 text-xs font-semibold shadow-xs hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+            >
+              Reset
             </button>
           </form>
         </div>

@@ -45,7 +45,6 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [departmentFilter, setDepartmentFilter] = useState('All');
   const [userPage, setUserPage] = useState(1);
   const [userTotal, setUserTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -65,13 +64,12 @@ export default function UserManagementPage() {
       search: searchQuery,
       role: roleFilter,
       status: statusFilter,
-      department: departmentFilter,
     });
     if (res.success) {
       setUsers(res.data);
       setUserTotal(res.pagination.total);
     }
-  }, [userPage, searchQuery, roleFilter, statusFilter, departmentFilter]);
+  }, [userPage, searchQuery, roleFilter, statusFilter]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,9 +81,9 @@ export default function UserManagementPage() {
       setLoading(false);
     };
     load();
-  }, [isAuthenticated, navigate, fetchUsers, userPage, searchQuery, roleFilter, statusFilter, departmentFilter]);
+  }, [isAuthenticated, navigate, fetchUsers, userPage, searchQuery, roleFilter, statusFilter]);
 
-  useEffect(() => { setUserPage(1); }, [searchQuery, roleFilter, statusFilter, departmentFilter]);
+  useEffect(() => { setUserPage(1); }, [searchQuery, roleFilter, statusFilter]);
 
   const handleSaveUser = async (formData) => {
     if (editingUser) {
@@ -198,17 +196,7 @@ export default function UserManagementPage() {
                 <option value="Admin">Admin</option>
                 <option value="Marketing Executive">Marketing Executive</option>
               </select>
-              <select
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              >
-                <option value="All">Any Department</option>
-                <option value="Sales">Sales</option>
-                <option value="Marketing">Marketing</option>
-                <option value="Support">Support</option>
-                <option value="IT">IT</option>
-              </select>
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}

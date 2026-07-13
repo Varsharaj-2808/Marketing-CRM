@@ -443,7 +443,6 @@ export default function AuditLogPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
-                  <th className="hidden sm:table-cell py-3.5 px-4">Seq</th>
                   <th className="py-3.5 px-4">Timestamp</th>
                   <th className="py-3.5 px-4">Actor</th>
                   <th className="hidden md:table-cell py-3.5 px-4">Role</th>
@@ -462,7 +461,6 @@ export default function AuditLogPage() {
                     className="border-b border-slate-150 hover:bg-slate-50/50 transition-colors duration-150 cursor-pointer"
                     onClick={() => setSelectedEntry(entry)}
                   >
-                    <td className="hidden sm:table-cell py-4 px-4 font-semibold text-slate-500">{entry.seq || '-'}</td>
                     <td className="py-4 px-4 text-slate-550 whitespace-nowrap">
                       {entry.created_at || entry.timestamp || entry.createdAt
                         ? new Date(entry.created_at || entry.timestamp || entry.createdAt).toLocaleString()

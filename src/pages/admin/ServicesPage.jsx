@@ -5,6 +5,7 @@ import { fetchServices, createService, updateService, deleteService } from '../.
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import Skeleton from '../../components/common/Skeleton';
 import SkeletonTable from '../../components/common/SkeletonTable';
+import Toast from '../../components/common/Toast';
 
 function ServicesSkeleton() {
   return (
@@ -37,12 +38,15 @@ export default function ServicesPage() {
   const [formName, setFormName] = useState('');
   const [formError, setFormError] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, target: null });
-  const [notification, setNotification] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [saving, setSaving] = useState(false);
 
-  const showNotification = (message, type = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+  };
+
+  const handleToastClose = () => {
+    setToast({ show: false, message: '', type: 'success' });
   };
 
   const loadServices = useCallback(async () => {
@@ -87,23 +91,23 @@ export default function ServicesPage() {
         const res = await updateService(editingService.id, { name: formName.trim() });
         if (res.success) {
           await loadServices();
-          showNotification(res.message);
+          showToast(res.message);
           setShowForm(false);
         } else {
-          showNotification(res.message, 'error');
+          showToast(res.message, 'error');
         }
       } else {
         const res = await createService({ name: formName.trim() });
         if (res.success) {
           await loadServices();
-          showNotification(res.message);
+          showToast(res.message);
           setShowForm(false);
         } else {
-          showNotification(res.message, 'error');
+          showToast(res.message, 'error');
         }
       }
     } catch (err) {
-      showNotification(err?.message || 'Action failed', 'error');
+      showToast(err?.message || 'Action failed', 'error');
     } finally {
       setSaving(false);
     }
@@ -119,12 +123,12 @@ export default function ServicesPage() {
       const res = await deleteService(confirmDialog.target.id);
       if (res.success) {
         await loadServices();
-        showNotification(res.message);
+        showToast(res.message);
       } else {
-        showNotification(res.message, 'error');
+        showToast(res.message, 'error');
       }
     } catch (err) {
-      showNotification(err?.message || 'Delete failed', 'error');
+      showToast(err?.message || 'Delete failed', 'error');
     } finally {
       setSaving(false);
       setConfirmDialog({ isOpen: false, target: null });
@@ -156,14 +160,12 @@ export default function ServicesPage() {
         </button>
       </div>
 
-      {notification && (
-        <div className={`mb-3 px-4 py-3 rounded-lg flex items-center gap-2.5 text-sm font-medium shadow-xs border ${
-          notification.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-        }`} style={{ animation: 'slide-up 0.3s ease' }}>
-          <span className="material-symbols-outlined text-[18px]">{notification.type === 'error' ? 'error' : 'check_circle'}</span>
-          <span>{notification.message}</span>
-        </div>
-      )}
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={handleToastClose}
+      />
 
       {/* Main Table Card */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">

@@ -108,7 +108,6 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Positive)', () => {
       expect(screen.getByLabelText(/mobile number/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/role/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/status/i)).toBeInTheDocument();
     });
   });
 
@@ -121,7 +120,6 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Positive)', () => {
     fireEvent.change(screen.getByLabelText(/mobile number/i), { target: { value: '9111122222' } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'jane.doe@company.com' } });
     fireEvent.change(screen.getByLabelText(/role/i), { target: { value: 'Admin' } });
-    fireEvent.change(screen.getByLabelText(/status/i), { target: { value: 'Active' } });
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
@@ -135,22 +133,7 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Positive)', () => {
     expect(empIds.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('TEST-EP1-USER-008: can create user with Inactive status', async () => {
-    await renderUserManagement();
-    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
-    await waitFor(() => screen.getByLabelText(/employee name/i));
 
-    fireEvent.change(screen.getByLabelText(/employee name/i), { target: { value: 'Inactive User' } });
-    fireEvent.change(screen.getByLabelText(/mobile number/i), { target: { value: '9988776655' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'inactive@company.com' } });
-    fireEvent.change(screen.getByLabelText(/role/i), { target: { value: 'Marketing Executive' } });
-    fireEvent.change(screen.getByLabelText(/status/i), { target: { value: 'Inactive' } });
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/user created successfully/i)).toBeInTheDocument();
-    });
-  });
 });
 
 describe('UserManagementPage — STORY-1.2.1 Create User (Negative)', () => {
@@ -163,7 +146,6 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Negative)', () => {
     fireEvent.change(screen.getByLabelText(/mobile number/i), { target: { value: '9111111111' } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'admin@company.com' } });
     fireEvent.change(screen.getByLabelText(/role/i), { target: { value: 'Marketing Executive' } });
-    fireEvent.change(screen.getByLabelText(/status/i), { target: { value: 'Active' } });
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
@@ -180,7 +162,6 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Negative)', () => {
     fireEvent.change(screen.getByLabelText(/mobile number/i), { target: { value: '9876543210' } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'unique@company.com' } });
     fireEvent.change(screen.getByLabelText(/role/i), { target: { value: 'Marketing Executive' } });
-    fireEvent.change(screen.getByLabelText(/status/i), { target: { value: 'Active' } });
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
@@ -248,15 +229,7 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Negative)', () => {
     expect(options).toContain('Marketing Executive');
   });
 
-  it('TEST-EP1-USER-018: rejects invalid status value', async () => {
-    await renderUserManagement();
-    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
-    await waitFor(() => screen.getByLabelText(/employee name/i));
-    const statusSelect = screen.getByLabelText(/status/i);
-    const options = Array.from(statusSelect.options).map(o => o.value);
-    expect(options).toContain('Active');
-    expect(options).toContain('Inactive');
-  });
+
 });
 
 describe('UserManagementPage — STORY-1.2.1 Edit User', () => {

@@ -23,8 +23,8 @@ export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
         </thead>
         <tbody className="text-sm text-slate-700">
           {users.map((user) => {
-            const isActive = toDisplayText(user.status) === 'Active';
-            const isAdmin = toDisplayText(user.role) === 'Admin';
+            const isActive = toDisplayText(user.status).toLowerCase() === 'active';
+            const isAdmin = toDisplayText(user.role).toLowerCase() === 'admin';
             return (
               <tr
                 key={user.employee_id || user.id || Math.random()}
@@ -35,7 +35,7 @@ export default function UserTable({ users, onEdit, onDeactivate, onActivate }) {
                 <td className="py-4 px-6 text-slate-650">{toDisplayText(user.email, '-')}</td>
                 <td className="py-4 px-6 text-slate-500">{toDisplayText(user.mobile, '-')}</td>
                 <td className="py-4 px-6">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${
                     isAdmin ? 'bg-primary/5 text-primary border-primary/10' : 'bg-indigo-50 text-indigo-700 border-indigo-150'
                   }`}>
                     {toDisplayText(user.role, '-')}

@@ -116,7 +116,9 @@ function buildQuery({ page, search, filters, sort }) {
   const query = { page, limit: PAGE_SIZE };
   if (search.trim().length >= 2) query.search = search.trim();
   if (filters.status) query.status = filters.status;
-  if (filters.stage) query.stage = filters.stage;
+  if (filters.stage) {
+    query.stage = filters.stage === 'New' ? 'New Lead' : filters.stage;
+  }
   if (filters.source) query.source = filters.source;
   if (filters.priority) query.priority = filters.priority;
   if (filters.category) query.category_id = filters.category;
@@ -173,6 +175,30 @@ export default function LeadList() {
       }
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      if (accessDenied) return;
+      try {
+        const res = await fetchSavedViews();
+        if (res?.success && Array.isArray(res.data)) {
+          const dbViews = res.data.map(v => ({
+            id: v.id,
+            name: v.name,
+            filters: v.filters || {},
+            sort: v.sort || { sortBy: '', sortOrder: 'desc' },
+            search: v.search || '',
+          }));
+          const deletedDefaults = JSON.parse(localStorage.getItem('deleted_default_views') || '[]');
+          const visibleDefaults = DEFAULT_SAVED_VIEWS.filter(d => !deletedDefaults.includes(d.id));
+          setSavedViews([...visibleDefaults, ...dbViews]);
+        }
+      } catch (err) {
+        console.error('Failed to load saved views', err);
+      }
+    };
+    load();
+  }, [accessDenied]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -259,20 +285,28 @@ export default function LeadList() {
     const promptName = nameOverride || window.prompt('View name', activeSearch || filters.priority || filters.status ? 'Current Lead View' : 'My Lead View');
     const name = promptName?.trim();
     if (!name) return;
-    const res = await createSavedView({ name, filters, sort, search: activeSearch });
-    const newView = res?.data || res || { id: `view-${Date.now()}`, name, filters, sort, search: activeSearch };
-    const view = {
-      id: newView.id || newView._id || `view-${Date.now()}`,
-      name: newView.name || name,
-      filters: newView.filters || filters,
-      sort: newView.sort || sort,
-      search: newView.search || activeSearch,
-    };
-    setSavedViews((prev) => [...prev, view]);
-    setActiveViewId(view.id);
-    setToastMessage('Saved View created successfully.');
-    setToastType('success');
-    setToastShow(true);
+    try {
+      const res = await createSavedView({ name, filters, sort, search: activeSearch });
+      if (res?.success) {
+        const newView = res.data;
+        const view = {
+          id: newView.id || newView._id,
+          name: newView.name || name,
+          filters: newView.filters || filters,
+          sort: newView.sort || sort,
+          search: newView.search || activeSearch,
+        };
+        setSavedViews((prev) => [...prev, view]);
+        setActiveViewId(view.id);
+        setToastMessage('Saved View created successfully.');
+        setToastType('success');
+        setToastShow(true);
+      }
+    } catch (err) {
+      setToastMessage(err?.message || 'Failed to save view.');
+      setToastType('error');
+      setToastShow(true);
+    }
   };
 
   const handleUpdateSavedView = async (viewId, nameOverride) => {
@@ -289,9 +323,27 @@ export default function LeadList() {
   };
 
   const handleDeleteSavedView = async (viewId) => {
-    await deleteSavedView(viewId);
-    setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
-    if (activeViewId === viewId) setActiveViewId('');
+    try {
+      const isDefault = DEFAULT_SAVED_VIEWS.some((dv) => dv.id === viewId);
+      if (isDefault) {
+        const deletedDefaults = JSON.parse(localStorage.getItem('deleted_default_views') || '[]');
+        if (!deletedDefaults.includes(viewId)) {
+          deletedDefaults.push(viewId);
+          localStorage.setItem('deleted_default_views', JSON.stringify(deletedDefaults));
+        }
+      } else {
+        await deleteSavedView(viewId);
+      }
+      setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
+      if (activeViewId === viewId) setActiveViewId('');
+      setToastMessage('Saved View deleted successfully.');
+      setToastType('success');
+      setToastShow(true);
+    } catch (err) {
+      setToastMessage(err?.message || 'Failed to delete saved view.');
+      setToastType('error');
+      setToastShow(true);
+    }
   };
 
   useEffect(() => {
