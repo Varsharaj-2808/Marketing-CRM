@@ -37,7 +37,7 @@ const User = {
 
   async findAll() {
     const result = await query(
-      `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status
+      `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status, department
        FROM users ORDER BY "createdAt" DESC`
     );
     return result.rows;
@@ -46,7 +46,7 @@ const User = {
   async findActiveByRole(role) {
     const result = await query(
       `SELECT id, "employee_id", name as employee_name, email, role,
-              "accountStatus" as status
+              "accountStatus" as status, department
        FROM users
        WHERE role = $1 AND "accountStatus" = 'active'
        ORDER BY name ASC`,
@@ -64,7 +64,7 @@ const User = {
   },
 
   async create(data, client) {
-    const { name, email, mobile, role, password, status } = data;
+    const { name, email, mobile, role, password, status, department } = data;
     const employeeId = await this.getNextEmployeeId();
     const passwordHash = await bcrypt.hash(password, 12);
     const userStatus = status || 'active';
@@ -75,10 +75,10 @@ const User = {
 
     const db = client || { query };
     const result = await db.query(
-      `INSERT INTO users ("employee_id", name, email, mobile, role, "accountStatus", password, "firstName", "lastName")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status, "createdAt", "updatedAt"`,
-      [employeeId, name, email.toLowerCase(), mobile, role, userStatus, passwordHash, firstName, lastName]
+      `INSERT INTO users ("employee_id", name, email, mobile, role, "accountStatus", password, "firstName", "lastName", department)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, "employee_id", name, email, mobile, role, "accountStatus" as status, "createdAt", "updatedAt", department`,
+      [employeeId, name, email.toLowerCase(), mobile, role, userStatus, passwordHash, firstName, lastName, department || null]
     );
     return result.rows[0];
   },
