@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 
@@ -289,7 +289,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
       expect(res.body.message).toBe('Invalid date format. Use YYYY-MM-DD');
     });
 
-    test('test-ep-5.2.1-b-008: Pagination boundary — page beyond total returns empty data', async () => {
+    test('test-ep-5.2.1-b-008: Pagination boundary ΓÇö page beyond total returns empty data', async () => {
       defaultQuery([
         ['SELECT COUNT(*) FROM', () => ({ rows: [{ count: '10' }] })],
         ['SELECT a.*', () => ({ rows: [] })],
@@ -1135,7 +1135,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
       expect(auditParams[3]).toBe('category');
     });
 
-    test('test-ep-5.2.1-b-041: Transaction atomicity — validation failure prevents audit log', async () => {
+    test('test-ep-5.2.1-b-041: Transaction atomicity ΓÇö validation failure prevents audit log', async () => {
       query.mockImplementation((sql, params) => {
         if (sql.includes('SELECT * FROM users WHERE id = $1')) {
           return Promise.resolve({
@@ -1156,7 +1156,7 @@ describe('STORY-5.2.1: System-wide Audit Log', () => {
       expect(auditCalls.length).toBe(0);
     });
 
-    test('test-ep-5.2.1-b-042: Transaction atomicity — audit log failure returns 500, category not created', async () => {
+    test('test-ep-5.2.1-b-042: Transaction atomicity ΓÇö audit log failure returns 500, category not created', async () => {
       const CAT_ID = 'abcdabcd-abcd-abcd-abcd-abcdabcdabcd';
       let auditLogCalled = false;
       let categoryInsertCommitted = false;

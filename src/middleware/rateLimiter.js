@@ -1,4 +1,4 @@
-const requestCounts = new Map();
+﻿const requestCounts = new Map();
 
 const cleanupInterval = setInterval(() => {
   const now = Date.now();

@@ -27,7 +27,13 @@ const Lead = {
 
   async findById(id) {
     const result = await query(
-      'SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id = $1',
+      `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+              bc.category_name, bsc.sub_category_name
+       FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       WHERE l.id = $1`,
       [id]
     );
     return result.rows[0] || null;
@@ -35,9 +41,12 @@ const Lead = {
 
   async findByLeadId(leadId) {
     const result = await query(
-      `SELECT l.*, u.name as assigned_to_name
+      `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+              bc.category_name, bsc.sub_category_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
        WHERE l.lead_id = $1`,
       [leadId]
     );
@@ -65,7 +74,7 @@ const Lead = {
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, status, category, sub_category, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
 
     const conditions = [];
     const values = [];
@@ -101,8 +110,13 @@ const Lead = {
     }
 
     if (status) {
-      conditions.push(`l.lead_status = $${idx++}`);
-      values.push(status);
+      if (status === 'Won' || status === 'Lost') {
+        conditions.push(`l.stage = $${idx++}`);
+        values.push(status);
+      } else {
+        conditions.push(`l.lead_status = $${idx++}`);
+        values.push(status);
+      }
     }
 
     if (category) {
@@ -113,6 +127,11 @@ const Lead = {
     if (sub_category) {
       conditions.push(`l.sub_category = $${idx++}`);
       values.push(sub_category);
+    }
+
+    if (lead_source) {
+      conditions.push(`l.lead_source = $${idx++}`);
+      values.push(lead_source);
     }
 
     if (from_date) {
@@ -151,9 +170,12 @@ const Lead = {
     const totalCount = parseInt(countResult.rows[0].count);
 
     const offset = (page - 1) * limit;
-    const sql = `SELECT l.*, u.name as assigned_to_name
+    const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+                        bc.category_name, bsc.sub_category_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
+                 LEFT JOIN business_categories bc ON l.category = bc.id
+                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -193,8 +215,13 @@ const Lead = {
     }
 
     if (status) {
-      conditions.push(`l.lead_status = $${idx++}`);
-      values.push(status);
+      if (status === 'Won' || status === 'Lost') {
+        conditions.push(`l.stage = $${idx++}`);
+        values.push(status);
+      } else {
+        conditions.push(`l.lead_status = $${idx++}`);
+        values.push(status);
+      }
     }
 
     if (priority) {
@@ -265,9 +292,12 @@ const Lead = {
     const totalCount = parseInt(countResult.rows[0].count);
 
     const offset = (page - 1) * limit;
-    const sql = `SELECT l.*, u.name as assigned_to_name
+    const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+                        bc.category_name, bsc.sub_category_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
+                 LEFT JOIN business_categories bc ON l.category = bc.id
+                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;

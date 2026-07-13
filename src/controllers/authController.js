@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+﻿const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -171,6 +171,10 @@ exports.refreshToken = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
 
+    // Normalize legacy role values before generating JWT (same as login)
+    if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
+    else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
+
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
     await User.storeRefreshToken(user.id, await bcrypt.hash(newRefreshToken, 12));
@@ -223,11 +227,17 @@ exports.logout = async (req, res, next) => {
 
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email: rawEmail } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
-    if (!email) {
+    if (!rawEmail) {
       return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const email = rawEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Invalid email format' });
     }
 
     const config = await getLockoutConfig();
@@ -248,7 +258,7 @@ exports.forgotPassword = async (req, res, next) => {
         }, client);
       });
 
-      const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${process.env.APP_URL || 'http://localhost:5173'}/app/reset-password?token=${resetToken}`;
       await sendPasswordResetEmail(email, resetUrl);
     } else {
       await AuditLog.create({

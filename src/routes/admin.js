@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
@@ -22,7 +22,7 @@ router.get('/leads/export/history/:id/download', protect, authorize('Admin'), le
 const followupController = require('../controllers/followupController');
 
 router.post('/users', protect, authorize('Admin'), userController.createUser);
-router.get('/users', protect, authorize('Admin'), userController.getUsers);
+router.get('/users', protect, authorize('Admin', 'Marketing Executive'), userController.getUsers);
 router.get('/users/deactivated', protect, authorize('Admin'), userController.getDeactivatedUsers);
 router.get('/users/reindex', protect, authorize('Admin'), userController.reindexUsers);
 router.get('/users/:id', protect, userController.getUser);
@@ -98,15 +98,15 @@ router.get('/reports/export', protect, authorize('Admin'), adminController.expor
 
 
 // Category Master CRUD
-router.get('/categories/active', protect, authorize('Admin'), categoryController.getActiveCategories);
+router.get('/categories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveCategories);
 router.get('/categories/audit-log', protect, authorize('Admin'), categoryController.getCategoryAuditLog);
 router.post('/categories/seed-defaults', protect, authorize('Admin'), categoryController.seedDefaultTaxonomy);
-router.get('/categories', protect, authorize('Admin'), categoryController.getCategories);
+router.get('/categories', protect, authorize('Admin', 'Marketing Executive'), categoryController.getCategories);
 router.post('/categories', protect, authorize('Admin'), categoryController.createCategory);
-router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin'), adminController.getBusinessSubCategories);
+router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessSubCategories);
 router.post('/categories/:categoryId/sub-categories', protect, authorize('Admin'), categoryController.createSubCategoryForCategory);
 router.get('/categories/:categoryId/sub-categories/:subCategoryId/in-use', protect, authorize('Admin'), adminController.checkSubCategoryInUse);
-router.get('/categories/:categoryId/sub-categories/active', protect, authorize('Admin'), categoryController.getActiveSubCategories);
+router.get('/categories/:categoryId/sub-categories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveSubCategories);
 router.get('/categories/:id/in-use', protect, authorize('Admin'), adminController.checkCategoryInUse);
 router.get('/categories/:id', protect, authorize('Admin'), categoryController.getCategory);
 router.put('/categories/:id', protect, authorize('Admin'), categoryController.updateCategory);
@@ -125,32 +125,32 @@ router.put('/categories/:categoryId/sub-categories/:subCategoryId', protect, aut
 router.delete('/categories/:categoryId/sub-categories/:subCategoryId', protect, authorize('Admin'), categoryController.deleteSubCategory);
 
 // Services CRUD
-router.get('/services', protect, authorize('Admin'), adminController.getServices);
+router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 router.post('/services', protect, authorize('Admin'), adminController.createService);
 router.put('/services/:id', protect, authorize('Admin'), adminController.updateService);
 router.delete('/services/:id', protect, authorize('Admin'), adminController.deleteService);
 
 // Lead Sources CRUD
-router.get('/lead_sources', protect, authorize('Admin'), adminController.getLeadSources);
+router.get('/lead_sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
 router.post('/lead_sources', protect, authorize('Admin'), adminController.createLeadSource);
 router.put('/lead_sources/:id', protect, authorize('Admin'), adminController.updateLeadSource);
 router.delete('/lead_sources/:id', protect, authorize('Admin'), adminController.deleteLeadSource);
 
-// ── STORY-4.2.1 | API-6 ─────────────────────────────────────
+// ΓöÇΓöÇ STORY-4.2.1 | API-6 ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 router.get('/dashboard/at-risk', protect, authorize('Admin'), adminController.getAtRiskLeads);
 
-// ── STORY-4.2.1 | API-4 ─────────────────────────────────────
+// ΓöÇΓöÇ STORY-4.2.1 | API-4 ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 router.post('/reminders/send-daily', protect, authorize('Admin'), adminController.sendDailyReminders);
 
-// ── STORY-4.3.1 | Admin Timeline ────────────────────────────
+// ΓöÇΓöÇ STORY-4.3.1 | Admin Timeline ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 router.get('/leads/:id/timeline', protect, authorize('Admin'), followupController.getTimeline);
 
-// ── STORY-4.3.1 | Timeline Immutability (Admin) ─────────────
+// ΓöÇΓöÇ STORY-4.3.1 | Timeline Immutability (Admin) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 router.put('/leads/:id/timeline/:eventId',    protect, authorize('Admin'), followupController.rejectTimelineMutation);
 router.patch('/leads/:id/timeline/:eventId',  protect, authorize('Admin'), followupController.rejectTimelineMutation);
 router.delete('/leads/:id/timeline/:eventId', protect, authorize('Admin'), followupController.rejectTimelineMutation);
 
-// ── SMTP Test ─────────────────────────────────────────────────
+// ΓöÇΓöÇ SMTP Test ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 router.post('/test-email', protect, authorize('Admin'), adminController.testEmail);
 
 module.exports = router;

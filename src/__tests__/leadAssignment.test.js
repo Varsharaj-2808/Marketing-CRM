@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -92,10 +92,10 @@ beforeEach(() => {
 afterAll(() => jest.restoreAllMocks());
 
 // ============================================================
-// API-1: PATCH /leads/{id}/assign — Single Lead Assign/Reassign
+// API-1: PATCH /leads/{id}/assign ΓÇö Single Lead Assign/Reassign
 // ============================================================
 describe('API-1: PATCH /admin/leads/:id/assign', () => {
-  test('test-ep-2.3.1-001: Assign an unowned lead to an active Marketing Executive — 200', async () => {
+  test('test-ep-2.3.1-001: Assign an unowned lead to an active Marketing Executive ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: null }] })],
@@ -116,7 +116,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.data).toBeDefined();
   });
 
-  test('test-ep-2.3.1-002: Reassign a lead that already has an owner with reason — 200', async () => {
+  test('test-ep-2.3.1-002: Reassign a lead that already has an owner with reason ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -135,7 +135,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.success).toBe(true);
   });
 
-  test('test-ep-2.3.1-003: Admin assigns lead to themselves — 200', async () => {
+  test('test-ep-2.3.1-003: Admin assigns lead to themselves ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: null }] })],
@@ -153,7 +153,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.success).toBe(true);
   });
 
-  test('test-ep-2.3.1-004: Initial assignment of newly created lead (no previous owner) does not require reason — 200', async () => {
+  test('test-ep-2.3.1-004: Initial assignment of newly created lead (no previous owner) does not require reason ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: null }] })],
@@ -170,7 +170,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-005: Reassignment with minimum length reason (single character) — 200', async () => {
+  test('test-ep-2.3.1-005: Reassignment with minimum length reason (single character) ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -188,7 +188,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-006: Reassign without reason when lead already has an owner — 400', async () => {
+  test('test-ep-2.3.1-006: Reassign without reason when lead already has an owner ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -202,7 +202,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.reason).toBe('Reassignment reason is required when the lead already has an owner');
   });
 
-  test('test-ep-2.3.1-007: Reassign with empty reason string when lead has owner — 400', async () => {
+  test('test-ep-2.3.1-007: Reassign with empty reason string when lead has owner ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -216,7 +216,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.reason).toBe('Reassignment reason cannot be empty');
   });
 
-  test('test-ep-2.3.1-008: Reassign with whitespace-only reason — 400', async () => {
+  test('test-ep-2.3.1-008: Reassign with whitespace-only reason ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -230,7 +230,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.reason).toBe('Reassignment reason cannot be empty');
   });
 
-  test('test-ep-2.3.1-009: Missing assigned_to field — 400', async () => {
+  test('test-ep-2.3.1-009: Missing assigned_to field ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]],
     );
     const app = createTestApp();
@@ -242,7 +242,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.assigned_to).toBe('Target user ID is required');
   });
 
-  test('test-ep-2.3.1-010: Empty assigned_to string — 400', async () => {
+  test('test-ep-2.3.1-010: Empty assigned_to string ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]],
     );
     const app = createTestApp();
@@ -254,7 +254,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.assigned_to).toBe('Target user ID is required');
   });
 
-  test('test-ep-2.3.1-011: Non-existent lead ID — 404', async () => {
+  test('test-ep-2.3.1-011: Non-existent lead ID ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [] })],
@@ -268,7 +268,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.error).toBe('Lead not found');
   });
 
-  test('test-ep-2.3.1-012: Non-existent user as assignee — 404', async () => {
+  test('test-ep-2.3.1-012: Non-existent user as assignee ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [MOCK_LEAD] })],
@@ -283,7 +283,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.error).toBe('Assigned user not found');
   });
 
-  test('test-ep-2.3.1-013: Inactive/deactivated user as assignee — 400', async () => {
+  test('test-ep-2.3.1-013: Inactive/deactivated user as assignee ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [MOCK_LEAD] })],
@@ -298,7 +298,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.error).toBe('Cannot assign leads to a deactivated user');
   });
 
-  test('test-ep-2.3.1-014: Marketing Executive attempts to access assign endpoint — 403', async () => {
+  test('test-ep-2.3.1-014: Marketing Executive attempts to access assign endpoint ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]],
     );
     const app = createTestApp();
@@ -309,7 +309,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.3.1-015: Unauthenticated request — 401', async () => {
+  test('test-ep-2.3.1-015: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .patch('/api/admin/leads/d290f1ee-6c54-4b01-90e6-d701748f0851/assign')
@@ -317,7 +317,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.3.1-016: Invalid lead ID format (non-UUID) — 400', async () => {
+  test('test-ep-2.3.1-016: Invalid lead ID format (non-UUID) ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]],
     );
     const app = createTestApp();
@@ -328,7 +328,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.status).toBe(404);
   });
 
-  test('test-ep-2.3.1-017: Assign lead to the same user it is already assigned to (no-op) — 200', async () => {
+  test('test-ep-2.3.1-017: Assign lead to the same user it is already assigned to (no-op) ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -344,7 +344,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.message).toBe('Lead ownership unchanged');
   });
 
-  test('test-ep-2.3.1-018: Reassign with reason at maximum allowed length (500 characters) — 200', async () => {
+  test('test-ep-2.3.1-018: Reassign with reason at maximum allowed length (500 characters) ΓÇö 200', async () => {
     const longReason = 'R'.repeat(500);
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -363,7 +363,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-019: Reassign with reason exceeding maximum length — 400', async () => {
+  test('test-ep-2.3.1-019: Reassign with reason exceeding maximum length ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -377,7 +377,7 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     expect(res.body.reason).toBe('Reason must be 500 characters or less');
   });
 
-  test('test-ep-2.3.1-020: Reassign with special characters and Unicode in reason — 200', async () => {
+  test('test-ep-2.3.1-020: Reassign with special characters and Unicode in reason ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -391,11 +391,11 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
     const res = await request(app)
       .patch('/api/admin/leads/d290f1ee-6c54-4b01-90e6-d701748f0851/assign')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ assigned_to: 'EMP-00005', reason: 'Réassignment — région: test' });
+      .send({ assigned_to: 'EMP-00005', reason: 'R├⌐assignment ΓÇö r├⌐gion: test' });
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-021: XSS attempt in reason field — 200', async () => {
+  test('test-ep-2.3.1-021: XSS attempt in reason field ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -415,10 +415,10 @@ describe('API-1: PATCH /admin/leads/:id/assign', () => {
 });
 
 // ============================================================
-// API-2: Lead History — Assignment-Changed Event Recording
+// API-2: Lead History ΓÇö Assignment-Changed Event Recording
 // ============================================================
-describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
-  test('test-ep-2.3.1-022: History entry created on initial assignment (no previous owner) — 200', async () => {
+describe('API-2: Lead History ΓÇö Assignment-Changed Event Recording', () => {
+  test('test-ep-2.3.1-022: History entry created on initial assignment (no previous owner) ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: null }] })],
@@ -440,7 +440,7 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-023: History entry created on reassignment with all fields populated — 200', async () => {
+  test('test-ep-2.3.1-023: History entry created on reassignment with all fields populated ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -463,7 +463,7 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-024: Multiple reassignments create sequential history entries — 200', async () => {
+  test('test-ep-2.3.1-024: Multiple reassignments create sequential history entries ΓÇö 200', async () => {
     const seqMocks = [
       { lead: { ...MOCK_LEAD, assigned_to: null }, target: MARKETING_USER, empId: 'EMP-00002' },
       { lead: { ...MOCK_LEAD, assigned_to: MARKETING_USER.id }, target: ANOTHER_ME, empId: 'EMP-00005' },
@@ -494,7 +494,7 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
     }
   });
 
-  test('test-ep-2.3.1-025: History entries are returned in chronological order via timeline endpoint — 200', async () => {
+  test('test-ep-2.3.1-025: History entries are returned in chronological order via timeline endpoint ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: MARKETING_USER.id }] })],
@@ -532,7 +532,7 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
     expect(res.body.data[0].timestamp).toBeDefined();
   });
 
-  test('test-ep-2.3.1-026: History entry immutability — no API endpoint exists to update or delete history — 404', async () => {
+  test('test-ep-2.3.1-026: History entry immutability ΓÇö no API endpoint exists to update or delete history ΓÇö 404', async () => {
     const app = createTestApp();
     const res1 = await request(app)
       .put('/api/marketing/leads/d290f1ee-6c54-4b01-90e6-d701748f0851/history/hist-001')
@@ -545,7 +545,7 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
     expect(res2.status).toBe(404);
   });
 
-  test('test-ep-2.3.1-027: No history entry created when no-op assignment (same owner) — 200', async () => {
+  test('test-ep-2.3.1-027: No history entry created when no-op assignment (same owner) ΓÇö 200', async () => {
     let historyCreated = false;
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -576,7 +576,7 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
     expect(historyCreated).toBe(false);
   });
 
-  test('test-ep-2.3.1-028: Non-admin cannot view lead history for arbitrary leads — 403', async () => {
+  test('test-ep-2.3.1-028: Non-admin cannot view lead history for arbitrary leads ΓÇö 403', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['LEFT JOIN users u ON l.assigned_to = u.id', () => ({ rows: [{ ...MOCK_LEAD, assigned_to: 'some-other-user' }] })],
@@ -591,10 +591,10 @@ describe('API-2: Lead History — Assignment-Changed Event Recording', () => {
 });
 
 // ============================================================
-// API-3: Notification — Trigger to New Owner
+// API-3: Notification ΓÇö Trigger to New Owner
 // ============================================================
-describe('API-3: Notification — Trigger to New Owner', () => {
-  test('test-ep-2.3.1-029: In-app notification created for new owner on assignment — 200', async () => {
+describe('API-3: Notification ΓÇö Trigger to New Owner', () => {
+  test('test-ep-2.3.1-029: In-app notification created for new owner on assignment ΓÇö 200', async () => {
     let notifCreated = false;
     let notifUserId = null;
     let notifMessage = null;
@@ -624,7 +624,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
     expect(notifMessage).toContain('assigned to you');
   });
 
-  test('test-ep-2.3.1-030: In-app notification created for new owner on reassignment — 200', async () => {
+  test('test-ep-2.3.1-030: In-app notification created for new owner on reassignment ΓÇö 200', async () => {
     let notifCreated = false;
     let notifUserId = null;
     const customMock = (sql, params) => {
@@ -652,7 +652,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
     expect(notifUserId).toBe(ANOTHER_ME.id);
   });
 
-  test('test-ep-2.3.1-031: New owner unread notification count reflects assignment — 200', async () => {
+  test('test-ep-2.3.1-031: New owner unread notification count reflects assignment ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT COUNT(*) FROM notifications', () => ({ rows: [{ count: '1' }] })],
@@ -665,7 +665,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
     expect(res.body.unread_count).toBe(1);
   });
 
-  test('test-ep-2.3.1-032: Notification includes lead details for easy identification — 200', async () => {
+  test('test-ep-2.3.1-032: Notification includes lead details for easy identification ΓÇö 200', async () => {
     let capturedMessage = null;
     const customMock = (sql, params) => {
       if (sql.includes('INSERT INTO notifications')) {
@@ -689,7 +689,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
     expect(capturedMessage).toContain('LD-2026-00042');
   });
 
-  test('test-ep-2.3.1-033: Notification failure does not block the assignment operation — 200', async () => {
+  test('test-ep-2.3.1-033: Notification failure does not block the assignment operation ΓÇö 200', async () => {
     let notifAttempted = false;
     const customMock = (sql, params) => {
       if (sql.includes('INSERT INTO notifications')) {
@@ -713,7 +713,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
     expect(notifAttempted).toBe(true);
   });
 
-  test('test-ep-2.3.1-034: Previous owner does not receive a notification on reassignment — 200', async () => {
+  test('test-ep-2.3.1-034: Previous owner does not receive a notification on reassignment ΓÇö 200', async () => {
     const notifRecipients = [];
     const customMock = (sql, params) => {
       if (sql.includes('INSERT INTO notifications')) {
@@ -739,7 +739,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
     expect(notifRecipients).not.toContain(MARKETING_USER.id);
   });
 
-  test('test-ep-2.3.1-035: Bulk assign triggers notifications for each new owner — 200', async () => {
+  test('test-ep-2.3.1-035: Bulk assign triggers notifications for each new owner ΓÇö 200', async () => {
     const mockClient = () => {
       const client = {
         query: jest.fn().mockResolvedValue({ rows: [] }),
@@ -779,7 +779,7 @@ describe('API-3: Notification — Trigger to New Owner', () => {
 });
 
 // ============================================================
-// API-4: POST /admin/leads/bulk-assign — Bulk Assign (2.3.1 Specific)
+// API-4: POST /admin/leads/bulk-assign ΓÇö Bulk Assign (2.3.1 Specific)
 // ============================================================
 describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
   const mockClient = () => {
@@ -791,7 +791,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     return client;
   };
 
-  test('test-ep-2.3.1-036: Bulk reassign with reason for leads that have mixed ownership — 200', async () => {
+  test('test-ep-2.3.1-036: Bulk reassign with reason for leads that have mixed ownership ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -813,7 +813,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.assigned).toBe(true);
   });
 
-  test('test-ep-2.3.1-037: Bulk assign with mix of owned and unowned leads — 200', async () => {
+  test('test-ep-2.3.1-037: Bulk assign with mix of owned and unowned leads ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -834,7 +834,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.status).toBe(200);
   });
 
-  test('test-ep-2.3.1-038: Bulk reassign without reason when all selected leads have owners — 400', async () => {
+  test('test-ep-2.3.1-038: Bulk reassign without reason when all selected leads have owners ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['"employee_id" = $1', () => ({ rows: [ANOTHER_ME] })],
@@ -852,7 +852,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.reason).toBe('Reassignment reason is required when one or more leads already have an owner');
   });
 
-  test('test-ep-2.3.1-039: Bulk reassign without reason when some leads have owners (partial) — 400', async () => {
+  test('test-ep-2.3.1-039: Bulk reassign without reason when some leads have owners (partial) ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['"employee_id" = $1', () => ({ rows: [ANOTHER_ME] })],
@@ -870,7 +870,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.reason).toBe('Reassignment reason is required when one or more leads already have an owner');
   });
 
-  test('test-ep-2.3.1-040: No-op for lead already assigned to target user — 200', async () => {
+  test('test-ep-2.3.1-040: No-op for lead already assigned to target user ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -892,7 +892,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.count).toBe(1);
   });
 
-  test('test-ep-2.3.1-041: Bulk assign to Admin user (self-assign) — 200', async () => {
+  test('test-ep-2.3.1-041: Bulk assign to Admin user (self-assign) ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -914,7 +914,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.assigned).toBe(true);
   });
 
-  test('test-ep-2.3.1-042: Bulk reassign large batch with reason (500 leads) — 200', async () => {
+  test('test-ep-2.3.1-042: Bulk reassign large batch with reason (500 leads) ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -939,7 +939,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.count).toBe(500);
   });
 
-  test('test-ep-2.3.1-043: Bulk assign with duplicate lead IDs — 200', async () => {
+  test('test-ep-2.3.1-043: Bulk assign with duplicate lead IDs ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -961,7 +961,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.body.count).toBe(1);
   });
 
-  test('test-ep-2.3.1-044: Marketing Executive cannot use bulk-assign endpoint — 403', async () => {
+  test('test-ep-2.3.1-044: Marketing Executive cannot use bulk-assign endpoint ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]],
     );
     const app = createTestApp();
@@ -972,7 +972,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.3.1-045: Lead disappears from previous owner list and appears in new owner list after reassignment — 200', async () => {
+  test('test-ep-2.3.1-045: Lead disappears from previous owner list and appears in new owner list after reassignment ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -1008,7 +1008,7 @@ describe('API-4: POST /admin/leads/bulk-assign (Story 2.3.1)', () => {
 // API-5: GET /admin/users?role=Marketing Executive
 // ============================================================
 describe('API-5: GET /admin/users?role=Marketing Executive', () => {
-  test('test-ep-2.3.1-046: Admin retrieves active Marketing Executives for assignee dropdown — 200', async () => {
+  test('test-ep-2.3.1-046: Admin retrieves active Marketing Executives for assignee dropdown ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE role = $1 AND "accountStatus"', () => ({ rows: [
@@ -1032,7 +1032,7 @@ describe('API-5: GET /admin/users?role=Marketing Executive', () => {
     });
   });
 
-  test('test-ep-2.3.1-047: Marketing Executive attempting to access admin users endpoint — 403', async () => {
+  test('test-ep-2.3.1-047: Marketing Executive attempting to access admin users endpoint ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]],
     );
     const app = createTestApp();
@@ -1042,7 +1042,7 @@ describe('API-5: GET /admin/users?role=Marketing Executive', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.3.1-048: Empty response when no active Marketing Executives exist — 200', async () => {
+  test('test-ep-2.3.1-048: Empty response when no active Marketing Executives exist ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE role = $1 AND "accountStatus"', () => ({ rows: [] })],

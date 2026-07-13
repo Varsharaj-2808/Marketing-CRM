@@ -1,4 +1,4 @@
-process.env.JWT_SECRET = 'test';
+﻿process.env.JWT_SECRET = 'test';
 const request = require('supertest');
 const express = require('express');
 

@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -98,7 +98,7 @@ beforeEach(() => {
 // TASK-3.2.1-01: Admin Lead List filtered by Category
 // ============================================================
 describe('TASK-3.2.1-01: Category/Sub-Category filter on Lead List', () => {
-  test('BE-TC-3.2.1-01: Admin Lead List filtered by Category — 200', async () => {
+  test('BE-TC-3.2.1-01: Admin Lead List filtered by Category ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*) FROM leads l', () => ({ rows: [{ count: 2 }] })],
@@ -119,7 +119,7 @@ describe('TASK-3.2.1-01: Category/Sub-Category filter on Lead List', () => {
     expect(res.body.data.data[0]).toHaveProperty('lead_id');
   });
 
-  test('BE-TC-3.2.1-02: Marketing Lead List filtered by Category & Sub-Category — 200', async () => {
+  test('BE-TC-3.2.1-02: Marketing Lead List filtered by Category & Sub-Category ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COUNT(*) FROM leads l', () => ({ rows: [{ count: 1 }] })],
@@ -133,7 +133,7 @@ describe('TASK-3.2.1-01: Category/Sub-Category filter on Lead List', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
-  test('BE-TC-3.2.1-03: Admin Dashboard KPIs filtered by Category — 200', async () => {
+  test('BE-TC-3.2.1-03: Admin Dashboard KPIs filtered by Category ΓÇö 200', async () => {
     const kpiRow = {
       total_leads: 15,
       won_leads: 4,
@@ -157,7 +157,7 @@ describe('TASK-3.2.1-01: Category/Sub-Category filter on Lead List', () => {
 // TASK-3.2.1-02: Won-rate by Category
 // ============================================================
 describe('TASK-3.2.1-02: Won-rate-by-Category widget', () => {
-  test('BE-TC-3.2.1-04: Retrieve Won-rate by Category — 200', async () => {
+  test('BE-TC-3.2.1-04: Retrieve Won-rate by Category ΓÇö 200', async () => {
     const wonRateRows = [
       { category_id: CATEGORY_UUID, category_name: 'Technology', total_closed: 20, won: 8, lost: 12, win_rate: '40.00%' },
       { category_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', category_name: 'Finance', total_closed: 15, won: 9, lost: 6, win_rate: '60.00%' },
@@ -178,7 +178,7 @@ describe('TASK-3.2.1-02: Won-rate-by-Category widget', () => {
 // TASK-3.2.1-03: Lead Volume by Category
 // ============================================================
 describe('TASK-3.2.1-03: Lead-volume-by-Category chart', () => {
-  test('BE-TC-3.2.1-05: Retrieve Lead Volume by Category — 200', async () => {
+  test('BE-TC-3.2.1-05: Retrieve Lead Volume by Category ΓÇö 200', async () => {
     const volumeRows = [
       { category_id: CATEGORY_UUID, category_name: 'Technology', lead_count: 45 },
       { category_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', category_name: 'Finance', lead_count: 30 },
@@ -199,7 +199,7 @@ describe('TASK-3.2.1-03: Lead-volume-by-Category chart', () => {
 // TASK-3.2.1-04: Category breakdown in CSV/Excel export
 // ============================================================
 describe('TASK-3.2.1-04: Category breakdown in CSV/Excel export', () => {
-  test('BE-TC-3.2.1-06: Export CSV with Category filter — 200', async () => {
+  test('BE-TC-3.2.1-06: Export CSV with Category filter ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT l.*, u.name as assigned_to_name', () => ({ rows: [LEAD_ROW, LEAD_ROW_2] })],
@@ -212,7 +212,7 @@ describe('TASK-3.2.1-04: Category breakdown in CSV/Excel export', () => {
     expect(res.status).toBe(200);
   });
 
-  test('BE-TC-3.2.1-07: Export Excel Report grouped by Category — 200', async () => {
+  test('BE-TC-3.2.1-07: Export Excel Report grouped by Category ΓÇö 200', async () => {
     const reportRows = [
       { category_name: 'Technology', total_leads: 45, won: 8, lost: 5, conversion_rate: '17.78%' },
       { category_name: 'Finance', total_leads: 30, won: 9, lost: 3, conversion_rate: '30.00%' },

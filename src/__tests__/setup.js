@@ -1,4 +1,4 @@
-const ADMIN_USER = {
+﻿const ADMIN_USER = {
   id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   employee_id: 'EMP-00001',
   name: 'Admin User',

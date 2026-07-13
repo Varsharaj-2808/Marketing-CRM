@@ -1,4 +1,4 @@
-const SavedView = require('../models/SavedView');
+﻿const SavedView = require('../models/SavedView');
 const AuditLog = require('../models/AuditLog');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 

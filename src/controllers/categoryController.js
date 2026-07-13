@@ -1,4 +1,4 @@
-const BusinessCategory = require('../models/BusinessCategory');
+﻿const BusinessCategory = require('../models/BusinessCategory');
 const BusinessSubCategory = require('../models/BusinessSubCategory');
 const AuditLog = require('../models/AuditLog');
 const { withTransaction } = require('../utils/transactionHelper');
@@ -372,7 +372,7 @@ exports.updateSubCategory = async (req, res, next) => {
 
 exports.deleteSubCategory = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.subCategoryId || req.params.id;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     const subcategory = await BusinessSubCategory.findById(id);

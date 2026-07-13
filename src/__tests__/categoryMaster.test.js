@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -102,7 +102,7 @@ const CATEGORY3 = {
 const ALL_CATEGORIES = [CATEGORY2, CATEGORY3, INACTIVE_CATEGORY];
 const ACTIVE_CATEGORIES = [CATEGORY2, CATEGORY3];
 
-// For paginated queries — add subCategoryCount
+// For paginated queries ΓÇö add subCategoryCount
 const ALL_CATEGORIES_PAGINATED = ALL_CATEGORIES.map(c => ({ ...c, subCategoryCount: 0 }));
 const ACTIVE_CATEGORIES_PAGINATED = ACTIVE_CATEGORIES.map(c => ({ ...c, subCategoryCount: 0 }));
 
@@ -123,7 +123,7 @@ beforeEach(() => {
 // API-1: POST /admin/categories
 // ============================================================
 describe('API-1: POST /admin/categories', () => {
-  test('TEST-EP3-CAT-001: Positive — Category Created — 201', async () => {
+  test('TEST-EP3-CAT-001: Positive ΓÇö Category Created ΓÇö 201', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories', () => ({ rows: ALL_CATEGORIES })],
@@ -143,7 +143,7 @@ describe('API-1: POST /admin/categories', () => {
     expect(res.body.data.status).toBe('Active');
   });
 
-  test('TEST-EP3-CAT-002: Failed — Duplicate Category Name — 409', async () => {
+  test('TEST-EP3-CAT-002: Failed ΓÇö Duplicate Category Name ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories', () => ({ rows: ALL_CATEGORIES })],
@@ -158,7 +158,7 @@ describe('API-1: POST /admin/categories', () => {
     expect(res.body.message).toMatch(/already exists/i);
   });
 
-  test('TEST-EP3-CAT-003: Failed — Missing Mandatory Field — 400', async () => {
+  test('TEST-EP3-CAT-003: Failed ΓÇö Missing Mandatory Field ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ]);
@@ -172,7 +172,7 @@ describe('API-1: POST /admin/categories', () => {
     expect(res.body.message).toMatch(/validation failed/i);
   });
 
-  test('TEST-EP3-CAT-004: Failed — Unauthorized (Non-Admin) — 403', async () => {
+  test('TEST-EP3-CAT-004: Failed ΓÇö Unauthorized (Non-Admin) ΓÇö 403', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
     ]);
@@ -189,7 +189,7 @@ describe('API-1: POST /admin/categories', () => {
 // API-2: GET /admin/categories
 // ============================================================
 describe('API-2: GET /admin/categories', () => {
-  test('TEST-EP3-CAT-005: Positive — List All Categories — 200', async () => {
+  test('TEST-EP3-CAT-005: Positive ΓÇö List All Categories ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)::int AS total FROM business_categories c', () => ({ rows: [{ total: 3 }] })],
@@ -208,7 +208,7 @@ describe('API-2: GET /admin/categories', () => {
     expect(res.body.data.data[0].subCategoryCount).toBeDefined();
   });
 
-  test('TEST-EP3-CAT-006: Positive — Search by Name — 200', async () => {
+  test('TEST-EP3-CAT-006: Positive ΓÇö Search by Name ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['category_name ILIKE', () => ({ rows: [{ total: 1 }] })],
@@ -223,7 +223,7 @@ describe('API-2: GET /admin/categories', () => {
     expect(res.body.data.totalCount).toBe(1);
   });
 
-  test('TEST-EP3-CAT-007: Failed — Unauthenticated — 401', async () => {
+  test('TEST-EP3-CAT-007: Failed ΓÇö Unauthenticated ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .get('/api/admin/categories');
@@ -235,7 +235,7 @@ describe('API-2: GET /admin/categories', () => {
 // API-3: GET /admin/categories/:id
 // ============================================================
 describe('API-3: GET /admin/categories/:id', () => {
-  test('TEST-EP3-CAT-008: Positive — Category Retrieved — 200', async () => {
+  test('TEST-EP3-CAT-008: Positive ΓÇö Category Retrieved ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -249,7 +249,7 @@ describe('API-3: GET /admin/categories/:id', () => {
     expect(res.body.data.category_name).toBe('Technology');
   });
 
-  test('TEST-EP3-CAT-009: Failed — Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-009: Failed ΓÇö Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [] })],
@@ -268,7 +268,7 @@ describe('API-3: GET /admin/categories/:id', () => {
 // API-4: PUT /admin/categories/:id
 // ============================================================
 describe('API-4: PUT /admin/categories/:id', () => {
-  test('TEST-EP3-CAT-010: Positive — Category Updated — 200', async () => {
+  test('TEST-EP3-CAT-010: Positive ΓÇö Category Updated ΓÇö 200', async () => {
     const updatedCategory = { ...CATEGORY, category_name: 'IT & Technology Services' };
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -287,7 +287,7 @@ describe('API-4: PUT /admin/categories/:id', () => {
     expect(res.body.data.category_name).toBe('IT & Technology Services');
   });
 
-  test('TEST-EP3-CAT-011: Failed — Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-011: Failed ΓÇö Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [] })],
@@ -302,7 +302,7 @@ describe('API-4: PUT /admin/categories/:id', () => {
     expect(res.body.message).toMatch(/category not found/i);
   });
 
-  test('TEST-EP3-CAT-012: Failed — Duplicate Name on Update — 409', async () => {
+  test('TEST-EP3-CAT-012: Failed ΓÇö Duplicate Name on Update ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -323,7 +323,7 @@ describe('API-4: PUT /admin/categories/:id', () => {
 // API-5: PATCH /admin/categories/:id/status
 // ============================================================
 describe('API-5: PATCH /admin/categories/:id/status', () => {
-  test('TEST-EP3-CAT-013: Positive — Category Deactivated — 200', async () => {
+  test('TEST-EP3-CAT-013: Positive ΓÇö Category Deactivated ΓÇö 200', async () => {
     const deactivatedCat = { ...CATEGORY, status: 'Inactive' };
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -342,7 +342,7 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
     expect(res.body.message).toMatch(/deactivated/i);
   });
 
-  test('TEST-EP3-CAT-014: Failed — Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-014: Failed ΓÇö Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [] })],
@@ -356,7 +356,7 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
     expect(res.body.success).toBe(false);
   });
 
-  test('TEST-EP3-CAT-015: Failed — Status Unchanged — 400', async () => {
+  test('TEST-EP3-CAT-015: Failed ΓÇö Status Unchanged ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -371,7 +371,7 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
     expect(res.body.message).toMatch(/category is already/i);
   });
 
-  test('PATCH with invalid status value — 400', async () => {
+  test('PATCH with invalid status value ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ]);
@@ -389,7 +389,7 @@ describe('API-5: PATCH /admin/categories/:id/status', () => {
 // API-6: DELETE /admin/categories/:id
 // ============================================================
 describe('API-6: DELETE /admin/categories/:id', () => {
-  test('TEST-EP3-CAT-016: Positive — Category Deleted (Unused) — 200', async () => {
+  test('TEST-EP3-CAT-016: Positive ΓÇö Category Deleted (Unused) ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -407,7 +407,7 @@ describe('API-6: DELETE /admin/categories/:id', () => {
     expect(res.body.data.id).toBe(CATEGORY_UUID);
   });
 
-  test('TEST-EP3-CAT-017: Failed — Category In Use (Blocked) — 409', async () => {
+  test('TEST-EP3-CAT-017: Failed ΓÇö Category In Use (Blocked) ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -423,7 +423,7 @@ describe('API-6: DELETE /admin/categories/:id', () => {
     expect(res.body.body.error).toMatch(/linked to 0 Sub-Categories \/ 3 active leads/i);
   });
 
-  test('TEST-EP3-CAT-018: Failed — Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-018: Failed ΓÇö Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [] })],
@@ -441,7 +441,7 @@ describe('API-6: DELETE /admin/categories/:id', () => {
 // API-7: POST /admin/subcategories
 // ============================================================
 describe('API-7: POST /admin/subcategories', () => {
-  test('TEST-EP3-CAT-019: Positive — Sub-Category Created — 201', async () => {
+  test('TEST-EP3-CAT-019: Positive ΓÇö Sub-Category Created ΓÇö 201', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -460,7 +460,7 @@ describe('API-7: POST /admin/subcategories', () => {
     expect(res.body.data.category_id).toBe(CATEGORY_UUID);
   });
 
-  test('TEST-EP3-CAT-020: Failed — Parent Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-020: Failed ΓÇö Parent Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [] })],
@@ -475,7 +475,7 @@ describe('API-7: POST /admin/subcategories', () => {
     expect(res.body.message).toMatch(/not found/i);
   });
 
-  test('TEST-EP3-CAT-021: Failed — Duplicate Sub-Category Name Under Same Parent — 409', async () => {
+  test('TEST-EP3-CAT-021: Failed ΓÇö Duplicate Sub-Category Name Under Same Parent ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -491,7 +491,7 @@ describe('API-7: POST /admin/subcategories', () => {
     expect(res.body.message).toBe('Duplicate Sub-Category name under same parent');
   });
 
-  test('TEST-EP3-CAT-022: Failed — Missing Mandatory Fields — 400', async () => {
+  test('TEST-EP3-CAT-022: Failed ΓÇö Missing Mandatory Fields ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ]);
@@ -509,7 +509,7 @@ describe('API-7: POST /admin/subcategories', () => {
 // API-8: GET /admin/subcategories
 // ============================================================
 describe('API-8: GET /admin/subcategories', () => {
-  test('TEST-EP3-CAT-023: Positive — List Filtered By Parent — 200', async () => {
+  test('TEST-EP3-CAT-023: Positive ΓÇö List Filtered By Parent ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM business_sub_categories s LEFT JOIN', () => ({ rows: [SUBCATEGORY] })],
@@ -523,7 +523,7 @@ describe('API-8: GET /admin/subcategories', () => {
     expect(res.body.data.data.length).toBe(1);
   });
 
-  test('TEST-EP3-CAT-024: Failed — Unauthenticated — 401', async () => {
+  test('TEST-EP3-CAT-024: Failed ΓÇö Unauthenticated ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .get('/api/admin/subcategories');
@@ -535,7 +535,7 @@ describe('API-8: GET /admin/subcategories', () => {
 // API-9: GET /admin/subcategories/:id
 // ============================================================
 describe('API-9: GET /admin/subcategories/:id', () => {
-  test('TEST-EP3-CAT-025: Positive — Sub-Category Retrieved — 200', async () => {
+  test('TEST-EP3-CAT-025: Positive ΓÇö Sub-Category Retrieved ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [SUBCATEGORY] })],
@@ -549,7 +549,7 @@ describe('API-9: GET /admin/subcategories/:id', () => {
     expect(res.body.data.sub_category_name).toBe('Software');
   });
 
-  test('TEST-EP3-CAT-026: Failed — Sub-Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-026: Failed ΓÇö Sub-Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [] })],
@@ -568,7 +568,7 @@ describe('API-9: GET /admin/subcategories/:id', () => {
 // API-10: PUT /admin/subcategories/:id
 // ============================================================
 describe('API-10: PUT /admin/subcategories/:id', () => {
-  test('TEST-EP3-CAT-027: Positive — Sub-Category Updated — 200', async () => {
+  test('TEST-EP3-CAT-027: Positive ΓÇö Sub-Category Updated ΓÇö 200', async () => {
     const updatedSub = { ...SUBCATEGORY, sub_category_name: 'Web & E-commerce Development' };
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -587,7 +587,7 @@ describe('API-10: PUT /admin/subcategories/:id', () => {
     expect(res.body.data.sub_category_name).toBe('Web & E-commerce Development');
   });
 
-  test('TEST-EP3-CAT-028: Failed — Sub-Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-028: Failed ΓÇö Sub-Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [] })],
@@ -606,7 +606,7 @@ describe('API-10: PUT /admin/subcategories/:id', () => {
 // API-11: PATCH /admin/subcategories/:id/status
 // ============================================================
 describe('API-11: PATCH /admin/subcategories/:id/status', () => {
-  test('TEST-EP3-CAT-030: Positive — Sub-Category Deactivated — 200', async () => {
+  test('TEST-EP3-CAT-030: Positive ΓÇö Sub-Category Deactivated ΓÇö 200', async () => {
     const deactivatedSub = { ...SUBCATEGORY, status: 'Inactive' };
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -624,7 +624,7 @@ describe('API-11: PATCH /admin/subcategories/:id/status', () => {
     expect(res.body.data.status).toBe('Inactive');
   });
 
-  test('TEST-EP3-CAT-031: Failed — Sub-Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-031: Failed ΓÇö Sub-Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [] })],
@@ -643,7 +643,7 @@ describe('API-11: PATCH /admin/subcategories/:id/status', () => {
 // API-12: DELETE /admin/subcategories/:id
 // ============================================================
 describe('API-12: DELETE /admin/subcategories/:id', () => {
-  test('TEST-EP3-CAT-032: Positive — Sub-Category Deleted (Unused) — 200', async () => {
+  test('TEST-EP3-CAT-032: Positive ΓÇö Sub-Category Deleted (Unused) ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [SUBCATEGORY] })],
@@ -660,7 +660,7 @@ describe('API-12: DELETE /admin/subcategories/:id', () => {
     expect(res.body.data.id).toBe(SUBCATEGORY_UUID);
   });
 
-  test('TEST-EP3-CAT-033: Failed — Sub-Category In Use (Blocked) — 409', async () => {
+  test('TEST-EP3-CAT-033: Failed ΓÇö Sub-Category In Use (Blocked) ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [SUBCATEGORY] })],
@@ -675,7 +675,7 @@ describe('API-12: DELETE /admin/subcategories/:id', () => {
     expect(res.body.body.error).toMatch(/linked to active leads/i);
   });
 
-  test('TEST-EP3-CAT-034: Failed — Sub-Category Not Found — 404', async () => {
+  test('TEST-EP3-CAT-034: Failed ΓÇö Sub-Category Not Found ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE s.id = $1', () => ({ rows: [] })],
@@ -693,7 +693,7 @@ describe('API-12: DELETE /admin/subcategories/:id', () => {
 // API-13: GET /categories/active
 // ============================================================
 describe('API-13: GET /categories/active', () => {
-  test('TEST-EP3-CAT-035: Positive — Active Categories for Dropdown — 200', async () => {
+  test('TEST-EP3-CAT-035: Positive ΓÇö Active Categories for Dropdown ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT id, category_name FROM business_categories WHERE status = $1', () => ({ rows: CATEGORY_DROPDOWN_ACTIVE })],
@@ -714,7 +714,7 @@ describe('API-13: GET /categories/active', () => {
 // API-14: GET /subcategories/active
 // ============================================================
 describe('API-14: GET /subcategories/active', () => {
-  test('TEST-EP3-CAT-036: Positive — Active Sub-Categories for Selected Category — 200', async () => {
+  test('TEST-EP3-CAT-036: Positive ΓÇö Active Sub-Categories for Selected Category ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY] })],
@@ -731,7 +731,7 @@ describe('API-14: GET /subcategories/active', () => {
     expect(res.body.data.category_id).toBe(CATEGORY_UUID);
   });
 
-  test('TEST-EP3-CAT-037: Positive — No Sub-Categories for Category — 200', async () => {
+  test('TEST-EP3-CAT-037: Positive ΓÇö No Sub-Categories for Category ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories WHERE id = $1', () => ({ rows: [CATEGORY2] })],
@@ -747,7 +747,7 @@ describe('API-14: GET /subcategories/active', () => {
     expect(res.body.data.count).toBe(0);
   });
 
-  test('TEST-EP3-CAT-038: Failed — Missing category_id — 400', async () => {
+  test('TEST-EP3-CAT-038: Failed ΓÇö Missing category_id ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ]);
@@ -765,7 +765,7 @@ describe('API-14: GET /subcategories/active', () => {
 // API-15: POST /admin/categories/seed-defaults
 // ============================================================
 describe('API-15: POST /admin/categories/seed-defaults', () => {
-  test('TEST-EP3-CAT-039: Positive — Default Taxonomy Seeded — 200', async () => {
+  test('TEST-EP3-CAT-039: Positive ΓÇö Default Taxonomy Seeded ΓÇö 200', async () => {
     let insertCount = 0;
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -787,7 +787,7 @@ describe('API-15: POST /admin/categories/seed-defaults', () => {
     expect(res.body.data.subCategoriesCreated).toBe(34);
   });
 
-  test('TEST-EP3-CAT-040: Failed — Already Seeded — 409', async () => {
+  test('TEST-EP3-CAT-040: Failed ΓÇö Already Seeded ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT * FROM business_categories', () => ({ rows: ALL_CATEGORIES })],

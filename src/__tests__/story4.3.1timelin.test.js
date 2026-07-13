@@ -1,14 +1,14 @@
-
+﻿
 /**
  * ============================================================
- * STORY-4.3.1  Lead Activity Timeline — TDD Suite
+ * STORY-4.3.1  Lead Activity Timeline ΓÇö TDD Suite
  * ============================================================
  * Source:
  *   - backend-story-4.3.1 (2).md  (24 backend API test cases)
  *
  * Sections:
- *   1. GET /marketing/leads/:id/timeline — ME Lead Timeline  (9 tests)
- *   2. GET /admin/leads/:id/timeline   — Admin Lead Timeline (3 tests)
+ *   1. GET /marketing/leads/:id/timeline ΓÇö ME Lead Timeline  (9 tests)
+ *   2. GET /admin/leads/:id/timeline   ΓÇö Admin Lead Timeline (3 tests)
  *   3. Timeline Immutability                                  (4 tests)
  *   4. Cross-Cutting Security, Input Sanitization & Perf      (8 tests)
  *
@@ -23,14 +23,14 @@ const express = require("express");
 const jwt     = require("jsonwebtoken");
 const { ADMIN_USER, MARKETING_USER } = require("./setup");
 
-// ── Mock DB for auth middleware ────────────────────────────────
+// ΓöÇΓöÇ Mock DB for auth middleware ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 let mockQuery = jest.fn();
 jest.mock("../config/db", () => ({
   query:     (...args) => mockQuery(...args),
   getClient: jest.fn(),
 }));
 
-// ── Mock models ───────────────────────────────────────────────
+// ΓöÇΓöÇ Mock models ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 jest.mock("../models/Lead", () => ({ findById: jest.fn() }));
 jest.mock("../models/Followup", () => ({ findByLeadId: jest.fn() }));
 jest.mock("../models/LeadHistory", () => ({ findByLeadId: jest.fn() }));
@@ -41,7 +41,7 @@ jest.mock("../models/BusinessCategory", () => ({ findAll: jest.fn() }));
 jest.mock("../models/BusinessSubCategory", () => ({ findAll: jest.fn() }));
 jest.mock("../models/Service", () => ({ findAll: jest.fn() }));
 
-// ── Mock email & algolia ───────────────────────────────────────
+// ΓöÇΓöÇ Mock email & algolia ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 jest.mock("../utils/emailService",  () => ({ sendWelcomeEmail: jest.fn().mockResolvedValue(), sendDailyReminderEmail: jest.fn().mockResolvedValue() }));
 jest.mock("../utils/algoliaService", () => ({
   saveUser:      jest.fn().mockResolvedValue(),
@@ -52,7 +52,7 @@ jest.mock("../utils/algoliaService", () => ({
 }));
 jest.mock("pdfkit", () => ({}));
 
-// ── Mock stub controllers ──────────────────────────────────────
+// ΓöÇΓöÇ Mock stub controllers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const stubHandler = (name) => (req, res) => res.status(501).json({ success: false, message: `Stub: ${name}` });
 const mockController = (methods) => {
   const obj = {};
@@ -73,7 +73,7 @@ jest.mock("../controllers/categoryController",       () => mockController([
   "createSubCategoryForCategory","updateSubCategoryByCategoryAndId"
 ]));
 
-// ── Express app ───────────────────────────────────────────────
+// ΓöÇΓöÇ Express app ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 let app;
 beforeAll(() => {
   app = express();
@@ -86,7 +86,7 @@ beforeAll(() => {
 
 beforeEach(() => jest.resetAllMocks());
 
-// ── JWT tokens ────────────────────────────────────────────────
+// ΓöÇΓöÇ JWT tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const adminToken = jwt.sign(
   { id: ADMIN_USER.id, email: ADMIN_USER.email, role: ADMIN_USER.role },
   process.env.JWT_SECRET, { expiresIn: "15m" }
@@ -96,7 +96,7 @@ const meToken = jwt.sign(
   process.env.JWT_SECRET, { expiresIn: "15m" }
 );
 
-// ── Fixtures ──────────────────────────────────────────────────
+// ΓöÇΓöÇ Fixtures ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const LEAD_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const OTHER_LEAD_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
 const COMPANY_NAME = "Test Corp";
@@ -167,21 +167,21 @@ const ALL_EVENTS = [CREATED_EVENT, ASSIGNED_EVENT, STATUS_CHANGE_EVENT, FOLLOWUP
 // Helper: protect middleware calls query('SELECT * FROM users WHERE id = $1', [decoded.id])
 const authMock = (user) => mockQuery.mockResolvedValueOnce({ rows: [user] });
 
-// ══════════════════════════════════════════════════════════════
-// Section 1: GET /marketing/leads/:id/timeline — ME Lead Timeline
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// Section 1: GET /marketing/leads/:id/timeline ΓÇö ME Lead Timeline
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 const Lead        = require("../models/Lead");
 const Followup    = require("../models/Followup");
 const LeadHistory = require("../models/LeadHistory");
 
-describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", () => {
+describe("Section 1 | GET /marketing/leads/:id/timeline ΓÇö ME Lead Timeline", () => {
 
   /**
    * test-ep-4.3.1-b-001
-   * Positive – ME retrieves consolidated chronological timeline (4 events)
+   * Positive ΓÇô ME retrieves consolidated chronological timeline (4 events)
    */
-  test("b-001 | Positive – ME retrieves consolidated chronological timeline", async () => {
+  test("b-001 | Positive ΓÇô ME retrieves consolidated chronological timeline", async () => {
     authMock(MARKETING_USER);
     Lead.findById.mockResolvedValue(LEAD);
     LeadHistory.findByLeadId.mockResolvedValue([CREATED_EVENT, ASSIGNED_EVENT, STATUS_CHANGE_EVENT]);
@@ -233,9 +233,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-002
-   * Positive – Single type filter (?type=followup)
+   * Positive ΓÇô Single type filter (?type=followup)
    */
-  test("b-002 | Positive – Single type filter returns only matching events", async () => {
+  test("b-002 | Positive ΓÇô Single type filter returns only matching events", async () => {
     authMock(MARKETING_USER);
     Lead.findById.mockResolvedValue(LEAD);
     LeadHistory.findByLeadId.mockResolvedValue([CREATED_EVENT, ASSIGNED_EVENT, STATUS_CHANGE_EVENT]);
@@ -257,9 +257,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-003
-   * Positive – Multiple type filters (?type=followup&type=status_change)
+   * Positive ΓÇô Multiple type filters (?type=followup&type=status_change)
    */
-  test("b-003 | Positive – Multiple type filter returns matching events", async () => {
+  test("b-003 | Positive ΓÇô Multiple type filter returns matching events", async () => {
     authMock(MARKETING_USER);
     Lead.findById.mockResolvedValue(LEAD);
     LeadHistory.findByLeadId.mockResolvedValue([CREATED_EVENT, ASSIGNED_EVENT, STATUS_CHANGE_EVENT]);
@@ -278,9 +278,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-004
-   * Edge – Pagination limit: page 1 with 25 total events returns 20
+   * Edge ΓÇô Pagination limit: page 1 with 25 total events returns 20
    */
-  test("b-004 | Edge – Pagination limit: first page returns max 20 events", async () => {
+  test("b-004 | Edge ΓÇô Pagination limit: first page returns max 20 events", async () => {
     const manyHistory = Array.from({ length: 22 }, (_, i) => ({
       ...CREATED_EVENT,
       id: `hist-${i}`,
@@ -313,9 +313,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-005
-   * Positive – Pagination page 2 returns remaining items
+   * Positive ΓÇô Pagination page 2 returns remaining items
    */
-  test("b-005 | Positive – Page 2 returns remaining events", async () => {
+  test("b-005 | Positive ΓÇô Page 2 returns remaining events", async () => {
     const manyHistory = Array.from({ length: 22 }, (_, i) => ({
       ...CREATED_EVENT,
       id: `hist-${i}`,
@@ -346,9 +346,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-006
-   * Security – ME cannot view another ME's lead timeline
+   * Security ΓÇô ME cannot view another ME's lead timeline
    */
-  test("b-006 | Security – ME cannot view another user's lead timeline (403)", async () => {
+  test("b-006 | Security ΓÇô ME cannot view another user's lead timeline (403)", async () => {
     authMock(MARKETING_USER);
     Lead.findById.mockResolvedValue(LEAD_OTHER);
 
@@ -364,9 +364,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-007
-   * Negative – Invalid lead ID format (non-UUID) → 400
+   * Negative ΓÇô Invalid lead ID format (non-UUID) ΓåÆ 400
    */
-  test("b-007 | Negative – Invalid lead ID format returns 400", async () => {
+  test("b-007 | Negative ΓÇô Invalid lead ID format returns 400", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -381,9 +381,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-008
-   * Negative – Non-existent lead UUID → 404
+   * Negative ΓÇô Non-existent lead UUID ΓåÆ 404
    */
-  test("b-008 | Negative – Non-existent lead returns 404", async () => {
+  test("b-008 | Negative ΓÇô Non-existent lead returns 404", async () => {
     authMock(MARKETING_USER);
     Lead.findById.mockResolvedValue(null); // lead not found
 
@@ -399,9 +399,9 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
   /**
    * test-ep-4.3.1-b-009
-   * Edge – Dates returned as ISO 8601 UTC, sorted by microsecond
+   * Edge ΓÇô Dates returned as ISO 8601 UTC, sorted by microsecond
    */
-  test("b-009 | Edge – Dates are ISO 8601 UTC strings, strict chronological order", async () => {
+  test("b-009 | Edge ΓÇô Dates are ISO 8601 UTC strings, strict chronological order", async () => {
     const events = [
       { ...FOLLOWUP_EVENT, id: "fup-001", created_at: "2026-07-03T11:00:00.123Z" },
     ];
@@ -433,17 +433,17 @@ describe("Section 1 | GET /marketing/leads/:id/timeline — ME Lead Timeline", (
 
 });
 
-// ══════════════════════════════════════════════════════════════
-// Section 2: GET /admin/leads/:id/timeline — Admin Lead Timeline
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// Section 2: GET /admin/leads/:id/timeline ΓÇö Admin Lead Timeline
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", () => {
+describe("Section 2 | GET /admin/leads/:id/timeline ΓÇö Admin Lead Timeline", () => {
 
   /**
    * test-ep-4.3.1-b-010
-   * Positive – Admin views any lead timeline regardless of assignment
+   * Positive ΓÇô Admin views any lead timeline regardless of assignment
    */
-  test("b-010 | Positive – Admin views any lead's timeline bypassing ownership", async () => {
+  test("b-010 | Positive ΓÇô Admin views any lead's timeline bypassing ownership", async () => {
     authMock(ADMIN_USER);
     Lead.findById.mockResolvedValue(LEAD_OTHER);
     LeadHistory.findByLeadId.mockResolvedValue([CREATED_EVENT]);
@@ -460,9 +460,9 @@ describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", ()
 
   /**
    * test-ep-4.3.1-b-011
-   * Positive – Admin timeline supports type filtering
+   * Positive ΓÇô Admin timeline supports type filtering
    */
-  test("b-011 | Positive – Admin timeline supports type filter", async () => {
+  test("b-011 | Positive ΓÇô Admin timeline supports type filter", async () => {
     authMock(ADMIN_USER);
     Lead.findById.mockResolvedValue(LEAD);
     LeadHistory.findByLeadId.mockResolvedValue([CREATED_EVENT, STATUS_CHANGE_EVENT]);
@@ -479,9 +479,9 @@ describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", ()
 
   /**
    * test-ep-4.3.1-b-012
-   * Positive – Admin timeline supports pagination
+   * Positive ΓÇô Admin timeline supports pagination
    */
-  test("b-012 | Positive – Admin timeline supports pagination", async () => {
+  test("b-012 | Positive ΓÇô Admin timeline supports pagination", async () => {
     const manyHistory = Array.from({ length: 30 }, (_, i) => ({
       ...CREATED_EVENT,
       id: `hist-${i}`,
@@ -506,11 +506,11 @@ describe("Section 2 | GET /admin/leads/:id/timeline — Admin Lead Timeline", ()
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // Section 3: Timeline Immutability (PUT/PATCH/DELETE Rejections)
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", () => {
+describe("Section 3 | Timeline Immutability ΓÇö PUT/PATCH/DELETE Rejections", () => {
 
   const EVENT_ID = "act-uuid-999";
 
@@ -518,7 +518,7 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
    * test-ep-4.3.1-b-013
    * PUT blocked on timeline events
    */
-  test("b-013 | Negative – PUT on timeline event returns 405", async () => {
+  test("b-013 | Negative ΓÇô PUT on timeline event returns 405", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -536,7 +536,7 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
    * test-ep-4.3.1-b-014
    * PATCH blocked on timeline events
    */
-  test("b-014 | Negative – PATCH on timeline event returns 405", async () => {
+  test("b-014 | Negative ΓÇô PATCH on timeline event returns 405", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -558,7 +558,7 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
    * test-ep-4.3.1-b-015
    * DELETE blocked on timeline events
    */
-  test("b-015 | Negative – DELETE on timeline event returns 405", async () => {
+  test("b-015 | Negative ΓÇô DELETE on timeline event returns 405", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -572,9 +572,9 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
 
   /**
    * test-ep-4.3.1-b-016
-   * Security – Admin also blocked from editing/deleting timeline events
+   * Security ΓÇô Admin also blocked from editing/deleting timeline events
    */
-  test("b-016 | Security – Admin cannot edit/delete timeline events either", async () => {
+  test("b-016 | Security ΓÇô Admin cannot edit/delete timeline events either", async () => {
     authMock(ADMIN_USER);
 
     const resDel = await request(app)
@@ -597,17 +597,17 @@ describe("Section 3 | Timeline Immutability — PUT/PATCH/DELETE Rejections", ()
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // Section 4: Cross-Cutting Security, Input Sanitization & Perf
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performance", () => {
+describe("Section 4 | Cross-Cutting ΓÇö Security, Input Sanitization & Performance", () => {
 
   /**
    * test-ep-4.3.1-b-017
-   * Security – XSS in historical notes is safely returned as literal string
+   * Security ΓÇô XSS in historical notes is safely returned as literal string
    */
-  test("b-017 | Security – XSS script in notes returned as literal string", async () => {
+  test("b-017 | Security ΓÇô XSS script in notes returned as literal string", async () => {
     const xssEvent = {
       ...FOLLOWUP_EVENT,
       notes: "<script>alert('XSS')</script>",
@@ -631,9 +631,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-018
-   * Security – SQL injection on type filter rejected
+   * Security ΓÇô SQL injection on type filter rejected
    */
-  test("b-018 | Security – SQL injection on type filter returns 400", async () => {
+  test("b-018 | Security ΓÇô SQL injection on type filter returns 400", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -648,9 +648,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-019
-   * Security – SQL injection on limit parameter rejected
+   * Security ΓÇô SQL injection on limit parameter rejected
    */
-  test("b-019 | Security – SQL injection on limit returns 400", async () => {
+  test("b-019 | Security ΓÇô SQL injection on limit returns 400", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -667,9 +667,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-020
-   * Edge – Performance with 1000+ events responds < 1500ms
+   * Edge ΓÇô Performance with 1000+ events responds < 1500ms
    */
-  test("b-020 | Edge – Timeline with 1000+ events responds within time limit", async () => {
+  test("b-020 | Edge ΓÇô Timeline with 1000+ events responds within time limit", async () => {
     const manyHistory = Array.from({ length: 1000 }, (_, i) => ({
       ...CREATED_EVENT,
       id: `hist-${i}`,
@@ -693,9 +693,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-021
-   * Edge – Empty timeline (lead with no activities) returns []
+   * Edge ΓÇô Empty timeline (lead with no activities) returns []
    */
-  test("b-021 | Edge – Lead with no activities returns empty timeline", async () => {
+  test("b-021 | Edge ΓÇô Lead with no activities returns empty timeline", async () => {
     authMock(MARKETING_USER);
     Lead.findById.mockResolvedValue(LEAD);
     LeadHistory.findByLeadId.mockResolvedValue([]);
@@ -714,9 +714,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-022
-   * Negative – Invalid pagination params (page=-1, limit=abc) → 400
+   * Negative ΓÇô Invalid pagination params (page=-1, limit=abc) ΓåÆ 400
    */
-  test("b-022 | Negative – Invalid page/limit params return 400", async () => {
+  test("b-022 | Negative ΓÇô Invalid page/limit params return 400", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -731,9 +731,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-023
-   * Negative – Unsupported type filter value → 400
+   * Negative ΓÇô Unsupported type filter value ΓåÆ 400
    */
-  test("b-023 | Negative – Unsupported type filter returns 400", async () => {
+  test("b-023 | Negative ΓÇô Unsupported type filter returns 400", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -748,9 +748,9 @@ describe("Section 4 | Cross-Cutting — Security, Input Sanitization & Performan
 
   /**
    * test-ep-4.3.1-b-024
-   * Edge – Events with identical timestamps sorted by UUID (stable order)
+   * Edge ΓÇô Events with identical timestamps sorted by UUID (stable order)
    */
-  test("b-024 | Edge – Same-timestamp events sorted stably", async () => {
+  test("b-024 | Edge ΓÇô Same-timestamp events sorted stably", async () => {
     const sameTs = "2026-07-03T11:00:00.000Z";
     const eventA = { ...FOLLOWUP_EVENT, id: "a0000000-0000-0000-0000-000000000001", created_at: sameTs };
     const eventB = { ...FOLLOWUP_EVENT, id: "b0000000-0000-0000-0000-000000000001", created_at: sameTs };

@@ -1,6 +1,19 @@
-const nodemailer = require('nodemailer');
+﻿const nodemailer = require('nodemailer');
 
 let transporter = null;
+
+const isValidEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  const trimmed = email.trim();
+  if (trimmed.length === 0 || trimmed.length > 254) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(trimmed);
+};
+
+const cleanEmail = (email) => {
+  if (!email || typeof email !== 'string') return null;
+  return email.replace(/[\s,;]+/g, '').trim().toLowerCase() || null;
+};
 
 const getTransporter = () => {
   if (transporter) return transporter;
@@ -14,31 +27,59 @@ const getTransporter = () => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 15000,
     });
-    console.log(`SMTP configured: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
+    console.log(`[SMTP] Configured: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT} user=${process.env.SMTP_USER}`);
   } else {
-    transporter = { sendMail: async (opts) => console.log('[EMAIL LOG]', opts) };
-    console.log('SMTP not configured - emails will be logged to console');
+    transporter = { sendMail: async (opts) => { console.log('[EMAIL LOG]', JSON.stringify(opts, null, 2)); return { messageId: 'console-log' }; } };
+    console.log('[SMTP] Not configured - emails will be logged to console');
   }
   return transporter;
 };
 
 const sendEmail = async ({ to, subject, text, html }) => {
+  const cleanTo = cleanEmail(to);
+
+  if (!cleanTo) {
+    console.error(`[EMAIL] BLOCKED - Invalid recipient: "${to}" | subject="${subject}"`);
+    return { success: false, error: 'Invalid recipient email address' };
+  }
+  if (!isValidEmail(cleanTo)) {
+    console.error(`[EMAIL] BLOCKED - Malformed recipient: "${cleanTo}" | subject="${subject}"`);
+    return { success: false, error: 'Malformed recipient email address' };
+  }
+
   try {
     const t = getTransporter();
+    const fromAddress = process.env.SMTP_FROM_EMAIL
+      ? `"${process.env.SMTP_FROM_NAME || 'CRM'}" <${process.env.SMTP_FROM_EMAIL}>`
+      : (process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@crm.com');
+
+    console.log(`[EMAIL] Sending | to="${cleanTo}" | subject="${subject}" | html_length=${(html || '').length} | from="${fromAddress}"`);
+
     const info = await t.sendMail({
-      from: process.env.SMTP_FROM_EMAIL
-        ? `"${process.env.SMTP_FROM_NAME || 'CRM'}" <${process.env.SMTP_FROM_EMAIL}>`
-        : (process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@crm.com'),
-      to,
+      from: fromAddress,
+      to: cleanTo,
       subject,
       text,
       html,
     });
-    console.log(`Email sent to ${to}: ${subject} (messageId: ${info.messageId || 'N/A'})`);
+
+    console.log(`[EMAIL] SUCCESS | to="${cleanTo}" | subject="${subject}" | messageId=${info.messageId} | accepted=${JSON.stringify(info.accepted)} | rejected=${JSON.stringify(info.rejected)} | response="${info.response || ''}"`);
+
+    return { success: true, messageId: info.messageId, accepted: info.accepted, rejected: info.rejected, response: info.response };
   } catch (error) {
-    console.error(`Failed to send email to ${to}: ${error.message}`);
-    console.log(`[FALLBACK LOG] To: ${to}, Subject: ${subject}, Body: ${text || html}`);
+    console.error(`[EMAIL] FAILED | to="${cleanTo}" | subject="${subject}" | error="${error.message}" | code=${error.code || 'N/A'} | command=${error.command || 'N/A'}`);
+    if (error.code) console.error(`[EMAIL] Error code: ${error.code}`);
+    if (error.command) console.error(`[EMAIL] SMTP command: ${error.command}`);
+    if (error.response) console.error(`[EMAIL] SMTP response: ${error.response}`);
+    console.log(`[EMAIL FALLBACK] To: ${cleanTo}, Subject: ${subject}, Body: ${(text || html || '').substring(0, 200)}`);
+    return { success: false, error: error.message, code: error.code };
   }
 };
 
@@ -47,7 +88,7 @@ const sendPasswordResetEmail = async (to, resetUrl) => {
   const text = `You requested a password reset.\n\nPlease use the following link to reset your password:\n${resetUrl}\n\nThis link will expire in ${process.env.RESET_TOKEN_EXPIRY_MINUTES || 30} minutes.\n\nIf you did not request this, please ignore this email.`;
   const html = `<p>You requested a password reset.</p><p>Please click the link below to reset your password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link will expire in ${process.env.RESET_TOKEN_EXPIRY_MINUTES || 30} minutes.</p><p>If you did not request this, please ignore this email.</p>`;
 
-  await sendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 };
 
 const sendWelcomeEmail = async (to, name, employeeId, tempPassword) => {
@@ -56,7 +97,7 @@ const sendWelcomeEmail = async (to, name, employeeId, tempPassword) => {
   const text = `Hello ${name},\n\nYour CRM account has been created.\n\nEmployee ID: ${employeeId}\nTemporary Password: ${tempPassword}\nLogin URL: ${loginUrl}\n\nPlease log in and change your password immediately.\n\nThis is a system-generated password. Do not share it with anyone.`;
   const html = `<p>Hello ${name},</p><p>Your CRM account has been created.</p><p><strong>Employee ID:</strong> ${employeeId}</p><p><strong>Temporary Password:</strong> ${tempPassword}</p><p><strong>Login URL:</strong> <a href="${loginUrl}">${loginUrl}</a></p><p>Please log in and change your password immediately.</p><p><em>This is a system-generated password. Do not share it with anyone.</em></p>`;
 
-  await sendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 };
 
 const sendDailyReminderEmail = async (to, name, companyName, priority) => {
@@ -65,13 +106,14 @@ const sendDailyReminderEmail = async (to, name, companyName, priority) => {
   const text = `Hello ${name},\n\nThis is a reminder that a follow-up is due today for ${companyName} (Priority: ${priority}).\n\nPlease log in to your CRM dashboard to view and manage this lead: ${appUrl}\n\nBest regards,\nCRM System`;
   const html = `<p>Hello ${name},</p><p>This is a reminder that a follow-up is due <strong>today</strong> for <strong>${companyName}</strong> (Priority: ${priority}).</p><p>Please <a href="${appUrl}">log in to your CRM dashboard</a> to view and manage this lead.</p><br><p>Best regards,<br>CRM System</p>`;
 
-  await sendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 };
 
-const sendLeadAssignedEmail = async (to, recipientName, lead, assignedByName) => {
+const sendLeadAssignedEmail = async (to, recipientName, lead, assignedByName, recipientRole) => {
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const rolePrefix = recipientRole === 'Admin' ? '/admin' : '/marketing';
   const subject = `New Lead Assigned: ${lead.company_name}`;
-  const leadUrl = `${appUrl}/leads/${lead.id}`;
+  const leadUrl = `${appUrl}${rolePrefix}/leads/${lead.id}`;
 
   const text = [
     `Hello ${recipientName},`,
@@ -93,7 +135,7 @@ const sendLeadAssignedEmail = async (to, recipientName, lead, assignedByName) =>
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
-      <h2 style="color:#1e3a5f;margin-bottom:8px;">📋 New Lead Assigned</h2>
+      <h2 style="color:#1e3a5f;margin-bottom:8px;">New Lead Assigned</h2>
       <p style="color:#374151;">Hello <strong>${recipientName}</strong>,</p>
       <p style="color:#374151;">A new lead has been assigned to you by <strong>${assignedByName || 'Admin'}</strong>.</p>
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:16px 0;">
@@ -105,16 +147,17 @@ const sendLeadAssignedEmail = async (to, recipientName, lead, assignedByName) =>
           <tr><td style="padding:6px 0;color:#6b7280;">Lead ID</td><td style="padding:6px 0;color:#111827;">${lead.lead_id || 'N/A'}</td></tr>
         </table>
       </div>
-      <a href="${leadUrl}" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View Lead →</a>
-      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System · This is an automated notification.</p>
+      <a href="${leadUrl}" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View Lead</a>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System - This is an automated notification.</p>
     </div>
   `;
 
-  await sendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 };
 
-const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByName) => {
+const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByName, recipientRole) => {
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const rolePrefix = recipientRole === 'Admin' ? '/admin' : '/marketing';
   const count = leads.length;
   const subject = `${count} Lead${count > 1 ? 's' : ''} Assigned to You`;
 
@@ -131,7 +174,7 @@ const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByNam
     `Leads:`,
     leadRows + extra,
     ``,
-    `View your leads: ${appUrl}/leads`,
+    `View your leads: ${appUrl}${rolePrefix}/leads`,
     ``,
     `Best regards,`,
     `CRM System`,
@@ -147,7 +190,7 @@ const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByNam
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
-      <h2 style="color:#1e3a5f;">📋 ${count} Lead${count > 1 ? 's' : ''} Assigned to You</h2>
+      <h2 style="color:#1e3a5f;">${count} Lead${count > 1 ? 's' : ''} Assigned to You</h2>
       <p style="color:#374151;">Hello <strong>${recipientName}</strong>,</p>
       <p style="color:#374151;"><strong>${count}</strong> lead${count > 1 ? 's have' : ' has'} been bulk-assigned to you by <strong>${assignedByName || 'Admin'}</strong>.</p>
       <table style="width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:6px;border-collapse:collapse;margin:16px 0;">
@@ -160,12 +203,12 @@ const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByNam
         </thead>
         <tbody>${leadHtmlRows}${extraHtml}</tbody>
       </table>
-      <a href="${appUrl}/leads" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View My Leads →</a>
-      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System · This is an automated notification.</p>
+      <a href="${appUrl}${rolePrefix}/leads" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View My Leads</a>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System - This is an automated notification.</p>
     </div>
   `;
 
-  await sendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 };
 
-module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail };
+module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail, isValidEmail, cleanEmail };

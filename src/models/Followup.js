@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+﻿const { query } = require('../config/db');
 
 const VALID_FOLLOWUP_TYPES = ['Call', 'WhatsApp', 'Email', 'Online Meeting', 'Client Meeting', 'Demo', 'Proposal Discussion'];
 const VALID_OUTCOMES = ['Interested', 'Need More Info', 'Proposal Requested', 'Budget Discussion', 'Decision Pending', 'Not Interested'];

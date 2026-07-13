@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+﻿const { query } = require('../config/db');
 
 const AuditLog = {
   async create(data, client) {

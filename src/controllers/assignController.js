@@ -1,4 +1,4 @@
-const Lead = require('../models/Lead');
+﻿const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
@@ -140,6 +140,8 @@ exports.assignLead = async (req, res, next) => {
     client.release();
     client = null;
 
+    const finalLead = await Lead.findById(id);
+
     const message = `Lead ${updatedLead.lead_id} has been assigned to you`;
     try {
       await Notification.create({
@@ -158,11 +160,11 @@ exports.assignLead = async (req, res, next) => {
         targetUser.email,
         targetUser.name || targetUser.email,
         finalLead || updatedLead,
-        req.user.name || req.user.email
+        req.user.name || req.user.email,
+        targetUser.role
       ).catch(err => console.error('[assignLead] Email notification skipped:', err.message));
     }
 
-    const finalLead = await Lead.findById(id);
     if (algolia && typeof algolia.saveLead === 'function') {
       await algolia.saveLead(finalLead).catch(err => console.error('[assignLead] Algolia indexing skipped:', err.message));
     }

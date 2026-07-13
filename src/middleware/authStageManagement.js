@@ -1,4 +1,4 @@
-const { protect, authorize } = require('./auth');
+﻿const { protect, authorize } = require('./auth');
 
 const protectStageManagement = protect;
 const authorizeStageManagement = authorize;

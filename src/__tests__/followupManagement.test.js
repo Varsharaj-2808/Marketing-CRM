@@ -1,5 +1,5 @@
-/**
- * STORY-4.1.1: Follow-up Management — Backend Tests
+﻿/**
+ * STORY-4.1.1: Follow-up Management ΓÇö Backend Tests
  * 72 test cases covering APIs 1-4 + cross-cutting concerns
  */
 
@@ -8,7 +8,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { ADMIN_USER, MARKETING_USER } = require('./setup');
 
-// ─── Mock dependencies ───────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Mock dependencies ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 let mockQuery = jest.fn();
 jest.mock('../config/db', () => ({ query: (...args) => mockQuery(...args), getClient: jest.fn() }));
 jest.mock('../utils/emailService', () => ({ sendWelcomeEmail: jest.fn().mockResolvedValue() }));
@@ -20,7 +20,7 @@ jest.mock('../utils/algoliaService', () => ({
   testConnection: jest.fn(),
 }));
 
-// ─── Test App ────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Test App ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 let app;
 beforeAll(() => {
   app = express();
@@ -30,7 +30,7 @@ beforeAll(() => {
   app.use(require('../middleware/errorHandler'));
 });
 
-// ─── Tokens ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const adminToken = jwt.sign(
   { id: ADMIN_USER.id, email: ADMIN_USER.email, role: ADMIN_USER.role },
   process.env.JWT_SECRET, { expiresIn: '15m' }
@@ -57,7 +57,7 @@ const me2Token = jwt.sign(
   process.env.JWT_SECRET, { expiresIn: '15m' }
 );
 
-// ─── Test Data ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Test Data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const LEAD_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const LEAD_ID_CLOSED = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 const NONEXISTENT_LEAD_ID = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
@@ -107,7 +107,7 @@ const FOLLOWUP_ROW = {
   correction_at: null,
 };
 
-// ─── Mock factory helpers ─────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Mock factory helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 /**
  * Auth middleware calls `SELECT * FROM users WHERE id = $1` for EVERY request.
  * The mock must return the correct full user object including accountStatus.
@@ -115,13 +115,13 @@ const FOLLOWUP_ROW = {
  */
 const mockLeadFound = (lead = BASE_LEAD, authUser = MARKETING_USER) => {
   mockQuery.mockImplementation((sql, params) => {
-    // Auth middleware: User.findById → SELECT * FROM users WHERE id = $1
+    // Auth middleware: User.findById ΓåÆ SELECT * FROM users WHERE id = $1
     if (sql === 'SELECT * FROM users WHERE id = $1') return { rows: [authUser] };
     // Lead lookup: FROM leads l LEFT JOIN users u ON ... WHERE l.id = $1
     if (sql.includes('FROM leads') && sql.includes('WHERE l.id')) return { rows: [lead] };
     // User name lookup in controller: SELECT id, name FROM users WHERE id = $1
     if (sql.includes('SELECT id, name FROM users')) return { rows: [{ id: authUser.id, name: authUser.name }] };
-    // Followup insert — build dynamic row from INSERT params
+    // Followup insert ΓÇö build dynamic row from INSERT params
     // Params: [leadId, followupType, outcome, notes, nextFollowupDate, proposalAmount, stageAtLog, createdBy]
     if (sql.includes('INSERT INTO followups')) {
       return { rows: [{
@@ -174,7 +174,7 @@ afterAll(() => jest.restoreAllMocks());
 // =============================================================================
 
 describe('API-1: POST /marketing/leads/:id/followups', () => {
-  // ── Positive ──────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Positive ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   test('test-ep-4.1.1-001 (Positive): Create follow-up with all valid fields', async () => {
     mockLeadFound();
@@ -277,7 +277,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
     expect(res.status).toBe(201);
   });
 
-  // ── Negative ──────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Negative ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   test('test-ep-4.1.1-009 (Negative): Missing followup_type', async () => {
     mockLeadFound();
@@ -419,7 +419,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
     expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['proposal_amount']))) || res.body.error || res.body.message).toMatch(/must be a number/);
   });
 
-  // ── Edge Cases ────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Edge Cases ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   test('test-ep-4.1.1-022 (Edge): notes at maximum 1000 characters', async () => {
     mockLeadFound();
@@ -442,7 +442,7 @@ describe('API-1: POST /marketing/leads/:id/followups', () => {
     expect((res.body.body && (res.body.body.error || (res.body.body.errors && res.body.body.errors['notes']))) || res.body.error || res.body.message).toMatch(/1000 characters/);
   });
 
-  test('test-ep-4.1.1-024 (Edge): Multiple follow-ups on same lead — each succeeds', async () => {
+  test('test-ep-4.1.1-024 (Edge): Multiple follow-ups on same lead ΓÇö each succeeds', async () => {
     for (let i = 0; i < 3; i++) {
       mockLeadFound();
       const res = await request(app)
@@ -854,10 +854,10 @@ describe('API-4: GET /marketing/followups/overdue', () => {
 });
 
 // =============================================================================
-// API-5: Cross-Cutting — Immutability & Audit (C1-81, C1-82)
+// API-5: Cross-Cutting ΓÇö Immutability & Audit (C1-81, C1-82)
 // =============================================================================
 
-describe('API-5: Cross-Cutting — Immutability & Audit', () => {
+describe('API-5: Cross-Cutting ΓÇö Immutability & Audit', () => {
   test('test-ep-4.1.1-052 (Positive): created_by is set server-side, not from request body', async () => {
     mockLeadFound();
     const res = await request(app)
@@ -1088,7 +1088,7 @@ describe('API-5: Cross-Cutting — Immutability & Audit', () => {
     expect([201, 400]).toContain(res.status);
   });
 
-  test('test-ep-4.1.1-067 (Edge): Multiple correction notes — latest wins', async () => {
+  test('test-ep-4.1.1-067 (Edge): Multiple correction notes ΓÇö latest wins', async () => {
     const buildCorrectionMock = (corrNote) => {
       mockQuery.mockImplementation((sql) => {
         if (sql === 'SELECT * FROM users WHERE id = $1') return { rows: [MARKETING_USER] };
