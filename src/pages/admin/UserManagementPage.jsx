@@ -201,7 +201,7 @@ export default function UserManagementPage() {
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full sm:w-auto bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any Department</option>
                 <option value="Sales">Sales</option>

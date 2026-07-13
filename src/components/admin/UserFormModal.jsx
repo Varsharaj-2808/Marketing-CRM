@@ -22,6 +22,7 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
         email: user.email || '',
         role: user.role || 'Marketing Executive',
         status: user.status || 'Active',
+        department: user.department || 'Sales',
       });
     } else {
       setFormData({
@@ -30,6 +31,7 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
         email: '',
         role: 'Marketing Executive',
         status: 'Active',
+        department: 'Sales',
       });
     }
     setErrors({});
@@ -161,6 +163,20 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               {errors.role && <p className="text-label-sm text-error mt-1">{errors.role}</p>}
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="emp-department" className="font-label-md text-label-md text-on-surface block">Department</label>
+              <select
+                id="emp-department"
+                value={formData.department}
+                onChange={(e) => handleChange('department', e.target.value)}
+                disabled={submitting}
+                className="w-full bg-surface-container-low/50 border border-outline-variant/30 rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50"
+              >
+                <option value="">Select department</option>
+                {['Sales', 'Marketing', 'Support', 'IT'].map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+              {errors.department && <p className="text-label-sm text-error mt-1">{errors.department}</p>}
             </div>
             <div className="space-y-1">
               <label htmlFor="emp-status" className="font-label-md text-label-md text-on-surface block">Status</label>
