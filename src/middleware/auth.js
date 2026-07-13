@@ -22,8 +22,17 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
     }
 
-    // Normalize role from JWT (handles legacy casing)
-    if (decoded.role) user.role = decoded.role;
+    // Normalize role (handles legacy casing)
+    const roleToNormalize = user.role || decoded.role;
+    if (roleToNormalize) {
+      let normalizedRole = roleToNormalize;
+      if (roleToNormalize === 'admin' || roleToNormalize === 'super_admin') {
+        normalizedRole = 'Admin';
+      } else if (roleToNormalize === 'user' || roleToNormalize === 'manager') {
+        normalizedRole = 'Marketing Executive';
+      }
+      user.role = normalizedRole;
+    }
 
     req.user = user;
     next();

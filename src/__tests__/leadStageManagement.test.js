@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -56,7 +56,7 @@ afterAll(() => jest.restoreAllMocks());
 describe('STORY-2.1.4: Lead Stage Management Tests', () => {
 
   // ============================================================
-  // API-1: PUT /marketing/leads/:id/status — Stage Transition
+  // API-1: PUT /marketing/leads/:id/status ΓÇö Stage Transition
   // ============================================================
   describe('API-1: PUT /marketing/leads/:id/status', () => {
     const leadId = 'e4c18495-e224-5b11-b652-c9559fc9c902';
@@ -390,7 +390,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
   });
 
   // ============================================================
-  // API-2: POST /marketing/leads/:id/close (Close as Lost) — Lost Reason Capture
+  // API-2: POST /marketing/leads/:id/close (Close as Lost) ΓÇö Lost Reason Capture
   // ============================================================
   describe('API-2: POST /marketing/leads/:id/close', () => {
     const leadId = 'e4c18495-e224-5b11-b652-c9559fc9c902';
@@ -504,7 +504,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
   });
 
   // ============================================================
-  // API-3: PUT /marketing/leads/:id/close (Close as Won) — Won Values Capture
+  // API-3: PUT /marketing/leads/:id/close (Close as Won) ΓÇö Won Values Capture
   // ============================================================
   describe('API-3: PUT /marketing/leads/:id/close', () => {
     const leadId = 'e4c18495-e224-5b11-b652-c9559fc9c902';
@@ -654,7 +654,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
   });
 
   // ============================================================
-  // API-4: POST /admin/leads/:id/reopen — Admin Reopen Override
+  // API-4: POST /admin/leads/:id/reopen ΓÇö Admin Reopen Override
   // ============================================================
   describe('API-4: POST /admin/leads/:id/reopen', () => {
     const leadId = 'e4c18495-e224-5b11-b652-c9559fc9c902';
@@ -804,7 +804,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
   });
 
   // ============================================================
-  // API-5: GET /marketing/leads/:id/lead-history & GET /admin/leads/:id/lead-history — Lead History Read
+  // API-5: GET /marketing/leads/:id/lead-history & GET /admin/leads/:id/lead-history ΓÇö Lead History Read
   // ============================================================
   describe('API-5: GET /marketing/leads/:id/lead-history & GET /admin/leads/:id/lead-history', () => {
     const leadId = 'e4c18495-e224-5b11-b652-c9559fc9c902';
@@ -923,7 +923,7 @@ describe('STORY-2.1.4: Lead Stage Management Tests', () => {
       expect((res.body.body && res.body.body.error) || res.body.error || res.body.message).toBe('Access denied. Lead not assigned to you.');
     });
 
-    test('test-ep-2.4.1-049 (Negative): History immutability — no update/delete endpoint exists', async () => {
+    test('test-ep-2.4.1-049 (Negative): History immutability ΓÇö no update/delete endpoint exists', async () => {
       const res1 = await request(createTestApp())
         .put(`/api/marketing/leads/${leadId}/lead-history/someEntryId`)
         .set('Authorization', `Bearer ${marketingToken}`);

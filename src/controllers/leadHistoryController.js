@@ -1,4 +1,4 @@
-const LeadHistory = require('../models/LeadHistory');
+﻿const LeadHistory = require('../models/LeadHistory');
 const Lead = require('../models/Lead');
 const { query } = require('../config/db');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');

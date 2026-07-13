@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const createTestApp = () => {
   const app = express();
@@ -161,7 +161,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.data.history.every(h => h.field_name === 'stage')).toBe(true);
     });
 
-    test(`test-ep-5.1.1-b-003: Verify pagination boundary — initial load returns at most 20 entries per page, with accurate pagination metadata.`, async () => {
+    test(`test-ep-5.1.1-b-003: Verify pagination boundary ΓÇö initial load returns at most 20 entries per page, with accurate pagination metadata.`, async () => {
       const LEAD_UUID = '33333333-3333-3333-3333-333333333333';
       const rows = Array.from({ length: 20 }, (_, i) => ({
         id: `h${i}`, field_name: 'stage', old_value: 'New', new_value: 'Contacted',
@@ -366,7 +366,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
   });
 
   describe('GET /api/admin/leads/:id/field-history/export', () => {
-    test(`test-ep-5.1.1-b-051: Admin exports a lead’s field history as CSV. The CSV content matches exactly what is shown on screen, with columns: field_name, old_value, new_value, change_summary, changed_by, changed_at, reason.`, async () => {
+    test(`test-ep-5.1.1-b-051: Admin exports a leadΓÇÖs field history as CSV. The CSV content matches exactly what is shown on screen, with columns: field_name, old_value, new_value, change_summary, changed_by, changed_at, reason.`, async () => {
       const LEAD_UUID = '51515151-5151-5151-5151-515151515151';
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [{ id: LEAD_UUID, assigned_to: null }] })],
@@ -600,7 +600,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
 
   describe('History Immutability & Cross-Cutting', () => {
     const LEAD_UUID = '11111111-1111-1111-1111-111111111111';
-    test(`test-ep-5.1.1-b-074: Verify that no POST route exists to manually insert lead_history rows — history is only created internally by tracking middleware.`, async () => {
+    test(`test-ep-5.1.1-b-074: Verify that no POST route exists to manually insert lead_history rows ΓÇö history is only created internally by tracking middleware.`, async () => {
       const res = await request(app)
         .post(`/api/admin/leads/${LEAD_UUID}/field-history`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -608,7 +608,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect([404, 405]).toContain(res.status);
     });
 
-    test(`test-ep-5.1.1-b-075: Verify XSS prevention — script tags stored in old_value or new_value are returned safely in JSON without server-side processing or execution.`, async () => {
+    test(`test-ep-5.1.1-b-075: Verify XSS prevention ΓÇö script tags stored in old_value or new_value are returned safely in JSON without server-side processing or execution.`, async () => {
       const XSS_LEAD = '75757575-7575-7575-7575-757575757575';
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [{ id: XSS_LEAD, assigned_to: null }] })],
@@ -676,7 +676,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
 
   describe('Transactions for Status Updates', () => {
     const LEAD_UUID = '11111111-1111-1111-1111-111111111111';
-    test(`test-ep-5.1.1-b-024: Verify transaction atomicity — if the lead update fails after history row is inserted, both operations are rolled back. No orphan lead_history row exists.`, async () => {
+    test(`test-ep-5.1.1-b-024: Verify transaction atomicity ΓÇö if the lead update fails after history row is inserted, both operations are rolled back. No orphan lead_history row exists.`, async () => {
        defaultQuery([
          ['WHERE l.id = $1', () => ({ rows: [{ id: LEAD_UUID, assigned_to: MARKETING_USER.id, stage: 'New Lead' }] })],
          ['SELECT * FROM users WHERE id', () => ({ rows: [{ id: MARKETING_USER.id, role: 'Marketing Executive', status: 'active' }] })]
@@ -720,7 +720,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       assigned_to: MARKETING_USER.id, lead_status: 'Active',
       ...overrides
     });
-    test(`test-ep-5.1.1-b-017: Verify updating a lead’s stage creates a lead_history row capturing field_name, old_value, new_value, changed_by, changed_at — written in the same database transaction. The response includes a history_logged object confirming the entry.`, async () => {
+    test(`test-ep-5.1.1-b-017: Verify updating a leadΓÇÖs stage creates a lead_history row capturing field_name, old_value, new_value, changed_by, changed_at ΓÇö written in the same database transaction. The response includes a history_logged object confirming the entry.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockLeadRow()] })]
       ]);
@@ -962,7 +962,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.message).toBe('Access denied. Admin role required.');
     });
 
-    test(`test-ep-5.1.1-b-033: Verify transaction atomicity — if the lead update succeeds but the lead_history insert fails, the entire operation rolls back and leads.assigned_to remains unchanged.`, async () => {
+    test(`test-ep-5.1.1-b-033: Verify transaction atomicity ΓÇö if the lead update succeeds but the lead_history insert fails, the entire operation rolls back and leads.assigned_to remains unchanged.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [{ id: LEAD_UUID, assigned_to: null, company_name: 'Acme Corp', lead_id: 'LD-001' }] })],
         ['SELECT * FROM users WHERE id', () => ({ rows: [{ id: TARGET_USER, role: 'Marketing Executive', status: 'active', name: 'Jane Smith', employee_id: 'EMP002' }] })]
@@ -993,7 +993,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       ...overrides
     });
 
-    test(`test-ep-5.1.1-b-034: Close a lead as Won — creates lead_history row for stage field, records final_deal_value and closure_date on the lead.`, async () => {
+    test(`test-ep-5.1.1-b-034: Close a lead as Won ΓÇö creates lead_history row for stage field, records final_deal_value and closure_date on the lead.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockLead()] })],
         ['stage = \'Won\'', () => ({ rows: [{ id: LEAD_UUID, lead_id: 'LD-001', stage: 'Won', lead_status: 'Closed' }] })],
@@ -1008,7 +1008,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.success).toBe(true);
     });
 
-    test(`test-ep-5.1.1-b-035: Close a lead as Lost — creates lead_history row and records loss_reason on the lead.`, async () => {
+    test(`test-ep-5.1.1-b-035: Close a lead as Lost ΓÇö creates lead_history row and records loss_reason on the lead.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockLead()] })],
         ['stage = \'Lost\'', () => ({ rows: [{ id: LEAD_UUID, lead_id: 'LD-001', stage: 'Lost', lead_status: 'Closed' }] })],
@@ -1103,7 +1103,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.message).toBe('final_deal_value must be a positive number');
     });
 
-    test(`test-ep-5.1.1-b-043: Verify transaction atomicity — if the lead update succeeds but lead_history insert fails, the entire close operation rolls back.`, async () => {
+    test(`test-ep-5.1.1-b-043: Verify transaction atomicity ΓÇö if the lead update succeeds but lead_history insert fails, the entire close operation rolls back.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockLead()] })],
         ['stage = \'Lost\'', () => ({ rows: [{ id: LEAD_UUID, lead_id: 'LD-001', stage: 'Lost', lead_status: 'Closed' }] })],
@@ -1142,7 +1142,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       ...overrides
     });
 
-    test(`test-ep-5.1.1-b-044: Admin reopens a Won lead — creates lead_history row recording the transition from Won to Contacted with the reopen reason.`, async () => {
+    test(`test-ep-5.1.1-b-044: Admin reopens a Won lead ΓÇö creates lead_history row recording the transition from Won to Contacted with the reopen reason.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockClosedLead({ stage: 'Won' })] })],
         ['stage = \'Contacted\'', () => ({ rows: [{ id: LEAD_UUID, lead_id: 'LD-001', stage: 'Contacted', lead_status: 'Active' }] })],
@@ -1157,7 +1157,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.success).toBe(true);
     });
 
-    test(`test-ep-5.1.1-b-045: Admin reopens a Lost lead — same behavior as reopening a Won lead.`, async () => {
+    test(`test-ep-5.1.1-b-045: Admin reopens a Lost lead ΓÇö same behavior as reopening a Won lead.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockClosedLead({ stage: 'Lost' })] })],
         ['stage = \'Contacted\'', () => ({ rows: [{ id: LEAD_UUID, lead_id: 'LD-001', stage: 'Contacted', lead_status: 'Active' }] })],
@@ -1221,7 +1221,7 @@ describe('STORY-5.1.1: Lead Field Change History & Audit Log', () => {
       expect(res.body.message).toBe('Access denied. Admin role required.');
     });
 
-    test(`test-ep-5.1.1-b-050: Verify transaction atomicity — both the lead record update and lead_history insertion occur in the same transaction.`, async () => {
+    test(`test-ep-5.1.1-b-050: Verify transaction atomicity ΓÇö both the lead record update and lead_history insertion occur in the same transaction.`, async () => {
       defaultQuery([
         ['WHERE l.id = $1', () => ({ rows: [mockClosedLead()] })],
         ['SELECT * FROM users WHERE id', () => ({ rows: [{ id: ADMIN_USER.id, role: 'Admin', status: 'active' }] })]

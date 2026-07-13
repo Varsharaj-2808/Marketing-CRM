@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+﻿require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -8,6 +8,7 @@ const errorHandler = require('./src/middleware/errorHandler');
 const authRoutes = require('./src/routes/auth');
 const adminRoutes = require('./src/routes/admin');
 const marketingRoutes = require('./src/routes/marketing');
+const searchRoutes = require('./src/routes/search');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,11 +35,14 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/marketing', marketingRoutes);
+app.use('/api/search', searchRoutes);
 
 const { protect } = require('./src/middleware/auth');
 const notificationController = require('./src/controllers/notificationController');
 app.get('/api/notifications', protect, notificationController.getNotifications);
 app.get('/api/notifications/count', protect, notificationController.getNotificationCount);
+app.put('/api/notifications/:id/read', protect, notificationController.markAsRead);
+app.put('/api/notifications/read-all', protect, notificationController.markAllAsRead);
 
 app.use(errorHandler);
 

@@ -1,17 +1,17 @@
-/**
- * EPIC-6: Analytics & Export — Backend API Test Cases
+﻿/**
+ * EPIC-6: Analytics & Export ΓÇö Backend API Test Cases
  * Source of truth: backend-epic-6.md
  * Total: 54 test cases (22 + 24 + 8)
  * Stories: STORY-6.1.1 | STORY-6.2.1 | STORY-6.3.1
  *
- * ⚠️  THESE TESTS ARE FINAL — DO NOT MODIFY AFTER CREATION ⚠️
+ * ΓÜá∩╕Å  THESE TESTS ARE FINAL ΓÇö DO NOT MODIFY AFTER CREATION ΓÜá∩╕Å
  */
 
 const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
-// ─── App factory ────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ App factory ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const createApp = () => {
   const app = express();
   app.use(express.json());
@@ -23,7 +23,7 @@ const createApp = () => {
 
 const app = createApp();
 
-// ─── DB mock ─────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ DB mock ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const { query, getClient } = require('../config/db');
 
 jest.mock('../config/db', () => ({
@@ -31,7 +31,7 @@ jest.mock('../config/db', () => ({
   getClient: jest.fn(),
 }));
 
-// ─── Mocked external dependencies ────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Mocked external dependencies ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 jest.mock('../utils/algoliaService', () => ({
   saveUser: jest.fn().mockResolvedValue({}),
   deleteUser: jest.fn().mockResolvedValue({}),
@@ -44,7 +44,7 @@ jest.mock('../middleware/rateLimiter', () => ({
   rateLimiter: () => (req, res, next) => next(),
 }));
 
-// ─── JWT tokens ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ JWT tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-for-testing';
 
 const ADMIN_ID   = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -101,14 +101,14 @@ const mockProtect = (userRow) => {
   query.mockResolvedValueOnce({ rows: [userRow] });
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PART 1 — STORY-6.1.1 Admin Dashboard
-// ═══════════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// PART 1 ΓÇö STORY-6.1.1 Admin Dashboard
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-describe('STORY-6.1.1 — GET /admin/dashboard/kpis', () => {
+describe('STORY-6.1.1 ΓÇö GET /admin/dashboard/kpis', () => {
 
   // test-ep-6.1.1-b-001
-  it('test-ep-6.1.1-b-001: Admin fetches aggregate KPI data — HTTP 200 with all required fields', async () => {
+  it('test-ep-6.1.1-b-001: Admin fetches aggregate KPI data ΓÇö HTTP 200 with all required fields', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [{
@@ -138,7 +138,7 @@ describe('STORY-6.1.1 — GET /admin/dashboard/kpis', () => {
   });
 
   // test-ep-6.1.1-b-002
-  it('test-ep-6.1.1-b-002: Date-range filters KPIs to specified timeframe — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-002: Date-range filters KPIs to specified timeframe ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [{
@@ -218,12 +218,12 @@ describe('STORY-6.1.1 — GET /admin/dashboard/kpis', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.1.1 — GET /admin/dashboard/category-volume', () => {
+describe('STORY-6.1.1 ΓÇö GET /admin/dashboard/category-volume', () => {
 
   // test-ep-6.1.1-b-007
-  it('test-ep-6.1.1-b-007: Admin fetches category-volume grouped by category and sub_category — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-007: Admin fetches category-volume grouped by category and sub_category ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [
@@ -248,7 +248,7 @@ describe('STORY-6.1.1 — GET /admin/dashboard/category-volume', () => {
   });
 
   // test-ep-6.1.1-b-008
-  it('test-ep-6.1.1-b-008: Filtering by category_id returns only sub_categories of that parent — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-008: Filtering by category_id returns only sub_categories of that parent ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [
@@ -282,7 +282,7 @@ describe('STORY-6.1.1 — GET /admin/dashboard/category-volume', () => {
   });
 
   // test-ep-6.1.1-b-010
-  it('test-ep-6.1.1-b-010: Empty state — no leads in range returns data: [] — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-010: Empty state ΓÇö no leads in range returns data: [] ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({ rows: [] });
     query.mockResolvedValueOnce({ rows: [{ cnt: 0 }] });
@@ -321,12 +321,12 @@ describe('STORY-6.1.1 — GET /admin/dashboard/category-volume', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.1.1 — GET /admin/dashboard/won-rate-by-source', () => {
+describe('STORY-6.1.1 ΓÇö GET /admin/dashboard/won-rate-by-source', () => {
 
   // test-ep-6.1.1-b-013
-  it('test-ep-6.1.1-b-013: Admin fetches won-rate-by-source grouped by lead_source — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-013: Admin fetches won-rate-by-source grouped by lead_source ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [
@@ -366,7 +366,7 @@ describe('STORY-6.1.1 — GET /admin/dashboard/won-rate-by-source', () => {
   });
 
   // test-ep-6.1.1-b-015
-  it('test-ep-6.1.1-b-015: Empty state when no won/lost leads in range — HTTP 200 data: []', async () => {
+  it('test-ep-6.1.1-b-015: Empty state when no won/lost leads in range ΓÇö HTTP 200 data: []', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({ rows: [] });
 
@@ -404,12 +404,12 @@ describe('STORY-6.1.1 — GET /admin/dashboard/won-rate-by-source', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.1.1 — GET /admin/dashboard/at-risk', () => {
+describe('STORY-6.1.1 ΓÇö GET /admin/dashboard/at-risk', () => {
 
   // test-ep-6.1.1-b-018
-  it('test-ep-6.1.1-b-018: Admin fetches at-risk leads with total_at_risk and breakdown — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-018: Admin fetches at-risk leads with total_at_risk and breakdown ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [
@@ -446,7 +446,7 @@ describe('STORY-6.1.1 — GET /admin/dashboard/at-risk', () => {
   });
 
   // test-ep-6.1.1-b-020
-  it('test-ep-6.1.1-b-020: Empty state — no at-risk leads returns total_at_risk: 0 — HTTP 200', async () => {
+  it('test-ep-6.1.1-b-020: Empty state ΓÇö no at-risk leads returns total_at_risk: 0 ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({ rows: [] });
     query.mockResolvedValueOnce({ rows: [] });
@@ -486,14 +486,14 @@ describe('STORY-6.1.1 — GET /admin/dashboard/at-risk', () => {
 
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PART 2 — STORY-6.2.1 Marketing Executive Dashboard
-// ═══════════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// PART 2 ΓÇö STORY-6.2.1 Marketing Executive Dashboard
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-describe('STORY-6.2.1 — GET /marketing/dashboard', () => {
+describe('STORY-6.2.1 ΓÇö GET /marketing/dashboard', () => {
 
   // test-ep-6.2.1-b-001
-  it('test-ep-6.2.1-b-001: ME fetches combined dashboard scoped to JWT user — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-001: ME fetches combined dashboard scoped to JWT user ΓÇö HTTP 200', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({
       rows: [{ my_leads: '50', my_followups_today: '5', my_won_leads: '8', my_lost_leads: '3' }],
@@ -539,7 +539,7 @@ describe('STORY-6.2.1 — GET /marketing/dashboard', () => {
   });
 
   // test-ep-6.2.1-b-004
-  it('test-ep-6.2.1-b-004: ME with zero leads — all card values 0, conversion_rate "0%" — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-004: ME with zero leads ΓÇö all card values 0, conversion_rate "0%" ΓÇö HTTP 200', async () => {
     mockProtect(me002Row);
     query.mockResolvedValueOnce({
       rows: [{ my_leads: '0', my_followups_today: '0', my_won_leads: '0', my_lost_leads: '0' }],
@@ -559,12 +559,12 @@ describe('STORY-6.2.1 — GET /marketing/dashboard', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.2.1 — GET /marketing/dashboard/cards', () => {
+describe('STORY-6.2.1 ΓÇö GET /marketing/dashboard/cards', () => {
 
   // test-ep-6.2.1-b-005
-  it('test-ep-6.2.1-b-005: ME card counts scoped to authenticated user — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-005: ME card counts scoped to authenticated user ΓÇö HTTP 200', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({
       rows: [{ my_leads: '50', my_followups_today: '5', my_won_leads: '8', my_lost_leads: '3' }],
@@ -583,7 +583,7 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/cards', () => {
   });
 
   // test-ep-6.2.1-b-006
-  it('test-ep-6.2.1-b-006: Client-supplied assigned_to param is ignored — HTTP 200 with me-001 data', async () => {
+  it('test-ep-6.2.1-b-006: Client-supplied assigned_to param is ignored ΓÇö HTTP 200 with me-001 data', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({
       rows: [{ my_leads: '50', my_followups_today: '5', my_won_leads: '8', my_lost_leads: '3' }],
@@ -600,7 +600,7 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/cards', () => {
   });
 
   // test-ep-6.2.1-b-007
-  it('test-ep-6.2.1-b-007: ME with zero leads — all card values 0 — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-007: ME with zero leads ΓÇö all card values 0 ΓÇö HTTP 200', async () => {
     mockProtect(me003Row);
     query.mockResolvedValueOnce({
       rows: [{ my_leads: '0', my_followups_today: '0', my_won_leads: '0', my_lost_leads: '0' }],
@@ -642,12 +642,12 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/cards', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.2.1 — GET /marketing/dashboard/conversion-rate', () => {
+describe('STORY-6.2.1 ΓÇö GET /marketing/dashboard/conversion-rate', () => {
 
   // test-ep-6.2.1-b-010
-  it('test-ep-6.2.1-b-010: ME personal conversion rate Won/(Won+Lost) — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-010: ME personal conversion rate Won/(Won+Lost) ΓÇö HTTP 200', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({ rows: [{ won: '8', lost: '3' }] });
 
@@ -664,7 +664,7 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/conversion-rate', () => {
   });
 
   // test-ep-6.2.1-b-011
-  it('test-ep-6.2.1-b-011: Zero Won/Lost leads returns 0% without divide-by-zero — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-011: Zero Won/Lost leads returns 0% without divide-by-zero ΓÇö HTTP 200', async () => {
     mockProtect(me003Row);
     query.mockResolvedValueOnce({ rows: [{ won: '0', lost: '0' }] });
 
@@ -681,7 +681,7 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/conversion-rate', () => {
   });
 
   // test-ep-6.2.1-b-012
-  it('test-ep-6.2.1-b-012: Date-range filter recalculates personal conversion rate — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-012: Date-range filter recalculates personal conversion rate ΓÇö HTTP 200', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({ rows: [{ won: '5', lost: '2' }] });
 
@@ -721,12 +721,12 @@ describe('STORY-6.2.1 — GET /marketing/dashboard/conversion-rate', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.2.1 — GET /marketing/followups/today', () => {
+describe('STORY-6.2.1 ΓÇö GET /marketing/followups/today', () => {
 
   // test-ep-6.2.1-b-015
-  it("test-ep-6.2.1-b-015: ME fetches today's follow-ups sorted Hot>Warm>Cold — HTTP 200", async () => {
+  it("test-ep-6.2.1-b-015: ME fetches today's follow-ups sorted Hot>Warm>Cold ΓÇö HTTP 200", async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({ rows: [{ count: 5 }] });
     query.mockResolvedValueOnce({
@@ -756,7 +756,7 @@ describe('STORY-6.2.1 — GET /marketing/followups/today', () => {
   });
 
   // test-ep-6.2.1-b-016
-  it('test-ep-6.2.1-b-016: No follow-ups today — empty state — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-016: No follow-ups today ΓÇö empty state ΓÇö HTTP 200', async () => {
     mockProtect(me003Row);
     query.mockResolvedValueOnce({ rows: [{ count: 0 }] });
     query.mockResolvedValueOnce({ rows: [] });
@@ -796,7 +796,7 @@ describe('STORY-6.2.1 — GET /marketing/followups/today', () => {
   });
 
   // test-ep-6.2.1-b-019
-  it('test-ep-6.2.1-b-019: Pagination metadata reflects correct total when followups exceed limit — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-019: Pagination metadata reflects correct total when followups exceed limit ΓÇö HTTP 200', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({ rows: [{ count: 25 }] });
     const rows = Array.from({ length: 20 }, (_, i) => ({
@@ -819,12 +819,12 @@ describe('STORY-6.2.1 — GET /marketing/followups/today', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.2.1 — GET /api/marketing/leads/:id (Lead Access Control)', () => {
+describe('STORY-6.2.1 ΓÇö GET /api/marketing/leads/:id (Lead Access Control)', () => {
 
   // test-ep-6.2.1-b-020
-  it('test-ep-6.2.1-b-020: ME views their own assigned lead — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-020: ME views their own assigned lead ΓÇö HTTP 200', async () => {
     mockProtect(me001Row);
     query.mockResolvedValueOnce({
       rows: [{
@@ -888,7 +888,7 @@ describe('STORY-6.2.1 — GET /api/marketing/leads/:id (Lead Access Control)', (
   });
 
   // test-ep-6.2.1-b-024
-  it('test-ep-6.2.1-b-024: Admin views any lead — HTTP 200', async () => {
+  it('test-ep-6.2.1-b-024: Admin views any lead ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({
       rows: [{
@@ -909,16 +909,16 @@ describe('STORY-6.2.1 — GET /api/marketing/leads/:id (Lead Access Control)', (
 
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PART 3 — STORY-6.3.1 Export Lead Data
-// ═══════════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// PART 3 ΓÇö STORY-6.3.1 Export Lead Data
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-describe('STORY-6.3.1 — GET /admin/leads/export', () => {
+describe('STORY-6.3.1 ΓÇö GET /admin/leads/export', () => {
 
   // test-ep-6.3.1-b-001
-  it('test-ep-6.3.1-b-001: Admin exports filtered leads as CSV — HTTP 200 with correct headers and row count', async () => {
+  it('test-ep-6.3.1-b-001: Admin exports filtered leads as CSV ΓÇö HTTP 200 with correct headers and row count', async () => {
     mockProtect(adminRow);
-    // Lead.findAllAdmin → count + data
+    // Lead.findAllAdmin ΓåÆ count + data
     query.mockResolvedValueOnce({ rows: [{ count: '245' }] });
     const leads = Array.from({ length: 245 }, (_, i) => ({
       lead_id: `LD-${i}`, company_name: `Company ${i}`,
@@ -943,7 +943,7 @@ describe('STORY-6.3.1 — GET /admin/leads/export', () => {
   });
 
   // test-ep-6.3.1-b-002
-  it('test-ep-6.3.1-b-002: Admin exports as Excel — HTTP 200 with correct content-type and X-Record-Count', async () => {
+  it('test-ep-6.3.1-b-002: Admin exports as Excel ΓÇö HTTP 200 with correct content-type and X-Record-Count', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({ rows: [{ count: '62' }] });
     const leads = Array.from({ length: 62 }, (_, i) => ({
@@ -978,7 +978,7 @@ describe('STORY-6.3.1 — GET /admin/leads/export', () => {
   });
 
   // test-ep-6.3.1-b-004
-  it('test-ep-6.3.1-b-004: No leads match filters returns 404 — Story MD', async () => {
+  it('test-ep-6.3.1-b-004: No leads match filters returns 404 ΓÇö Story MD', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
     query.mockResolvedValueOnce({ rows: [] });
@@ -1016,12 +1016,12 @@ describe('STORY-6.3.1 — GET /admin/leads/export', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-describe('STORY-6.3.1 — GET /admin/audit-log (Export Verification)', () => {
+describe('STORY-6.3.1 ΓÇö GET /admin/audit-log (Export Verification)', () => {
 
   // test-ep-6.3.1-b-008
-  it('test-ep-6.3.1-b-008: Export action is logged in audit-log with actor, record_count, format, filter criteria — HTTP 200', async () => {
+  it('test-ep-6.3.1-b-008: Export action is logged in audit-log with actor, record_count, format, filter criteria ΓÇö HTTP 200', async () => {
     mockProtect(adminRow);
     query.mockResolvedValueOnce({ rows: [{ count: '1' }] });
     query.mockResolvedValueOnce({

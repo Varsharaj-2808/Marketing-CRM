@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -55,7 +55,7 @@ beforeEach(() => {
 afterAll(() => jest.restoreAllMocks());
 
 // ============================================================
-// STORY-2.1.1 Lead Creation — TEST-EP2-LEADS-001 to 014
+// STORY-2.1.1 Lead Creation ΓÇö TEST-EP2-LEADS-001 to 014
 // ============================================================
 
 describe('API-1: POST /marketing/leads', () => {
@@ -82,7 +82,7 @@ describe('API-1: POST /marketing/leads', () => {
     updated_at: new Date().toISOString(),
   };
 
-  test('TEST-EP2-LEADS-001: Create lead with all valid fields — 201', async () => {
+  test('TEST-EP2-LEADS-001: Create lead with all valid fields ΓÇö 201', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COALESCE(', () => ({ rows: [{ next_seq: 5 }] })],
@@ -113,7 +113,7 @@ describe('API-1: POST /marketing/leads', () => {
     expect(res.body.data.lead_status).toBe('New Lead');
   });
 
-  test('TEST-EP2-LEADS-002: Missing mandatory fields — 400', async () => {
+  test('TEST-EP2-LEADS-002: Missing mandatory fields ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -129,7 +129,7 @@ describe('API-1: POST /marketing/leads', () => {
     expect(res.body.priority).toBe('Priority is required');
   });
 
-  test('TEST-EP2-LEADS-003: Invalid mobile format — 400', async () => {
+  test('TEST-EP2-LEADS-003: Invalid mobile format ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
 
@@ -154,7 +154,7 @@ describe('API-1: POST /marketing/leads', () => {
     expect(res2.body.mobile_number).toBe('Mobile Number must be exactly 10 numeric digits');
   });
 
-  test('TEST-EP2-LEADS-004: Invalid priority — 400', async () => {
+  test('TEST-EP2-LEADS-004: Invalid priority ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
 
@@ -180,7 +180,7 @@ describe('API-1: POST /marketing/leads', () => {
 });
 
 describe('API-2: GET /marketing/leads/check-mobile', () => {
-  test('TEST-EP2-LEADS-005: No duplicate — 200', async () => {
+  test('TEST-EP2-LEADS-005: No duplicate ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT * FROM leads WHERE', () => ({ rows: [] })],
@@ -193,7 +193,7 @@ describe('API-2: GET /marketing/leads/check-mobile', () => {
     expect(res.body.data.isDuplicate).toBe(false);
   });
 
-  test('TEST-EP2-LEADS-006: Duplicate found — 200', async () => {
+  test('TEST-EP2-LEADS-006: Duplicate found ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT * FROM leads WHERE', () => ({ rows: [{ lead_id: 'LD-2026-00001', mobile_number: '9998887776' }] })],
@@ -209,7 +209,7 @@ describe('API-2: GET /marketing/leads/check-mobile', () => {
 });
 
 describe('API-3: GET /marketing/leads/check-email', () => {
-  test('TEST-EP2-LEADS-007: No duplicate — 200', async () => {
+  test('TEST-EP2-LEADS-007: No duplicate ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT * FROM leads WHERE', () => ({ rows: [] })],
@@ -222,7 +222,7 @@ describe('API-3: GET /marketing/leads/check-email', () => {
     expect(res.body.data.isDuplicate).toBe(false);
   });
 
-  test('TEST-EP2-LEADS-008: Duplicate found — 200', async () => {
+  test('TEST-EP2-LEADS-008: Duplicate found ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT * FROM leads WHERE', () => ({ rows: [{ lead_id: 'LD-2026-00001', email: 'existing@company.com' }] })],
@@ -238,7 +238,7 @@ describe('API-3: GET /marketing/leads/check-email', () => {
 });
 
 describe('API-4 to API-7: Admin reference data endpoints', () => {
-  test('TEST-EP2-LEADS-009: GET /admin/lead-sources — 200', async () => {
+  test('TEST-EP2-LEADS-009: GET /admin/lead-sources ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT id, name, status FROM lead_sources', () => ({
@@ -258,7 +258,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
     expect(res.body.data[0].source_name).toBe('Website');
   });
 
-  test('TEST-EP2-LEADS-010: GET /admin/categories — 200', async () => {
+  test('TEST-EP2-LEADS-010: GET /admin/categories ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT id, category_name, status FROM business_categories', () => ({
@@ -276,7 +276,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
     expect(res.body.data[0].category_name).toBe('IT Services');
   });
 
-  test('TEST-EP2-LEADS-011: GET /admin/categories/:id/subcategories — 200', async () => {
+  test('TEST-EP2-LEADS-011: GET /admin/categories/:id/subcategories ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['WHERE id = $1', () => ({ rows: [{ id: 'd3b07384-d113-4a00-a541-b8448fb8b801', category_name: 'IT Services' }] })],
@@ -295,7 +295,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
     expect(res.body.data[0].sub_category_name).toBe('Web Development');
   });
 
-  test('TEST-EP2-LEADS-012: GET /admin/services — 200', async () => {
+  test('TEST-EP2-LEADS-012: GET /admin/services ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT id, name, status FROM services', () => ({
@@ -315,7 +315,7 @@ describe('API-4 to API-7: Admin reference data endpoints', () => {
 });
 
 describe('API-8: GET /marketing/leads/:id', () => {
-  test('TEST-EP2-LEADS-013: Retrieve lead details — 200', async () => {
+  test('TEST-EP2-LEADS-013: Retrieve lead details ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT l.*', () => ({
@@ -358,7 +358,7 @@ describe('API-8: GET /marketing/leads/:id', () => {
 });
 
 describe('API-9: GET /marketing/leads/:id/lead-history', () => {
-  test('TEST-EP2-LEADS-014: Retrieve lead history — 200', async () => {
+  test('TEST-EP2-LEADS-014: Retrieve lead history ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['SELECT l.*, u.name', () => ({
@@ -402,7 +402,7 @@ describe('API-10: GET /marketing/leads', () => {
     { id: 'lead-3', lead_id: 'LD-2026-00003', company_name: 'Gamma Ltd', contact_person: 'Charlie', mobile_number: '9333333333', priority: 'Cold', stage: 'Contacted', estimated_value: 10000, assigned_to: MARKETING_USER.id, assigned_to_name: 'Marketing User', created_at: '2026-06-03T00:00:00.000Z' },
   ];
 
-  test('TEST-EP2-LEADS-015: ME retrieves only own assigned leads — 200', async () => {
+  test('TEST-EP2-LEADS-015: ME retrieves only own assigned leads ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '2' }] })],
@@ -420,7 +420,7 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.body.totalCount).toBe(2);
   });
 
-  test('TEST-EP2-LEADS-016: Admin retrieves all leads — 200', async () => {
+  test('TEST-EP2-LEADS-016: Admin retrieves all leads ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -436,7 +436,7 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.body.totalCount).toBe(3);
   });
 
-  test('TEST-EP2-LEADS-017: Search leads by text query — 200', async () => {
+  test('TEST-EP2-LEADS-017: Search leads by text query ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '1' }] })],
@@ -451,7 +451,7 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.body.data[0].company_name).toContain('Alpha');
   });
 
-  test('TEST-EP2-LEADS-018: Filter by priority and stage — 200', async () => {
+  test('TEST-EP2-LEADS-018: Filter by priority and stage ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '1' }] })],
@@ -466,7 +466,7 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.body.data[0].stage).toBe('New Lead');
   });
 
-  test('TEST-EP2-LEADS-019: Sort by estimated value descending — 200', async () => {
+  test('TEST-EP2-LEADS-019: Sort by estimated value descending ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -480,7 +480,7 @@ describe('API-10: GET /marketing/leads', () => {
     expect(res.body.data[0].estimated_value).toBe(50000);
   });
 
-  test('TEST-EP2-LEADS-020: Paginated leads retrieval Page 2 — 200', async () => {
+  test('TEST-EP2-LEADS-020: Paginated leads retrieval Page 2 ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '65' }] })],

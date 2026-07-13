@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -70,9 +70,9 @@ beforeEach(() => {
 afterAll(() => jest.restoreAllMocks());
 
 // ============================================================
-// 2.1 Create User (Positive) — USER-001 to USER-010
+// 2.1 Create User (Positive) ΓÇö USER-001 to USER-010
 // ============================================================
-describe('2.1 Create User (Positive) — USER-001 to USER-010', () => {
+describe('2.1 Create User (Positive) ΓÇö USER-001 to USER-010', () => {
   const createUserHandlers = (overrides = {}) => [
     ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
     ['SELECT value FROM system_settings', () => ({ rows: [] })],
@@ -215,12 +215,12 @@ describe('2.1 Create User (Positive) — USER-001 to USER-010', () => {
 });
 
 // ============================================================
-// 2.2 Create User (Negative) — USER-011 to USER-026
+// 2.2 Create User (Negative) ΓÇö USER-011 to USER-026
 // ============================================================
-describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
+describe('2.2 Create User (Negative) ΓÇö USER-011 to USER-026', () => {
   const app = createTestApp();
 
-  test('USER-011: Duplicate email — 409', async () => {
+  test('USER-011: Duplicate email ΓÇö 409', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT id FROM users WHERE email =', () => ({ rows: [{ id: 'other' }] })],
@@ -233,7 +233,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.body.message).toMatch(/email/i);
   });
 
-  test('USER-012: Duplicate mobile — 409', async () => {
+  test('USER-012: Duplicate mobile ΓÇö 409', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT id FROM users WHERE email =', () => ({ rows: [] })],
@@ -247,7 +247,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.body.message).toMatch(/mobile/i);
   });
 
-  test('USER-013: Empty name — 400', async () => {
+  test('USER-013: Empty name ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -256,7 +256,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-014: Empty mobile — 400', async () => {
+  test('USER-014: Empty mobile ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -265,7 +265,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-015: Empty email — 400', async () => {
+  test('USER-015: Empty email ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -274,7 +274,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-016: Invalid email format — 400', async () => {
+  test('USER-016: Invalid email format ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -283,7 +283,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-017: Invalid role — 400', async () => {
+  test('USER-017: Invalid role ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -292,7 +292,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-018: Invalid status — 400', async () => {
+  test('USER-018: Invalid status ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -301,7 +301,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-019: Name over 100 chars — 400', async () => {
+  test('USER-019: Name over 100 chars ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -310,7 +310,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-020: Email over 255 chars — 400', async () => {
+  test('USER-020: Email over 255 chars ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -345,7 +345,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-023: Marketing cannot create — 403', async () => {
+  test('USER-023: Marketing cannot create ΓÇö 403', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -354,7 +354,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(403);
   });
 
-  test('USER-024: Unauthenticated — 401', async () => {
+  test('USER-024: Unauthenticated ΓÇö 401', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -362,7 +362,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(401);
   });
 
-  test('USER-025: Missing role — 400', async () => {
+  test('USER-025: Missing role ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -371,7 +371,7 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
     expect(res.status).toBe(400);
   });
 
-  test('USER-026: Missing status — 400', async () => {
+  test('USER-026: Missing status ΓÇö 400', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const res = await request(app)
       .post('/api/admin/users')
@@ -382,12 +382,12 @@ describe('2.2 Create User (Negative) — USER-011 to USER-026', () => {
 });
 
 // ============================================================
-// 2.3 Edit User — USER-027 to USER-034
+// 2.3 Edit User ΓÇö USER-027 to USER-034
 // ============================================================
-describe('2.3 Edit User — USER-027 to USER-034', () => {
+describe('2.3 Edit User ΓÇö USER-027 to USER-034', () => {
   const app = createTestApp();
 
-  test('USER-027: Admin edits name and mobile — 200', async () => {
+  test('USER-027: Admin edits name and mobile ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [{ ...MARKETING_USER }] })],
@@ -401,7 +401,7 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
     expect(res.status).toBe(200);
   });
 
-  test('USER-028: Role change Marketing → Admin — 200', async () => {
+  test('USER-028: Role change Marketing ΓåÆ Admin ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [{ ...MARKETING_USER }] })],
@@ -430,7 +430,7 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
     expect(jwt.decode(res.body.data.token).role).toBe('Admin');
   });
 
-  test('USER-030: Duplicate email on edit — 409', async () => {
+  test('USER-030: Duplicate email on edit ΓÇö 409', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [{ ...MARKETING_USER }] })],
@@ -443,7 +443,7 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
     expect(res.status).toBe(409);
   });
 
-  test('USER-031: Duplicate mobile on edit — 409', async () => {
+  test('USER-031: Duplicate mobile on edit ΓÇö 409', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [{ ...MARKETING_USER }] })],
@@ -467,11 +467,11 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
       .put('/api/admin/users/EMP-00002')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ employee_id: 'EMP-99999' });
-    // No changes detected → 400
+    // No changes detected ΓåÆ 400
     expect(res.status).toBe(400);
   });
 
-  test('USER-033: Marketing cannot edit — 403', async () => {
+  test('USER-033: Marketing cannot edit ΓÇö 403', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const res = await request(app)
       .put('/api/admin/users/EMP-00002')
@@ -480,7 +480,7 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
     expect(res.status).toBe(403);
   });
 
-  test('USER-034: Edit non-existent user — 404', async () => {
+  test('USER-034: Edit non-existent user ΓÇö 404', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [] })],
@@ -494,12 +494,12 @@ describe('2.3 Edit User — USER-027 to USER-034', () => {
 });
 
 // ============================================================
-// 2.4 Deactivate / Reactivate — USER-035 to USER-040
+// 2.4 Deactivate / Reactivate ΓÇö USER-035 to USER-040
 // ============================================================
-describe('2.4 Deactivate User — USER-035 to USER-040', () => {
+describe('2.4 Deactivate User ΓÇö USER-035 to USER-040', () => {
   const app = createTestApp();
 
-  test('USER-035: Admin deactivates active user — 200', async () => {
+  test('USER-035: Admin deactivates active user ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [{ ...MARKETING_USER }] })],
@@ -512,7 +512,7 @@ describe('2.4 Deactivate User — USER-035 to USER-040', () => {
     expect(res.status).toBe(200);
   });
 
-  test('USER-036: Deactivated user cannot log in — 403', async () => {
+  test('USER-036: Deactivated user cannot log in ΓÇö 403', async () => {
     defaultQuery([
       ['WHERE email =', () => ({ rows: [{ ...INACTIVE_USER, password: 'x' }] })],
       ['SELECT value FROM system_settings', () => ({ rows: [] })],
@@ -524,7 +524,7 @@ describe('2.4 Deactivate User — USER-035 to USER-040', () => {
     expect(res.body.message).toMatch(/inactive/i);
   });
 
-  test('USER-038: Admin reactivates deactivated user — 200', async () => {
+  test('USER-038: Admin reactivates deactivated user ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [{ ...INACTIVE_USER }] })],
@@ -547,9 +547,9 @@ describe('2.4 Deactivate User — USER-035 to USER-040', () => {
 });
 
 // ============================================================
-// 2.5 Role Change & Permission — USER-041 to USER-043
+// 2.5 Role Change & Permission ΓÇö USER-041 to USER-043
 // ============================================================
-describe('2.5 Role Change & Permission — USER-041 to USER-043', () => {
+describe('2.5 Role Change & Permission ΓÇö USER-041 to USER-043', () => {
   const app = createTestApp();
 
   test('USER-041: Re-login after role change grants Admin access', async () => {
@@ -581,12 +581,12 @@ describe('2.5 Role Change & Permission — USER-041 to USER-043', () => {
 });
 
 // ============================================================
-// 2.6 Access Control & Authorization — USER-044 to USER-052
+// 2.6 Access Control & Authorization ΓÇö USER-044 to USER-052
 // ============================================================
-describe('2.6 Access Control — USER-044 to USER-052', () => {
+describe('2.6 Access Control ΓÇö USER-044 to USER-052', () => {
   const app = createTestApp();
 
-  test('USER-044: Marketing cannot access admin users list — 403', async () => {
+  test('USER-044: Marketing cannot access admin users list ΓÇö 403', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const res = await request(app)
       .get('/api/admin/users')
@@ -594,7 +594,7 @@ describe('2.6 Access Control — USER-044 to USER-052', () => {
     expect(res.status).toBe(403);
   });
 
-  test('USER-046: Admin can view all users — 200', async () => {
+  test('USER-046: Admin can view all users ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['SELECT id, "employee_id", name', () => ({ rows: ALL_USERS })],
@@ -606,7 +606,7 @@ describe('2.6 Access Control — USER-044 to USER-052', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
-  test('USER-047: Admin can view specific user — 200', async () => {
+  test('USER-047: Admin can view specific user ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['WHERE "employee_id" = $1', () => ({ rows: [MARKETING_USER] })],
@@ -617,7 +617,7 @@ describe('2.6 Access Control — USER-044 to USER-052', () => {
     expect(res.status).toBe(200);
   });
 
-  test('USER-048: Marketing can view own profile — 200', async () => {
+  test('USER-048: Marketing can view own profile ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [MARKETING_USER] })],
     ]);
@@ -627,7 +627,7 @@ describe('2.6 Access Control — USER-044 to USER-052', () => {
     expect(res.status).toBe(200);
   });
 
-  test('USER-049: Marketing cannot view all users — 403', async () => {
+  test('USER-049: Marketing cannot view all users ΓÇö 403', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const res = await request(app)
       .get('/api/admin/users')
@@ -635,7 +635,7 @@ describe('2.6 Access Control — USER-044 to USER-052', () => {
     expect(res.status).toBe(403);
   });
 
-  test('USER-050: Unauthenticated — 401', async () => {
+  test('USER-050: Unauthenticated ΓÇö 401', async () => {
     const res = await request(app).get('/api/admin/users');
     expect(res.status).toBe(401);
   });
@@ -672,9 +672,9 @@ describe('2.6 Access Control — USER-044 to USER-052', () => {
 });
 
 // ============================================================
-// 2.7 Audit Log — USER-053 to USER-058
+// 2.7 Audit Log ΓÇö USER-053 to USER-058
 // ============================================================
-describe('2.7 Audit Log — USER-053 to USER-058', () => {
+describe('2.7 Audit Log ΓÇö USER-053 to USER-058', () => {
   const app = createTestApp();
 
   test('USER-053: Audit log created on user creation', async () => {
@@ -730,9 +730,9 @@ describe('2.7 Audit Log — USER-053 to USER-058', () => {
 });
 
 // ============================================================
-// 2.8 Business Rules — USER-059 to USER-066
+// 2.8 Business Rules ΓÇö USER-059 to USER-066
 // ============================================================
-describe('2.8 Business Rules — USER-059 to USER-066', () => {
+describe('2.8 Business Rules ΓÇö USER-059 to USER-066', () => {
   const app = createTestApp();
 
   test('USER-059: Employee ID format EMP-XXXXX', async () => {
@@ -790,7 +790,7 @@ describe('2.8 Business Rules — USER-059 to USER-066', () => {
 });
 
 // ============================================================
-// 2.9 Audit Log API — USER-061 to USER-066 (re-purposed)
+// 2.9 Audit Log API ΓÇö USER-061 to USER-066 (re-purposed)
 // ============================================================
 describe('2.9 Audit Log API', () => {
   const app = createTestApp();
@@ -800,7 +800,7 @@ describe('2.9 Audit Log API', () => {
     { id: '22222222-2222-4222-8222-222222222222', user_id: ADMIN_USER.id, email: ADMIN_USER.email, action: 'LOGIN_SUCCESS', resource: 'Auth', resourceId: '', details: 'Successful login', ipAddress: '::1', userAgent: 'supertest', result: 'Success', createdAt: '2026-06-28T09:00:00.000Z' },
   ];
 
-  test('USER-061: Admin can list audit logs — 200', async () => {
+  test('USER-061: Admin can list audit logs ΓÇö 200', async () => {
     defaultQuery([
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '2' }] })],
@@ -829,7 +829,7 @@ describe('2.9 Audit Log API', () => {
     expect(res.body.data[0].action).toBe('USER_CREATED');
   });
 
-  test('USER-063: Marketing cannot list audit logs — 403', async () => {
+  test('USER-063: Marketing cannot list audit logs ΓÇö 403', async () => {
     defaultQuery([['WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const res = await request(app)
       .get('/api/admin/audit-log')
@@ -837,12 +837,12 @@ describe('2.9 Audit Log API', () => {
     expect(res.status).toBe(403);
   });
 
-  test('USER-064: Unauthenticated — 401', async () => {
+  test('USER-064: Unauthenticated ΓÇö 401', async () => {
     const res = await request(app).get('/api/admin/audit-log');
     expect(res.status).toBe(401);
   });
 
-  test('USER-065: Admin can view specific audit log — 200', async () => {
+  test('USER-065: Admin can view specific audit log ΓÇö 200', async () => {
     defaultQuery([
       ['audit_logs WHERE id =', () => ({ rows: [MOCK_LOGS[0]] })],
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -854,7 +854,7 @@ describe('2.9 Audit Log API', () => {
     expect(res.body.data.id).toBe('11111111-1111-4111-8111-111111111111');
   });
 
-  test('USER-066: View non-existent audit log — 404', async () => {
+  test('USER-066: View non-existent audit log ΓÇö 404', async () => {
     defaultQuery([
       ['audit_logs WHERE id =', () => ({ rows: [] })],
       ['WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -867,12 +867,12 @@ describe('2.9 Audit Log API', () => {
 });
 
 // ============================================================
-// 2.10 Refresh Token — Expiry & Remember Me
+// 2.10 Refresh Token ΓÇö Expiry & Remember Me
 // ============================================================
 describe('2.10 Refresh Token', () => {
   const app = createTestApp();
 
-  test('USER-067: Remember Me refresh token expired after 30d + 1s — 401', async () => {
+  test('USER-067: Remember Me refresh token expired after 30d + 1s ΓÇö 401', async () => {
     const expiredRefreshToken = jwt.sign(
       { id: MARKETING_USER.id, email: MARKETING_USER.email, role: MARKETING_USER.role },
       process.env.JWT_SECRET,
@@ -885,7 +885,7 @@ describe('2.10 Refresh Token', () => {
     expect(res.body.message).toMatch(/invalid token/i);
   });
 
-  test('USER-068: Valid refresh token returns new tokens — 200', async () => {
+  test('USER-068: Valid refresh token returns new tokens ΓÇö 200', async () => {
     const bcrypt = require('bcryptjs');
     const validRefreshToken = jwt.sign(
       { id: MARKETING_USER.id, email: MARKETING_USER.email, role: MARKETING_USER.role },
@@ -904,7 +904,7 @@ describe('2.10 Refresh Token', () => {
     expect(res.body.data.token).toBeDefined();
   });
 
-  test('USER-069: No refresh token in body — 400', async () => {
+  test('USER-069: No refresh token in body ΓÇö 400', async () => {
     const res = await request(app)
       .post('/api/auth/refresh')
       .send({});

@@ -1,8 +1,8 @@
-
+﻿
 
 /**
  * ============================================================
- * STORY-4.2.1  View Today & Overdue Follow-ups — TDD Suite
+ * STORY-4.2.1  View Today & Overdue Follow-ups ΓÇö TDD Suite
  * ============================================================
  * Source docs:
  *   - frontend-story-4.2.1.md  (28 frontend test cases)
@@ -32,7 +32,7 @@ const express = require("express");
 const jwt     = require("jsonwebtoken");
 const { ADMIN_USER, MARKETING_USER } = require("./setup");
 
-// ── Mock DB & services ────────────────────────────────────────
+// ΓöÇΓöÇ Mock DB & services ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 let mockQuery = jest.fn();
 jest.mock("../config/db", () => ({
   query:     (...args) => mockQuery(...args),
@@ -55,7 +55,7 @@ jest.mock("../models/BusinessSubCategory",  () => ({}), { virtual: true });
 jest.mock("../models/Service",         () => ({}), { virtual: true });
 jest.mock("pdfkit", () => ({}));
 
-// ── Mock stub controllers that aren't under test ──────────────
+// ΓöÇΓöÇ Mock stub controllers that aren't under test ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const stubHandler = (name) => (req, res) => res.status(501).json({ success: false, message: `Stub: ${name}` });
 const mockController = (methods) => {
   const obj = {};
@@ -76,7 +76,7 @@ jest.mock("../controllers/categoryController",       () => mockController([
   "createSubCategoryForCategory","updateSubCategoryByCategoryAndId"
 ]));
 
-// ── Express app ───────────────────────────────────────────────
+// ΓöÇΓöÇ Express app ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 let app;
 beforeAll(() => {
   app = express();
@@ -89,7 +89,7 @@ beforeAll(() => {
 
 beforeEach(() => jest.resetAllMocks());
 
-// ── JWT tokens ────────────────────────────────────────────────
+// ΓöÇΓöÇ JWT tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const adminToken = jwt.sign(
   { id: ADMIN_USER.id, email: ADMIN_USER.email, role: ADMIN_USER.role },
   process.env.JWT_SECRET, { expiresIn: "15m" }
@@ -112,7 +112,7 @@ const me2Token = jwt.sign(
   process.env.JWT_SECRET, { expiresIn: "15m" }
 );
 
-// ── Shared test fixtures ──────────────────────────────────────
+// ΓöÇΓöÇ Shared test fixtures ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const TODAY_ISO  = new Date().toISOString().split("T")[0];   // YYYY-MM-DD
 const PAST_ISO   = "2026-07-01T10:00:00Z";   // overdue date
 const FUTURE_ISO = "2026-07-15T12:00:00Z";   // future date
@@ -150,17 +150,17 @@ const AT_RISK_BREAKDOWN = [
 // Helper: mock auth (protect middleware calls User.findById = 1 query)
 const authMock = (user) => mockQuery.mockResolvedValueOnce({ rows: [user] });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-1 | GET /marketing/followups/today
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-001
-   * Positive – ME retrieves today follow-ups sorted Hot > Warm > Cold
+   * Positive ΓÇô ME retrieves today follow-ups sorted Hot > Warm > Cold
    */
-  test("test-ep-4.2.1-b-001 | Positive – ME retrieves today follow-ups; other user's leads excluded, sorted Hot > Warm > Cold", async () => {
-    // Per b-001: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's leads → 2 returned
+  test("test-ep-4.2.1-b-001 | Positive ΓÇô ME retrieves today follow-ups; other user's leads excluded, sorted Hot > Warm > Cold", async () => {
+    // Per b-001: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's leads ΓåÆ 2 returned
     const myLeads = TODAY_LEADS.slice(0, 2);
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: myLeads });
@@ -180,9 +180,9 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-002
-   * Positive – Empty array returned when no leads are due today
+   * Positive ΓÇô Empty array returned when no leads are due today
    */
-  test("test-ep-4.2.1-b-002 | Positive – Returns empty data array when no followups due today", async () => {
+  test("test-ep-4.2.1-b-002 | Positive ΓÇô Returns empty data array when no followups due today", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
@@ -197,9 +197,9 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-003
-   * Edge – Closed (Won/Lost) leads excluded from today queue
+   * Edge ΓÇô Closed (Won/Lost) leads excluded from today queue
    */
-  test("test-ep-4.2.1-b-003 | Edge – Won/Lost leads excluded from today queue", async () => {
+  test("test-ep-4.2.1-b-003 | Edge ΓÇô Won/Lost leads excluded from today queue", async () => {
     // DB WHERE clause filters out Won/Lost; controller returns only active leads
     const activeOnly = TODAY_LEADS.filter(l => !["Won", "Lost"].includes(l.stage));
     authMock(MARKETING_USER);
@@ -217,9 +217,9 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-004
-   * Edge – Lead with next_followup_date = today 00:00 appears in today queue
+   * Edge ΓÇô Lead with next_followup_date = today 00:00 appears in today queue
    */
-  test("test-ep-4.2.1-b-004 | Edge – Lead due exactly at midnight today is included in today queue", async () => {
+  test("test-ep-4.2.1-b-004 | Edge ΓÇô Lead due exactly at midnight today is included in today queue", async () => {
     const midnightLead = { ...TODAY_LEADS[0], next_followup_date: `${TODAY_ISO}T00:00:00Z` };
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [midnightLead] });
@@ -235,9 +235,9 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-005
-   * Security – ME cannot access another user's today follow-ups (isolation via assigned_to)
+   * Security ΓÇô ME cannot access another user's today follow-ups (isolation via assigned_to)
    */
-  test("test-ep-4.2.1-b-005 | Security – ME cannot access another user's queue via user_id param", async () => {
+  test("test-ep-4.2.1-b-005 | Security ΓÇô ME cannot access another user's queue via user_id param", async () => {
     // Per b-005: Send ?user_id=me-001 as me-002; server ignores param, returns me-002's own data
     authMock(ME2_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // no leads assigned to me-002
@@ -254,18 +254,18 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-006
-   * Security – Unauthenticated request returns 401
+   * Security ΓÇô Unauthenticated request returns 401
    */
-  test("test-ep-4.2.1-b-006 | Security – Unauthenticated request returns 401", async () => {
+  test("test-ep-4.2.1-b-006 | Security ΓÇô Unauthenticated request returns 401", async () => {
     const res = await request(app).get("/api/marketing/followups/today");
     expect(res.status).toBe(401);
   });
 
   /**
    * test-ep-4.2.1-b-007
-   * Positive – Admin sees all users today follow-ups (no assigned_to filter)
+   * Positive ΓÇô Admin sees all users today follow-ups (no assigned_to filter)
    */
-  test("test-ep-4.2.1-b-007 | Positive – Admin retrieves today follow-ups unfiltered & filtered by assigned_to", async () => {
+  test("test-ep-4.2.1-b-007 | Positive ΓÇô Admin retrieves today follow-ups unfiltered & filtered by assigned_to", async () => {
     // Per b-007: Unfiltered returns all, filtered returns only the specified user's leads
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: TODAY_LEADS });
@@ -294,9 +294,9 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-028
-   * Security – SQL injection on assigned_to query param is sanitised
+   * Security ΓÇô SQL injection on assigned_to query param is sanitised
    */
-  test("test-ep-4.2.1-b-028 | Security – SQL injection on filter param is sanitised", async () => {
+  test("test-ep-4.2.1-b-028 | Security ΓÇô SQL injection on filter param is sanitised", async () => {
     // Per b-028: Server should reject injection with 400 OR safely return 200 with empty result
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // parameterised query prevents injection
@@ -314,9 +314,9 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
   /**
    * test-ep-4.2.1-b-031
-   * Edge – Past date (yesterday) excluded from today queue
+   * Edge ΓÇô Past date (yesterday) excluded from today queue
    */
-  test("test-ep-4.2.1-b-031 | Edge – Past next_followup_date excluded from today queue (belongs in overdue)", async () => {
+  test("test-ep-4.2.1-b-031 | Edge ΓÇô Past next_followup_date excluded from today queue (belongs in overdue)", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // DATE(next_followup_date) < CURRENT_DATE filtered out
 
@@ -330,18 +330,18 @@ describe("API-1 | GET /marketing/followups/today", () => {
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-2 | GET /marketing/followups/overdue
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-008
-   * Positive – ME retrieves overdue leads sorted by most overdue first
+   * Positive ΓÇô ME retrieves overdue leads sorted by most overdue first
    */
-  test("test-ep-4.2.1-b-008 | Positive – ME retrieves overdue leads; other user's leads excluded, sorted DESC", async () => {
-    // Per b-008: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's → 2 returned
-    // Lead A (3 days), Lead B (1 day) — sorted most overdue first
+  test("test-ep-4.2.1-b-008 | Positive ΓÇô ME retrieves overdue leads; other user's leads excluded, sorted DESC", async () => {
+    // Per b-008: 3 leads exist (Lead C assigned to me-002); SQL filters to only me-001's ΓåÆ 2 returned
+    // Lead A (3 days), Lead B (1 day) ΓÇö sorted most overdue first
     const myOverdue = OVERDUE_LEADS.slice(0, 2);
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: myOverdue });
@@ -363,9 +363,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-009
-   * Positive – Empty array when no overdue leads
+   * Positive ΓÇô Empty array when no overdue leads
    */
-  test("test-ep-4.2.1-b-009 | Positive – Returns empty array when no overdue follow-ups exist", async () => {
+  test("test-ep-4.2.1-b-009 | Positive ΓÇô Returns empty array when no overdue follow-ups exist", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
@@ -379,9 +379,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-010
-   * Edge – Won/Lost leads excluded from overdue queue
+   * Edge ΓÇô Won/Lost leads excluded from overdue queue
    */
-  test("test-ep-4.2.1-b-010 | Edge – Won/Lost leads excluded from overdue queue", async () => {
+  test("test-ep-4.2.1-b-010 | Edge ΓÇô Won/Lost leads excluded from overdue queue", async () => {
     const activeOverdue = OVERDUE_LEADS.filter(l => !["Won", "Lost"].includes(l.stage));
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: activeOverdue });
@@ -398,9 +398,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-011
-   * Edge – days_overdue is correctly calculated (calendar days)
+   * Edge ΓÇô days_overdue is correctly calculated (calendar days)
    */
-  test("test-ep-4.2.1-b-011 | Edge – days_overdue field is a positive integer calculated from CURRENT_DATE", async () => {
+  test("test-ep-4.2.1-b-011 | Edge ΓÇô days_overdue field is a positive integer calculated from CURRENT_DATE", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [OVERDUE_LEADS[0]] }); // 5 days overdue
 
@@ -417,9 +417,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-012
-   * Security – ME cannot access another user's overdue leads
+   * Security ΓÇô ME cannot access another user's overdue leads
    */
-  test("test-ep-4.2.1-b-012 | Security – ME cannot access another user's overdue queue via user_id param", async () => {
+  test("test-ep-4.2.1-b-012 | Security ΓÇô ME cannot access another user's overdue queue via user_id param", async () => {
     // Per b-012: Send ?user_id=me-001 as me-002; server ignores param, returns me-002's own data
     authMock(ME2_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // no overdue leads for me-002
@@ -434,9 +434,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-013
-   * Positive – Admin can view overdue for all users or filter by assigned_to
+   * Positive ΓÇô Admin can view overdue for all users or filter by assigned_to
    */
-  test("test-ep-4.2.1-b-013 | Positive – Admin retrieves overdue follow-ups unfiltered & filtered by assigned_to", async () => {
+  test("test-ep-4.2.1-b-013 | Positive ΓÇô Admin retrieves overdue follow-ups unfiltered & filtered by assigned_to", async () => {
     // Per b-013: Unfiltered returns all, filtered returns only the specified user's overdue leads
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: OVERDUE_LEADS });
@@ -463,9 +463,9 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
   /**
    * test-ep-4.2.1-b-032
-   * Edge – Future next_followup_date excluded from overdue queue
+   * Edge ΓÇô Future next_followup_date excluded from overdue queue
    */
-  test("test-ep-4.2.1-b-032 | Edge – Future next_followup_date excluded from overdue queue", async () => {
+  test("test-ep-4.2.1-b-032 | Edge ΓÇô Future next_followup_date excluded from overdue queue", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // DATE < CURRENT_DATE excludes future
 
@@ -479,19 +479,19 @@ describe("API-2 | GET /marketing/followups/overdue", () => {
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-3 | GET /marketing/dashboard
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 describe("API-3 | GET /marketing/dashboard", () => {
 
   /**
    * test-ep-4.2.1-b-014
-   * Positive – Dashboard returns KPI data including stats, stage_breakdown, unread_notifications
+   * Positive ΓÇô Dashboard returns KPI data including stats, stage_breakdown, unread_notifications
    * Note: The Excel expects todays_followups & overdue_followups KPI counts.
    * The current /marketing/dashboard returns stats + stage_breakdown + unread_notifications.
    * This test verifies the existing contract and flags the delta for follow-up.
    */
-  test("test-ep-4.2.1-b-014 | Positive – Dashboard returns stats, stage_breakdown, unread_notifications", async () => {
+  test("test-ep-4.2.1-b-014 | Positive ΓÇô Dashboard returns stats, stage_breakdown, unread_notifications", async () => {
     // protect: User.findById (1 query)
     authMock(MARKETING_USER);
     // getDashboard: Promise.all([leadStats, recentLeads, unreadCount]) = 3 parallel queries
@@ -514,9 +514,9 @@ describe("API-3 | GET /marketing/dashboard", () => {
 
   /**
    * test-ep-4.2.1-b-015
-   * Security – Missing/invalid token returns 401
+   * Security ΓÇô Missing/invalid token returns 401
    */
-  test("test-ep-4.2.1-b-015 | Security – Invalid token returns 401 on dashboard endpoint", async () => {
+  test("test-ep-4.2.1-b-015 | Security ΓÇô Invalid token returns 401 on dashboard endpoint", async () => {
     const res = await request(app)
       .get("/api/marketing/dashboard")
       .set("Authorization", "Bearer INVALID_TOKEN");
@@ -526,10 +526,10 @@ describe("API-3 | GET /marketing/dashboard", () => {
 
   /**
    * test-ep-4.2.1-b-030
-   * Edge – UNIT TEST ONLY: Verifies controller logic handles large stats datasets without crashing.
+   * Edge ΓÇô UNIT TEST ONLY: Verifies controller logic handles large stats datasets without crashing.
    * NOTE: Actual performance target (< 1500ms) requires separate integration test with real DB.
    */
-  test("test-ep-4.2.1-b-030 | Edge – Unit test for controller dataset handling (Mocked)", async () => {
+  test("test-ep-4.2.1-b-030 | Edge ΓÇô Unit test for controller dataset handling (Mocked)", async () => {
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [{ total_leads: "200", active_leads: "180", won_leads: "10", lost_leads: "10", total_estimated_value: "10000000" }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
@@ -547,16 +547,16 @@ describe("API-3 | GET /marketing/dashboard", () => {
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-4 | POST /admin/reminders/send-daily
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
    * test-ep-4.2.1-b-016
-   * Positive – Admin triggers cron; notifications created for leads due today
+   * Positive ΓÇô Admin triggers cron; notifications created for leads due today
    */
-  test("test-ep-4.2.1-b-016 | Positive – Admin triggers send-daily; reminders_sent > 0 for active leads", async () => {
+  test("test-ep-4.2.1-b-016 | Positive ΓÇô Admin triggers send-daily; reminders_sent > 0 for active leads", async () => {
     authMock(ADMIN_USER);
     // Leads due today, not yet notified
     mockQuery.mockResolvedValueOnce({ rows: [
@@ -583,9 +583,9 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
    * test-ep-4.2.1-b-017
-   * Edge – Won/Lost leads skipped; reminders_sent = 0
+   * Edge ΓÇô Won/Lost leads skipped; reminders_sent = 0
    */
-  test("test-ep-4.2.1-b-017 | Edge – Won/Lost leads skipped; reminders_sent = 0", async () => {
+  test("test-ep-4.2.1-b-017 | Edge ΓÇô Won/Lost leads skipped; reminders_sent = 0", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // all today leads are Won/Lost; query returns none
 
@@ -602,9 +602,9 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
    * test-ep-4.2.1-b-018
-   * Security – Marketing Executive is forbidden (403)
+   * Security ΓÇô Marketing Executive is forbidden (403)
    */
-  test("test-ep-4.2.1-b-018 | Security – ME role is forbidden from triggering daily reminders (403)", async () => {
+  test("test-ep-4.2.1-b-018 | Security ΓÇô ME role is forbidden from triggering daily reminders (403)", async () => {
     authMock(MARKETING_USER); // valid ME token but wrong role
 
     const res = await request(app)
@@ -619,9 +619,9 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
    * test-ep-4.2.1-b-019
-   * Negative – Invalid date string rejected with 400
+   * Negative ΓÇô Invalid date string rejected with 400
    */
-  test("test-ep-4.2.1-b-019 | Negative – Invalid date string rejected with 400 validation error", async () => {
+  test("test-ep-4.2.1-b-019 | Negative ΓÇô Invalid date string rejected with 400 validation error", async () => {
     authMock(ADMIN_USER);
 
     const res = await request(app)
@@ -636,9 +636,9 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
 
   /**
    * test-ep-4.2.1-b-020
-   * Edge – Duplicate run on same date returns reminders_sent = 0 (idempotent)
+   * Edge ΓÇô Duplicate run on same date returns reminders_sent = 0 (idempotent)
    */
-  test("test-ep-4.2.1-b-020 | Edge – Duplicate run same date returns 0 new reminders (idempotent)", async () => {
+  test("test-ep-4.2.1-b-020 | Edge ΓÇô Duplicate run same date returns 0 new reminders (idempotent)", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: [] }); // all leads already notified today
 
@@ -655,16 +655,16 @@ describe("API-4 | POST /admin/reminders/send-daily", () => {
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-5 | GET /marketing/notifications
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 describe("API-5 | GET /marketing/notifications", () => {
 
   /**
    * test-ep-4.2.1-b-021
-   * Positive – ME retrieves notifications list with unread count
+   * Positive ΓÇô ME retrieves notifications list with unread count
    */
-  test("test-ep-4.2.1-b-021 | Positive – ME retrieves notification list with unread count", async () => {
+  test("test-ep-4.2.1-b-021 | Positive ΓÇô ME retrieves notification list with unread count", async () => {
     // Per b-021: GET /notifications returns data array + unread count
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [
@@ -688,16 +688,16 @@ describe("API-5 | GET /marketing/notifications", () => {
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-6 | GET /admin/dashboard/at-risk
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
    * test-ep-4.2.1-b-022
-   * Positive – Admin fetches leads overdue >= 3 days with breakdown
+   * Positive ΓÇô Admin fetches leads overdue >= 3 days with breakdown
    */
-  test("test-ep-4.2.1-b-022 | Positive – Admin fetches at-risk leads (3+ days) with total_at_risk, leads, breakdown", async () => {
+  test("test-ep-4.2.1-b-022 | Positive ΓÇô Admin fetches at-risk leads (3+ days) with total_at_risk, leads, breakdown", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });     // leads query
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_BREAKDOWN }); // breakdown query
@@ -726,9 +726,9 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
    * test-ep-4.2.1-b-023
-   * Security – ME role is forbidden (403)
+   * Security ΓÇô ME role is forbidden (403)
    */
-  test("test-ep-4.2.1-b-023 | Security – ME role is forbidden from at-risk endpoint (403)", async () => {
+  test("test-ep-4.2.1-b-023 | Security ΓÇô ME role is forbidden from at-risk endpoint (403)", async () => {
     authMock(MARKETING_USER);
 
     const res = await request(app)
@@ -742,9 +742,9 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
    * test-ep-4.2.1-b-024
-   * Edge – Custom overdue_days=5 filters correctly
+   * Edge ΓÇô Custom overdue_days=5 filters correctly
    */
-  test("test-ep-4.2.1-b-024 | Edge – overdue_days=5 returns only leads overdue by 5+ days", async () => {
+  test("test-ep-4.2.1-b-024 | Edge ΓÇô overdue_days=5 returns only leads overdue by 5+ days", async () => {
     const fiveOnly = [AT_RISK_LEADS[0]]; // only Ancient Corp (5 days)
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: fiveOnly });
@@ -762,10 +762,10 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
    * test-ep-4.2.1-b-025
-   * Edge – UNIT TEST ONLY: Verifies controller doesn't throw when processing large datasets.
+   * Edge ΓÇô UNIT TEST ONLY: Verifies controller doesn't throw when processing large datasets.
    * NOTE: Actual performance target (< 2s on 50k rows) requires separate integration test with real DB.
    */
-  test("test-ep-4.2.1-b-025 | Edge – Unit test for at-risk dataset processing (Mocked)", async () => {
+  test("test-ep-4.2.1-b-025 | Edge ΓÇô Unit test for at-risk dataset processing (Mocked)", async () => {
     authMock(ADMIN_USER);
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_BREAKDOWN });
@@ -781,11 +781,11 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
   /**
    * test-ep-4.2.1-b-029
-   * Security – SQL injection on overdue_days param is sanitised
+   * Security ΓÇô SQL injection on overdue_days param is sanitised
    */
-  test("test-ep-4.2.1-b-029 | Security – SQL injection on overdue_days param is sanitised", async () => {
+  test("test-ep-4.2.1-b-029 | Security ΓÇô SQL injection on overdue_days param is sanitised", async () => {
     authMock(ADMIN_USER);
-    // Parameterised query treats the injection as non-numeric; parseInt produces NaN → falls back to default 3
+    // Parameterised query treats the injection as non-numeric; parseInt produces NaN ΓåÆ falls back to default 3
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_LEADS });
     mockQuery.mockResolvedValueOnce({ rows: AT_RISK_BREAKDOWN });
 
@@ -800,10 +800,10 @@ describe("API-6 | GET /admin/dashboard/at-risk", () => {
 
 });
 
-// ══════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // API-7 | GET /marketing/leads  (is_overdue flag)
-// ══════════════════════════════════════════════════════════════
-describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+describe("API-7 | GET /marketing/leads ΓÇö is_overdue flag", () => {
 
   const LEADS_WITH_FLAGS = [
     { id: "lead-uuid-201", lead_id: "LD-2026-00085", company_name: "Ancient Corp",
@@ -816,10 +816,10 @@ describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
 
   /**
    * test-ep-4.2.1-b-026
-   * Positive – Leads list includes is_overdue boolean with correct true/false values
+   * Positive ΓÇô Leads list includes is_overdue boolean with correct true/false values
    */
-  test("test-ep-4.2.1-b-026 | Positive – Leads include is_overdue true for past, false for future dates", async () => {
-    // Per b-026: Lead A (past date) → is_overdue: true, Lead B (future date) → is_overdue: false
+  test("test-ep-4.2.1-b-026 | Positive ΓÇô Leads include is_overdue true for past, false for future dates", async () => {
+    // Per b-026: Lead A (past date) ΓåÆ is_overdue: true, Lead B (future date) ΓåÆ is_overdue: false
     authMock(MARKETING_USER);
     mockQuery.mockResolvedValueOnce({ rows: [{ count: "2" }] });         // COUNT
     mockQuery.mockResolvedValueOnce({ rows: LEADS_WITH_FLAGS });          // data
@@ -845,9 +845,9 @@ describe("API-7 | GET /marketing/leads — is_overdue flag", () => {
 
   /**
    * test-ep-4.2.1-b-027
-   * Edge – Won/Lost leads always have is_overdue = false regardless of past due date
+   * Edge ΓÇô Won/Lost leads always have is_overdue = false regardless of past due date
    */
-  test("test-ep-4.2.1-b-027 | Edge – Closed Won/Lost leads always return is_overdue = false", async () => {
+  test("test-ep-4.2.1-b-027 | Edge ΓÇô Closed Won/Lost leads always return is_overdue = false", async () => {
     // Per b-027: Even with past next_followup_date, closed leads must have is_overdue: false
     const closedLeads = [
       { id: "lead-uuid-205", lead_id: "LD-2026-00021", company_name: "Won Corp",

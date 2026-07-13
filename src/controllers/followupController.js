@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+﻿const { query } = require('../config/db');
 const Followup = require('../models/Followup');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
@@ -8,9 +8,9 @@ const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CLOSING_OUTCOMES = ['Not Interested'];
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Helpers
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const isClosingOutcome = (outcome) => CLOSING_OUTCOMES.includes(outcome);
 
@@ -23,9 +23,9 @@ const isValidDate = (str) => {
 const getIp = (req) =>
   (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip || '';
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // POST /marketing/leads/:id/followups
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.createFollowup = async (req, res, next) => {
   try {
@@ -44,7 +44,7 @@ exports.createFollowup = async (req, res, next) => {
       proposal_amount,
     } = req.body;
 
-    // ── Field validation ──────────────────────
+    // ΓöÇΓöÇ Field validation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     const errors = {};
 
     if (!followup_type) {
@@ -91,7 +91,7 @@ exports.createFollowup = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Validation failed', data: { errors } });
     }
 
-    // ── Lead existence & ownership ────────────
+    // ΓöÇΓöÇ Lead existence & ownership ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     const lead = await Lead.findById(id);
     if (!lead) {
       return res.status(404).json(wrapError('Lead not found'));
@@ -108,7 +108,7 @@ exports.createFollowup = async (req, res, next) => {
       return res.status(403).json(wrapError('Cannot add follow-up to a closed lead. Contact Admin to reopen.'));
     }
 
-    // ── Create follow-up ──────────────────────
+    // ΓöÇΓöÇ Create follow-up ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     const parsedProposalAmount = (proposal_amount !== undefined && proposal_amount !== null)
       ? Number(proposal_amount)
       : null;
@@ -124,7 +124,7 @@ exports.createFollowup = async (req, res, next) => {
       createdBy: req.user.id,
     });
 
-    // ── Update lead proposal_value if needed ──
+    // ΓöÇΓöÇ Update lead proposal_value if needed ΓöÇΓöÇ
     let leadUpdated = null;
     if (parsedProposalAmount !== null) {
       await query(
@@ -132,19 +132,29 @@ exports.createFollowup = async (req, res, next) => {
         [parsedProposalAmount, id]
       );
       leadUpdated = { proposal_value: parsedProposalAmount };
+
+      // Sync updated lead to Algolia after proposal_value change
+      try {
+        const LeadModel = require('../models/Lead');
+        const algoliaSvc = require('../utils/algoliaService');
+        const updatedLead = await LeadModel.findById(id);
+        if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
+          await algoliaSvc.saveLead(updatedLead).catch(() => {});
+        }
+      } catch (_) { /* non-critical */ }
     }
 
-    // ── Lead history entry ────────────────────
+    // ΓöÇΓöÇ Lead history entry ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     try {
       await LeadHistory.create({
         leadId: id,
         fieldName: 'followup_logged',
-        changeSummary: `Follow-up logged: ${followup_type} — ${outcome} by ${req.user.name || req.user.id}`,
+        changeSummary: `Follow-up logged: ${followup_type} ΓÇö ${outcome} by ${req.user.name || req.user.id}`,
         changedBy: req.user.id,
       });
     } catch (_) { /* non-critical */ }
 
-    // ── Audit log ─────────────────────────────
+    // ΓöÇΓöÇ Audit log ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     try {
       await AuditLog.create({
         userId: req.user.id,
@@ -159,7 +169,7 @@ exports.createFollowup = async (req, res, next) => {
       });
     } catch (_) { /* non-critical */ }
 
-    // ── Fetch created_by user name ────────────
+    // ΓöÇΓöÇ Fetch created_by user name ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     let createdByUserName = req.user.name || null;
     try {
       const createdByUser = await query(
@@ -197,10 +207,10 @@ exports.createFollowup = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // GET /marketing/leads/:id/timeline (Enhanced)
 // Backward-compatible with assignController.getTimeline
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const VALID_TIMELINE_TYPES = ['created', 'status_change', 'followup', 'assigned'];
 
@@ -252,7 +262,7 @@ exports.getTimeline = async (req, res, next) => {
       return res.status(403).json(wrapError(msg));
     }
 
-    // ── Legacy format: filter=Assignment ──────
+    // ΓöÇΓöÇ Legacy format: filter=Assignment ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     if (legacyFilter === 'Assignment') {
       let history;
       if (LeadHistory.findAssignments) {
@@ -292,7 +302,7 @@ exports.getTimeline = async (req, res, next) => {
       return res.json({ success: true, message: 'Timeline retrieved successfully', data: mapped });
     }
 
-    // ── Enhanced format ───────────────────────
+    // ΓöÇΓöÇ Enhanced format ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     // Fetch history entries
     const historyResult = await LeadHistory.findByLeadId(id);
@@ -385,9 +395,9 @@ exports.getTimeline = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // GET /marketing/followups/today
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.getTodayFollowups = async (req, res, next) => {
   try {
@@ -437,9 +447,9 @@ exports.getTodayFollowups = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // GET /marketing/followups/overdue
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.getOverdueFollowups = async (req, res, next) => {
   try {
@@ -546,9 +556,9 @@ exports.addCorrection = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Immutability guard (PUT / PATCH / DELETE)
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.rejectMutation = (req, res) => {
   const method = req.method.toUpperCase();

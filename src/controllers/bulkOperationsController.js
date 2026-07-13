@@ -1,4 +1,4 @@
-const { query, getClient } = require('../config/db');
+﻿const { query, getClient } = require('../config/db');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
@@ -7,6 +7,7 @@ const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
 const algolia = require('../utils/algoliaService');
+const { sendBulkLeadAssignedEmail } = require('../utils/emailService');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const getIpAndAgent = (req) => ({
@@ -87,7 +88,7 @@ exports.bulkAssign = async (req, res, next) => {
 
     const leadPlaceholders = uniqueIds.map((_, i) => `$${i + 1}`).join(', ');
     const leadResult = await query(
-      `SELECT id, lead_id, assigned_to FROM leads WHERE id IN (${leadPlaceholders})`,
+      `SELECT id, lead_id, assigned_to, company_name, priority FROM leads WHERE id IN (${leadPlaceholders})`,
       uniqueIds
     );
 
@@ -159,6 +160,21 @@ exports.bulkAssign = async (req, res, next) => {
       } catch (notifError) {
         console.error('Notification creation failed (non-blocking):', notifError.message);
       }
+    }
+
+    if (targetUser.email && changedCount > 0) {
+      const assignedLeads = leadsToProcess.map(l => ({
+        lead_id: l.lead_id,
+        company_name: l.company_name || 'Unknown',
+        priority: l.priority || 'N/A',
+      }));
+      sendBulkLeadAssignedEmail(
+        targetUser.email,
+        targetUser.name || targetUser.email,
+        assignedLeads,
+        req.user.name || req.user.email,
+        targetUser.role
+      ).catch(err => console.error('[bulkAssign] Email notification skipped:', err.message));
     }
 
     await AuditLog.create({

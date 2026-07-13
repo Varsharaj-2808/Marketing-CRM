@@ -1,4 +1,4 @@
-const success = (message, data = null) => ({
+﻿const success = (message, data = null) => ({
   success: true,
   message,
   data,

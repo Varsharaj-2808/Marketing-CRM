@@ -1,4 +1,4 @@
-const request = require('supertest');
+﻿const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -82,7 +82,7 @@ beforeEach(() => {
 afterAll(() => jest.restoreAllMocks());
 
 // ============================================================
-// API-1: POST /admin/leads/saved-views — Create Saved View
+// API-1: POST /admin/leads/saved-views ΓÇö Create Saved View
 // ============================================================
 describe('API-1: POST /admin/leads/saved-views', () => {
   const SAVED_VIEW = {
@@ -94,7 +94,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     updated_at: '2026-07-01T10:00:00.000Z',
   };
 
-  test('test-ep-2.2.1-001: Create saved view with name and all filter fields — 201', async () => {
+  test('test-ep-2.2.1-001: Create saved view with name and all filter fields ΓÇö 201', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE name = $1', () => ({ rows: [] })],
@@ -115,7 +115,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.data.updated_at).toBeDefined();
   });
 
-  test('test-ep-2.2.1-002: Create saved view with name only and no filters — 201', async () => {
+  test('test-ep-2.2.1-002: Create saved view with name only and no filters ΓÇö 201', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE name = $1', () => ({ rows: [] })],
@@ -132,7 +132,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.data.filters).toEqual({});
   });
 
-  test('test-ep-2.2.1-003: Create saved view with partial filters (only status) — 201', async () => {
+  test('test-ep-2.2.1-003: Create saved view with partial filters (only status) ΓÇö 201', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE name = $1', () => ({ rows: [] })],
@@ -148,7 +148,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.data.filters).toEqual({ status: 'Open' });
   });
 
-  test('test-ep-2.2.1-004: Missing name field — 400', async () => {
+  test('test-ep-2.2.1-004: Missing name field ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -159,7 +159,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.name).toBe('Name is required');
   });
 
-  test('test-ep-2.2.1-005: Empty string name — 400', async () => {
+  test('test-ep-2.2.1-005: Empty string name ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -170,7 +170,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.name).toBe('Name cannot be empty');
   });
 
-  test('test-ep-2.2.1-006: Duplicate view name for same admin user — 409', async () => {
+  test('test-ep-2.2.1-006: Duplicate view name for same admin user ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE name = $1', () => ({ rows: [{ id: 'existing-view-id' }] })],
@@ -184,7 +184,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.error).toBe('A saved view with this name already exists');
   });
 
-  test('test-ep-2.2.1-007: Duplicate view name allowed for different admin users — 201', async () => {
+  test('test-ep-2.2.1-007: Duplicate view name allowed for different admin users ΓÇö 201', async () => {
     const otherAdminUser = { ...ADMIN_USER, id: '55555555-5555-5555-5555-555555555555' };
     const otherAdminToken = jwt.sign(
       { id: otherAdminUser.id, email: otherAdminUser.email, role: otherAdminUser.role },
@@ -205,7 +205,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.data.name).toBe('My Views');
   });
 
-  test('test-ep-2.2.1-008: Unauthorized — Marketing Executive role — 403', async () => {
+  test('test-ep-2.2.1-008: Unauthorized ΓÇö Marketing Executive role ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -216,7 +216,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.error || res.body.message).toMatch(/Admin/);
   });
 
-  test('test-ep-2.2.1-009: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-009: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .post('/api/admin/leads/saved-views')
@@ -224,7 +224,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-010: Name at maximum allowed length (100 characters) — 201', async () => {
+  test('test-ep-2.2.1-010: Name at maximum allowed length (100 characters) ΓÇö 201', async () => {
     const name100 = 'A'.repeat(100);
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -241,7 +241,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.data.name).toBe(name100);
   });
 
-  test('test-ep-2.2.1-011: Name exceeding maximum length — 400', async () => {
+  test('test-ep-2.2.1-011: Name exceeding maximum length ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -252,7 +252,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.name).toBe('Name must be 100 characters or less');
   });
 
-  test('test-ep-2.2.1-012: Filters with unknown/extra fields — 201', async () => {
+  test('test-ep-2.2.1-012: Filters with unknown/extra fields ΓÇö 201', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE name = $1', () => ({ rows: [] })],
@@ -268,7 +268,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
     expect(res.body.data.filters.unknown_field).toBe('value');
   });
 
-  test('test-ep-2.2.1-013: XSS attempt in name field — 201', async () => {
+  test('test-ep-2.2.1-013: XSS attempt in name field ΓÇö 201', async () => {
     const xssName = "<script>alert('xss')</script>";
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -287,7 +287,7 @@ describe('API-1: POST /admin/leads/saved-views', () => {
 });
 
 // ============================================================
-// API-2: PUT /admin/leads/saved-views/{viewId} — Update Saved View
+// API-2: PUT /admin/leads/saved-views/{viewId} ΓÇö Update Saved View
 // ============================================================
 describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
   const VIEW_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -306,7 +306,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     updated_at: '2026-07-01T11:00:00.000Z',
   };
 
-  test('test-ep-2.2.1-014: Update name only, filters remain unchanged — 200', async () => {
+  test('test-ep-2.2.1-014: Update name only, filters remain unchanged ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -324,7 +324,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.data.updated_at).toBeDefined();
   });
 
-  test('test-ep-2.2.1-015: Update filters only, name remains unchanged — 200', async () => {
+  test('test-ep-2.2.1-015: Update filters only, name remains unchanged ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -341,7 +341,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.data.filters).toEqual({ stage: 'Meeting Scheduled' });
   });
 
-  test('test-ep-2.2.1-016: Update both name and filters — 200', async () => {
+  test('test-ep-2.2.1-016: Update both name and filters ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -359,7 +359,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.data.filters).toEqual({ priority: 'High' });
   });
 
-  test('test-ep-2.2.1-017: Update with empty name — 400', async () => {
+  test('test-ep-2.2.1-017: Update with empty name ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -373,7 +373,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.name).toBe('Name cannot be empty');
   });
 
-  test('test-ep-2.2.1-018: Update with no fields provided — 400', async () => {
+  test('test-ep-2.2.1-018: Update with no fields provided ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -384,7 +384,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('At least one field (name or filters) must be provided');
   });
 
-  test('test-ep-2.2.1-019: Non-existent viewId — 404', async () => {
+  test('test-ep-2.2.1-019: Non-existent viewId ΓÇö 404', async () => {
     const nonExistentId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -399,7 +399,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('Saved view not found');
   });
 
-  test('test-ep-2.2.1-020: Invalid viewId format — 400', async () => {
+  test('test-ep-2.2.1-020: Invalid viewId format ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -410,7 +410,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('Invalid view ID format');
   });
 
-  test('test-ep-2.2.1-021: Update another admin\'s saved view (IDOR prevention) — 403', async () => {
+  test('test-ep-2.2.1-021: Update another admin\'s saved view (IDOR prevention) ΓÇö 403', async () => {
     const otherAdminView = {
       ...EXISTING_VIEW,
       created_by: '55555555-5555-5555-5555-555555555555',
@@ -428,7 +428,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('You do not have permission to modify this saved view');
   });
 
-  test('test-ep-2.2.1-022: Unauthorized — Marketing Executive role — 403', async () => {
+  test('test-ep-2.2.1-022: Unauthorized ΓÇö Marketing Executive role ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -438,7 +438,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.2.1-023: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-023: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .put(`/api/admin/leads/saved-views/${VIEW_ID}`)
@@ -446,7 +446,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-024: Update duplicate name (same user, different view) — 409', async () => {
+  test('test-ep-2.2.1-024: Update duplicate name (same user, different view) ΓÇö 409', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -463,7 +463,7 @@ describe('API-2: PUT /admin/leads/saved-views/:viewId', () => {
 });
 
 // ============================================================
-// API-3: DELETE /admin/leads/saved-views/{viewId} — Delete Saved View
+// API-3: DELETE /admin/leads/saved-views/{viewId} ΓÇö Delete Saved View
 // ============================================================
 describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
   const VIEW_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -476,7 +476,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
     updated_at: '2026-07-01T10:00:00.000Z',
   };
 
-  test('test-ep-2.2.1-025: Delete existing saved view owned by the requesting admin — 200', async () => {
+  test('test-ep-2.2.1-025: Delete existing saved view owned by the requesting admin ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -491,7 +491,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
     expect(res.body.message).toBe('Saved view deleted');
   });
 
-  test('test-ep-2.2.1-026: Delete non-existent viewId — 404', async () => {
+  test('test-ep-2.2.1-026: Delete non-existent viewId ΓÇö 404', async () => {
     const nonExistentId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -505,7 +505,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('Saved view not found');
   });
 
-  test('test-ep-2.2.1-027: Invalid viewId format — 400', async () => {
+  test('test-ep-2.2.1-027: Invalid viewId format ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -515,7 +515,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('Invalid view ID format');
   });
 
-  test('test-ep-2.2.1-028: Delete another admin\'s saved view (IDOR prevention) — 403', async () => {
+  test('test-ep-2.2.1-028: Delete another admin\'s saved view (IDOR prevention) ΓÇö 403', async () => {
     const otherAdminView = { ...EXISTING_VIEW, created_by: '55555555-5555-5555-5555-555555555555' };
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
@@ -529,7 +529,7 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
     expect(res.body.error).toBe('You do not have permission to delete this saved view');
   });
 
-  test('test-ep-2.2.1-029: Unauthorized — Marketing Executive role — 403', async () => {
+  test('test-ep-2.2.1-029: Unauthorized ΓÇö Marketing Executive role ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -538,14 +538,14 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.2.1-030: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-030: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .delete(`/api/admin/leads/saved-views/${VIEW_ID}`);
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-031: Delete already-deleted view (idempotency) — 200 then 404', async () => {
+  test('test-ep-2.2.1-031: Delete already-deleted view (idempotency) ΓÇö 200 then 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM saved_views WHERE id = $1', () => ({ rows: [EXISTING_VIEW] })],
@@ -573,10 +573,10 @@ describe('API-3: DELETE /admin/leads/saved-views/:viewId', () => {
 });
 
 // ============================================================
-// API-4: POST /admin/leads/bulk-select — Bulk Select Leads
+// API-4: POST /admin/leads/bulk-select ΓÇö Bulk Select Leads
 // ============================================================
 describe('API-4: POST /admin/leads/bulk-select', () => {
-  test('test-ep-2.2.1-032: Select multiple valid lead IDs — 200', async () => {
+  test('test-ep-2.2.1-032: Select multiple valid lead IDs ΓÇö 200', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -589,7 +589,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.body.lead_ids).toEqual(['lead-001', 'lead-002']);
   });
 
-  test('test-ep-2.2.1-033: Select empty array (no leads) — 200', async () => {
+  test('test-ep-2.2.1-033: Select empty array (no leads) ΓÇö 200', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -602,7 +602,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.body.lead_ids).toEqual([]);
   });
 
-  test('test-ep-2.2.1-034: Select single lead ID — 200', async () => {
+  test('test-ep-2.2.1-034: Select single lead ID ΓÇö 200', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -613,7 +613,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.body.count).toBe(1);
   });
 
-  test('test-ep-2.2.1-035: lead_ids is not an array — 400', async () => {
+  test('test-ep-2.2.1-035: lead_ids is not an array ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -624,7 +624,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.body.lead_ids).toBe('Must be an array of lead ID strings');
   });
 
-  test('test-ep-2.2.1-036: lead_ids contains non-string entries — 400', async () => {
+  test('test-ep-2.2.1-036: lead_ids contains non-string entries ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -635,7 +635,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.body.lead_ids).toBe('Each lead ID must be a string');
   });
 
-  test('test-ep-2.2.1-037: Unauthorized — Marketing Executive role — 403', async () => {
+  test('test-ep-2.2.1-037: Unauthorized ΓÇö Marketing Executive role ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -645,7 +645,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.2.1-038: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-038: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .post('/api/admin/leads/bulk-select')
@@ -653,7 +653,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-039: Duplicate lead IDs in the array — 200 with deduplication', async () => {
+  test('test-ep-2.2.1-039: Duplicate lead IDs in the array ΓÇö 200 with deduplication', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -667,7 +667,7 @@ describe('API-4: POST /admin/leads/bulk-select', () => {
 });
 
 // ============================================================
-// API-5: POST /admin/leads/bulk-assign — Bulk Assign Leads
+// API-5: POST /admin/leads/bulk-assign ΓÇö Bulk Assign Leads
 // ============================================================
 describe('API-5: POST /admin/leads/bulk-assign', () => {
   const mockClient = () => {
@@ -679,7 +679,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     return client;
   };
 
-  test('test-ep-2.2.1-040: Assign multiple leads to a valid active user — 200', async () => {
+  test('test-ep-2.2.1-040: Assign multiple leads to a valid active user ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -699,7 +699,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.count).toBe(2);
   });
 
-  test('test-ep-2.2.1-041: Assign with a reason field — 200', async () => {
+  test('test-ep-2.2.1-041: Assign with a reason field ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -719,7 +719,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.count).toBe(1);
   });
 
-  test('test-ep-2.2.1-042: Assign single lead — 200', async () => {
+  test('test-ep-2.2.1-042: Assign single lead ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -738,7 +738,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.count).toBe(1);
   });
 
-  test('test-ep-2.2.1-043: Admin assigns lead to themselves — 200', async () => {
+  test('test-ep-2.2.1-043: Admin assigns lead to themselves ΓÇö 200', async () => {
     const client = mockClient();
     client.query.mockResolvedValue({ rows: [] });
 
@@ -757,7 +757,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.assigned).toBe(true);
   });
 
-  test('test-ep-2.2.1-044: Empty lead_ids array — 400', async () => {
+  test('test-ep-2.2.1-044: Empty lead_ids array ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -768,7 +768,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.lead_ids).toBe('At least one lead ID is required');
   });
 
-  test('test-ep-2.2.1-045: Missing assigned_to field — 400', async () => {
+  test('test-ep-2.2.1-045: Missing assigned_to field ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -779,7 +779,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.assigned_to).toBe('Target user ID is required');
   });
 
-  test('test-ep-2.2.1-046: Non-existent assigned_to user — 404', async () => {
+  test('test-ep-2.2.1-046: Non-existent assigned_to user ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['"employee_id" = $1', () => ({ rows: [] })],
@@ -793,7 +793,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.error).toBe('Assigned user not found');
   });
 
-  test('test-ep-2.2.1-047: Deactivated/inactive user as assignee — 400', async () => {
+  test('test-ep-2.2.1-047: Deactivated/inactive user as assignee ΓÇö 400', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['"employee_id" = $1', () => ({ rows: [{ id: 'inactive-user', role: 'Marketing Executive', accountStatus: 'inactive', status: 'inactive' }] })],
@@ -807,7 +807,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.error).toBe('Cannot assign leads to a deactivated user');
   });
 
-  test('test-ep-2.2.1-048: One or more lead IDs do not exist (partial failure) — 404', async () => {
+  test('test-ep-2.2.1-048: One or more lead IDs do not exist (partial failure) ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['"employee_id" = $1', () => ({ rows: [{ id: 'user-101', role: 'Marketing Executive', accountStatus: 'active', status: 'active' }] })],
@@ -823,7 +823,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.body.error).toContain('nonexistent-lead');
   });
 
-  test('test-ep-2.2.1-049: Unauthorized — Marketing Executive role — 403', async () => {
+  test('test-ep-2.2.1-049: Unauthorized ΓÇö Marketing Executive role ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -833,7 +833,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.2.1-050: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-050: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .post('/api/admin/leads/bulk-assign')
@@ -841,7 +841,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-051: Large batch assignment (1000+ leads) — 200', async () => {
+  test('test-ep-2.2.1-051: Large batch assignment (1000+ leads) ΓÇö 200', async () => {
     const leadIds = Array.from({ length: 1000 }, (_, i) => `lead-${String(i).padStart(3, '0')}`);
     const leads = leadIds.map(id => ({ id, lead_id: `LD-2026-${String(id).padStart(5, '0')}`, assigned_to: null }));
     const client = mockClient();
@@ -865,7 +865,7 @@ describe('API-5: POST /admin/leads/bulk-assign', () => {
 });
 
 // ============================================================
-// API-6: POST /admin/leads/export — Bulk Export Leads
+// API-6: POST /admin/leads/export ΓÇö Bulk Export Leads
 // ============================================================
 describe('API-6: POST /admin/leads/export', () => {
   const EXPORT_LEADS = [
@@ -873,7 +873,7 @@ describe('API-6: POST /admin/leads/export', () => {
     { id: 'lead-002', lead_id: 'LD-2026-00002', company_name: 'Beta Inc', contact_person: 'Bob', mobile_number: '9222222222', email: 'bob@beta.com', lead_source: 'Referral', category: 'Consulting', priority: 'Warm', stage: 'Contacted', estimated_value: 30000, assigned_to_name: null, created_at: '2026-06-02T00:00:00.000Z', updated_at: '2026-06-16T00:00:00.000Z' },
   ];
 
-  test('test-ep-2.2.1-052: Export selected leads to xlsx format — 200', async () => {
+  test('test-ep-2.2.1-052: Export selected leads to xlsx format ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM leads l LEFT JOIN users u', () => ({ rows: EXPORT_LEADS })],
@@ -888,7 +888,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.download_url).toMatch(/^\/exports\/leads-\d{4}-\d{2}-\d{2}-[a-z0-9]+\.xlsx$/);
   });
 
-  test('test-ep-2.2.1-053: Export selected leads to csv format — 200', async () => {
+  test('test-ep-2.2.1-053: Export selected leads to csv format ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM leads l LEFT JOIN users u', () => ({ rows: EXPORT_LEADS })],
@@ -903,7 +903,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.download_url).toMatch(/^\/exports\/leads-\d{4}-\d{2}-\d{2}-[a-z0-9]+\.csv$/);
   });
 
-  test('test-ep-2.2.1-054: Export all leads (empty lead_ids array) — 200', async () => {
+  test('test-ep-2.2.1-054: Export all leads (empty lead_ids array) ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM leads l LEFT JOIN users u', () => ({ rows: EXPORT_LEADS })],
@@ -917,7 +917,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.download_url).toBeDefined();
   });
 
-  test('test-ep-2.2.1-055: Invalid format specified — 400', async () => {
+  test('test-ep-2.2.1-055: Invalid format specified ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -928,7 +928,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.format).toBe("Format must be 'xlsx' or 'csv'");
   });
 
-  test('test-ep-2.2.1-056: Missing format field — 400', async () => {
+  test('test-ep-2.2.1-056: Missing format field ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -939,7 +939,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.format).toBe('Export format is required');
   });
 
-  test('test-ep-2.2.1-057: Non-existent lead IDs in selection — 404', async () => {
+  test('test-ep-2.2.1-057: Non-existent lead IDs in selection ΓÇö 404', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM leads l LEFT JOIN users u', () => ({ rows: [{ id: 'lead-001', lead_id: 'LD-2026-00001' }] })],
@@ -953,7 +953,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.error).toContain('Lead(s) not found');
   });
 
-  test('test-ep-2.2.1-058: Unauthorized — Marketing Executive role — 403', async () => {
+  test('test-ep-2.2.1-058: Unauthorized ΓÇö Marketing Executive role ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -963,7 +963,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.status).toBe(403);
   });
 
-  test('test-ep-2.2.1-059: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-059: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .post('/api/admin/leads/export')
@@ -971,7 +971,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-060: Downloaded file is accessible and has correct headers — 200', async () => {
+  test('test-ep-2.2.1-060: Downloaded file is accessible and has correct headers ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM leads l LEFT JOIN users u', () => ({ rows: EXPORT_LEADS })],
@@ -992,7 +992,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(downloadRes.text.length).toBeGreaterThan(0);
   });
 
-  test('test-ep-2.2.1-061: Export with large dataset (10000+ leads) — 200', async () => {
+  test('test-ep-2.2.1-061: Export with large dataset (10000+ leads) ΓÇö 200', async () => {
     const largeLeads = Array.from({ length: 100 }, (_, i) => ({
       id: `lead-${String(i).padStart(5, '0')}`,
       lead_id: `LD-2026-${String(i + 1).padStart(5, '0')}`,
@@ -1023,7 +1023,7 @@ describe('API-6: POST /admin/leads/export', () => {
     expect(res.body.download_url).toBeDefined();
   });
 
-  test('test-ep-2.2.1-062: Export file includes correct columns — 200', async () => {
+  test('test-ep-2.2.1-062: Export file includes correct columns ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['FROM leads l LEFT JOIN users u', () => ({ rows: EXPORT_LEADS })],
@@ -1056,7 +1056,7 @@ describe('API-6: POST /admin/leads/export', () => {
 });
 
 // ============================================================
-// API-7: GET /admin/leads — Admin Lead List
+// API-7: GET /admin/leads ΓÇö Admin Lead List
 // ============================================================
 describe('API-7: GET /admin/leads', () => {
   const MOCK_LEADS = [
@@ -1065,7 +1065,7 @@ describe('API-7: GET /admin/leads', () => {
     { id: 'lead-3', lead_id: 'LD-2026-00003', company_name: 'Gamma Ltd', contact_person: 'Charlie', mobile_number: '9333333333', email: 'charlie@gamma.com', lead_source: 'Website', category: 'IT Services', priority: 'Cold', stage: 'Contacted', estimated_value: 10000, assigned_to: 'user-102', assigned_to_name: 'Another User', created_at: '2026-06-03T00:00:00.000Z', updated_at: '2026-06-17T00:00:00.000Z' },
   ];
 
-  test('test-ep-2.2.1-063: Admin retrieves all leads without filters — 200', async () => {
+  test('test-ep-2.2.1-063: Admin retrieves all leads without filters ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -1084,7 +1084,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.data.length).toBe(3);
   });
 
-  test('test-ep-2.2.1-064: Admin sees leads owned by all Marketing Executives — 200', async () => {
+  test('test-ep-2.2.1-064: Admin sees leads owned by all Marketing Executives ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -1102,7 +1102,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(owners.has(null)).toBe(true);
   });
 
-  test('test-ep-2.2.1-065: Search leads by company name text — 200', async () => {
+  test('test-ep-2.2.1-065: Search leads by company name text ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '1' }] })],
@@ -1117,7 +1117,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.data[0].company_name).toContain('Alpha');
   });
 
-  test('test-ep-2.2.1-066: Filter leads by status, priority, and stage — 200', async () => {
+  test('test-ep-2.2.1-066: Filter leads by status, priority, and stage ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '1' }] })],
@@ -1131,7 +1131,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.data[0].priority).toBe('Hot');
   });
 
-  test('test-ep-2.2.1-067: Filter leads by source, category, and assigned_to — 200', async () => {
+  test('test-ep-2.2.1-067: Filter leads by source, category, and assigned_to ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '1' }] })],
@@ -1145,7 +1145,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.data[0].lead_source).toBe('Website');
   });
 
-  test('test-ep-2.2.1-068: Sort leads by estimated value descending — 200', async () => {
+  test('test-ep-2.2.1-068: Sort leads by estimated value descending ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -1159,7 +1159,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.data[0].estimated_value).toBe(50000);
   });
 
-  test('test-ep-2.2.1-069: Sort leads by created date ascending — 200', async () => {
+  test('test-ep-2.2.1-069: Sort leads by created date ascending ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -1173,7 +1173,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(new Date(res.body.data.data[0].created_at).getTime()).toBeLessThanOrEqual(new Date(res.body.data.data[1].created_at).getTime());
   });
 
-  test('test-ep-2.2.1-070: Sort leads by priority and status — 200', async () => {
+  test('test-ep-2.2.1-070: Sort leads by priority and status ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '3' }] })],
@@ -1187,7 +1187,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
-  test('test-ep-2.2.1-071: Paginated leads retrieval page 2 with custom limit — 200', async () => {
+  test('test-ep-2.2.1-071: Paginated leads retrieval page 2 with custom limit ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '65' }] })],
@@ -1205,7 +1205,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
-  test('test-ep-2.2.1-072: Marketing Executive cannot access admin leads endpoint — 403', async () => {
+  test('test-ep-2.2.1-072: Marketing Executive cannot access admin leads endpoint ΓÇö 403', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [MARKETING_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -1215,14 +1215,14 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.error || res.body.message).toMatch(/Admin/);
   });
 
-  test('test-ep-2.2.1-073: Unauthenticated request — 401', async () => {
+  test('test-ep-2.2.1-073: Unauthenticated request ΓÇö 401', async () => {
     const app = createTestApp();
     const res = await request(app)
       .get('/api/admin/leads');
     expect(res.status).toBe(401);
   });
 
-  test('test-ep-2.2.1-074: Empty results with no matching leads — 200', async () => {
+  test('test-ep-2.2.1-074: Empty results with no matching leads ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '0' }] })],
@@ -1239,7 +1239,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.data).toEqual([]);
   });
 
-  test('test-ep-2.2.1-075: Combined search, filter, sort, and pagination — 200', async () => {
+  test('test-ep-2.2.1-075: Combined search, filter, sort, and pagination ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '1' }] })],
@@ -1255,7 +1255,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 
-  test('test-ep-2.2.1-076: Invalid page number (negative or zero) — 400', async () => {
+  test('test-ep-2.2.1-076: Invalid page number (negative or zero) ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
 
@@ -1271,7 +1271,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res2.status).toBe(400);
   });
 
-  test('test-ep-2.2.1-077: Invalid sort field — 400', async () => {
+  test('test-ep-2.2.1-077: Invalid sort field ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)
@@ -1281,7 +1281,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.sortBy).toContain('Invalid sort field');
   });
 
-  test('test-ep-2.2.1-078: Filter leads by created date range — 200', async () => {
+  test('test-ep-2.2.1-078: Filter leads by created date range ΓÇö 200', async () => {
     defaultQuery([
       ['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })],
       ['COUNT(*)', () => ({ rows: [{ count: '2' }] })],
@@ -1296,7 +1296,7 @@ describe('API-7: GET /admin/leads', () => {
     expect(res.body.data.totalCount).toBe(2);
   });
 
-  test('test-ep-2.2.1-079: Invalid date range (from_date greater than to_date) — 400', async () => {
+  test('test-ep-2.2.1-079: Invalid date range (from_date greater than to_date) ΓÇö 400', async () => {
     defaultQuery([['SELECT * FROM users WHERE id = $1', () => ({ rows: [ADMIN_USER] })]]);
     const app = createTestApp();
     const res = await request(app)

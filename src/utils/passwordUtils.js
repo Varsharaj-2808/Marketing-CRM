@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+﻿const crypto = require('crypto');
 
 const generateTempPassword = (length = 14) => {
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';

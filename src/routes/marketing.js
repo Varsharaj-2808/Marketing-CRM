@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
@@ -6,8 +6,8 @@ const leadController = require('../controllers/leadController');
 const leadHistoryController = require('../controllers/leadHistoryController');
 const { query } = require('../config/db');
 
-router.get('/leads/:id/field-history', protect, authorize('Marketing Executive'), leadHistoryController.getFieldHistory);
-router.all('/leads/:id/field-history', protect, authorize('Marketing Executive'), leadHistoryController.rejectMutation);
+router.get('/leads/:id/field-history', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.getFieldHistory);
+router.all('/leads/:id/field-history', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.rejectMutation);
 router.get('/leads/:id/lead-history', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeadHistory);
 
 const adminController = require('../controllers/adminController');
@@ -36,10 +36,10 @@ router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin',
 router.get('/subcategories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveSubCategories);
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 
-// STORY-6.2.1 — ME Dashboard (Marketing Executive only)
-router.get('/dashboard/cards', protect, authorize('Marketing Executive'), marketingDashboardController.getCards);
-router.get('/dashboard/conversion-rate', protect, authorize('Marketing Executive'), marketingDashboardController.getConversionRate);
-router.get('/dashboard', protect, authorize('Marketing Executive'), marketingDashboardController.getCombinedDashboard);
+// STORY-6.2.1 — ME Dashboard
+router.get('/dashboard/cards', protect, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getCards);
+router.get('/dashboard/conversion-rate', protect, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getConversionRate);
+router.get('/dashboard', protect, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getCombinedDashboard);
 
 // Legacy dashboard (kept for other uses)
 router.get('/dashboard/kpis', protect, authorize('Admin', 'Marketing Executive'), adminController.getDashboardKpisMarketing);
@@ -60,7 +60,7 @@ router.get('/followups/overdue', protect, authorize('Admin', 'Marketing Executiv
 // Enhanced timeline (replaces assignController.getTimeline)
 router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), followupController.getTimeline);
 
-// Timeline Immutability — reject PUT/PATCH/DELETE on timeline events
+// Timeline Immutability ΓÇö reject PUT/PATCH/DELETE on timeline events
 router.put('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectTimelineMutation);
 router.patch('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectTimelineMutation);
 router.delete('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectTimelineMutation);
@@ -69,7 +69,7 @@ router.delete('/leads/:id/timeline/:eventId', protect, authorize('Admin', 'Marke
 router.post('/leads/:id/followups', protect, authorize('Admin', 'Marketing Executive'), followupController.createFollowup);
 router.post('/leads/:id/followups/:fid/correction', protect, authorize('Admin', 'Marketing Executive'), followupController.addCorrection);
 
-// Immutability guards — reject PUT/PATCH/DELETE on follow-up records
+// Immutability guards ΓÇö reject PUT/PATCH/DELETE on follow-up records
 router.put('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectMutation);
 router.patch('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectMutation);
 router.delete('/leads/:id/followups/:fid', protect, authorize('Admin', 'Marketing Executive'), followupController.rejectMutation);

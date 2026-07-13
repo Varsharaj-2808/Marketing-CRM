@@ -207,6 +207,7 @@ exports.getLeads = async (req, res, next) => {
     const {
       search, priority, stage, category, sub_category,
       category_id, sub_category_id, quality, status,
+      source, lead_source,
       from, to, from_date, to_date,
       sortBy, sort_by, sortOrder, sort_order, page, limit,
     } = req.query;
@@ -218,12 +219,13 @@ exports.getLeads = async (req, res, next) => {
     const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
     const resolvedStage = (stage || '').trim() || undefined;
     const resolvedStatus = (status || '').trim() || undefined;
+    const resolvedSource = (source || lead_source || '').trim() || undefined;
     const resolvedFromDate = (from_date || from || '').trim() || undefined;
     const resolvedToDate = (to_date || to || '').trim() || undefined;
     const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
 
-    if (algolia && typeof algolia.searchLeads === 'function' && (resolvedSearch || resolvedPriority || resolvedStage || resolvedStatus || resolvedCategory || resolvedSubCategory || resolvedFromDate || resolvedToDate)) {
+    if (algolia && typeof algolia.searchLeads === 'function' && (resolvedSearch || resolvedPriority || resolvedStage || resolvedStatus || resolvedCategory || resolvedSubCategory || resolvedSource || resolvedFromDate || resolvedToDate)) {
       const algoliaResult = await algolia.searchLeads(
         resolvedSearch || '',
         {
@@ -232,6 +234,7 @@ exports.getLeads = async (req, res, next) => {
           status: resolvedStatus,
           category: resolvedCategory,
           sub_category: resolvedSubCategory,
+          lead_source: resolvedSource,
           from_date: resolvedFromDate,
           to_date: resolvedToDate
         },
@@ -281,6 +284,7 @@ exports.getLeads = async (req, res, next) => {
       status: resolvedStatus,
       category: resolvedCategory,
       sub_category: resolvedSubCategory,
+      lead_source: resolvedSource,
       from_date: resolvedFromDate,
       to_date: resolvedToDate,
       sortBy: resolvedSortBy,

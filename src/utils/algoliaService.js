@@ -27,7 +27,7 @@ async function initIndices() {
     await client.setSettings({
       indexName: USERS_INDEX,
       indexSettings: {
-        searchableAttributes: ['name', 'email', 'employee_id', 'mobile'],
+        searchableAttributes: ['name', 'email', 'employee_id', 'mobile', 'department', 'designation'],
         attributesForFaceting: ['role', 'status', 'department', 'designation', 'createdAt', 'updatedAt'],
         customRanking: ['desc(createdAt)'],
       }
@@ -36,12 +36,17 @@ async function initIndices() {
     await client.setSettings({
       indexName: LEADS_INDEX,
       indexSettings: {
-        searchableAttributes: ['company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'lead_id'],
+        searchableAttributes: [
+          'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source',
+          'lead_id', 'city', 'state', 'country', 'service_interested', 'assigned_to_name',
+          'category_name', 'sub_category_name', 'website'
+        ],
         attributesForFaceting: [
           'stage', 'priority', 'lead_source', 'category', 'sub_category',
-          'assigned_to', 'status', 'city', 'state', 'country', 'created_at', 'updated_at'
+          'category_name', 'sub_category_name',
+          'assigned_to', 'assigned_employee_id', 'status', 'city', 'state', 'country', 'created_at', 'updated_at'
         ],
-        customRanking: ['desc(created_at)'],
+        customRanking: ['desc(created_at_timestamp)'],
       }
     });
     console.log('Algolia index settings configured successfully.');
@@ -79,6 +84,8 @@ module.exports = {
         mobile: user.mobile,
         role: user.role,
         status: user.accountStatus || user.status,
+        department: user.department || null,
+        designation: user.designation || null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       };
@@ -113,6 +120,12 @@ module.exports = {
       }
       if (filters.status && filters.status !== 'All') {
         facetFilters.push(`status:${filters.status}`);
+      }
+      if (filters.department && filters.department !== 'All') {
+        facetFilters.push(`department:${filters.department}`);
+      }
+      if (filters.designation && filters.designation !== 'All') {
+        facetFilters.push(`designation:${filters.designation}`);
       }
 
       const searchParams = {
@@ -151,6 +164,8 @@ module.exports = {
         mobile: user.mobile,
         role: user.role,
         status: user.accountStatus || user.status,
+        department: user.department || null,
+        designation: user.designation || null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       }));
@@ -177,13 +192,19 @@ module.exports = {
         email: lead.email,
         website: lead.website,
         city: lead.city,
+        state: lead.state,
+        country: lead.country,
         lead_source: lead.lead_source,
         category: lead.category,
+        category_name: lead.category_name || null,
         sub_category: lead.sub_category,
+        sub_category_name: lead.sub_category_name || null,
         service_interested: lead.service_interested,
         priority: lead.priority,
         estimated_value: lead.estimated_value ? parseFloat(lead.estimated_value) : null,
         assigned_to: lead.assigned_to,
+        assigned_employee_id: lead.assigned_employee_id || null,
+        assigned_to_name: lead.assigned_to_name || null,
         stage: lead.stage,
         status: lead.lead_status || lead.status,
         created_at: lead.created_at,
@@ -221,10 +242,11 @@ module.exports = {
     try {
       const cli = getClient();
       const facetFilters = [];
+      let hasAssignedToFilter = false;
 
-      // Role-based scoping (similar to Lead.js): non-admins can only see leads assigned to them
       if (!isAdmin && userId) {
         facetFilters.push(`assigned_to:${userId}`);
+        hasAssignedToFilter = true;
       }
 
       if (filters.priority && filters.priority !== 'All') {
@@ -234,7 +256,11 @@ module.exports = {
         facetFilters.push(`stage:${filters.stage}`);
       }
       if (filters.status && filters.status !== 'All') {
-        facetFilters.push(`status:${filters.status}`);
+        if (filters.status === 'Won' || filters.status === 'Lost') {
+          facetFilters.push(`stage:${filters.status}`);
+        } else {
+          facetFilters.push(`status:${filters.status}`);
+        }
       }
       if (filters.category && filters.category !== 'All') {
         facetFilters.push(`category:${filters.category}`);
@@ -246,7 +272,20 @@ module.exports = {
         facetFilters.push(`lead_source:${filters.lead_source}`);
       }
       if (filters.assigned_to && filters.assigned_to !== 'All') {
-        facetFilters.push(`assigned_to:${filters.assigned_to}`);
+        if (filters.assigned_to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          facetFilters.push(`assigned_to:${filters.assigned_to}`);
+        } else {
+          facetFilters.push(`assigned_employee_id:${filters.assigned_to}`);
+        }
+      }
+      if (filters.city && filters.city !== 'All') {
+        facetFilters.push(`city:${filters.city}`);
+      }
+      if (filters.state && filters.state !== 'All') {
+        facetFilters.push(`state:${filters.state}`);
+      }
+      if (filters.country && filters.country !== 'All') {
+        facetFilters.push(`country:${filters.country}`);
       }
 
       const numericFilters = [];
@@ -278,6 +317,23 @@ module.exports = {
         searchParams,
       });
 
+      if (hasAssignedToFilter && result && result.nbHits === 0) {
+        const retryFilters = facetFilters.filter(f => !f.startsWith('assigned_to:'));
+        const retryParams = { ...searchParams, hitsPerPage: 0 };
+        if (retryFilters.length > 0) {
+          retryParams.facetFilters = retryFilters;
+        } else {
+          delete retryParams.facetFilters;
+        }
+        const countResult = await cli.searchSingleIndex({
+          indexName: LEADS_INDEX,
+          searchParams: retryParams,
+        });
+        if (countResult && countResult.nbHits > 0) {
+          return null;
+        }
+      }
+
       return result;
     } catch (err) {
       console.error('Algolia searchLeads failed:', err.message);
@@ -299,13 +355,19 @@ module.exports = {
         email: lead.email,
         website: lead.website,
         city: lead.city,
+        state: lead.state,
+        country: lead.country,
         lead_source: lead.lead_source,
         category: lead.category,
+        category_name: lead.category_name || null,
         sub_category: lead.sub_category,
+        sub_category_name: lead.sub_category_name || null,
         service_interested: lead.service_interested,
         priority: lead.priority,
         estimated_value: lead.estimated_value ? parseFloat(lead.estimated_value) : null,
         assigned_to: lead.assigned_to,
+        assigned_employee_id: lead.assigned_employee_id || null,
+        assigned_to_name: lead.assigned_to_name || null,
         stage: lead.stage,
         status: lead.lead_status || lead.status,
         created_at: lead.created_at,
