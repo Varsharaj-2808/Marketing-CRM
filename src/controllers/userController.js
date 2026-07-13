@@ -16,7 +16,7 @@ const getIpAndAgent = (req) => ({
 
 exports.createUser = async (req, res, next) => {
   try {
-    const { name, email, mobile, role, status } = req.body;
+    const { name, email, mobile, role, status, department } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!name || !name.trim()) {
@@ -72,6 +72,7 @@ exports.createUser = async (req, res, next) => {
         role,
         password: tempPassword,
         status: userStatus,
+        department: department || null,
       }, client);
 
       await AuditLog.create({
@@ -104,6 +105,7 @@ exports.createUser = async (req, res, next) => {
         mobile: user.mobile,
         role: user.role,
         status: user.status,
+        department: user.department,
         createdAt: user.createdAt,
       },
     });
@@ -123,17 +125,14 @@ exports.createUser = async (req, res, next) => {
 
 exports.getUsers = async (req, res, next) => {
   try {
-    const { search, role, status, page, limit } = req.query;
+    const { search, role, status, department, page, limit } = req.query;
 
-    if (role === 'Marketing Executive') {
-      const users = await User.findActiveByRole('Marketing Executive');
-      return res.json({ success: true, message: 'Users fetched successfully', data: users });
-    }
 
-    if (search || role || status) {
+
+    if (search || role || status || department) {
       const algoliaResult = await algolia.searchUsers(
         search || '',
-        { role, status },
+        { role, status, department },
         parseInt(page) || 1,
         parseInt(limit) || 20
       );
@@ -193,7 +192,7 @@ exports.getUser = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, mobile, role } = req.body;
+    const { name, email, mobile, role, department } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     const user = await User.findByIdOrEmployeeId(id);
@@ -255,6 +254,10 @@ exports.updateUser = async (req, res, next) => {
     if (role !== undefined && role !== user.role) {
       changes.push({ field: 'role', old: user.role, new: role });
       fieldsToUpdate.role = role;
+    }
+    if (department !== undefined && department !== user.department) {
+      changes.push({ field: 'department', old: user.department, new: department });
+      fieldsToUpdate.department = department;
     }
 
     if (Object.keys(fieldsToUpdate).length === 0) {
