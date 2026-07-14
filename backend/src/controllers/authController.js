@@ -201,16 +201,14 @@ exports.getProfile = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.json({
-      success: true,
-      data: {
-        id: user.id,
-        name: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role
-      }
-    });
+    const responseData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile || user.mobile_number || '',
+      role: user.role,
+    };
+    res.json({ success: true, data: responseData });
   } catch (error) {
     next(error);
   }
