@@ -1,0 +1,11 @@
+{
+  "name": "marketing-crm-backend-root",
+  "version": "1.0.0",
+  "description": "Root package runner to delegate to backend folder",
+  "scripts": {
+    "start": "npm start --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "test": "npm test --prefix backend",
+    "install": "npm install --prefix backend"
+  }
+}
