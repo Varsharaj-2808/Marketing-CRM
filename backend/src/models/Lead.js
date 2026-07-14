@@ -64,12 +64,12 @@ const Lead = {
   },
 
   async findByMobile(mobile) {
-    const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2', [mobile, 'Closed Lost']);
+    const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2 AND lead_status != $3', [mobile, 'Closed Lost', 'Lost']);
     return result.rows[0] || null;
   },
 
   async findByEmail(email) {
-    const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2', [email, 'Closed Lost']);
+    const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2 AND lead_status != $3', [email, 'Closed Lost', 'Lost']);
     return result.rows[0] || null;
   },
 
@@ -110,13 +110,8 @@ const Lead = {
     }
 
     if (status) {
-      if (status === 'Won' || status === 'Lost') {
-        conditions.push(`l.stage = $${idx++}`);
-        values.push(status);
-      } else {
-        conditions.push(`l.lead_status = $${idx++}`);
-        values.push(status);
-      }
+      conditions.push(`l.lead_status = $${idx++}`);
+      values.push(status);
     }
 
     if (category) {
@@ -215,13 +210,8 @@ const Lead = {
     }
 
     if (status) {
-      if (status === 'Won' || status === 'Lost') {
-        conditions.push(`l.stage = $${idx++}`);
-        values.push(status);
-      } else {
-        conditions.push(`l.lead_status = $${idx++}`);
-        values.push(status);
-      }
+      conditions.push(`l.lead_status = $${idx++}`);
+      values.push(status);
     }
 
     if (priority) {
