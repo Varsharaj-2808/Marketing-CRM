@@ -177,6 +177,10 @@ exports.createLeadSource = async (req, res, next) => {
       result: 'success',
     }).catch(() => {});
 
+    if (algolia && typeof algolia.saveLeadSource === 'function') {
+      await algolia.saveLeadSource(source).catch(() => {});
+    }
+
     res.status(201).json(wrapSuccess('Lead source created successfully', source));
   } catch (error) {
     next(error);
@@ -223,6 +227,10 @@ exports.updateLeadSource = async (req, res, next) => {
       result: 'success',
     }).catch(() => {});
 
+    if (algolia && typeof algolia.saveLeadSource === 'function') {
+      await algolia.saveLeadSource(updated).catch(() => {});
+    }
+
     res.json(wrapSuccess('Lead source updated successfully', updated));
   } catch (error) {
     next(error);
@@ -252,6 +260,10 @@ exports.deleteLeadSource = async (req, res, next) => {
       userAgent,
       result: 'success',
     }).catch(() => {});
+
+    if (algolia && typeof algolia.deleteLeadSource === 'function') {
+      await algolia.deleteLeadSource(id).catch(() => {});
+    }
 
     res.json(wrapSuccess('Lead source deleted successfully', { id }));
   } catch (error) {
@@ -360,6 +372,10 @@ exports.createService = async (req, res, next) => {
       result: 'success',
     }).catch(() => {});
 
+    if (algolia && typeof algolia.saveService === 'function') {
+      await algolia.saveService(service).catch(() => {});
+    }
+
     res.status(201).json(wrapSuccess('Service created successfully', service));
   } catch (error) {
     next(error);
@@ -406,6 +422,10 @@ exports.updateService = async (req, res, next) => {
       result: 'success',
     }).catch(() => {});
 
+    if (algolia && typeof algolia.saveService === 'function') {
+      await algolia.saveService(updated).catch(() => {});
+    }
+
     res.json(wrapSuccess('Service updated successfully', updated));
   } catch (error) {
     next(error);
@@ -435,6 +455,10 @@ exports.deleteService = async (req, res, next) => {
       userAgent,
       result: 'success',
     }).catch(() => {});
+
+    if (algolia && typeof algolia.deleteService === 'function') {
+      await algolia.deleteService(id).catch(() => {});
+    }
 
     res.json(wrapSuccess('Service deleted successfully', { id }));
   } catch (error) {

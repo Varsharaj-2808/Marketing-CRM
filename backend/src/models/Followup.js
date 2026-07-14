@@ -1,4 +1,4 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 
 const VALID_FOLLOWUP_TYPES = ['Call', 'WhatsApp', 'Email', 'Online Meeting', 'Client Meeting', 'Demo', 'Proposal Discussion'];
 const VALID_OUTCOMES = ['Interested', 'Need More Info', 'Proposal Requested', 'Budget Discussion', 'Decision Pending', 'Not Interested'];
@@ -38,7 +38,18 @@ const Followup = {
         createdBy,
       ]
     );
-    return result.rows[0];
+    const createdFollowup = result.rows[0];
+    if (createdFollowup) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveFollowup === 'function') {
+          await algolia.saveFollowup(createdFollowup).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync followup to Algolia:', err.message);
+      }
+    }
+    return createdFollowup;
   },
 
   async findById(id) {
@@ -72,7 +83,18 @@ const Followup = {
        RETURNING *`,
       [correctionNotes, correctionBy, id]
     );
-    return result.rows[0] || null;
+    const updated = result.rows[0] || null;
+    if (updated) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveFollowup === 'function') {
+          await algolia.saveFollowup(updated).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync followup correction to Algolia:', err.message);
+      }
+    }
+    return updated;
   },
 
   formatResponse(followup) {

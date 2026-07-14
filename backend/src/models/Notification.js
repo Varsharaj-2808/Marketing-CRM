@@ -10,7 +10,18 @@ const Notification = {
        RETURNING *`,
       [userId, notificationType || 'lead_assigned', leadId || null, message]
     );
-    return result.rows[0];
+    const createdNotification = result.rows[0];
+    if (createdNotification) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveNotification === 'function') {
+          await algolia.saveNotification(createdNotification).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync notification to Algolia:', err.message);
+      }
+    }
+    return createdNotification;
   },
 
   async findByUser(userId) {
@@ -38,7 +49,18 @@ const Notification = {
       'UPDATE notifications SET is_read = true WHERE id = $1 RETURNING *',
       [notificationId]
     );
-    return result.rows[0] || null;
+    const updated = result.rows[0] || null;
+    if (updated) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveNotification === 'function') {
+          await algolia.saveNotification(updated).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync notification update to Algolia:', err.message);
+      }
+    }
+    return updated;
   },
 
   async markAllAsRead(userId) {
@@ -46,6 +68,15 @@ const Notification = {
       'UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false',
       [userId]
     );
+    try {
+      const algolia = require('../utils/algoliaService');
+      const notifs = await this.findByUser(userId);
+      if (algolia && typeof algolia.indexAllNotifications === 'function') {
+        await algolia.indexAllNotifications(notifs).catch(() => {});
+      }
+    } catch (err) {
+      console.error('Failed to reindex notifications to Algolia:', err.message);
+    }
   },
 
   async notifyAdmins(data) {

@@ -248,15 +248,23 @@ exports.getLeads = async (req, res, next) => {
     const resolvedPriority = (priority || quality || '').trim() || undefined;
     const resolvedCategory = (category || category_id || '').trim() || undefined;
     const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
-    const resolvedStage = (stage || '').trim() || undefined;
+    let resolvedStage = (stage || '').trim() || undefined;
+    if (resolvedStage === 'New Lead') {
+      resolvedStage = 'New';
+    }
     const resolvedStatus = (status || '').trim() || undefined;
     const resolvedSource = (source || lead_source || '').trim() || undefined;
     const resolvedFromDate = (from_date || from || '').trim() || undefined;
     const resolvedToDate = (to_date || to || '').trim() || undefined;
-    const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    if (resolvedSortBy) {
+      if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
+      if (resolvedSortBy === 'estimatedValue') resolvedSortBy = 'estimated_value';
+      if (resolvedSortBy === 'source') resolvedSortBy = 'lead_source';
+    }
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
 
-    if (algolia && typeof algolia.searchLeads === 'function' && (resolvedSearch || resolvedPriority || resolvedStage || resolvedStatus || resolvedCategory || resolvedSubCategory || resolvedSource || resolvedFromDate || resolvedToDate)) {
+    if (algolia && typeof algolia.searchLeads === 'function') {
       const algoliaResult = await algolia.searchLeads(
         resolvedSearch || '',
         {
@@ -353,12 +361,20 @@ exports.getAdminLeads = async (req, res, next) => {
     const resolvedSearch = (search || '').trim() || undefined;
     const resolvedStatus = (status || '').trim() || undefined;
     const resolvedPriority = (priority || quality || '').trim() || undefined;
-    const resolvedStage = (stage || '').trim() || undefined;
+    let resolvedStage = (stage || '').trim() || undefined;
+    if (resolvedStage === 'New Lead') {
+      resolvedStage = 'New';
+    }
     const resolvedSource = (source || '').trim() || undefined;
     const resolvedCategory = (category || category_id || '').trim() || undefined;
     const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
     const resolvedAssignedTo = (assigned_to || '').trim() || undefined;
-    const resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    if (resolvedSortBy) {
+      if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
+      if (resolvedSortBy === 'estimatedValue') resolvedSortBy = 'estimated_value';
+      if (resolvedSortBy === 'source') resolvedSortBy = 'lead_source';
+    }
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
     const resolvedFromDate = (from_date || from || '').trim() || undefined;
     const resolvedToDate = (to_date || to || '').trim() || undefined;
@@ -373,7 +389,7 @@ exports.getAdminLeads = async (req, res, next) => {
     if (resolvedSortBy) {
       const validSortFields = [
         'company_name', 'contact_person', 'priority', 'status', 'stage',
-        'estimated_value', 'created_at',
+        'estimated_value', 'created_at', 'lead_source', 'category'
       ];
       if (!validSortFields.includes(resolvedSortBy)) {
         return res.status(400).json(wrapError('sortBy must be a valid field'));
@@ -384,7 +400,7 @@ exports.getAdminLeads = async (req, res, next) => {
       return res.status(400).json(wrapError('from_date must be a valid date'));
     }
 
-    if (algolia && typeof algolia.searchLeads === 'function' && (resolvedSearch || resolvedStatus || resolvedPriority || resolvedStage || resolvedSource || resolvedCategory || resolvedSubCategory || resolvedAssignedTo || resolvedFromDate || resolvedToDate)) {
+    if (algolia && typeof algolia.searchLeads === 'function') {
       const algoliaResult = await algolia.searchLeads(
         resolvedSearch || '',
         {

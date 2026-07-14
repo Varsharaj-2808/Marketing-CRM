@@ -129,7 +129,7 @@ exports.getUsers = async (req, res, next) => {
 
 
 
-    if (search || role || status || department) {
+    if (algolia && typeof algolia.searchUsers === 'function') {
       const algoliaResult = await algolia.searchUsers(
         search || '',
         { role, status, department },
@@ -141,14 +141,12 @@ exports.getUsers = async (req, res, next) => {
         return res.json({
           success: true,
           message: 'Users fetched successfully',
-          data: {
-            users: algoliaResult.hits,
-            pagination: {
-              page: parseInt(page) || 1,
-              limit: parseInt(limit) || 20,
-              totalRecords: algoliaResult.nbHits,
-              totalPages: algoliaResult.nbPages,
-            },
+          data: algoliaResult.hits,
+          pagination: {
+            page: parseInt(page) || 1,
+            limit: parseInt(limit) || 20,
+            totalRecords: algoliaResult.nbHits,
+            totalPages: algoliaResult.nbPages,
           },
         });
       }

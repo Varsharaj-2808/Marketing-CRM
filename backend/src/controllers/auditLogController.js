@@ -65,6 +65,34 @@ exports.getAuditLogs = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
     }
 
+    const algolia = require('../utils/algoliaService');
+    if (algolia && typeof algolia.searchAuditLogs === 'function') {
+      const algoliaResult = await algolia.searchAuditLogs(
+        '',
+        {
+          actor: userId,
+          action_type: action,
+          from,
+          to,
+        },
+        parseInt(page) || 1,
+        parseInt(limit) || PAGE_SIZE || 10
+      );
+      if (algoliaResult) {
+        const enriched = await Promise.all(algoliaResult.hits.map(enrichRow));
+        const data = enriched.map(transformRow);
+        const pagination = {
+          page: parseInt(page) || 1,
+          limit: parseInt(limit) || PAGE_SIZE || 10,
+          total_pages: algoliaResult.nbPages,
+          total_records: algoliaResult.nbHits,
+          totalPages: algoliaResult.nbPages,
+          totalRecords: algoliaResult.nbHits,
+        };
+        return res.json({ success: true, message: 'Audit logs fetched successfully', data: { logs: data, pagination } });
+      }
+    }
+
     const filters = {};
     if (userId) {
       if (!UUID_REGEX.test(userId)) {
