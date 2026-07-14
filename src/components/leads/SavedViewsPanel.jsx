@@ -9,13 +9,6 @@ const DEFAULT_SAVED_VIEWS = [
     sort: { sortBy: 'createdAt', sortOrder: 'desc' },
     search: '',
   },
-  {
-    id: 'pending-follow-up-today',
-    name: 'Pending Follow-up Today',
-    filters: { stage: 'Contacted' },
-    sort: { sortBy: 'createdAt', sortOrder: 'desc' },
-    search: '',
-  },
 ];
 
 export { DEFAULT_SAVED_VIEWS };

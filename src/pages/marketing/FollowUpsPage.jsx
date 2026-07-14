@@ -150,16 +150,21 @@ export default function FollowUpsPage() {
               <button
                 key={fup.id}
                 onClick={() => handleLeadClick(fup.id)}
-                className="w-full flex items-center gap-4 p-4 bg-red-50/30 rounded-xl border border-red-200/40 hover:bg-red-50/60 hover:border-red-300/60 transition-all text-left"
+                className="w-full flex justify-between items-start gap-4 p-4 bg-red-50/30 rounded-xl border border-red-200/40 hover:bg-red-50/60 hover:border-red-300/60 transition-all text-left"
               >
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="material-symbols-outlined text-error text-[20px]">warning</span>
-                  <span className="font-label-sm font-label-sm text-error">{fup.days_overdue}d</span>
+                {/* Left section containing Warning icon, Overdue days, and Priority badge */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="material-symbols-outlined text-error text-[20px]">warning</span>
+                    <span className="font-label-sm font-label-sm text-error">{fup.days_overdue}d</span>
+                  </div>
+                  <div className={`px-2.5 py-1 rounded-full border text-label-xs font-label-xs shrink-0 ${getPriorityBadge(fup.lead_quality)}`}>
+                    {fup.lead_quality || 'N/A'}
+                  </div>
                 </div>
-                <div className={`px-2.5 py-1 rounded-full border text-label-xs font-label-xs shrink-0 ${getPriorityBadge(fup.lead_quality)}`}>
-                  {fup.lead_quality || 'N/A'}
-                </div>
-                <div className="flex-1 min-w-0">
+
+                {/* Middle section containing Company and Contact name */}
+                <div className="flex-grow min-w-0">
                   <p className="font-body-md text-body-md text-on-surface truncate">
                     {fup.company_name || 'Unknown Company'}
                   </p>
@@ -167,15 +172,21 @@ export default function FollowUpsPage() {
                     {fup.contact_person || '-'}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="font-label-sm text-label-sm text-error font-medium">
+
+                {/* Right section containing Date & Time and Lead Stage */}
+                <div className="flex flex-col items-end text-right min-w-0">
+                  <p className="font-label-sm text-label-sm text-error font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] sm:max-w-none">
                     {fup.next_followup_date ? formatDate(fup.next_followup_date) : '-'}
                   </p>
                   {fup.stage && (
-                    <p className="text-label-xs font-label-xs text-on-surface-variant/50">{fup.stage}</p>
+                    <p className="text-label-xs font-label-xs text-on-surface-variant/50 truncate w-full">
+                      {fup.stage}
+                    </p>
                   )}
                 </div>
-                <span className="material-symbols-outlined text-outline">chevron_right</span>
+
+                {/* Chevron icon */}
+                <span className="material-symbols-outlined text-outline self-center shrink-0">chevron_right</span>
               </button>
             ))}
           </div>
