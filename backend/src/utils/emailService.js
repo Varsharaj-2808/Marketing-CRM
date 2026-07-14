@@ -1,4 +1,4 @@
-﻿const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 
 let transporter = null;
 
@@ -155,6 +155,50 @@ const sendLeadAssignedEmail = async (to, recipientName, lead, assignedByName, re
   return sendEmail({ to, subject, text, html });
 };
 
+const sendAdminLeadCreatedEmail = async (to, adminName, creatorName, lead) => {
+  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const subject = `New Lead Created by ${creatorName}: ${lead.company_name}`;
+  const leadUrl = `${appUrl}/admin/leads/${lead.id}`;
+
+  const text = [
+    `Hello ${adminName},`,
+    ``,
+    `A new lead has been created by ${creatorName}.`,
+    ``,
+    `Lead Details:`,
+    `  Company   : ${lead.company_name}`,
+    `  Contact   : ${lead.contact_person || 'N/A'}`,
+    `  Mobile    : ${lead.mobile_number || 'N/A'}`,
+    `  Priority  : ${lead.priority || 'N/A'}`,
+    `  Category  : ${lead.category_name || 'N/A'}`,
+    ``,
+    `View Lead: ${leadUrl}`,
+    ``,
+    `Best regards,`,
+    `CRM System`,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
+      <h2 style="color:#1e3a5f;margin-bottom:8px;">New Lead Created</h2>
+      <p style="color:#374151;">Hello <strong>${adminName}</strong>,</p>
+      <p style="color:#374151;">A new lead has been created by <strong>${creatorName}</strong>.</p>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:16px 0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:6px 0;color:#6b7280;width:120px;">Company</td><td style="padding:6px 0;color:#111827;font-weight:600;">${lead.company_name}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Contact</td><td style="padding:6px 0;color:#111827;">${lead.contact_person || 'N/A'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Mobile</td><td style="padding:6px 0;color:#111827;">${lead.mobile_number || 'N/A'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Priority</td><td style="padding:6px 0;"><span style="background:${lead.priority === 'Hot' ? '#fee2e2' : lead.priority === 'Warm' ? '#fef3c7' : '#dbeafe'};color:${lead.priority === 'Hot' ? '#991b1b' : lead.priority === 'Warm' ? '#92400e' : '#1e40af'};padding:2px 10px;border-radius:9999px;font-size:13px;">${lead.priority || 'N/A'}</span></td></tr>
+        </table>
+      </div>
+      <a href="${leadUrl}" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;margin-top:8px;">View Lead</a>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System - This is an automated notification.</p>
+    </div>
+  `;
+
+  return sendEmail({ to, subject, text, html });
+};
+
 const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByName, recipientRole) => {
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
   const rolePrefix = recipientRole === 'Admin' ? '/admin' : '/marketing';
@@ -211,4 +255,4 @@ const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByNam
   return sendEmail({ to, subject, text, html });
 };
 
-module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail, isValidEmail, cleanEmail };
+module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail, sendAdminLeadCreatedEmail, isValidEmail, cleanEmail };

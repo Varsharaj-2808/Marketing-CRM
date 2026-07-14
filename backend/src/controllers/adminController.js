@@ -10,6 +10,7 @@ const BusinessSubCategory = require('../models/BusinessSubCategory');
 const Service = require('../models/Service');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
+const Notification = require('../models/Notification');
 const PDFDocument = require('pdfkit');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
@@ -518,6 +519,15 @@ exports.reopenLead = async (req, res, next) => {
     const finalLead = await Lead.findById(updatedLead.id);
     if (algolia && typeof algolia.saveLead === 'function') {
       await algolia.saveLead(finalLead).catch(err => console.error('[reopenLead] Algolia indexing skipped:', err.message));
+    }
+
+    if (updatedLead.assigned_to) {
+      Notification.create({
+        userId: updatedLead.assigned_to,
+        notificationType: 'lead_reopened',
+        leadId: id,
+        message: `Lead ${updatedLead.lead_id} has been reopened by Admin (Reason: ${reasonField})`
+      }).catch(err => console.error('[reopenLead] ME notification skipped:', err.message));
     }
 
     return res.status(200).json({

@@ -1,8 +1,9 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 const Followup = require('../models/Followup');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const AuditLog = require('../models/AuditLog');
+const Notification = require('../models/Notification');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -200,6 +201,14 @@ exports.createFollowup = async (req, res, next) => {
 
     const response = { success: true, message: 'Follow-up recorded', data: responseFollowup };
     if (leadUpdated) response.data.lead_updated = leadUpdated;
+
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'followup_created',
+        leadId: id,
+        message: `New follow-up created for lead ${lead.company_name} by ${req.user.name || req.user.email}`
+      }).catch(err => console.error('[createFollowup] Admin notification skipped:', err.message));
+    }
 
     return res.status(201).json(response);
   } catch (error) {
@@ -534,6 +543,14 @@ exports.addCorrection = async (req, res, next) => {
     }
 
     const updated = await Followup.addCorrection(fid, correction_notes.trim(), req.user.id);
+
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'followup_updated',
+        leadId: id,
+        message: `Follow-up corrected for lead ${lead.company_name} by ${req.user.name || req.user.email}`
+      }).catch(err => console.error('[addCorrection] Admin notification skipped:', err.message));
+    }
 
     return res.json({
       success: true,
