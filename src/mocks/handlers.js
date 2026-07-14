@@ -1073,12 +1073,12 @@ export const handlers = [
       });
     }
 
-    if (email === 'executive@company.com' && password === 'Executive@123') {
+    if (email === 'abikannayiram68@gmail.com' && password === '12345678') {
       return HttpResponse.json({
         success: true,
         data: {
           token: 'mock-jwt-token-' + Date.now(),
-          user: { id: 'EMP-00002', name: 'John Executive', email: 'executive@company.com', role: 'Marketing Executive', status: 'active' },
+          user: { id: 'EMP-00002', name: 'Executive User', email: 'abikannayiram68@gmail.com', role: 'Marketing Executive', status: 'active' },
           refreshToken: 'mock-refresh-token',
         },
       });

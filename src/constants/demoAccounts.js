@@ -15,12 +15,12 @@ export const DEMO_ACCOUNTS = [
   {
     id: 'executive',
     role: 'Marketing Executive',
-    email: 'executive@company.com',
-    password: 'Executive@123',
+    email: 'abikannayiram68@gmail.com',
+    password: '12345678',
     user: {
       id: 'EMP-00002',
       name: 'Executive User',
-      email: 'executive@company.com',
+      email: 'abikannayiram68@gmail.com',
       role: 'Marketing Executive',
       status: 'active',
     },
