@@ -13,13 +13,17 @@ const protect = async (req, res, next) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+      const isAuthUrl = req.originalUrl && req.originalUrl.includes('auth');
+      const msg = isAuthUrl ? 'Invalid or expired token.' : 'Invalid or expired token';
+      return res.status(401).json({ success: false, message: msg });
     }
 
     const result = await query('SELECT * FROM users WHERE id = $1', [decoded.id]);
     const user = result.rows[0];
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+      const isAuthUrl = req.originalUrl && req.originalUrl.includes('auth');
+      const msg = isAuthUrl ? 'Invalid or expired token.' : 'Invalid or expired token';
+      return res.status(401).json({ success: false, message: msg });
     }
 
     // Normalize role (handles legacy casing)

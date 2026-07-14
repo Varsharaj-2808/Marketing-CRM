@@ -1,4 +1,4 @@
-﻿const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -201,7 +201,14 @@ exports.getProfile = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.json({ success: true, message: 'Profile fetched successfully', data: User.toSafeUser(user) });
+    const responseData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile || user.mobile_number || '',
+      role: user.role,
+    };
+    res.json({ success: true, data: responseData });
   } catch (error) {
     next(error);
   }
@@ -341,7 +348,7 @@ exports.changePassword = async (req, res, next) => {
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ success: false, message: 'Min 8 chars required' });
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters long.' });
     }
 
     const user = await User.findById(req.user.id);
@@ -355,7 +362,7 @@ exports.changePassword = async (req, res, next) => {
         userId: user.id, email: user.email, action: 'user.change_password',
         details: 'Current password is incorrect', ipAddress, userAgent, result: 'failure',
       });
-      return res.status(400).json({ success: false, message: 'Current password wrong' });
+      return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
     }
 
     const isSameAsCurrent = await User.comparePassword(newPassword, user.password);
@@ -372,7 +379,7 @@ exports.changePassword = async (req, res, next) => {
       }, client);
     });
 
-    res.json({ success: true, message: 'Password changed', data: null });
+    res.json({ success: true, message: 'Password changed successfully.' });
   } catch (error) {
     next(error);
   }

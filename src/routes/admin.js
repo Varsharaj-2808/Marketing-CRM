@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
@@ -58,10 +58,10 @@ router.post('/audit-log/archive', protect, authorize('Admin', { message: 'Access
 router.get('/settings', protect, authorize('Admin'), systemSettingController.getSettings);
 router.put('/settings/:key', protect, authorize('Admin'), systemSettingController.updateSetting);
 
-router.get('/leads/saved-views', protect, authorize('Admin'), savedViewController.getSavedViews);
-router.post('/leads/saved-views', protect, authorize('Admin'), savedViewController.createSavedView);
-router.put('/leads/saved-views/:viewId', protect, authorize('Admin'), savedViewController.updateSavedView);
-router.delete('/leads/saved-views/:viewId', protect, authorize('Admin'), savedViewController.deleteSavedView);
+router.get('/leads/saved-views', protect, authorize('Admin'), savedViewController.getSavedViews || ((req, res) => res.status(501).json({ success: false })));
+router.post('/leads/saved-views', protect, authorize('Admin'), savedViewController.createSavedView || ((req, res) => res.status(501).json({ success: false })));
+router.put('/leads/saved-views/:viewId', protect, authorize('Admin'), savedViewController.updateSavedView || ((req, res) => res.status(501).json({ success: false })));
+router.delete('/leads/saved-views/:viewId', protect, authorize('Admin'), savedViewController.deleteSavedView || ((req, res) => res.status(501).json({ success: false })));
 
 router.post('/leads/bulk-select', protect, authorize('Admin'), bulkOperationsController.bulkSelect);
 router.post('/leads/bulk-assign', protect, authorize('Admin'), bulkOperationsController.bulkAssign);

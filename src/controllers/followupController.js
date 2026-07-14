@@ -328,7 +328,7 @@ exports.getTimeline = async (req, res, next) => {
         id: h.id,
         type,
         description: h.change_summary || null,
-        created_at: h.created_at,
+        created_at: h.changed_at || h.created_at,
         actor: h.changed_by_name || null,
       };
     });
