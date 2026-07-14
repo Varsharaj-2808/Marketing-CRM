@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
 import UserTable from '../../components/admin/UserTable';
@@ -39,13 +39,21 @@ function UserManagementSkeleton() {
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
+
+  const initialPage = Number(searchParams.get('page')) || 1;
+  const initialSearch = searchParams.get('search') || '';
+  const initialRole = searchParams.get('role') || 'All';
+  const initialStatus = searchParams.get('status') || 'All';
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [userPage, setUserPage] = useState(1);
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [roleFilter, setRoleFilter] = useState(initialRole);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [userPage, setUserPage] = useState(initialPage);
   const [userTotal, setUserTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -66,10 +74,56 @@ export default function UserManagementPage() {
       status: statusFilter,
     });
     if (res.success) {
-      setUsers(res.data);
-      setUserTotal(res.pagination.total);
+      const userList = Array.isArray(res.data) ? res.data : (res.data?.users || []);
+      const totalCount = res.pagination?.totalRecords ?? res.pagination?.total ?? userList.length;
+      setUsers(userList);
+      setUserTotal(totalCount);
     }
   }, [userPage, searchQuery, roleFilter, statusFilter]);
+
+  // Sync state changes back to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (userPage > 1) params.set('page', String(userPage));
+    if (roleFilter !== 'All') params.set('role', roleFilter);
+    if (statusFilter !== 'All') params.set('status', statusFilter);
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, roleFilter, statusFilter, userPage, setSearchParams]);
+
+  // Sync external/URL changes back to state (e.g. back button)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlPage = Number(searchParams.get('page')) || 1;
+    const urlRole = searchParams.get('role') || 'All';
+    const urlStatus = searchParams.get('status') || 'All';
+
+    if (urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+      setSearchInput(urlSearch);
+    }
+    if (urlPage !== userPage) {
+      setUserPage(urlPage);
+    }
+    if (urlRole !== roleFilter) {
+      setRoleFilter(urlRole);
+    }
+    if (urlStatus !== statusFilter) {
+      setStatusFilter(urlStatus);
+    }
+  }, [searchParams]);
+
+  // Debounce search input to update searchQuery
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const val = searchInput.trim();
+      if (val !== searchQuery) {
+        setSearchQuery(val);
+        setUserPage(1);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput, searchQuery]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,7 +137,10 @@ export default function UserManagementPage() {
     load();
   }, [isAuthenticated, navigate, fetchUsers, userPage, searchQuery, roleFilter, statusFilter]);
 
-  useEffect(() => { setUserPage(1); }, [searchQuery, roleFilter, statusFilter]);
+  // Reset page when filters change (except search, which is handled by debounce)
+  useEffect(() => {
+    setUserPage(1);
+  }, [roleFilter, statusFilter]);
 
   const handleSaveUser = async (formData) => {
     if (editingUser) {
@@ -181,8 +238,8 @@ export default function UserManagementPage() {
               <div className="relative sm:w-56">
                 <span className="material-symbols-outlined text-slate-400 text-[18px] absolute left-3 top-1/2 -translate-y-1/2">search</span>
                 <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search name, email, ID..."
                   className="w-full h-10 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                 />

@@ -32,10 +32,19 @@ export default function NotificationBell() {
   const unreadCount = notifications.filter((n) => isUnread(n)).length;
 
   useEffect(() => {
-    fetchNotifications().then((res) => {
-      const data = res?.data || [];
-      setNotifications(Array.isArray(data) ? data : []);
-    });
+    const loadNotifs = () => {
+      fetchNotifications().then((res) => {
+        const data = res?.data || [];
+        setNotifications(Array.isArray(data) ? data : []);
+      });
+    };
+
+    loadNotifs();
+
+    // Poll every 10 seconds to immediately display new notifications
+    const interval = setInterval(loadNotifs, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

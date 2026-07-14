@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { fetchAdminLeads, fetchMarketingLeads, fetchUsers, bulkAssignLeads, fetchSavedViews, createSavedView, deleteSavedView, exportLeads, fetchCategories } from '../../services/leadService';
 import EmptyState from '../../components/common/EmptyState';
@@ -136,19 +136,37 @@ function buildQuery({ page, search, filters, sort }) {
 export default function LeadList() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isAdmin = user?.role === 'Admin';
   const isMarketingExecutive = user?.role === 'Marketing Executive';
 
+  // Read initial values from URL params
+  const initialPage = Number(searchParams.get('page')) || 1;
+  const initialSearch = searchParams.get('search') || '';
+  const initialSortBy = searchParams.get('sortBy') || '';
+  const initialSortOrder = searchParams.get('sortOrder') || 'desc';
+  const initialFilters = useMemo(() => ({
+    status: searchParams.get('status') || '',
+    stage: searchParams.get('stage') || '',
+    source: searchParams.get('source') || '',
+    category: searchParams.get('category') || '',
+    subCategory: searchParams.get('subCategory') || '',
+    priority: searchParams.get('priority') || '',
+    assignedTo: searchParams.get('assignedTo') || '',
+    dateFrom: searchParams.get('dateFrom') || '',
+    dateTo: searchParams.get('dateTo') || '',
+  }), [searchParams]);
+
   const [leads, setLeads] = useState([]);
-  const [searchInput, setSearchInput] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [sort, setSort] = useState({ sortBy: '', sortOrder: 'desc' });
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [activeSearch, setActiveSearch] = useState(initialSearch);
+  const [filters, setFilters] = useState(initialFilters);
+  const [sort, setSort] = useState({ sortBy: initialSortBy, sortOrder: initialSortOrder });
   const [savedViews, setSavedViews] = useState(DEFAULT_SAVED_VIEWS);
   const [activeViewId, setActiveViewId] = useState('');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
@@ -200,13 +218,60 @@ export default function LeadList() {
     load();
   }, [accessDenied, isAdmin]);
 
+  // Sync state changes back to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeSearch) params.set('search', activeSearch);
+    if (page > 1) params.set('page', String(page));
+    if (sort.sortBy) {
+      params.set('sortBy', sort.sortBy);
+      params.set('sortOrder', sort.sortOrder);
+    }
+    Object.keys(filters).forEach((key) => {
+      if (filters[key]) {
+        params.set(key, filters[key]);
+      }
+    });
+    setSearchParams(params, { replace: true });
+  }, [activeSearch, filters, sort, page, setSearchParams]);
+
+  // Sync external/URL changes back to state (e.g. back button)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlPage = Number(searchParams.get('page')) || 1;
+    const urlSortBy = searchParams.get('sortBy') || '';
+    const urlSortOrder = searchParams.get('sortOrder') || 'desc';
+
+    if (urlSearch !== activeSearch) {
+      setActiveSearch(urlSearch);
+      setSearchInput(urlSearch);
+    }
+    if (urlPage !== page) {
+      setPage(urlPage);
+    }
+    if (urlSortBy !== sort.sortBy || urlSortOrder !== sort.sortOrder) {
+      setSort({ sortBy: urlSortBy, sortOrder: urlSortOrder });
+    }
+
+    const hasFilterChanged = Object.keys(initialFilters).some(
+      (key) => initialFilters[key] !== filters[key]
+    );
+    if (hasFilterChanged) {
+      setFilters(initialFilters);
+    }
+  }, [searchParams, initialFilters]);
+
+  // Debounce search input to update activeSearch
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setActiveSearch(searchInput.trim().length >= 2 ? searchInput.trim() : '');
-      setPage(1);
+      const val = searchInput.trim().length >= 2 ? searchInput.trim() : '';
+      if (val !== activeSearch) {
+        setActiveSearch(val);
+        setPage(1);
+      }
     }, 300);
     return () => clearTimeout(timeout);
-  }, [searchInput]);
+  }, [searchInput, activeSearch]);
 
   const query = useMemo(
     () => buildQuery({ page, search: activeSearch, filters, sort }),

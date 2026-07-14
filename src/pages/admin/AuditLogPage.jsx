@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { fetchAuditLogEntries, exportAuditLog } from '../../services/leadService';
 import Skeleton from '../../components/common/Skeleton';
 import SkeletonTable from '../../components/common/SkeletonTable';
@@ -127,7 +128,15 @@ function AuditLogSkeleton() {
 }
 
 export default function AuditLogPage() {
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialPage = Number(searchParams.get('page')) || 1;
+  const initialActor = searchParams.get('actor') || '';
+  const initialActionType = searchParams.get('action_type') || '';
+  const initialFrom = searchParams.get('from') || '';
+  const initialTo = searchParams.get('to') || '';
+
+  const [page, setPage] = useState(initialPage);
   const [auditLog, setAuditLog] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -136,18 +145,18 @@ export default function AuditLogPage() {
   const [dateError, setDateError] = useState(null);
   const [applying, setApplying] = useState(false);
 
-  // Filters state (internal temp values until Apply is clicked)
-  const [actor, setActor] = useState('');
-  const [actionType, setActionType] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  // Filters state (internal temp values until Apply/Debounce is active)
+  const [actor, setActor] = useState(initialActor);
+  const [actionType, setActionType] = useState(initialActionType);
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
 
   // Active filters applied to the API query
   const [activeFilters, setActiveFilters] = useState({
-    actor: '',
-    action_type: '',
-    from: '',
-    to: ''
+    actor: initialActor,
+    action_type: initialActionType,
+    from: initialFrom,
+    to: initialTo
   });
 
   // Modal detail state
@@ -196,6 +205,60 @@ export default function AuditLogPage() {
       setApplying(false);
     }
   }, [page, activeFilters]);
+
+  // Sync state changes back to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', String(page));
+    if (activeFilters.actor) params.set('actor', activeFilters.actor);
+    if (activeFilters.action_type) params.set('action_type', activeFilters.action_type);
+    if (activeFilters.from) params.set('from', activeFilters.from);
+    if (activeFilters.to) params.set('to', activeFilters.to);
+    setSearchParams(params, { replace: true });
+  }, [activeFilters, page, setSearchParams]);
+
+  // Sync external/URL changes back to state (e.g. back button)
+  useEffect(() => {
+    const urlPage = Number(searchParams.get('page')) || 1;
+    const urlActor = searchParams.get('actor') || '';
+    const urlActionType = searchParams.get('action_type') || '';
+    const urlFrom = searchParams.get('from') || '';
+    const urlTo = searchParams.get('to') || '';
+
+    if (urlPage !== page) {
+      setPage(urlPage);
+    }
+    const hasActiveFiltersChanged =
+      urlActor !== activeFilters.actor ||
+      urlActionType !== activeFilters.action_type ||
+      urlFrom !== activeFilters.from ||
+      urlTo !== activeFilters.to;
+
+    if (hasActiveFiltersChanged) {
+      setActiveFilters({
+        actor: urlActor,
+        action_type: urlActionType,
+        from: urlFrom,
+        to: urlTo
+      });
+      setActor(urlActor);
+      setActionType(urlActionType);
+      setFrom(urlFrom);
+      setTo(urlTo);
+    }
+  }, [searchParams]);
+
+  // Debounce actor input to update activeFilters.actor
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const val = actor.trim();
+      if (val !== activeFilters.actor) {
+        setPage(1);
+        setActiveFilters(prev => ({ ...prev, actor: val }));
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [actor]);
 
   useEffect(() => {
     fetchAudit();
