@@ -1,8 +1,11 @@
-﻿require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+const path = require('path');
+const fs = require('fs');
+const localEnv = path.join(__dirname, '.env');
+const parentEnv = path.join(__dirname, '..', '.env');
+require('dotenv').config({ path: fs.existsSync(localEnv) ? localEnv : parentEnv });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
 const errorHandler = require('./src/middleware/errorHandler');
 
 const authRoutes = require('./src/routes/auth');
