@@ -1,4 +1,4 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 
 const AuditLog = {
   async create(data, client) {
@@ -21,6 +21,15 @@ const AuditLog = {
     if (filters.userId) {
       conditions.push(`"user_id" = $${idx++}`);
       values.push(filters.userId);
+    }
+    if (filters.userIds) {
+      if (filters.userIds.length > 0) {
+        conditions.push(`"user_id" = ANY($${idx++}::uuid[])`);
+        values.push(filters.userIds);
+      } else {
+        // If userIds is empty, we want to return 0 results
+        conditions.push(`1 = 0`);
+      }
     }
     if (filters.action) {
       conditions.push(`action = $${idx++}`);

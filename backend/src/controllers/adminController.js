@@ -1,4 +1,4 @@
-﻿const { query, getClient } = require('../config/db');
+const { query, getClient } = require('../config/db');
 const { sendDailyReminderEmail, sendEmail } = require('../utils/emailService');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
@@ -468,8 +468,8 @@ exports.reopenLead = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
-    if (lead.stage !== 'Won' && lead.stage !== 'Lost') {
-      const errMsg = isPut ? 'Only Won or Lost leads can be reopened' : `Lead is not closed. Current stage: ${lead.stage}`;
+    if (lead.stage !== 'Closed') {
+      const errMsg = isPut ? 'Only Closed leads can be reopened' : `Lead is not closed. Current stage: ${lead.stage}`;
       return res.status(400).json(wrapError(errMsg));
     }
 
@@ -480,7 +480,7 @@ exports.reopenLead = async (req, res, next) => {
       await client.query('BEGIN');
 
       const updateRes = await client.query(
-        `UPDATE leads SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
+        `UPDATE leads SET stage = 'Contacted', lead_status = NULL, lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW() WHERE id = $1 RETURNING *`,
         [id]
       );
       updatedLead = updateRes.rows[0];
@@ -595,10 +595,10 @@ exports.getDashboardKpis = async (req, res, next) => {
         COUNT(*) FILTER (WHERE stage = 'Meeting')                                     AS meeting,
         COUNT(*) FILTER (WHERE stage = 'Proposal')                                   AS proposal,
         COUNT(*) FILTER (WHERE stage = 'Negotiation')                                AS negotiation,
-        COUNT(*) FILTER (WHERE stage = 'Won')                                         AS won,
-        COUNT(*) FILTER (WHERE stage = 'Lost')                                        AS lost,
+        COUNT(*) FILTER (WHERE lead_status = 'Won')                                         AS won,
+        COUNT(*) FILTER (WHERE lead_status = 'Lost')                                        AS lost,
         COUNT(*) FILTER (WHERE DATE(next_followup_date) = '${today}'
-                           AND stage NOT IN ('Won','Lost'))                            AS today_followups,
+                           AND stage != 'Closed')                            AS today_followups,
         COUNT(*) FILTER (WHERE priority = 'Hot')                                  AS hot_leads,
         COUNT(*) FILTER (WHERE priority = 'Warm')                                 AS warm_leads,
         COUNT(*) FILTER (WHERE priority = 'Cold')                                 AS cold_leads
@@ -736,11 +736,11 @@ exports.getWonRateBySource = async (req, res, next) => {
       SELECT
         COALESCE(ls.name, l.lead_source, 'Unknown') AS source,
         COUNT(*)::int                                         AS total,
-        COUNT(*) FILTER (WHERE l.stage = 'Won')::int         AS won,
-        COUNT(*) FILTER (WHERE l.stage = 'Lost')::int        AS lost,
+        COUNT(*) FILTER (WHERE l.lead_status = 'Won')::int         AS won,
+        COUNT(*) FILTER (WHERE l.lead_status = 'Lost')::int        AS lost,
         CASE
           WHEN COUNT(*) > 0
-            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*), 2) || '%'
+            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.lead_status = 'Won') / COUNT(*), 2) || '%'
           ELSE '0%'
         END AS rate
       FROM leads l
@@ -774,17 +774,17 @@ exports.getWonRateByCategory = async (req, res, next) => {
     const result = await query(`
       SELECT
         c.category_name AS category,
-        COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) AS total,
-        COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
-        COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
+        COUNT(*) FILTER (WHERE l.lead_status IN ('Won', 'Lost')) AS total,
+        COUNT(*) FILTER (WHERE l.lead_status = 'Won') AS won,
+        COUNT(*) FILTER (WHERE l.lead_status = 'Lost') AS lost,
         CASE
-          WHEN COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) > 0
-            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')), 2) || '%'
+          WHEN COUNT(*) FILTER (WHERE l.lead_status IN ('Won', 'Lost')) > 0
+            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.lead_status = 'Won') / COUNT(*) FILTER (WHERE l.lead_status IN ('Won', 'Lost')), 2) || '%'
           ELSE '0.00%'
         END AS rate
       FROM leads l
       LEFT JOIN business_categories c ON l.category = c.id
-      WHERE ${filter.where} AND l.stage IN ('Won', 'Lost')
+      WHERE ${filter.where} AND l.lead_status IN ('Won', 'Lost')
       GROUP BY l.category, c.category_name
       ORDER BY rate DESC
     `, filter.values);
@@ -844,9 +844,9 @@ exports.getDashboardKpisMarketing = async (req, res, next) => {
     let sql = `
       SELECT
         COUNT(*) AS total_leads,
-        COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
-        COUNT(*) FILTER (WHERE stage = 'Lost') AS lost_leads,
-        COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
+        COUNT(*) FILTER (WHERE lead_status = 'Won') AS won_leads,
+        COUNT(*) FILTER (WHERE lead_status = 'Lost') AS lost_leads,
+        COUNT(*) FILTER (WHERE stage != 'Closed') AS active_leads,
         COALESCE(SUM(estimated_value), 0) AS total_estimated_value
       FROM leads
       WHERE deleted_at IS NULL
@@ -898,17 +898,17 @@ exports.getWonRateByCategoryMarketing = async (req, res, next) => {
       SELECT
         l.category AS category_id,
         c.category_name AS category_name,
-        COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) AS total_closed,
-        COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
-        COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
+        COUNT(*) FILTER (WHERE l.lead_status IN ('Won', 'Lost')) AS total_closed,
+        COUNT(*) FILTER (WHERE l.lead_status = 'Won') AS won,
+        COUNT(*) FILTER (WHERE l.lead_status = 'Lost') AS lost,
         CASE
-          WHEN COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')) > 0
-            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*) FILTER (WHERE l.stage IN ('Won', 'Lost')), 2) || '%'
+          WHEN COUNT(*) FILTER (WHERE l.lead_status IN ('Won', 'Lost')) > 0
+            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.lead_status = 'Won') / COUNT(*) FILTER (WHERE l.lead_status IN ('Won', 'Lost')), 2) || '%'
           ELSE '0.00%'
         END AS win_rate
       FROM leads l
       LEFT JOIN business_categories c ON l.category = c.id
-      WHERE l.deleted_at IS NULL AND l.stage IN ('Won', 'Lost')
+      WHERE l.deleted_at IS NULL AND l.lead_status IN ('Won', 'Lost')
     `;
     const values = [];
     let idx = 0;
@@ -1068,10 +1068,10 @@ exports.exportReport = async (req, res, next) => {
         SELECT
           c.category_name,
           COUNT(*) AS total_leads,
-          COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
-          COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
+          COUNT(*) FILTER (WHERE l.lead_status = 'Won') AS won,
+          COUNT(*) FILTER (WHERE l.lead_status = 'Lost') AS lost,
           CASE WHEN COUNT(*) > 0
-            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.stage = 'Won') / COUNT(*), 2) || '%'
+            THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.lead_status = 'Won') / COUNT(*), 2) || '%'
             ELSE '0.00%'
           END AS conversion_rate
         FROM leads l
@@ -1116,9 +1116,9 @@ exports.exportReport = async (req, res, next) => {
         SELECT
           c.category_name,
           COUNT(*) AS lead_count,
-          COUNT(*) FILTER (WHERE l.stage = 'Won') AS won,
-          COUNT(*) FILTER (WHERE l.stage = 'Lost') AS lost,
-          COUNT(*) FILTER (WHERE l.stage NOT IN ('Won', 'Lost')) AS active
+          COUNT(*) FILTER (WHERE l.lead_status = 'Won') AS won,
+          COUNT(*) FILTER (WHERE l.lead_status = 'Lost') AS lost,
+          COUNT(*) FILTER (WHERE l.stage != 'Closed') AS active
         FROM leads l
         LEFT JOIN business_categories c ON l.category = c.id
         WHERE ${filter.where}
@@ -1203,7 +1203,7 @@ exports.getAtRiskLeads = async (req, res, next) => {
        LEFT JOIN users u ON l.assigned_to = u.id
        WHERE l.next_followup_date IS NOT NULL
          AND DATE(l.next_followup_date) < CURRENT_DATE
-         AND l.stage NOT IN ('Won', 'Lost')
+         AND l.stage != 'Closed'
          AND (CURRENT_DATE - DATE(l.next_followup_date)) >= $1
          AND l.deleted_at IS NULL
          ${dateWhere}
@@ -1221,7 +1221,7 @@ exports.getAtRiskLeads = async (req, res, next) => {
        LEFT JOIN users u ON l.assigned_to = u.id
        WHERE l.next_followup_date IS NOT NULL
          AND DATE(l.next_followup_date) < CURRENT_DATE
-         AND l.stage NOT IN ('Won', 'Lost')
+         AND l.stage != 'Closed'
          AND (CURRENT_DATE - DATE(l.next_followup_date)) >= $1
          AND l.deleted_at IS NULL
          ${dateWhere}
@@ -1278,7 +1278,7 @@ exports.sendDailyReminders = async (req, res, next) => {
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
        WHERE DATE(l.next_followup_date) = $1
-         AND l.stage NOT IN ('Won', 'Lost')
+         AND l.stage != 'Closed'
          AND l.deleted_at IS NULL
          AND NOT EXISTS (
            SELECT 1 FROM notifications n

@@ -18,7 +18,7 @@ const Lead = {
     const leadId = await this.getNextLeadId();
     const result = await query(
       `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", "lead_id", stage, "lead_status")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New Lead', 'New Lead')
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New', NULL)
        RETURNING *`,
       [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, service_interested || null, priority, estimated_value || null, creatorId, leadId]
     );
@@ -312,7 +312,7 @@ const Lead = {
       totalCount,
     };
   },
-  async updateStage(id, stage, leadStatus) {
+  async updateStage(id, stage, leadStatus = null) {
     const result = await query(
       `UPDATE leads
        SET stage = $1, lead_status = $2, updated_at = NOW()
@@ -326,7 +326,7 @@ const Lead = {
   async closeLost(id, lostReason) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Lost', lead_status = 'Closed', lost_reason = $1, updated_at = NOW()
+       SET stage = 'Closed', lead_status = 'Lost', lost_reason = $1, updated_at = NOW()
        WHERE id = $2
        RETURNING *`,
       [lostReason, id]
@@ -337,7 +337,7 @@ const Lead = {
   async closeWon(id, finalDealValue, closureDate) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Won', lead_status = 'Closed', final_deal_value = $1, closure_date = $2, updated_at = NOW()
+       SET stage = 'Closed', lead_status = 'Won', final_deal_value = $1, closure_date = $2, updated_at = NOW()
        WHERE id = $3
        RETURNING *`,
       [finalDealValue, closureDate, id]
@@ -348,7 +348,7 @@ const Lead = {
   async reopen(id) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW()
+       SET stage = 'Contacted', lead_status = NULL, lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
       [id]

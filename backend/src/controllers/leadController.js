@@ -177,6 +177,8 @@ exports.getLead = async (req, res, next) => {
       website: lead.website,
       category: lead.category,
       sub_category: lead.sub_category,
+      category_name: lead.category_name,
+      sub_category_name: lead.sub_category_name,
       contact_person: lead.contact_person,
       mobile_number: lead.mobile_number,
       email: lead.email,
@@ -549,8 +551,7 @@ exports.updateLeadStage = async (req, res, next) => {
     }
 
     const validStages = [
-      'New', 'Contacted', 'Qualified', 'Meeting', 'Proposal', 'Negotiation', 'Won', 'Lost', 'Hold',
-      'New Lead', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent'
+      'New', 'Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Hold', 'Closed'
     ];
     if (!validStages.includes(stage)) {
       return res.status(400).json(wrapError('Invalid stage value'));
@@ -580,16 +581,13 @@ exports.updateLeadStage = async (req, res, next) => {
 
     const transitions = {
       'New': ['Contacted'],
-      'New Lead': ['Contacted', 'Hold', 'Lost'],
-      'Contacted': ['Qualified', 'Meeting', 'Meeting Scheduled', 'Hold', 'Lost'],
-      'Qualified': ['Meeting', 'Proposal', 'Hold', 'Lost'],
-      'Meeting Scheduled': ['Requirement Gathering', 'Proposal Sent', 'Proposal', 'Hold', 'Lost'],
-      'Meeting': ['Proposal', 'Hold', 'Lost'],
-      'Requirement Gathering': ['Proposal Sent', 'Hold', 'Lost'],
-      'Proposal Sent': ['Negotiation', 'Hold', 'Lost'],
-      'Proposal': ['Negotiation', 'Hold', 'Lost'],
-      'Negotiation': ['Won', 'Hold', 'Lost'],
-      'Hold': ['Contacted', 'Qualified', 'Meeting', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Proposal', 'Negotiation', 'Lost']
+      'Contacted': ['Qualified', 'Meeting Scheduled', 'Hold', 'Closed'],
+      'Qualified': ['Meeting Scheduled', 'Proposal Sent', 'Hold', 'Closed'],
+      'Meeting Scheduled': ['Requirement Gathering', 'Proposal Sent', 'Hold', 'Closed'],
+      'Requirement Gathering': ['Proposal Sent', 'Hold', 'Closed'],
+      'Proposal Sent': ['Negotiation', 'Hold', 'Closed'],
+      'Negotiation': ['Hold', 'Closed'],
+      'Hold': ['Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Closed']
     };
 
     const allowed = transitions[lead.stage] || [];
@@ -615,8 +613,8 @@ exports.updateLeadStage = async (req, res, next) => {
       });
     }
 
-    if (stage === 'Won' || stage === 'Lost') {
-      return res.status(400).json({ success: false, message: `To close a lead as ${stage}, please use the close endpoint.` });
+    if (stage === 'Won' || stage === 'Lost' || stage === 'Closed') {
+      return res.status(400).json({ success: false, message: `To close a lead, please use the close endpoint.` });
     }
     let client;
     let historyLogged;
@@ -627,7 +625,7 @@ exports.updateLeadStage = async (req, res, next) => {
       
       const updateRes = await client.query(
         'UPDATE leads SET stage = $1, lead_status = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-        [stage, 'Active', id]
+        [stage, null, id]
       );
       updatedLead = updateRes.rows[0];
 
