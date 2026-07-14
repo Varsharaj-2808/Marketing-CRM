@@ -1,4 +1,4 @@
-﻿/**
+/**
  * marketingDashboardController.js
  * STORY-6.2.1 ΓÇö Marketing Executive Dashboard
  * All endpoints are scoped server-side to req.user.id (JWT).
@@ -297,14 +297,12 @@ exports.getTodayFollowups = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Today's follow-ups retrieved successfully",
-      data: {
-        followups: rows,
-        applied_filters: {
-          assigned_to: isAdmin && assignedTo ? assignedTo : 'current_user',
-          next_followup_date: 'today',
-        },
-        pagination: { page, total_pages, total_records },
+      data: rows,
+      applied_filters: {
+        assigned_to: isAdmin && assignedTo ? assignedTo : 'current_user',
+        next_followup_date: 'today',
       },
+      pagination: { page, total_pages, total_records },
     });
   } catch (error) {
     next(error);

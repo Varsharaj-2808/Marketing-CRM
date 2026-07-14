@@ -1,11 +1,21 @@
-﻿const Notification = require('../models/Notification');
+const Notification = require('../models/Notification');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 exports.getNotifications = async (req, res, next) => {
   try {
+    const algolia = require('../utils/algoliaService');
+    if (algolia && typeof algolia.searchNotifications === 'function') {
+      const algoliaResult = await algolia.searchNotifications('', { user_id: req.user.id });
+      if (algoliaResult) {
+        const hits = algoliaResult.hits;
+        const unreadCount = hits.filter(n => !n.is_read).length;
+        return res.json({ success: true, message: 'Notifications fetched successfully', data: hits, unread_count: unreadCount });
+      }
+    }
+
     const data = await Notification.findByUser(req.user.id);
     const unreadCount = await Notification.getUnreadCount(req.user.id);
-    res.json({ success: true, message: 'Notifications fetched successfully', data: { notifications: data, unread_count: unreadCount } });
+    res.json({ success: true, message: 'Notifications fetched successfully', data: data, unread_count: unreadCount });
   } catch (error) {
     next(error);
   }

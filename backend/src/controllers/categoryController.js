@@ -1,7 +1,8 @@
-﻿const BusinessCategory = require('../models/BusinessCategory');
+const BusinessCategory = require('../models/BusinessCategory');
 const BusinessSubCategory = require('../models/BusinessSubCategory');
 const AuditLog = require('../models/AuditLog');
 const { withTransaction } = require('../utils/transactionHelper');
+const algolia = require('../utils/algoliaService');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -44,6 +45,10 @@ exports.createCategory = async (req, res, next) => {
       return cat;
     });
 
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      await algolia.saveCategory({ ...category, type: 'category' }).catch(() => {});
+    }
+
     res.status(201).json(wrapSuccess('Category created successfully', category));
   } catch (error) {
     next(error);
@@ -53,6 +58,22 @@ exports.createCategory = async (req, res, next) => {
 exports.getCategories = async (req, res, next) => {
   try {
     const { search, status, page = 1, limit = 20 } = req.query;
+
+    if (algolia && typeof algolia.searchCategories === 'function') {
+      const algoliaResult = await algolia.searchCategories(search, status, parseInt(page, 10) || 1, parseInt(limit, 10) || 20);
+      if (algoliaResult) {
+        // Filter out types of subcategories, only return category types
+        const filteredHits = algoliaResult.hits.filter(h => h.type === 'category');
+        return res.json(wrapSuccess('Categories fetched successfully', {
+          page: parseInt(page, 10) || 1,
+          totalPages: algoliaResult.nbPages,
+          totalCount: algoliaResult.nbHits,
+          limit: parseInt(limit, 10) || 20,
+          data: filteredHits,
+        }));
+      }
+    }
+
     const result = await BusinessCategory.findAllPaginated({
       search,
       status,
@@ -135,6 +156,10 @@ exports.updateCategory = async (req, res, next) => {
       return updatedCat;
     });
 
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      await algolia.saveCategory({ ...updated, type: 'category' }).catch(() => {});
+    }
+
     res.json(wrapSuccess('Category updated successfully', updated));
   } catch (error) {
     next(error);
@@ -171,6 +196,10 @@ exports.deleteCategory = async (req, res, next) => {
         result: 'success',
       }, client);
     });
+
+    if (algolia && typeof algolia.deleteCategory === 'function') {
+      await algolia.deleteCategory(id).catch(() => {});
+    }
 
     res.json(wrapSuccess('Category deleted successfully', { id }));
   } catch (error) {
@@ -215,6 +244,10 @@ exports.patchCategoryStatus = async (req, res, next) => {
       return updatedCat;
     });
 
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      await algolia.saveCategory({ ...updated, type: 'category' }).catch(() => {});
+    }
+
     const actionLabel = status === 'Inactive' ? 'deactivated' : 'activated';
     res.json(wrapSuccess(`Category ${actionLabel} successfully`, updated));
   } catch (error) {
@@ -252,8 +285,6 @@ exports.createSubCategory = async (req, res, next) => {
         sub_category_name: sub_category_name.trim(),
       }, client);
 
-      sub.category_name = parent.category_name;
-
       await AuditLog.create({
         userId: req.user.id,
         email: req.user.email,
@@ -269,6 +300,17 @@ exports.createSubCategory = async (req, res, next) => {
       return sub;
     });
 
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      await algolia.saveCategory({
+        ...subcategory,
+        id: subcategory.id,
+        category_name: subcategory.sub_category_name,
+        name: subcategory.sub_category_name,
+        parent_category_name: parent.category_name,
+        type: 'subcategory',
+      }).catch(() => {});
+    }
+
     res.status(201).json(wrapSuccess('Sub-Category created successfully', subcategory));
   } catch (error) {
     next(error);
@@ -277,20 +319,9 @@ exports.createSubCategory = async (req, res, next) => {
 
 exports.getSubCategories = async (req, res, next) => {
   try {
-    const { status, category_id, page = 1, limit = 20 } = req.query;
-    const filters = {};
-    if (status) filters.status = status;
-    if (category_id) filters.category_id = category_id;
-
-    const subcategories = await BusinessSubCategory.findAll(filters);
-
-    res.json(wrapSuccess('Sub-Categories fetched successfully', {
-      page: parseInt(page, 10) || 1,
-      totalPages: 1,
-      totalCount: subcategories.length,
-      limit: parseInt(limit, 10) || 20,
-      data: subcategories,
-    }));
+    const { category_id } = req.query;
+    const subcategories = await BusinessSubCategory.findAll({ category_id });
+    res.json(wrapSuccess('Sub-categories fetched successfully', subcategories));
   } catch (error) {
     next(error);
   }
@@ -299,11 +330,11 @@ exports.getSubCategories = async (req, res, next) => {
 exports.getSubCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const subcategory = await BusinessSubCategory.findById(id);
-    if (!subcategory) {
+    const subsubcategory = await BusinessSubCategory.findById(id);
+    if (!subsubcategory) {
       return res.status(404).json(wrapError('Sub-Category with the specified ID does not exist'));
     }
-    res.json(wrapSuccess('Sub-Category fetched successfully', subcategory));
+    res.json(wrapSuccess('Sub-Category fetched successfully', subsubcategory));
   } catch (error) {
     next(error);
   }
@@ -364,6 +395,18 @@ exports.updateSubCategory = async (req, res, next) => {
       return updatedSub;
     });
 
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      const parent = await BusinessCategory.findById(updated.category_id);
+      await algolia.saveCategory({
+        ...updated,
+        id: updated.id,
+        category_name: updated.sub_category_name,
+        name: updated.sub_category_name,
+        parent_category_name: parent?.category_name,
+        type: 'subcategory',
+      }).catch(() => {});
+    }
+
     res.json(wrapSuccess('Sub-Category updated successfully', updated));
   } catch (error) {
     next(error);
@@ -408,6 +451,10 @@ exports.deleteSubCategory = async (req, res, next) => {
       }, client);
     });
 
+    if (algolia && typeof algolia.deleteCategory === 'function') {
+      await algolia.deleteCategory(id).catch(() => {});
+    }
+
     res.json(wrapSuccess('Sub-Category deleted successfully', { id }));
   } catch (error) {
     next(error);
@@ -450,6 +497,18 @@ exports.patchSubCategoryStatus = async (req, res, next) => {
 
       return updatedSub;
     });
+
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      const parent = await BusinessCategory.findById(updated.category_id);
+      await algolia.saveCategory({
+        ...updated,
+        id: updated.id,
+        category_name: updated.sub_category_name,
+        name: updated.sub_category_name,
+        parent_category_name: parent?.category_name,
+        type: 'subcategory',
+      }).catch(() => {});
+    }
 
     const actionLabel = status === 'Inactive' ? 'deactivated' : 'activated';
     res.json(wrapSuccess(`Sub-Category ${actionLabel} successfully`, updated));
@@ -503,7 +562,6 @@ exports.seedDefaultTaxonomy = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     const existing = await BusinessCategory.findAll();
-    const existingNames = new Set(existing.map(c => c.category_name.toLowerCase()));
 
     if (existing.length > 0) {
       return res.status(409).json(wrapError('System default categories have already been loaded'));
@@ -549,6 +607,25 @@ exports.seedDefaultTaxonomy = async (req, res, next) => {
         result: 'success',
       }, client);
     });
+
+    // Bulk index to Algolia after seeding default taxonomy
+    if (algolia && typeof algolia.indexAllCategories === 'function') {
+      const allCategories = await BusinessCategory.findAll();
+      await algolia.indexAllCategories(allCategories).catch(() => {});
+
+      const allSubCategories = await BusinessSubCategory.findAll();
+      for (const sub of allSubCategories) {
+        const parent = allCategories.find(c => c.id === sub.category_id);
+        await algolia.saveCategory({
+          ...sub,
+          id: sub.id,
+          category_name: sub.sub_category_name,
+          name: sub.sub_category_name,
+          parent_category_name: parent?.category_name,
+          type: 'subcategory',
+        }).catch(() => {});
+      }
+    }
 
     res.json(wrapSuccess('Default taxonomy seeded', {
       categoriesCreated,
@@ -644,6 +721,17 @@ exports.createSubCategoryForCategory = async (req, res, next) => {
       return sub;
     });
 
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      await algolia.saveCategory({
+        ...subcategory,
+        id: subcategory.id,
+        category_name: subcategory.sub_category_name,
+        name: subcategory.sub_category_name,
+        parent_category_name: parent.category_name,
+        type: 'subcategory',
+      }).catch(() => {});
+    }
+
     res.status(201).json(wrapSuccess('Sub-Category created successfully', subcategory));
   } catch (error) {
     next(error);
@@ -701,6 +789,18 @@ exports.updateSubCategoryByCategoryAndId = async (req, res, next) => {
 
       return updatedSub;
     });
+
+    if (algolia && typeof algolia.saveCategory === 'function') {
+      const parent = await BusinessCategory.findById(updated.category_id);
+      await algolia.saveCategory({
+        ...updated,
+        id: updated.id,
+        category_name: updated.sub_category_name,
+        name: updated.sub_category_name,
+        parent_category_name: parent?.category_name,
+        type: 'subcategory',
+      }).catch(() => {});
+    }
 
     res.json(wrapSuccess('Sub-Category updated successfully', updated));
   } catch (error) {

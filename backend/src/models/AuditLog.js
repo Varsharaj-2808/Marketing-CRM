@@ -10,7 +10,18 @@ const AuditLog = {
        RETURNING *`,
       [userId || null, email || '', action || '', resource || '', resourceId || '', details || '', ipAddress || '', userAgent || '', result || 'Success']
     );
-    return res && res.rows ? res.rows[0] : null;
+    const createdLog = res && res.rows ? res.rows[0] : null;
+    if (createdLog) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveAuditLog === 'function') {
+          await algolia.saveAuditLog(createdLog).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync audit log to Algolia:', err.message);
+      }
+    }
+    return createdLog;
   },
 
   async findAll(filters = {}) {

@@ -35,13 +35,11 @@ async function searchUsers(q) {
 
 async function searchCategories(q) {
   try {
-    const result = await query(
-      `SELECT id, category_name FROM business_categories WHERE category_name ILIKE $1 LIMIT $2`,
-      [`%${q}%`, HITS_PER_MODULE]
-    );
-    return result.rows.map((r) => ({
-      id: r.id,
-      title: r.category_name,
+    const result = await algoliaService.searchCategories(q, 'Active', 1, HITS_PER_MODULE, 'category');
+    if (!result || !result.hits) return [];
+    return result.hits.map((h) => ({
+      id: h.id,
+      title: h.category_name || h.name,
       subtitle: 'Business Category',
       icon: 'category',
     }));
@@ -52,17 +50,12 @@ async function searchCategories(q) {
 
 async function searchSubCategories(q) {
   try {
-    const result = await query(
-      `SELECT sc.id, sc.sub_category_name, c.category_name
-       FROM business_sub_categories sc
-       LEFT JOIN business_categories c ON sc.category_id = c.id
-       WHERE sc.sub_category_name ILIKE $1 LIMIT $2`,
-      [`%${q}%`, HITS_PER_MODULE]
-    );
-    return result.rows.map((r) => ({
-      id: r.id,
-      title: r.sub_category_name,
-      subtitle: r.category_name ? `Sub-Category · ${r.category_name}` : 'Sub-Category',
+    const result = await algoliaService.searchCategories(q, 'Active', 1, HITS_PER_MODULE, 'subcategory');
+    if (!result || !result.hits) return [];
+    return result.hits.map((h) => ({
+      id: h.id,
+      title: h.category_name || h.name,
+      subtitle: h.parent_category_name ? `Sub-Category · ${h.parent_category_name}` : 'Sub-Category',
       icon: 'label',
     }));
   } catch {
@@ -72,13 +65,11 @@ async function searchSubCategories(q) {
 
 async function searchServices(q) {
   try {
-    const result = await query(
-      `SELECT id, name FROM services WHERE name ILIKE $1 LIMIT $2`,
-      [`%${q}%`, HITS_PER_MODULE]
-    );
-    return result.rows.map((r) => ({
-      id: r.id,
-      title: r.name,
+    const result = await algoliaService.searchServices(q, 'Active', 1, HITS_PER_MODULE);
+    if (!result || !result.hits) return [];
+    return result.hits.map((h) => ({
+      id: h.id,
+      title: h.name,
       subtitle: 'Service',
       icon: 'settings',
     }));
@@ -89,16 +80,12 @@ async function searchServices(q) {
 
 async function searchNotifications(q, userId) {
   try {
-    const result = await query(
-      `SELECT id, notification_type, message FROM notifications
-       WHERE user_id = $1 AND (message ILIKE $2 OR notification_type ILIKE $2)
-       LIMIT $3`,
-      [userId, `%${q}%`, HITS_PER_MODULE]
-    );
-    return result.rows.map((r) => ({
-      id: r.id,
-      title: r.notification_type || 'Notification',
-      subtitle: r.message || '',
+    const result = await algoliaService.searchNotifications(q, { user_id: userId }, 1, HITS_PER_MODULE);
+    if (!result || !result.hits) return [];
+    return result.hits.map((h) => ({
+      id: h.id,
+      title: h.notification_type || 'Notification',
+      subtitle: h.message || '',
       icon: 'notifications',
     }));
   } catch {
@@ -108,16 +95,12 @@ async function searchNotifications(q, userId) {
 
 async function searchAuditLogs(q) {
   try {
-    const result = await query(
-      `SELECT id, action, resource, details, email FROM audit_logs
-       WHERE action ILIKE $1 OR resource ILIKE $1 OR details ILIKE $1 OR email ILIKE $1
-       ORDER BY created_at DESC LIMIT $2`,
-      [`%${q}%`, HITS_PER_MODULE]
-    );
-    return result.rows.map((r) => ({
-      id: r.id,
-      title: r.action || 'Audit Event',
-      subtitle: [r.resource, r.email].filter(Boolean).join(' · '),
+    const result = await algoliaService.searchAuditLogs(q, {}, 1, HITS_PER_MODULE);
+    if (!result || !result.hits) return [];
+    return result.hits.map((h) => ({
+      id: h.id,
+      title: h.action || 'Audit Event',
+      subtitle: [h.resource, h.email].filter(Boolean).join(' · '),
       icon: 'history',
     }));
   } catch {
@@ -127,27 +110,16 @@ async function searchAuditLogs(q) {
 
 async function searchFollowups(q, userId, isAdmin) {
   try {
-    let sql = `
-      SELECT f.id, f.followup_type, f.outcome, f.notes, f.lead_id,
-             l.company_name, l.contact_person
-      FROM followups f
-      LEFT JOIN leads l ON f.lead_id = l.id
-      WHERE (f.notes ILIKE $1 OR f.followup_type ILIKE $1 OR f.outcome ILIKE $1)
-    `;
-    const params = [`%${q}%`];
-    let idx = 2;
+    const filters = {};
     if (!isAdmin && userId) {
-      sql += ` AND f.created_by = $${idx++}`;
-      params.push(userId);
+      filters.created_by = userId;
     }
-    sql += ` ORDER BY f.created_at DESC LIMIT $${idx}`;
-    params.push(HITS_PER_MODULE);
-
-    const result = await query(sql, params);
-    return result.rows.map((r) => ({
-      id: r.id,
-      title: `${r.followup_type} – ${r.outcome || 'N/A'}`,
-      subtitle: [r.company_name || r.contact_person, r.notes?.substring(0, 60)].filter(Boolean).join(' · '),
+    const result = await algoliaService.searchFollowups(q, filters, 1, HITS_PER_MODULE);
+    if (!result || !result.hits) return [];
+    return result.hits.map((h) => ({
+      id: h.id,
+      title: `${h.followup_type} – ${h.outcome || 'N/A'}`,
+      subtitle: [h.company_name || h.contact_person, h.notes?.substring(0, 60)].filter(Boolean).join(' · '),
       icon: 'phone',
     }));
   } catch {
