@@ -1,4 +1,4 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 const Notification = require('../models/Notification');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
@@ -45,9 +45,9 @@ exports.getDashboard = async (req, res, next) => {
       query(`
         SELECT
           COUNT(*) AS total_leads,
-          COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
-          COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
-          COUNT(*) FILTER (WHERE stage = 'Lost') AS lost_leads,
+          COUNT(*) FILTER (WHERE stage != 'Closed') AS active_leads,
+          COUNT(*) FILTER (WHERE lead_status = 'Won') AS won_leads,
+          COUNT(*) FILTER (WHERE lead_status = 'Lost') AS lost_leads,
           COALESCE(SUM(estimated_value), 0) AS total_estimated_value
         FROM leads
         WHERE ${clause}

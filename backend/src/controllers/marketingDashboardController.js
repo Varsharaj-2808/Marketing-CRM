@@ -37,9 +37,9 @@ exports.getCards = async (req, res, next) => {
       `SELECT
          COUNT(*)                                                          AS my_leads,
          COUNT(*) FILTER (WHERE DATE(next_followup_date) = $2
-                            AND stage NOT IN ('Won', 'Lost'))              AS my_followups_today,
-         COUNT(*) FILTER (WHERE stage = 'Won')                            AS my_won_leads,
-         COUNT(*) FILTER (WHERE stage = 'Lost')                           AS my_lost_leads
+                            AND stage != 'Closed')              AS my_followups_today,
+         COUNT(*) FILTER (WHERE lead_status = 'Won')                            AS my_won_leads,
+         COUNT(*) FILTER (WHERE lead_status = 'Lost')                           AS my_lost_leads
        FROM leads
        WHERE assigned_to = $1
          AND deleted_at IS NULL`,
@@ -90,12 +90,12 @@ exports.getConversionRate = async (req, res, next) => {
 
     const result = await query(
       `SELECT
-         COUNT(*) FILTER (WHERE stage = 'Won')  AS won,
-         COUNT(*) FILTER (WHERE stage = 'Lost') AS lost
+         COUNT(*) FILTER (WHERE lead_status = 'Won')  AS won,
+         COUNT(*) FILTER (WHERE lead_status = 'Lost') AS lost
        FROM leads
        WHERE assigned_to = $1
          AND deleted_at IS NULL
-         AND stage IN ('Won', 'Lost')
+         AND lead_status IN ('Won', 'Lost')
          ${extraConditions}`,
       values
     );
@@ -153,9 +153,9 @@ exports.getCombinedDashboard = async (req, res, next) => {
       leadStats = await query(
         `SELECT
            COUNT(*) AS total_leads,
-           COUNT(*) FILTER (WHERE stage NOT IN ('Won', 'Lost')) AS active_leads,
-           COUNT(*) FILTER (WHERE stage = 'Won') AS won_leads,
-           COUNT(*) FILTER (WHERE stage = 'Lost') AS lost_leads,
+           COUNT(*) FILTER (WHERE stage != 'Closed') AS active_leads,
+           COUNT(*) FILTER (WHERE lead_status = 'Won') AS won_leads,
+           COUNT(*) FILTER (WHERE lead_status = 'Lost') AS lost_leads,
            COALESCE(SUM(estimated_value), 0) AS total_estimated_value
          FROM leads WHERE ${filterClause}`,
         filterValues
@@ -238,7 +238,7 @@ exports.getTodayFollowups = async (req, res, next) => {
     const isAdmin = req.user.role === 'Admin';
     const assignedTo = req.query.assigned_to;
     const baseConditions = `DATE(l.next_followup_date) = CURRENT_DATE
-      AND l.stage NOT IN ('Won', 'Lost')
+      AND l.stage != 'Closed'
       AND l.deleted_at IS NULL`;
 
     let assignedClause;

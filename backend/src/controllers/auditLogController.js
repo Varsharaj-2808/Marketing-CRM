@@ -1,4 +1,4 @@
-﻿const AuditLog = require('../models/AuditLog');
+const AuditLog = require('../models/AuditLog');
 const SystemSetting = require('../models/SystemSetting');
 const { query } = require('../config/db');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
@@ -66,7 +66,15 @@ exports.getAuditLogs = async (req, res, next) => {
     }
 
     const filters = {};
-    if (userId) filters.userId = userId;
+    if (userId) {
+      if (!UUID_REGEX.test(userId)) {
+        // If it's not a UUID, treat it as a name search
+        const usersResult = await query('SELECT id FROM users WHERE name ILIKE $1', [`%${userId}%`]);
+        filters.userIds = usersResult.rows.map(u => u.id);
+      } else {
+        filters.userId = userId;
+      }
+    }
     if (action) filters.action = action;
     if (entity) filters.resource = entity;
     if (from) filters.from = new Date(from);
