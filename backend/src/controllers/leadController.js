@@ -1,6 +1,7 @@
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const AuditLog = require('../models/AuditLog');
+const Notification = require('../models/Notification');
 const { query, getClient } = require('../config/db');
 const PDFDocument = require('pdfkit');
 const algolia = require('../utils/algoliaService');
@@ -73,6 +74,16 @@ exports.createLead = async (req, res, next) => {
     const finalLead = await Lead.findById(lead.id);
     if (algolia && typeof algolia.saveLead === 'function') {
       await algolia.saveLead(finalLead).catch(err => console.error('[createLead] Algolia indexing skipped:', err.message));
+    }
+
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'lead_created',
+        leadId: lead.id,
+        message: `New lead created by ${req.user.name || req.user.email}: ${lead.company_name}`,
+        leadData: finalLead,
+        creatorName: req.user.name || req.user.email
+      }).catch(err => console.error('[createLead] Admin notification skipped:', err.message));
     }
 
     res.status(201).json({
@@ -671,6 +682,14 @@ exports.updateLeadStage = async (req, res, next) => {
       await algolia.saveLead(finalLead).catch(err => console.error('[updateLeadStage] Algolia indexing skipped:', err.message));
     }
 
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'stage_updated',
+        leadId: updatedLead.id,
+        message: `Lead ${updatedLead.lead_id} stage updated to ${stage} by ${req.user.name || req.user.email}`
+      }).catch(err => console.error('[updateLeadStage] Admin notification skipped:', err.message));
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Lead stage updated',
@@ -776,6 +795,14 @@ exports.closeLeadLost = async (req, res, next) => {
     const finalLead = await Lead.findById(updatedLead.id);
     if (algolia && typeof algolia.saveLead === 'function') {
       await algolia.saveLead(finalLead).catch(err => console.error('[closeLeadLost] Algolia indexing skipped:', err.message));
+    }
+
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'lead_closed',
+        leadId: updatedLead.id,
+        message: `Lead ${updatedLead.lead_id} closed as Lost by ${req.user.name || req.user.email}`
+      }).catch(err => console.error('[closeLeadLost] Admin notification skipped:', err.message));
     }
 
     const responseLead = {
