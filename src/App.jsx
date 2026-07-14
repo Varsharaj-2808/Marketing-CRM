@@ -51,6 +51,7 @@ const router = createBrowserRouter([
       { path: 'leads/create', element: <CreateLead /> },
       { path: 'leads/:leadId', element: <LeadDetails /> },
       { path: 'leads/:leadId/lead-history', element: <LeadHistory /> },
+      { path: 'security', element: <SecurityPage /> },
     ],
   },
 
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
       { path: 'leads/:leadId', element: <LeadDetails /> },
       { path: 'leads/:leadId/lead-history', element: <LeadHistory /> },
       { path: 'leads/export/history', element: <ExportHistoryPage /> },
+      { path: 'security', element: <SecurityPage /> },
     ],
   },
 ]);

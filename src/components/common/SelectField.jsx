@@ -42,7 +42,7 @@ export default function SelectField({
             {placeholder || `Select ${label}`}
           </option>
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled} style={opt.style}>
               {opt.label}
             </option>
           ))}

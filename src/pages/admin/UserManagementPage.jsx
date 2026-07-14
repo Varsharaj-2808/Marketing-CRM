@@ -190,7 +190,7 @@ export default function UserManagementPage() {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg pl-3 pr-8 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any Role</option>
                 <option value="Admin">Admin</option>
@@ -200,7 +200,7 @@ export default function UserManagementPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full sm:w-auto h-10 bg-white border border-slate-200 rounded-lg pl-3 pr-8 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
               >
                 <option value="All">Any Status</option>
                 <option value="Active">Active</option>

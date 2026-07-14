@@ -46,7 +46,7 @@ export default function AdminLayout() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <NotificationBell />
-          <button className="p-1.5 rounded-full bg-primary/5 text-primary border border-primary/10" aria-label="Settings">
+          <button onClick={() => navigate('/admin/security')} className="p-1.5 rounded-full bg-primary/5 text-primary border border-primary/10" aria-label="Settings">
             <span className="material-symbols-outlined">settings</span>
           </button>
           <button onClick={handleLogout} className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-label-md text-error hover:bg-error/5 rounded-xl transition-colors" aria-label="Sign out">

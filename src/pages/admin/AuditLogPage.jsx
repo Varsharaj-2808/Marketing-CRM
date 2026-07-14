@@ -335,11 +335,11 @@ export default function AuditLogPage() {
           <div className="flex-1 min-w-[180px]">
             <label htmlFor="filter-action-type" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Action Type</label>
             <label htmlFor="filter-action-type" className="sr-only">Action</label>
-            <select
+             <select
               id="filter-action-type"
               value={actionType}
               onChange={(e) => setActionType(e.target.value)}
-              className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+              className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-8 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
             >
               <option value="">All Action Types</option>
               {ACTION_OPTIONS.filter(Boolean).map((opt) => (

@@ -746,7 +746,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* At Risk Widget */}
-        <div className="bg-white border border-slate-200 p-6 rounded-xl relative min-h-[380px] flex flex-col shadow-sm xl:col-span-2 glass-card">
+        <div className="bg-white border border-slate-200 p-6 rounded-xl relative min-h-[380px] flex flex-col shadow-sm lg:col-span-2 glass-card">
           {atRiskLoading ? (
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10">
               <span className="material-symbols-outlined animate-spin text-[36px] text-primary">progress_activity</span>
@@ -779,7 +779,7 @@ export default function AdminDashboardPage() {
                     aria-label="Overdue threshold days"
                     value={overdueDays}
                     onChange={(e) => setOverdueDays(e.target.value)}
-                    className="h-8 px-2 rounded-md border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none"
+                    className="h-8 pl-2 pr-8 rounded-md border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none"
                   >
                     <option value={3}>3 Days</option>
                     <option value={5}>5 Days</option>
@@ -953,7 +953,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Legacy At Risk Follow-ups Widget */}
-          <div className="bg-white border border-slate-200 p-6 rounded-xl relative min-h-[380px] flex flex-col shadow-sm xl:col-span-2 glass-card">
+          <div className="bg-white border border-slate-200 p-6 rounded-xl relative min-h-[380px] flex flex-col shadow-sm lg:col-span-2 glass-card">
             <div className="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">

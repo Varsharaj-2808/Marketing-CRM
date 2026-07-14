@@ -586,6 +586,7 @@ export default function LeadDetails() {
               isLeadOwner={isLeadOwner()}
               onStageChange={handleStageChange}
               onCloseAsWon={handleCloseAsWon}
+              onCloseAsLost={() => setLostModalOpen(true)}
               onOpenReopen={() => setReopenModalOpen(true)}
               disabled={stageLoading}
               loading={stageLoading}
@@ -599,7 +600,7 @@ export default function LeadDetails() {
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Website</p>
-              <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['website'], '-')}</p>
+              <p className="font-body-md text-body-md text-on-surface break-all break-words">{getLeadField(lead, ['website'], '-')}</p>
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Contact Person</p>
@@ -611,7 +612,7 @@ export default function LeadDetails() {
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Email</p>
-              <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['email'], '-')}</p>
+              <p className="font-body-md text-body-md text-on-surface break-all break-words">{getLeadField(lead, ['email'], '-')}</p>
             </div>
             <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">City</p>

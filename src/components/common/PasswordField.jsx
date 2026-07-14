@@ -6,6 +6,7 @@ export default function PasswordField({
   name,
   value,
   onChange,
+  onFocus,
   onBlur,
   placeholder,
   error,
@@ -38,6 +39,7 @@ export default function PasswordField({
           type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={onChange}
+          onFocus={onFocus}
           onBlur={onBlur}
           placeholder={placeholder}
           required

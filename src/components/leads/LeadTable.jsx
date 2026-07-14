@@ -11,12 +11,12 @@ const STATUS_VARIANTS = {
 };
 
 const PRIORITY_VARIANTS = {
-  High: 'lost',
-  Hot: 'lost',
-  Medium: 'qualified',
-  Warm: 'qualified',
-  Low: 'new',
-  Cold: 'new',
+  High: 'hot',
+  Hot: 'hot',
+  Medium: 'warm',
+  Warm: 'warm',
+  Low: 'cold',
+  Cold: 'cold',
 };
 
 function formatDate(value) {

@@ -19,7 +19,7 @@ function SelectFilter({ id, label, value, options, onChange, disabled, onFocus }
         onChange={(event) => onChange(event.target.value)}
         onFocus={onFocus}
         disabled={disabled}
-        className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">All</option>
         {options.map((option) => {

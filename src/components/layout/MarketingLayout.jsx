@@ -41,7 +41,7 @@ export default function MarketingLayout() {
         </div>
         <div className="flex items-center gap-x-2 sm:gap-x-3">
           <NotificationBell />
-          <button className="p-1.5 rounded-full hover:bg-primary/5 transition-colors" aria-label="Settings">
+          <button onClick={() => navigate('/marketing/security')} className="p-1.5 rounded-full hover:bg-primary/5 transition-colors" aria-label="Settings">
             <span className="material-symbols-outlined text-on-surface-variant">settings</span>
           </button>
           <div className="flex items-center gap-1.5">

@@ -15,6 +15,36 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isConfirmFocused, setIsConfirmFocused] = useState(false);
+
+  const hasLength = newPassword.length >= 8;
+  const hasNumeric = /[0-9]/.test(newPassword);
+  const hasAlpha = /[a-zA-Z]/.test(newPassword);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(newPassword);
+
+  let score = 0;
+  if (newPassword) {
+    if (hasLength) score++;
+    if (hasNumeric) score++;
+    if (hasAlpha) score++;
+    if (hasSpecial) score++;
+  }
+
+  let strengthLabel = '';
+  if (newPassword) {
+    if (score <= 2) {
+      strengthLabel = 'Weak';
+    } else if (score === 3) {
+      strengthLabel = 'Medium';
+    } else if (score === 4) {
+      strengthLabel = 'Strong';
+    }
+  }
+
+  const isPasswordValid = newPassword && score === 4;
+  const isConfirmValid = confirmPassword === newPassword;
+  const canSubmit = isPasswordValid && isConfirmValid;
+  const showStrength = newPassword && !isConfirmFocused && !confirmPassword;
 
   if (!token) {
     return (
@@ -48,8 +78,12 @@ export default function ResetPasswordPage() {
     const errors = {};
     if (!newPassword) {
       errors.newPassword = 'New password is required';
-    } else if (newPassword.length < 8) {
-      errors.newPassword = 'Password must be at least 8 characters';
+    } else {
+      if (!hasLength) {
+        errors.newPassword = 'Password must be at least 8 characters';
+      } else if (!hasNumeric || !hasAlpha || !hasSpecial) {
+        errors.newPassword = 'Password must contain at least 1 numeric, 1 alphabetic, and 1 special character';
+      }
     }
     if (!confirmPassword) {
       errors.confirmPassword = 'Please confirm your password';
@@ -124,16 +158,73 @@ export default function ResetPasswordPage() {
             error={fieldErrors.newPassword}
           />
 
+          {showStrength && (
+            <div className="space-y-2 mt-1 mb-3 ml-1" data-testid="password-strength-indicator">
+              <div className="flex justify-between items-center text-label-sm">
+                <span className="text-on-surface-variant">Password Strength:</span>
+                <span className={
+                  score <= 2 ? 'text-red-500 font-semibold' :
+                  score === 3 ? 'text-yellow-600 font-semibold' :
+                  'text-green-600 font-semibold'
+                }>
+                  {strengthLabel}
+                </span>
+              </div>
+              
+              <div className="flex gap-1 h-1.5 w-full">
+                <div className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                  score >= 1 ? (score <= 2 ? 'bg-red-500' : score === 3 ? 'bg-yellow-500' : 'bg-green-500') : 'bg-outline-variant/30'
+                }`} />
+                <div className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                  score >= 2 ? (score <= 2 ? 'bg-red-500' : score === 3 ? 'bg-yellow-500' : 'bg-green-500') : 'bg-outline-variant/30'
+                }`} />
+                <div className={`h-full flex-1 rounded-full transition-all duration-300 ${
+                  score >= 4 ? 'bg-green-500' : 'bg-outline-variant/30'
+                }`} />
+              </div>
+
+              {/* Requirements checklist */}
+              <ul className="text-label-sm space-y-1 mt-2 text-on-surface-variant/80">
+                <li className="flex items-center gap-1.5">
+                  <span className={`material-symbols-outlined text-[16px] leading-none shrink-0 ${hasLength ? 'text-green-600 font-bold' : 'text-outline/40'}`}>
+                    {hasLength ? 'check_circle' : 'circle'}
+                  </span>
+                  <span>Min. 8 characters</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className={`material-symbols-outlined text-[16px] leading-none shrink-0 ${hasNumeric ? 'text-green-600 font-bold' : 'text-outline/40'}`}>
+                    {hasNumeric ? 'check_circle' : 'circle'}
+                  </span>
+                  <span>At least 1 numeric character (0-9)</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className={`material-symbols-outlined text-[16px] leading-none shrink-0 ${hasAlpha ? 'text-green-600 font-bold' : 'text-outline/40'}`}>
+                    {hasAlpha ? 'check_circle' : 'circle'}
+                  </span>
+                  <span>At least 1 alphabetic character (a-z, A-Z)</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className={`material-symbols-outlined text-[16px] leading-none shrink-0 ${hasSpecial ? 'text-green-600 font-bold' : 'text-outline/40'}`}>
+                    {hasSpecial ? 'check_circle' : 'circle'}
+                  </span>
+                  <span>At least 1 special character</span>
+                </li>
+              </ul>
+            </div>
+          )}
+
           <PasswordField
             label="Confirm Password"
             name="confirmPassword"
             value={confirmPassword}
             onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, confirmPassword: '' })); }}
+            onFocus={() => setIsConfirmFocused(true)}
+            onBlur={() => setIsConfirmFocused(false)}
             placeholder="Re-enter new password"
-            error={fieldErrors.confirmPassword}
+            error={confirmPassword && confirmPassword !== newPassword ? 'Passwords do not match' : fieldErrors.confirmPassword}
           />
 
-          <Button type="submit" loading={loading}>
+          <Button type="submit" loading={loading} disabled={!canSubmit}>
             Reset Password
           </Button>
         </form>

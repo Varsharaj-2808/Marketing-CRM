@@ -173,12 +173,12 @@ export default function LeadList() {
         list.forEach((c) => { map[c.id] = c.category_name || c.name; });
         setCategoriesMap(map);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   useEffect(() => {
     const load = async () => {
-      if (accessDenied) return;
+      if (accessDenied || !isAdmin) return;
       try {
         const res = await fetchSavedViews();
         if (res?.success && Array.isArray(res.data)) {
@@ -198,7 +198,7 @@ export default function LeadList() {
       }
     };
     load();
-  }, [accessDenied]);
+  }, [accessDenied, isAdmin]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -412,7 +412,7 @@ export default function LeadList() {
     const csv = [
       ['Lead ID', 'Company Name', 'Contact Person', 'Mobile', 'Status', 'Stage', 'Source', 'Category', 'Priority', 'Assigned To', 'Created Date', 'Estimated Value'].join(','),
       ...selectedLeads.map((l) =>
-        [l.leadId, l.companyName, l.contactPerson, l.mobileNumber, l.status, l.stage, l.source, l.category, l.priority, l.assignedToName, l.createdAt, l.estimatedValue].join(',')
+        [l.leadId, l.companyName, l.contactPerson, l.mobileNumber, l.status, l.stage, l.source, l.category, l.priority, l.assignedToName, l.priority, l.estimatedValue].join(',')
       ),
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -439,7 +439,7 @@ export default function LeadList() {
         from: q.from || '',
         to: q.to || '',
       };
-      
+
       const blob = await exportLeads(exportParams, isAdmin);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -447,7 +447,7 @@ export default function LeadList() {
       a.download = `leads-export-${Date.now()}.${format === 'excel' ? 'xlsx' : 'csv'}`;
       a.click();
       URL.revokeObjectURL(url);
-      
+
       setToastMessage('Leads exported successfully.');
       setToastType('success');
       setToastShow(true);

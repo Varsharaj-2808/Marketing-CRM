@@ -31,3 +31,14 @@ export async function resetPassword(token, newPassword) {
     body: { token, newPassword },
   });
 }
+
+export async function getProfile() {
+  return apiClient('/auth/profile', { method: 'GET' });
+}
+
+export async function changePassword({ currentPassword, newPassword }) {
+  return apiClient('/auth/change-password', {
+    method: 'PUT',
+    body: { currentPassword, newPassword },
+  });
+}

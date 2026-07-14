@@ -213,7 +213,7 @@ export default function GlobalSearch({ variant = 'admin' }) {
         </span>
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => setShowDropdown(true)}
