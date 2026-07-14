@@ -64,12 +64,12 @@ const Lead = {
   },
 
   async findByMobile(mobile) {
-    const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2', [mobile, 'Closed Lost']);
+    const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2 AND lead_status != $3', [mobile, 'Closed Lost', 'Lost']);
     return result.rows[0] || null;
   },
 
   async findByEmail(email) {
-    const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2', [email, 'Closed Lost']);
+    const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2 AND lead_status != $3', [email, 'Closed Lost', 'Lost']);
     return result.rows[0] || null;
   },
 
@@ -110,13 +110,8 @@ const Lead = {
     }
 
     if (status) {
-      if (status === 'Won' || status === 'Lost') {
-        conditions.push(`l.stage = $${idx++}`);
-        values.push(status);
-      } else {
-        conditions.push(`l.lead_status = $${idx++}`);
-        values.push(status);
-      }
+      conditions.push(`l.lead_status = $${idx++}`);
+      values.push(status);
     }
 
     if (category) {
@@ -215,13 +210,8 @@ const Lead = {
     }
 
     if (status) {
-      if (status === 'Won' || status === 'Lost') {
-        conditions.push(`l.stage = $${idx++}`);
-        values.push(status);
-      } else {
-        conditions.push(`l.lead_status = $${idx++}`);
-        values.push(status);
-      }
+      conditions.push(`l.lead_status = $${idx++}`);
+      values.push(status);
     }
 
     if (priority) {
@@ -326,7 +316,7 @@ const Lead = {
   async closeLost(id, lostReason) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Lost', lead_status = 'Closed', lost_reason = $1, updated_at = NOW()
+       SET stage = 'Closed', lead_status = 'Lost', lost_reason = $1, updated_at = NOW()
        WHERE id = $2
        RETURNING *`,
       [lostReason, id]
@@ -337,7 +327,7 @@ const Lead = {
   async closeWon(id, finalDealValue, closureDate) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Won', lead_status = 'Closed', final_deal_value = $1, closure_date = $2, updated_at = NOW()
+       SET stage = 'Closed', lead_status = 'Won', final_deal_value = $1, closure_date = $2, updated_at = NOW()
        WHERE id = $3
        RETURNING *`,
       [finalDealValue, closureDate, id]

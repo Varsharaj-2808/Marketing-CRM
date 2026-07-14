@@ -140,6 +140,7 @@ exports.getLeadSources = async (req, res, next) => {
     const mappedSources = sources.map(s => ({
       id: s.id,
       name: s.name,
+      source_name: s.name || s.source_name || '',
     }));
     res.json(wrapSuccess('Lead sources fetched successfully', mappedSources));
   } catch (error) {
@@ -322,6 +323,7 @@ exports.getServices = async (req, res, next) => {
     const mappedServices = services.map(s => ({
       id: s.id,
       name: s.name,
+      service_name: s.name || s.service_name || '',
     }));
     res.json(wrapSuccess('Services fetched successfully', mappedServices));
   } catch (error) {
@@ -448,15 +450,15 @@ exports.reopenLead = async (req, res, next) => {
     const reasonField = isPut ? req.body.reopen_reason : req.body.reason;
 
     if (reasonField === undefined) {
-      return res.status(400).json(wrapError('Reopen reason is required'));
+      return res.status(400).json({ success: false, reason: 'Reopen reason is required', message: 'Reopen reason is required' });
     }
 
     if (typeof reasonField === 'string' && reasonField.trim().length === 0) {
-      return res.status(400).json(wrapError('Reopen reason cannot be empty'));
+      return res.status(400).json({ success: false, reason: 'Reopen reason cannot be empty', message: 'Reopen reason cannot be empty' });
     }
 
     if (typeof reasonField === 'string' && reasonField.length > 500) {
-      return res.status(400).json(wrapError('Reopen reason must not exceed 500 characters'));
+      return res.status(400).json({ success: false, reason: 'Reopen reason must not exceed 500 characters', message: 'Reopen reason must not exceed 500 characters' });
     }
 
     if (!UUID_REGEX.test(id)) {
@@ -468,7 +470,8 @@ exports.reopenLead = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
-    if (lead.stage !== 'Won' && lead.stage !== 'Lost') {
+    const isClosed = lead.stage === 'Closed' || lead.lead_status === 'Won' || lead.lead_status === 'Lost' || lead.stage === 'Won' || lead.stage === 'Lost';
+    if (!isClosed) {
       const errMsg = isPut ? 'Only Won or Lost leads can be reopened' : `Lead is not closed. Current stage: ${lead.stage}`;
       return res.status(400).json(wrapError(errMsg));
     }
