@@ -2,12 +2,83 @@
 
 Express.js REST API server with PostgreSQL (Supabase) and Algolia search integration.
 
+## Prerequisites
+
+- **Node.js** >= 18
+- **PostgreSQL** >= 14 (or a Supabase project)
+- **psql** CLI (for database setup)
+
 ## Setup
+
+### 1. Install dependencies
 
 ```bash
 npm install
-cp .env.example .env   # configure your Supabase & SMTP credentials
-npm run dev            # starts on http://localhost:5000
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and fill in:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/marketing_crm`) |
+| `JWT_SECRET` | Yes | Secret for signing JWT tokens |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | For email | Nodemailer SMTP credentials |
+| `ALGOLIA_APP_ID`, `ALGOLIA_API_KEY` | For search | Algolia credentials (optional for basic use) |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | If using Supabase | Only needed for Supabase-hosted DB |
+
+### 3. Create the database
+
+**Option A — Local PostgreSQL:**
+
+```bash
+# Create the database
+psql -U postgres -c "CREATE DATABASE marketing_crm;"
+
+# Run the schema migration
+psql -U postgres -d marketing_crm -f database/schema/init.sql
+```
+
+**Option B — Supabase (SQL Editor):**
+
+Copy the contents of `database/schema/init.sql` into the Supabase SQL Editor and run it.
+
+### 4. Create the first admin user
+
+```bash
+node -e "
+const { query } = require('./src/config/db');
+const bcrypt = require('bcryptjs');
+(async () => {
+  const hash = await bcrypt.hash('Admin@123', 12);
+  await query(
+    \`INSERT INTO users (\"employee_id\", name, email, mobile, role, \"accountStatus\", password, \"firstName\", \"lastName\")
+     VALUES ('EMP-00001', 'Admin', 'admin@example.com', '9999999999', 'Admin', 'active', \$1, 'Admin', 'User')
+     ON CONFLICT (email) DO NOTHING\`,
+    [hash]
+  );
+  console.log('Admin user created (admin@example.com / Admin@123)');
+  process.exit(0);
+})();
+"
+```
+
+### 5. Start the server
+
+```bash
+npm run dev    # development (auto-reload via --watch)
+npm start      # production
+```
+
+The API starts at `http://localhost:5000`. Test with:
+
+```bash
+curl http://localhost:5000/api/health
 ```
 
 ## Project Structure
@@ -32,25 +103,13 @@ src/
   cron/               - Scheduled jobs
   sockets/            - WebSocket handlers
   uploads/            - File uploads
+database/
+  schema/
+    init.sql          - Full database schema (13 tables + indexes)
 tests/
   unit/               - Jest unit tests
 scripts/              - Utility & debug scripts
 ```
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `PORT` | Server port (default: `5000`) |
-| `NODE_ENV` | `development` or `production` |
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
-| `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | PostgreSQL connection |
-| `JWT_SECRET` | JWT signing secret |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Email (Nodemailer) |
-| `ALGOLIA_APP_ID`, `ALGOLIA_API_KEY` | Algolia search |
-| `CORS_ORIGIN` | Allowed CORS origin (default: `*`) |
 
 ## API Routes
 
@@ -192,6 +251,26 @@ scripts/              - Utility & debug scripts
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/health` | API health status |
+
+## Database Schema
+
+The full DDL is in `database/schema/init.sql`. Key tables:
+
+| Table | Description |
+|-------|-------------|
+| `users` | Admin & Marketing Executive accounts (JWT auth, lockout) |
+| `leads` | Lead records with stage pipeline, priority, category |
+| `lead_history` | Field-level change audit trail per lead |
+| `followups` | Follow-up records (call/meeting/email logs, outcomes) |
+| `notifications` | User notifications (lead assigned, follow-up, etc.) |
+| `audit_logs` | System-wide audit trail (login, CRUD, exports) |
+| `audit_logs_archive` | Archived audit logs (older than retention period) |
+| `business_categories` | Lead category taxonomy |
+| `business_sub_categories` | Sub-categories under each category |
+| `lead_sources` | Lead source definitions (Referral, Website, etc.) |
+| `services` | Service catalog |
+| `system_settings` | Key-value config (lockout, retention, etc.) |
+| `saved_views` | Admin saved filter presets |
 
 ## Architecture
 

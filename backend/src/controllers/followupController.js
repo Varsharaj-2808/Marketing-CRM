@@ -156,6 +156,8 @@ exports.createFollowup = async (req, res, next) => {
       await LeadHistory.create({
         leadId: id,
         fieldName: 'followup_logged',
+        oldValue: null,
+        newValue: outcome,
         changeSummary: `Follow-up logged: ${followup_type} ΓÇö ${outcome} by ${req.user.name || req.user.id}`,
         changedBy: req.user.id,
       });
