@@ -5,12 +5,29 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "jest",
+    "dev": "node --watch src/server.js",
+    "test": "jest --forceExit --detectOpenHandles",
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.110.0",
+    "algoliasearch": "^5.55.1",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.3",
+    "nodemailer": "^9.0.1",
+    "pdfkit": "^0.19.1",
+    "pg": "^8.22.0",
+    "xlsx": "^0.18.5"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
+  }
 }
