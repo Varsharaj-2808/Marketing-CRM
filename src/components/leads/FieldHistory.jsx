@@ -89,15 +89,22 @@ export default function FieldHistory({ leadId, isAdminRoute, visible = false, va
     try {
       const res = await fetcher(leadId, params);
       const data = res?.data || {};
-      const items = data.history || [];
+      const mappedItems = (data.history || []).map((entry) => ({
+        ...entry,
+        field: entry.field || entry.field_name,
+        changed_by: entry.changed_by_name
+          ? { id: entry.changed_by, name: entry.changed_by_name }
+          : entry.changed_by,
+        source: entry.source || (entry.is_system_generated ? 'system' : 'user'),
+      }));
       const total = data.total_changes || 0;
       const pagination = res?.pagination || {};
       const totalPages = pagination.total_pages || 1;
 
       if (append) {
-        setHistory((prev) => [...prev, ...items]);
+        setHistory((prev) => [...prev, ...mappedItems]);
       } else {
-        setHistory(items);
+        setHistory(mappedItems);
       }
       setTotalChanges(total);
       setHasMore(pageNum < totalPages);
