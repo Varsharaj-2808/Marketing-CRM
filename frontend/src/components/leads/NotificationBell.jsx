@@ -1,0 +1,194 @@
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../../services/notificationService';
+import { toDisplayText } from '../../utils/leadDisplay';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = MONTHS[d.getMonth()] || 'Jan';
+  const year = d.getFullYear();
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
+}
+
+function isUnread(n) {
+  return n.is_read === false || n.read === false;
+}
+
+export default function NotificationBell() {
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const bellRef = useRef(null);
+
+  const unreadCount = notifications.filter((n) => isUnread(n)).length;
+
+  useEffect(() => {
+    const loadNotifs = () => {
+      fetchNotifications().then((res) => {
+        const data = res?.data || [];
+        setNotifications(Array.isArray(data) ? data : []);
+      });
+    };
+
+    loadNotifs();
+
+    // Poll every 10 seconds to immediately display new notifications
+    const interval = setInterval(loadNotifs, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
+
+  useEffect(() => {
+    if (dropdownOpen) {
+      setTimeout(() => {
+        const firstBtn = dropdownRef.current?.querySelector('button.notification-item');
+        if (firstBtn) {
+          firstBtn.focus();
+        }
+      }, 50);
+    }
+  }, [dropdownOpen]);
+
+  async function handleNotificationClick(notification) {
+    const leadId = notification.leadId || notification.lead_id || notification.lead_business_id || notification.resourceId || notification.reference_id;
+    if (leadId) {
+      const isAdminRoute = window.location.pathname.startsWith('/admin') || notification.role === 'Admin';
+      navigate(`${isAdminRoute ? '/admin' : '/marketing'}/leads/${leadId}`);
+    }
+    if (isUnread(notification)) {
+      await markNotificationRead(notification.id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true, read: true } : n))
+      );
+    }
+    setDropdownOpen(false);
+  }
+
+  async function handleMarkAllRead() {
+    await markAllNotificationsRead();
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, is_read: true, read: true }))
+    );
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setDropdownOpen(false);
+      bellRef.current?.focus();
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef} onKeyDown={handleKeyDown}>
+      <button
+        ref={bellRef}
+        onClick={() => setDropdownOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setDropdownOpen((prev) => !prev);
+          }
+        }}
+        className="p-1.5 rounded-full hover:bg-primary/5 transition-colors relative"
+        aria-haspopup="true"
+        aria-expanded={dropdownOpen}
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+      >
+        <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
+        {unreadCount > 0 && (
+          <span 
+            aria-label={`${unreadCount} unread notifications`}
+            className="absolute top-0.5 right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-error text-white text-[10px] font-bold rounded-full px-1 leading-none"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {dropdownOpen && (
+        <div className="fixed md:absolute top-16 md:top-auto left-4 right-4 md:left-auto md:right-0 mt-2 w-auto md:w-[340px] lg:w-[380px] max-h-[70vh] md:max-h-[480px] overflow-y-auto overflow-x-hidden rounded-2xl bg-white shadow-xl border border-outline-variant/20 z-50 animate-fade-in-scale">
+          <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-outline-variant/10 px-5 py-3.5 flex items-center justify-between z-10">
+            <h3 className="font-headline-md text-headline-md text-on-surface">Notifications</h3>
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                aria-label="Mark all as read"
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+          {notifications.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <span className="material-symbols-outlined text-[32px] text-on-surface-variant/30 mb-2">notifications_off</span>
+              <p className="font-body-md text-body-md text-on-surface-variant/70">No notifications yet.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-outline-variant/10">
+              {notifications.map((n) => {
+                const actionText = toDisplayText(n.message || n.action || n.description, '');
+                const unread = isUnread(n);
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => handleNotificationClick(n)}
+                    className={`w-full text-left px-5 py-4 transition-colors hover:bg-primary/5 notification-item ${
+                      unread ? 'bg-primary/[0.03]' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        unread ? 'bg-primary/10' : 'bg-surface-container-high'
+                      }`}>
+                        <span className={`material-symbols-outlined text-[18px] ${
+                          unread ? 'text-primary' : 'text-on-surface-variant'
+                        }`}>
+                          {n.notification_type === 'assignment' ? 'assignment' : 'notifications'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-body-md text-body-md leading-relaxed whitespace-normal break-words ${
+                          unread ? 'text-on-surface font-semibold' : 'text-on-surface-variant'
+                        }`}>
+                          {actionText || 'Notification'}
+                        </p>
+                        <p className="font-label-sm text-label-sm text-on-surface-variant/60 mt-1 whitespace-normal">
+                          {formatDate(n.created_at || n.createdAt || n.timestamp)}
+                        </p>
+                      </div>
+                      {unread && (
+                        <span className="w-2.5 h-2.5 rounded-full bg-error shrink-0 mt-2" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
