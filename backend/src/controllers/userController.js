@@ -6,7 +6,6 @@ const algolia = require('../utils/algoliaService');
 const { query } = require('../config/db');
 const { withTransaction } = require('../utils/transactionHelper');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
-const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const sanitize = (str) => str.replace(/<[^>]*>/g, '');
 
