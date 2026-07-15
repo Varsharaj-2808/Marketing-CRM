@@ -759,7 +759,7 @@ export default function LeadDetails() {
                   isLeadOwner={isLeadOwner()}
                   onAddCorrection={handleAddCorrection}
                   emptyMessage="No history found for this lead."
-                  showLogFollowUpButton={true}
+                  showLogFollowUpButton={canLogFollowUp}
                   onLogFollowUp={handleLogFollowUp}
                   activeFilter={activeFilter}
                   onFilterChange={handleFilterChange}

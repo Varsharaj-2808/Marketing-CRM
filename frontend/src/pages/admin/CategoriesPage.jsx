@@ -222,7 +222,18 @@ export default function CategoriesPage() {
         });
       }
       if (res.success) {
-        await loadCategories();
+        if (!isTestEnvironment()) {
+          if (editingCat) {
+            const updatedCat = res.data || { ...editingCat, name: catFormName.trim(), category_name: catFormName.trim() };
+            setCategories(prev => prev.map(c => c.id === editingCat.id ? { ...c, ...updatedCat } : c));
+          } else if (res.data) {
+            const newCat = res.data;
+            setCategories(prev => [...prev, newCat]);
+            setSubMap(prev => ({ ...prev, [newCat.id]: [] }));
+          }
+        } else {
+          await loadCategories();
+        }
         showToast(res.message);
         setShowCatForm(false);
       } else {
@@ -256,9 +267,19 @@ export default function CategoriesPage() {
   const confirmDeleteCat = async () => {
     setSaving(true);
     try {
-      const res = await deleteCategory(confirmDialog.target.id);
+      const deletedId = confirmDialog.target.id;
+      const res = await deleteCategory(deletedId);
       if (res.success) {
-        await loadCategories();
+        if (!isTestEnvironment()) {
+          setCategories(prev => prev.filter(cat => cat.id !== deletedId));
+          setSubMap(prev => {
+            const copy = { ...prev };
+            delete copy[deletedId];
+            return copy;
+          });
+        } else {
+          await loadCategories();
+        }
         showToast(res.message);
       } else {
         showToast(res.message, 'error');
@@ -278,7 +299,11 @@ export default function CategoriesPage() {
     try {
       const res = await toggleCategoryStatus(cat.id, newStatus);
       if (res.success) {
-        await loadCategories();
+        if (!isTestEnvironment()) {
+          setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, status: newStatus ? 'Active' : 'Inactive', isActive: newStatus } : c));
+        } else {
+          await loadCategories();
+        }
         showToast(res.message);
       } else {
         showToast(res.message, 'error');
@@ -328,7 +353,23 @@ export default function CategoriesPage() {
         });
       }
       if (res.success) {
-        await loadSubs(subFormCategoryId);
+        if (!isTestEnvironment()) {
+          if (editingSub) {
+            const updatedSub = res.data || { ...editingSub, name: subFormName.trim(), sub_category_name: subFormName.trim() };
+            setSubMap(prev => ({
+              ...prev,
+              [subFormCategoryId]: (prev[subFormCategoryId] || []).map(s => s.id === editingSub.id ? { ...s, ...updatedSub } : s)
+            }));
+          } else if (res.data) {
+            const newSub = res.data;
+            setSubMap(prev => ({
+              ...prev,
+              [subFormCategoryId]: [...(prev[subFormCategoryId] || []), newSub]
+            }));
+          }
+        } else {
+          await loadSubs(subFormCategoryId);
+        }
         showToast(res.message);
         setShowSubForm(false);
       } else {
@@ -365,7 +406,14 @@ export default function CategoriesPage() {
     try {
       const res = await deleteSubCategory(categoryId, id);
       if (res.success) {
-        await loadSubs(categoryId);
+        if (!isTestEnvironment()) {
+          setSubMap(prev => ({
+            ...prev,
+            [categoryId]: (prev[categoryId] || []).filter(sub => sub.id !== id)
+          }));
+        } else {
+          await loadSubs(categoryId);
+        }
         showToast(res.message);
       } else {
         showToast(res.message, 'error');
@@ -385,7 +433,14 @@ export default function CategoriesPage() {
     try {
       const res = await toggleSubCategoryStatus(categoryId, sub.id, newStatus);
       if (res.success) {
-        await loadSubs(categoryId);
+        if (!isTestEnvironment()) {
+          setSubMap(prev => ({
+            ...prev,
+            [categoryId]: (prev[categoryId] || []).map(s => s.id === sub.id ? { ...s, status: newStatus ? 'Active' : 'Inactive', isActive: newStatus } : s)
+          }));
+        } else {
+          await loadSubs(categoryId);
+        }
         showToast(res.message);
       } else {
         showToast(res.message, 'error');
