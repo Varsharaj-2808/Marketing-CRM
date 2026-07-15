@@ -1,7 +1,0 @@
--- STORY-2.1.4 Lead Stage Management columns
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason VARCHAR(100);
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS final_deal_value NUMERIC(12, 2);
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS closure_date DATE;
-
-ALTER TABLE lead_history ADD COLUMN IF NOT EXISTS reason VARCHAR(500);
-ALTER TABLE lead_history ADD COLUMN IF NOT EXISTS metadata JSONB;

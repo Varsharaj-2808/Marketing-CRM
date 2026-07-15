@@ -38,7 +38,18 @@ const Followup = {
         createdBy,
       ]
     );
-    return result.rows[0];
+    const createdFollowup = result.rows[0];
+    if (createdFollowup) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveFollowup === 'function') {
+          await algolia.saveFollowup(createdFollowup).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync followup to Algolia:', err.message);
+      }
+    }
+    return createdFollowup;
   },
 
   async findById(id) {
@@ -72,7 +83,18 @@ const Followup = {
        RETURNING *`,
       [correctionNotes, correctionBy, id]
     );
-    return result.rows[0] || null;
+    const updated = result.rows[0] || null;
+    if (updated) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveFollowup === 'function') {
+          await algolia.saveFollowup(updated).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync followup correction to Algolia:', err.message);
+      }
+    }
+    return updated;
   },
 
   formatResponse(followup) {

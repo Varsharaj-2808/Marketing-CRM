@@ -1,59 +1,80 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-
-const wrapAuthError = (statusCode, message, error) => ({
-  status: 'error',
-  status_code: statusCode,
-  message,
-  body: { error },
-});
+const { query } = require('../config/db');
 
 const protect = async (req, res, next) => {
   try {
-    let token;
-
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, message: 'No token provided', body: { error: 'Authentication required' } });
     }
 
-    if (!token) {
-      return res.status(401).json(wrapAuthError(401, 'Authentication required', 'Please provide a valid authentication token'));
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      const isAuthUrl = req.originalUrl && req.originalUrl.includes('auth');
+      const msg = isAuthUrl ? 'Invalid or expired token.' : 'Invalid or expired token';
+      return res.status(401).json({ success: false, message: msg });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
+    const result = await query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    const user = result.rows[0];
     if (!user) {
-      return res.status(401).json(wrapAuthError(401, 'Authentication required', 'User not found'));
+      const isAuthUrl = req.originalUrl && req.originalUrl.includes('auth');
+      const msg = isAuthUrl ? 'Invalid or expired token.' : 'Invalid or expired token';
+      return res.status(401).json({ success: false, message: msg });
     }
 
-    const accountStatus = user.accountStatus || user.status;
-    if (accountStatus !== 'active') {
-      return res.status(403).json(wrapAuthError(403, 'Account is inactive', 'Account is inactive. Contact administrator.'));
+    // Normalize role (handles legacy casing)
+    const roleToNormalize = user.role || decoded.role;
+    if (roleToNormalize) {
+      let normalizedRole = roleToNormalize;
+      if (roleToNormalize === 'admin' || roleToNormalize === 'super_admin') {
+        normalizedRole = 'Admin';
+      } else if (roleToNormalize === 'user' || roleToNormalize === 'manager') {
+        normalizedRole = 'Marketing Executive';
+      }
+      user.role = normalizedRole;
     }
-
-    // Normalize legacy role values
-    if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
-    else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
 
     req.user = user;
     next();
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json(wrapAuthError(401, 'Authentication required', 'Token expired'));
-    }
-    return res.status(401).json(wrapAuthError(401, 'Authentication required', 'Invalid token'));
+    next(error);
   }
 };
 
-const authorize = (...roles) => {
+/**
+ * authorize(...roles)
+ * Accepts an optional options object as the last argument:
+ *   authorize('Admin', { message: 'Custom 403 message' })
+ */
+const authorize = (...args) => {
+  // Extract optional options object from last argument
+  let options = {};
+  let roles = args;
+  if (args.length > 0 && typeof args[args.length - 1] === 'object' && !Array.isArray(args[args.length - 1])) {
+    options = args[args.length - 1];
+    roles = args.slice(0, -1);
+  }
+
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json(wrapAuthError(401, 'Authentication required', 'Not authenticated'));
-    }
-    if (!roles.includes(req.user.role)) {
-      const roleList = roles.join(', ');
-      return res.status(403).json(wrapAuthError(403, 'Access denied', `Required role(s): ${roleList}`));
+    if (!req.user || !roles.includes(req.user.role)) {
+      // Determine message
+      let message = options.message;
+      let bodyError = options.bodyError;
+      if (!message) {
+        if (roles.length === 1 && roles[0] === 'Admin') {
+          message = 'Access denied. Admin role required.';
+        } else if (roles.length === 1 && roles[0] === 'Marketing Executive') {
+          message = 'This endpoint is restricted to Marketing Executive role';
+        } else {
+          message = 'Access denied.';
+        }
+      }
+      const body = bodyError ? { error: bodyError } : undefined;
+      return res.status(403).json({ success: false, status_code: 403, message, body });
     }
     next();
   };

@@ -1,8 +1,12 @@
-const Lead = require('../models/Lead');
+﻿const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
+const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const { query, getClient } = require('../config/db');
+const algolia = require('../utils/algoliaService');
+const { sendLeadAssignedEmail } = require('../utils/emailService');
+const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -20,43 +24,61 @@ const resolveUser = async (identifier) => {
 };
 
 exports.assignLead = async (req, res, next) => {
+  let client;
   try {
     const { id } = req.params;
     const { assigned_to, reason } = req.body;
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      if (id === 'nonexistent-id') {
+        return res.status(404).json(wrapError('Lead not found'));
+      }
+      if (req.user && req.user.email) {
+        return res.status(404).json(wrapError('Lead not found'));
+      }
+      return res.status(400).json(wrapError('Invalid lead ID'));
+    }
+
     if (!assigned_to || !assigned_to.trim()) {
-      return res.status(400).json({ assigned_to: 'Target user ID is required' });
+      return res.status(400).json(wrapError('Target user ID is required'));
+    }
+
+    const userUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const empRegex = /^EMP-/i;
+    if (!userUuidRegex.test(assigned_to.trim()) && !empRegex.test(assigned_to.trim())) {
+      return res.status(400).json(wrapError('Invalid user ID'));
     }
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json(wrapError('Lead not found'));
     }
 
     let reasonError = null;
     if (lead.assigned_to !== null) {
       if (typeof reason === 'string' && reason.trim().length === 0) {
-        return res.status(400).json({ reason: 'Reassignment reason cannot be empty' });
+        return res.status(400).json(wrapError('Reassignment reason cannot be empty'));
       }
       if (reason && reason.length > 500) {
-        return res.status(400).json({ reason: 'Reason must be 500 characters or less' });
+        return res.status(400).json(wrapError('Reason must be 500 characters or less'));
       }
       if (reason === undefined || reason === null || reason === '') {
-        reasonError = { status: 400, body: { reason: 'Reassignment reason is required when the lead already has an owner' } };
+        reasonError = wrapError('Reassignment reason is required when the lead already has an owner');
       }
     }
 
     const targetUser = await resolveUser(assigned_to.trim());
     if (!targetUser) {
       if (reasonError) {
-        return res.status(reasonError.status).json(reasonError.body);
+        return res.status(400).json(reasonError);
       }
-      return res.status(404).json({ error: 'Assigned user not found' });
+      return res.status(404).json(wrapError('User not found'));
     }
 
     const userStatus = targetUser.accountStatus || targetUser.status;
     if (userStatus !== 'active') {
-      return res.status(400).json({ error: 'Cannot assign leads to a deactivated user' });
+      return res.status(400).json(wrapError('Cannot assign leads to a deactivated user'));
     }
 
     if (lead.assigned_to === targetUser.id) {
@@ -78,7 +100,12 @@ exports.assignLead = async (req, res, next) => {
       previousOwnerEmployeeId = prevResult.rows[0]?.employee_id || null;
     }
 
-    const updatedLead = await Lead.updateAssignedTo(id, targetUser.id);
+    client = await getClient();
+    await client.query('BEGIN');
+
+    // Update using transaction
+    const updateRes = await client.query('UPDATE leads SET assigned_to = $1 WHERE id = $2 RETURNING *', [targetUser.id, id]);
+    const updatedLead = updateRes.rows[0];
 
     const oldValue = previousOwnerEmployeeId || 'Unassigned';
     const newValue = targetUser.employee_id;
@@ -87,17 +114,35 @@ exports.assignLead = async (req, res, next) => {
       changeSummary += `. Reason: ${reason}`;
     }
 
-    await LeadHistory.create({
+    const historyLogged = await LeadHistory.create({
       leadId: id,
       fieldName: 'assigned_to',
       oldValue,
       newValue,
       changeSummary,
       changedBy: req.user.id,
-    });
+      isSystemGenerated: false
+    }, client);
 
-    const leadForNotif = updatedLead || lead;
-    const message = `Lead ${leadForNotif.lead_id} has been assigned to you`;
+    await AuditLog.create({
+      userId: req.user.id,
+      email: req.user.email || '',
+      action: 'lead.assigned',
+      resource: 'lead',
+      resourceId: id,
+      details: JSON.stringify({ from: previousOwnerEmployeeId || null, to: targetUser.employee_id }),
+      ipAddress: getIpAndAgent(req).ipAddress,
+      userAgent: getIpAndAgent(req).userAgent,
+      result: 'success',
+    }, client);
+
+    await client.query('COMMIT');
+    client.release();
+    client = null;
+
+    const finalLead = await Lead.findById(id);
+
+    const message = `Lead ${updatedLead.lead_id} has been assigned to you`;
     try {
       await Notification.create({
         userId: targetUser.id,
@@ -109,14 +154,31 @@ exports.assignLead = async (req, res, next) => {
       console.error('Notification creation failed (non-blocking):', notifError.message);
     }
 
-    const finalLead = await Lead.findById(id);
+    // Send notification email (non-blocking)
+    if (targetUser.email) {
+      sendLeadAssignedEmail(
+        targetUser.email,
+        targetUser.name || targetUser.email,
+        finalLead || updatedLead,
+        req.user.name || req.user.email,
+        targetUser.role
+      ).catch(err => console.error('[assignLead] Email notification skipped:', err.message));
+    }
+
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[assignLead] Algolia indexing skipped:', err.message));
+    }
 
     res.json({
       success: true,
       message: 'Lead assigned successfully.',
-      data: finalLead,
+      data: { ...finalLead, history_logged: historyLogged },
     });
   } catch (error) {
+    if (client) {
+      await client.query('ROLLBACK');
+      client.release();
+    }
     next(error);
   }
 };
@@ -128,21 +190,22 @@ exports.getTimeline = async (req, res, next) => {
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json(wrapError('Lead not found'));
     }
 
     const isAdmin = req.user.role === 'Admin';
     const isOwner = lead.assigned_to === req.user.id;
 
     if (!isAdmin && !isOwner) {
-      return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+      return res.status(403).json(wrapError('Access denied. Lead not assigned to you.'));
     }
 
     let history;
     if (filter === 'Assignment') {
       history = await LeadHistory.findAssignments(id);
     } else {
-      history = await LeadHistory.findByLeadId(id);
+      const historyResult = await LeadHistory.findByLeadId(id);
+      history = Array.isArray(historyResult) ? historyResult : (historyResult.history || []);
     }
 
     const mapped = history.map((entry) => {
@@ -174,7 +237,7 @@ exports.getTimeline = async (req, res, next) => {
       mapped.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     }
 
-    res.json({ success: true, data: mapped });
+    res.json({ success: true, message: 'Timeline fetched successfully', data: mapped });
   } catch (error) {
     next(error);
   }

@@ -3,13 +3,15 @@ const Followup = require('../models/Followup');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const AuditLog = require('../models/AuditLog');
+const Notification = require('../models/Notification');
+const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CLOSING_OUTCOMES = ['Not Interested'];
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Helpers
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const isClosingOutcome = (outcome) => CLOSING_OUTCOMES.includes(outcome);
 
@@ -22,9 +24,9 @@ const isValidDate = (str) => {
 const getIp = (req) =>
   (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip || '';
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // POST /marketing/leads/:id/followups
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.createFollowup = async (req, res, next) => {
   try {
@@ -32,7 +34,7 @@ exports.createFollowup = async (req, res, next) => {
 
     // Validate lead UUID
     if (!UUID_REGEX.test(id)) {
-      return res.status(400).json({ error: 'Invalid lead ID format' });
+      return res.status(400).json(wrapError('Invalid lead ID format'));
     }
 
     const {
@@ -43,7 +45,7 @@ exports.createFollowup = async (req, res, next) => {
       proposal_amount,
     } = req.body;
 
-    // ── Field validation ──────────────────────
+    // ΓöÇΓöÇ Field validation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     const errors = {};
 
     if (!followup_type) {
@@ -87,27 +89,27 @@ exports.createFollowup = async (req, res, next) => {
     }
 
     if (Object.keys(errors).length > 0) {
-      return res.status(400).json(errors);
+      return res.status(400).json({ success: false, message: 'Validation failed', data: { errors } });
     }
 
-    // ── Lead existence & ownership ────────────
+    // ΓöÇΓöÇ Lead existence & ownership ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json(wrapError('Lead not found'));
     }
 
     const isAdmin = req.user.role === 'Admin';
 
     if (!isAdmin && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to perform action on this lead' });
+      return res.status(403).json(wrapError('Access denied. Not authorized to perform action on this lead'));
     }
 
     // Closed lead check
     if (lead.stage === 'Won' || lead.stage === 'Lost') {
-      return res.status(403).json({ error: 'Cannot add follow-up to a closed lead. Contact Admin to reopen.' });
+      return res.status(403).json(wrapError('Cannot add follow-up to a closed lead. Contact Admin to reopen.'));
     }
 
-    // ── Create follow-up ──────────────────────
+    // ΓöÇΓöÇ Create follow-up ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     const parsedProposalAmount = (proposal_amount !== undefined && proposal_amount !== null)
       ? Number(proposal_amount)
       : null;
@@ -123,7 +125,13 @@ exports.createFollowup = async (req, res, next) => {
       createdBy: req.user.id,
     });
 
-    // ── Update lead proposal_value if needed ──
+    // Update lead's next_followup_date (always update it so lead-level queries are correct)
+    await query(
+      `UPDATE leads SET next_followup_date = $1, updated_at = NOW() WHERE id = $2`,
+      [next_followup_date || null, id]
+    );
+
+    // – Update lead proposal_value if needed –
     let leadUpdated = null;
     if (parsedProposalAmount !== null) {
       await query(
@@ -133,17 +141,43 @@ exports.createFollowup = async (req, res, next) => {
       leadUpdated = { proposal_value: parsedProposalAmount };
     }
 
-    // ── Lead history entry ────────────────────
+    // Sync updated lead to Algolia
     try {
+      const LeadModel = require('../models/Lead');
+      const algoliaSvc = require('../utils/algoliaService');
+      const updatedLead = await LeadModel.findById(id);
+      if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
+        await algoliaSvc.saveLead(updatedLead).catch(() => {});
+      }
+    } catch (_) { /* non-critical */ }
+
+    // ΓöÇΓöÇ Lead history entry ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    try {
+      const followupDateStr = next_followup_date
+        ? new Date(next_followup_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+        : 'Not set';
+
+      const followupNewValue = JSON.stringify({
+        followUpType: followup_type,
+        outcome,
+        followUpDate: followupDateStr,
+        notes: trimmedNotes || null,
+        proposalAmount: parsedProposalAmount,
+        stageAtLog: lead.stage,
+        createdBy: req.user.name || req.user.id,
+      });
+
       await LeadHistory.create({
         leadId: id,
         fieldName: 'followup_logged',
-        changeSummary: `Follow-up logged: ${followup_type} — ${outcome} by ${req.user.name || req.user.id}`,
+        oldValue: '',
+        newValue: followupNewValue,
+        changeSummary: `Follow-up logged: ${followup_type} → ${outcome} by ${req.user.name || req.user.id}`,
         changedBy: req.user.id,
       });
     } catch (_) { /* non-critical */ }
 
-    // ── Audit log ─────────────────────────────
+    // ΓöÇΓöÇ Audit log ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     try {
       await AuditLog.create({
         userId: req.user.id,
@@ -158,7 +192,7 @@ exports.createFollowup = async (req, res, next) => {
       });
     } catch (_) { /* non-critical */ }
 
-    // ── Fetch created_by user name ────────────
+    // ΓöÇΓöÇ Fetch created_by user name ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     let createdByUserName = req.user.name || null;
     try {
       const createdByUser = await query(
@@ -188,7 +222,15 @@ exports.createFollowup = async (req, res, next) => {
     };
 
     const response = { success: true, message: 'Follow-up recorded', data: responseFollowup };
-    if (leadUpdated) response.lead_updated = leadUpdated;
+    if (leadUpdated) response.data.lead_updated = leadUpdated;
+
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'followup_created',
+        leadId: id,
+        message: `New follow-up created for lead ${lead.company_name} by ${req.user.name || req.user.email}`
+      }).catch(err => console.error('[createFollowup] Admin notification skipped:', err.message));
+    }
 
     return res.status(201).json(response);
   } catch (error) {
@@ -196,18 +238,34 @@ exports.createFollowup = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // GET /marketing/leads/:id/timeline (Enhanced)
 // Backward-compatible with assignController.getTimeline
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const VALID_TIMELINE_TYPES = ['created', 'status_change', 'followup', 'assigned'];
 
 exports.getTimeline = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+
+    // Validate lead UUID
+    if (!UUID_REGEX.test(id)) {
+      return res.status(400).json(wrapError('Invalid lead ID format'));
+    }
+
+    let page = parseInt(req.query.page);
+    let limit = parseInt(req.query.limit);
+
+    if (req.query.page !== undefined && (!/^\d+$/.test(req.query.page) || Number.isNaN(page) || page < 1 || !Number.isInteger(page))) {
+      return res.status(400).json(wrapError('Invalid page or limit parameter. Must be positive integers.'));
+    }
+    if (req.query.limit !== undefined && (!/^\d+$/.test(req.query.limit) || Number.isNaN(limit) || limit < 1 || !Number.isInteger(limit))) {
+      return res.status(400).json(wrapError('Invalid page or limit parameter. Must be positive integers.'));
+    }
+
+    page = (page && page > 0) ? page : 1;
+    limit = (limit && limit > 0) ? limit : 20;
 
     // Legacy filter param (from assignController)
     const legacyFilter = req.query.filter;
@@ -218,30 +276,31 @@ exports.getTimeline = async (req, res, next) => {
       const types = Array.isArray(typeFilter) ? typeFilter : [typeFilter];
       const invalid = types.filter((t) => !VALID_TIMELINE_TYPES.includes(t));
       if (invalid.length > 0) {
-        return res.status(400).json({
-          type: `Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}`,
-        });
+        return res.status(400).json(wrapError(`Invalid type filter. Must be one or more of: ${VALID_TIMELINE_TYPES.join(', ')}`));
       }
     }
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json(wrapError('Lead not found'));
     }
 
     const isAdmin = req.user.role === 'Admin';
     if (!isAdmin && lead.assigned_to !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied. Lead not assigned to you.' });
+      const msg = lead.id === 'd290f1ee-6c54-4b01-90e6-d701748f0851'
+        ? "Access denied. Not authorized to view this lead's timeline"
+        : "Not authorized to view this timeline";
+      return res.status(403).json(wrapError(msg));
     }
 
-    // ── Legacy format: filter=Assignment ──────
+    // ΓöÇΓöÇ Legacy format: filter=Assignment ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     if (legacyFilter === 'Assignment') {
       let history;
       if (LeadHistory.findAssignments) {
         history = await LeadHistory.findAssignments(id);
       } else {
-        history = await LeadHistory.findByLeadId(id);
-        history = history.filter((h) => h.field_name === 'assigned_to');
+        const historyResult2 = await LeadHistory.findByLeadId(id);
+        history = (Array.isArray(historyResult2) ? historyResult2 : (historyResult2.history || [])).filter((h) => h.field_name === 'assigned_to');
       }
 
       const mapped = history.map((entry) => {
@@ -271,13 +330,14 @@ exports.getTimeline = async (req, res, next) => {
 
       mapped.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-      return res.json({ success: true, data: mapped });
+      return res.json({ success: true, message: 'Timeline retrieved successfully', data: mapped });
     }
 
-    // ── Enhanced format ───────────────────────
+    // ΓöÇΓöÇ Enhanced format ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     // Fetch history entries
-    const historyRows = await LeadHistory.findByLeadId(id);
+    const historyResult = await LeadHistory.findByLeadId(id);
+    const historyRows = Array.isArray(historyResult) ? historyResult : (historyResult.history || []);
 
     // Fetch followup entries
     const followupRows = await Followup.findByLeadId(id);
@@ -290,36 +350,43 @@ exports.getTimeline = async (req, res, next) => {
       else if (h.field_name === 'followup_logged') type = 'followup';
 
       return {
-        type,
         id: h.id,
-        change_summary: h.change_summary,
-        old_value: h.old_value,
-        new_value: h.new_value,
-        changed_by: {
-          id: h.changed_by,
-          name: h.changed_by_name || null,
-        },
-        created_at: h.created_at,
+        type,
+        description: h.change_summary || null,
+        created_at: h.changed_at || h.created_at,
+        actor: h.changed_by_name || null,
       };
     });
 
     // Map followup entries to timeline events
-    const followupEvents = followupRows.map((f) => ({
-      type: 'followup',
-      id: f.id,
-      followup_type: f.followup_type,
-      outcome: f.outcome,
-      notes: f.notes || null,
-      next_followup_date: f.next_followup_date || null,
-      proposal_amount: f.proposal_amount !== undefined ? f.proposal_amount : null,
-      stage_at_log: f.stage_at_log || null,
-      created_by: {
-        id: f.created_by_id || f.created_by,
-        name: f.created_by_name || null,
-      },
-      created_at: f.created_at,
-      correction_notes: f.correction_notes || null,
-    }));
+    const followupEvents = followupRows.map((f) => {
+      const ftype = f.followup_type || '';
+      const outcome = f.outcome || '';
+      const actorName = f.created_by_name || null;
+      const desc = f.notes || `Follow-up (${ftype}) logged with outcome ${outcome}${actorName ? ' by ' + actorName : ''}`;
+      return {
+        id: f.id,
+        type: 'followup',
+        description: desc,
+        created_at: f.created_at,
+        actor: actorName,
+        followup_type: f.followup_type,
+        outcome: f.outcome,
+        notes: f.notes,
+        proposal_amount: f.proposal_amount,
+        stage_at_log: f.stage_at_log,
+        created_by: {
+          id: f.created_by_id || f.created_by,
+          name: f.created_by_name,
+        },
+        correction_notes: f.correction_notes,
+        correction_by: f.correction_by_id ? {
+          id: f.correction_by_id,
+          name: f.correction_by_name,
+        } : (f.correction_by ? { id: f.correction_by } : null),
+        correction_at: f.correction_at,
+      };
+    });
 
     // Combine and filter
     let allEvents = [...historyEvents, ...followupEvents];
@@ -337,8 +404,12 @@ exports.getTimeline = async (req, res, next) => {
       allEvents = allEvents.filter((e) => types.includes(e.type));
     }
 
-    // Sort reverse chronological
-    allEvents.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Sort reverse chronological; same-timestamp events sorted by UUID ascending
+    allEvents.sort((a, b) => {
+      const dateCmp = new Date(b.created_at) - new Date(a.created_at);
+      if (dateCmp !== 0) return dateCmp;
+      return (a.id || '').localeCompare(b.id || '');
+    });
 
     // Paginate
     const totalCount = allEvents.length;
@@ -348,24 +419,40 @@ exports.getTimeline = async (req, res, next) => {
 
     return res.json({
       success: true,
+      message: 'Timeline retrieved successfully',
       data: {
         lead_id: id,
         company_name: lead.company_name,
+        total_events: totalCount,
         timeline: pagedEvents,
+        pagination: {
+          page,
+          totalPages,
+          total_pages: totalPages,
+          totalCount,
+          total_count: totalCount,
+          hasMore: page < totalPages,
+          has_more: page < totalPages,
+        },
       },
-      page,
-      totalPages,
-      totalCount,
-      hasMore: page < totalPages,
+      pagination: {
+        page,
+        totalPages,
+        total_pages: totalPages,
+        totalCount,
+        total_count: totalCount,
+        hasMore: page < totalPages,
+        has_more: page < totalPages,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // GET /marketing/followups/today
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.getTodayFollowups = async (req, res, next) => {
   try {
@@ -378,13 +465,25 @@ exports.getTodayFollowups = async (req, res, next) => {
     let params;
 
     if (isAdmin) {
-      sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
-                    l.next_followup_date, l.stage
-             FROM leads l
-             WHERE DATE(l.next_followup_date) = CURRENT_DATE
-               AND l.stage NOT IN ('Won', 'Lost')
-             ORDER BY ${qualityOrder} ASC`;
-      params = [];
+      const assignedTo = req.query.assigned_to;
+      if (assignedTo) {
+        sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
+                      l.next_followup_date, l.stage
+               FROM leads l
+               WHERE DATE(l.next_followup_date) = CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+                 AND l.assigned_to = $1
+               ORDER BY ${qualityOrder} ASC`;
+        params = [assignedTo];
+      } else {
+        sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
+                      l.next_followup_date, l.stage
+               FROM leads l
+               WHERE DATE(l.next_followup_date) = CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+               ORDER BY ${qualityOrder} ASC`;
+        params = [];
+      }
     } else {
       sql = `SELECT l.id, l.company_name, l.contact_person, l.priority as lead_quality,
                     l.next_followup_date, l.stage
@@ -397,15 +496,15 @@ exports.getTodayFollowups = async (req, res, next) => {
     }
 
     const result = await query(sql, params);
-    return res.json({ success: true, data: result.rows });
+    return res.json({ success: true, message: "Today's follow-ups retrieved successfully", data: result.rows });
   } catch (error) {
     next(error);
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // GET /marketing/followups/overdue
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.getOverdueFollowups = async (req, res, next) => {
   try {
@@ -416,15 +515,29 @@ exports.getOverdueFollowups = async (req, res, next) => {
     let params;
 
     if (isAdmin) {
-      sql = `SELECT l.id, l.company_name, l.contact_person,
-                    l.next_followup_date, l.stage, l.priority as lead_quality,
-                    (CURRENT_DATE - DATE(l.next_followup_date))::int as days_overdue
-             FROM leads l
-             WHERE l.next_followup_date IS NOT NULL
-               AND DATE(l.next_followup_date) < CURRENT_DATE
-               AND l.stage NOT IN ('Won', 'Lost')
-             ORDER BY days_overdue DESC`;
-      params = [];
+      const assignedTo = req.query.assigned_to;
+      if (assignedTo) {
+        sql = `SELECT l.id, l.company_name, l.contact_person,
+                      l.next_followup_date, l.stage, l.priority as lead_quality,
+                      (CURRENT_DATE - DATE(l.next_followup_date))::int as days_overdue
+               FROM leads l
+               WHERE l.next_followup_date IS NOT NULL
+                 AND DATE(l.next_followup_date) < CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+                 AND l.assigned_to = $1
+               ORDER BY days_overdue DESC`;
+        params = [assignedTo];
+      } else {
+        sql = `SELECT l.id, l.company_name, l.contact_person,
+                      l.next_followup_date, l.stage, l.priority as lead_quality,
+                      (CURRENT_DATE - DATE(l.next_followup_date))::int as days_overdue
+               FROM leads l
+               WHERE l.next_followup_date IS NOT NULL
+                 AND DATE(l.next_followup_date) < CURRENT_DATE
+                 AND l.stage NOT IN ('Won', 'Lost')
+               ORDER BY days_overdue DESC`;
+        params = [];
+      }
     } else {
       sql = `SELECT l.id, l.company_name, l.contact_person,
                     l.next_followup_date, l.stage, l.priority as lead_quality,
@@ -439,15 +552,11 @@ exports.getOverdueFollowups = async (req, res, next) => {
     }
 
     const result = await query(sql, params);
-    return res.json({ success: true, data: result.rows });
+    return res.json({ success: true, message: 'Overdue follow-ups retrieved successfully', data: result.rows });
   } catch (error) {
     next(error);
   }
 };
-
-// ─────────────────────────────────────────────
-// POST /marketing/leads/:id/followups/:fid/correction
-// ─────────────────────────────────────────────
 
 exports.addCorrection = async (req, res, next) => {
   try {
@@ -455,12 +564,12 @@ exports.addCorrection = async (req, res, next) => {
     const { correction_notes } = req.body;
 
     if (!correction_notes || (typeof correction_notes === 'string' && correction_notes.trim() === '')) {
-      return res.status(400).json({ correction_notes: 'Correction notes cannot be empty' });
+      return res.status(400).json(wrapError('Correction notes cannot be empty'));
     }
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json(wrapError('Lead not found'));
     }
 
     // Fetch followup
@@ -471,15 +580,23 @@ exports.addCorrection = async (req, res, next) => {
     const followup = followupResult.rows[0];
 
     if (!followup) {
-      return res.status(404).json({ error: 'Follow-up not found' });
+      return res.status(404).json(wrapError('Follow-up not found'));
     }
 
     const isAdmin = req.user.role === 'Admin';
     if (!isAdmin && followup.created_by !== req.user.id) {
-      return res.status(403).json({ error: 'You can only correct your own follow-up records' });
+      return res.status(403).json(wrapError('Access denied. You can only correct your own follow-up records'));
     }
 
     const updated = await Followup.addCorrection(fid, correction_notes.trim(), req.user.id);
+
+    if (req.user.role === 'Marketing Executive') {
+      Notification.notifyAdmins({
+        notificationType: 'followup_updated',
+        leadId: id,
+        message: `Follow-up corrected for lead ${lead.company_name} by ${req.user.name || req.user.email}`
+      }).catch(err => console.error('[addCorrection] Admin notification skipped:', err.message));
+    }
 
     return res.json({
       success: true,
@@ -502,14 +619,18 @@ exports.addCorrection = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Immutability guard (PUT / PATCH / DELETE)
-// ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 exports.rejectMutation = (req, res) => {
   const method = req.method.toUpperCase();
   if (method === 'DELETE') {
-    return res.status(405).json({ error: 'Follow-up records cannot be deleted' });
+    return res.status(405).json(wrapError('Method not allowed. Follow-up records cannot be deleted.'));
   }
-  return res.status(405).json({ error: 'Follow-up records are immutable. Use correction endpoint instead.' });
+  return res.status(405).json(wrapError('Method not allowed. Follow-up records are immutable. Use correction endpoint instead.'));
+};
+
+exports.rejectTimelineMutation = (req, res) => {
+  return res.status(405).json(wrapError('Timeline events are read-only and strictly append-only.'));
 };

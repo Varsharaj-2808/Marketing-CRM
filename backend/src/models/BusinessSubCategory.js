@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+﻿const { query } = require('../config/db');
 
 const BusinessSubCategory = {
   async findByCategoryId(categoryId) {
@@ -47,16 +47,17 @@ const BusinessSubCategory = {
     return result.rows[0] || null;
   },
 
-  async create(data) {
+  async create(data, client) {
     const { category_id, sub_category_name } = data;
-    const result = await query(
+    const db = client || { query };
+    const result = await db.query(
       `INSERT INTO business_sub_categories (category_id, sub_category_name, status) VALUES ($1, $2, 'Active') RETURNING *`,
       [category_id, sub_category_name]
     );
     return result.rows[0];
   },
 
-  async update(id, data) {
+  async update(id, data, client) {
     const sets = [];
     const values = [];
     let idx = 1;
@@ -79,15 +80,17 @@ const BusinessSubCategory = {
     sets.push(`updated_at = NOW()`);
     values.push(id);
 
-    const result = await query(
+    const db = client || { query };
+    const result = await db.query(
       `UPDATE business_sub_categories SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
       values
     );
     return result.rows[0] || null;
   },
 
-  async delete(id) {
-    const result = await query('DELETE FROM business_sub_categories WHERE id = $1 RETURNING *', [id]);
+  async delete(id, client) {
+    const db = client || { query };
+    const result = await db.query('DELETE FROM business_sub_categories WHERE id = $1 RETURNING *', [id]);
     return result.rows[0] || null;
   },
 

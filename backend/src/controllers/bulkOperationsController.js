@@ -1,4 +1,4 @@
-const { query, getClient } = require('../config/db');
+﻿const { query, getClient } = require('../config/db');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
@@ -6,6 +6,9 @@ const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
+const algolia = require('../utils/algoliaService');
+const { sendBulkLeadAssignedEmail } = require('../utils/emailService');
+const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -17,21 +20,25 @@ exports.bulkSelect = async (req, res, next) => {
     const { lead_ids } = req.body;
 
     if (!Array.isArray(lead_ids)) {
-      return res.status(400).json({ lead_ids: 'Must be an array of lead ID strings' });
+      return res.status(400).json(wrapError('Must be an array of lead ID strings'));
     }
 
     for (const id of lead_ids) {
       if (typeof id !== 'string') {
-        return res.status(400).json({ lead_ids: 'Each lead ID must be a string' });
+        return res.status(400).json(wrapError('Each lead ID must be a string'));
       }
     }
 
     const uniqueIds = [...new Set(lead_ids)];
 
     res.json({
-      selected: true,
-      count: uniqueIds.length,
-      lead_ids: uniqueIds,
+      success: true,
+      message: 'Leads selected successfully',
+      data: {
+        selected: true,
+        count: uniqueIds.length,
+        lead_ids: uniqueIds,
+      },
     });
   } catch (error) {
     next(error);
@@ -54,16 +61,16 @@ exports.bulkAssign = async (req, res, next) => {
 
   try {
     if (!Array.isArray(lead_ids) || lead_ids.length === 0) {
-      return res.status(400).json({ lead_ids: 'At least one lead ID is required' });
+      return res.status(400).json(wrapError('At least one lead ID is required'));
     }
 
     if (!assigned_to || !assigned_to.trim()) {
-      return res.status(400).json({ assigned_to: 'Target user ID is required' });
+      return res.status(400).json(wrapError('Target user ID is required'));
     }
 
     for (const id of lead_ids) {
       if (typeof id !== 'string') {
-        return res.status(400).json({ lead_ids: 'Each lead ID must be a string' });
+        return res.status(400).json(wrapError('Each lead ID must be a string'));
       }
     }
 
@@ -71,17 +78,17 @@ exports.bulkAssign = async (req, res, next) => {
 
     const targetUser = await resolveUser(assigned_to.trim());
     if (!targetUser) {
-      return res.status(404).json({ error: 'Assigned user not found' });
+      return res.status(404).json(wrapError('Assigned user not found'));
     }
 
     const userStatus = targetUser.accountStatus || targetUser.status;
     if (userStatus !== 'active') {
-      return res.status(400).json({ error: 'Cannot assign leads to a deactivated user' });
+      return res.status(400).json(wrapError('Cannot assign leads to a deactivated user'));
     }
 
     const leadPlaceholders = uniqueIds.map((_, i) => `$${i + 1}`).join(', ');
     const leadResult = await query(
-      `SELECT id, lead_id, assigned_to FROM leads WHERE id IN (${leadPlaceholders})`,
+      `SELECT id, lead_id, assigned_to, company_name, priority FROM leads WHERE id IN (${leadPlaceholders})`,
       uniqueIds
     );
 
@@ -89,25 +96,22 @@ exports.bulkAssign = async (req, res, next) => {
     const missingIds = uniqueIds.filter(id => !foundIds.has(id));
 
     if (missingIds.length > 0) {
-      return res.status(404).json({ error: `Lead(s) not found: ${missingIds.join(', ')}` });
+      return res.status(404).json(wrapError(`Lead(s) not found: ${missingIds.join(', ')}`));
     }
 
     const hasAnyOwner = leadResult.rows.some(l => l.assigned_to !== null);
     if (hasAnyOwner && (reason === undefined || reason === null || reason === '')) {
-      return res.status(400).json({ reason: 'Reassignment reason is required when one or more leads already have an owner' });
+      return res.status(400).json(wrapError('Reassignment reason is required when one or more leads already have an owner'));
     }
 
     if (reason !== undefined && reason !== null && reason !== '' && reason.trim && reason.trim().length === 0) {
-      return res.status(400).json({ reason: 'Reassignment reason cannot be empty' });
+      return res.status(400).json(wrapError('Reassignment reason cannot be empty'));
     }
 
     const leadsToProcess = leadResult.rows.filter(l => l.assigned_to !== targetUser.id);
 
     if (leadsToProcess.length === 0) {
-      return res.json({
-        assigned: true,
-        count: 0,
-      });
+      return res.json(wrapSuccess('No leads needed reassignment', { assigned: true, count: 0 }));
     }
 
     const client = await getClient();
@@ -158,6 +162,21 @@ exports.bulkAssign = async (req, res, next) => {
       }
     }
 
+    if (targetUser.email && changedCount > 0) {
+      const assignedLeads = leadsToProcess.map(l => ({
+        lead_id: l.lead_id,
+        company_name: l.company_name || 'Unknown',
+        priority: l.priority || 'N/A',
+      }));
+      sendBulkLeadAssignedEmail(
+        targetUser.email,
+        targetUser.name || targetUser.email,
+        assignedLeads,
+        req.user.name || req.user.email,
+        targetUser.role
+      ).catch(err => console.error('[bulkAssign] Email notification skipped:', err.message));
+    }
+
     await AuditLog.create({
       userId: req.user.id,
       email: req.user.email,
@@ -170,9 +189,21 @@ exports.bulkAssign = async (req, res, next) => {
       result: 'Success',
     });
 
+    const finalLeadsResult = await query(
+      `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id IN (${leadPlaceholders})`,
+      uniqueIds
+    );
+    if (algolia && typeof algolia.indexAllLeads === 'function') {
+      await algolia.indexAllLeads(finalLeadsResult.rows).catch(err => console.error('[bulkAssign] Algolia indexing skipped:', err.message));
+    }
+
     res.json({
-      assigned: true,
-      count: changedCount,
+      success: true,
+      message: 'Leads assigned successfully',
+      data: {
+        assigned: true,
+        count: changedCount,
+      },
     });
   } catch (error) {
     next(error);
@@ -185,18 +216,18 @@ exports.exportLeads = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!format || !format.trim()) {
-      return res.status(400).json({ format: 'Export format is required' });
+      return res.status(400).json(wrapError('Export format is required'));
     }
 
     const validFormats = ['xlsx', 'csv'];
     if (!validFormats.includes(format)) {
-      return res.status(400).json({ format: "Format must be 'xlsx' or 'csv'" });
+      return res.status(400).json(wrapError("Format must be 'xlsx' or 'csv'"));
     }
 
     let leads;
     if (lead_ids && lead_ids.length > 0) {
       if (lead_ids.some(id => typeof id !== 'string')) {
-        return res.status(400).json({ lead_ids: 'Each lead ID must be a string' });
+        return res.status(400).json(wrapError('Each lead ID must be a string'));
       }
 
       const uniqueIds = [...new Set(lead_ids)];
@@ -210,7 +241,7 @@ exports.exportLeads = async (req, res, next) => {
       const missingIds = uniqueIds.filter(id => !foundIds.has(id));
 
       if (missingIds.length > 0) {
-        return res.status(404).json({ error: `Lead(s) not found: ${missingIds.join(', ')}` });
+        return res.status(404).json(wrapError(`Lead(s) not found: ${missingIds.join(', ')}`));
       }
 
       leads = leadResult.rows;
@@ -297,9 +328,7 @@ exports.exportLeads = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json({
-      download_url: `/exports/${fileName}`,
-    });
+    res.json(wrapSuccess('Export completed', { download_url: `/exports/${fileName}` }));
   } catch (error) {
     next(error);
   }

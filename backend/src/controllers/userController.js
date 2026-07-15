@@ -3,6 +3,9 @@ const AuditLog = require('../models/AuditLog');
 const { generateTempPassword } = require('../utils/passwordUtils');
 const { sendWelcomeEmail } = require('../utils/emailService');
 const algolia = require('../utils/algoliaService');
+const { query } = require('../config/db');
+const { withTransaction } = require('../utils/transactionHelper');
+const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const sanitize = (str) => str.replace(/<[^>]*>/g, '');
 
@@ -13,7 +16,7 @@ const getIpAndAgent = (req) => ({
 
 exports.createUser = async (req, res, next) => {
   try {
-    const { name, email, mobile, role, status } = req.body;
+    const { name, email, mobile, role, status, department } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!name || !name.trim()) {
@@ -61,24 +64,29 @@ exports.createUser = async (req, res, next) => {
     const tempPassword = generateTempPassword();
     const userStatus = status.toLowerCase();
 
-    const user = await User.create({
-      name: sanitize(name.trim()),
-      email: email.trim(),
-      mobile: mobile.trim(),
-      role,
-      password: tempPassword,
-      status: userStatus,
-    });
+    const user = await withTransaction(async (client) => {
+      const newUser = await User.create({
+        name: sanitize(name.trim()),
+        email: email.trim(),
+        mobile: mobile.trim(),
+        role,
+        password: tempPassword,
+        status: userStatus,
+        department: department || null,
+      }, client);
 
-    await AuditLog.create({
-      userId: req.user.id,
-      action: 'USER_CREATED',
-      resource: 'User',
-      resourceId: user.employee_id,
-      details: JSON.stringify({ name: user.name, email: user.email, role: user.role, status: user.status }),
-      ipAddress,
-      userAgent,
-      result: 'Success',
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'user.created',
+        resource: 'user',
+        resourceId: newUser.employee_id,
+        details: JSON.stringify({ name: newUser.name, email: newUser.email, role: newUser.role, status: newUser.status }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
+
+      return newUser;
     });
 
     await sendWelcomeEmail(user.email, user.name, user.employee_id, tempPassword);
@@ -91,11 +99,14 @@ exports.createUser = async (req, res, next) => {
       data: {
         id: user.id,
         employee_id: user.employee_id,
+        employee_name: user.name,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
         role: user.role,
         status: user.status,
+        department: user.department,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -114,17 +125,14 @@ exports.createUser = async (req, res, next) => {
 
 exports.getUsers = async (req, res, next) => {
   try {
-    const { search, role, status, page, limit } = req.query;
+    const { search, role, status, department, page, limit } = req.query;
 
-    if (role === 'Marketing Executive') {
-      const users = await User.findActiveByRole('Marketing Executive');
-      return res.json({ success: true, data: users });
-    }
 
-    if (search || role || status) {
+
+    if (algolia && typeof algolia.searchUsers === 'function') {
       const algoliaResult = await algolia.searchUsers(
         search || '',
-        { role, status },
+        { role, status, department },
         parseInt(page) || 1,
         parseInt(limit) || 20
       );
@@ -132,6 +140,7 @@ exports.getUsers = async (req, res, next) => {
       if (algoliaResult) {
         return res.json({
           success: true,
+          message: 'Users fetched successfully',
           data: algoliaResult.hits,
           pagination: {
             page: parseInt(page) || 1,
@@ -144,7 +153,7 @@ exports.getUsers = async (req, res, next) => {
     }
 
     const users = await User.findAll();
-    res.json({ success: true, data: users });
+    res.json({ success: true, message: 'Users fetched successfully', data: users });
   } catch (error) {
     next(error);
   }
@@ -172,7 +181,7 @@ exports.getUser = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Admin access required.' });
     }
 
-    res.json({ success: true, data: User.toSafeUser(user) });
+    res.json({ success: true, message: 'User fetched successfully', data: User.toSafeUser(user) });
   } catch (error) {
     next(error);
   }
@@ -181,7 +190,7 @@ exports.getUser = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, mobile, role } = req.body;
+    const { name, email, mobile, role, department } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     const user = await User.findByIdOrEmployeeId(id);
@@ -244,32 +253,50 @@ exports.updateUser = async (req, res, next) => {
       changes.push({ field: 'role', old: user.role, new: role });
       fieldsToUpdate.role = role;
     }
+    if (department !== undefined && department !== user.department) {
+      changes.push({ field: 'department', old: user.department, new: department });
+      fieldsToUpdate.department = department;
+    }
 
     if (Object.keys(fieldsToUpdate).length === 0) {
       return res.status(400).json({ success: false, message: 'No changes detected' });
     }
 
-    const updated = await User.update(user.id, fieldsToUpdate);
+    const updated = await withTransaction(async (client) => {
+      const updatedUser = await User.update(user.id, fieldsToUpdate, client);
+
+      for (const change of changes) {
+        await AuditLog.create({
+          userId: req.user.id,
+          action: change.field === 'role' ? 'user.role_changed' : 'user.updated',
+          resource: 'user',
+          resourceId: user.employee_id || id,
+          details: JSON.stringify({ field: change.field, old_value: change.old, new_value: change.new, old_role: change.old, new_role: change.new }),
+          ipAddress,
+          userAgent,
+          result: 'success',
+        }, client);
+      }
+
+      return updatedUser;
+    });
 
     await algolia.saveUser(updated).catch(err => console.error('[updateUser] Algolia indexing skipped:', err.message));
-
-    for (const change of changes) {
-      await AuditLog.create({
-        userId: req.user.id,
-        action: change.field === 'role' ? 'USER_ROLE_CHANGED' : 'USER_UPDATED',
-        resource: 'User',
-        resourceId: user.employee_id || id,
-        details: JSON.stringify({ field: change.field, old_value: change.old, new_value: change.new }),
-        ipAddress,
-        userAgent,
-        result: 'Success',
-      });
-    }
 
     res.json({
       success: true,
       message: 'User updated successfully.',
-      data: User.toSafeUser(updated),
+      data: {
+        id: updated.id,
+        employee_id: updated.employee_id,
+        employee_name: updated.name,
+        name: updated.name,
+        email: updated.email,
+        mobile: updated.mobile,
+        role: updated.role,
+        status: updated.accountStatus || updated.status,
+        updatedAt: updated.updatedAt,
+      },
     });
   } catch (error) {
     if (error.code === '23505') {
@@ -289,7 +316,7 @@ exports.reindexUsers = async (req, res, next) => {
   try {
     const users = await User.findAll();
     await algolia.indexAllUsers(users);
-    res.json({ success: true, message: `Re-indexed ${users.length} users to Algolia.` });
+    res.json({ success: true, message: `Re-indexed ${users.length} users to Algolia.`, data: null });
   } catch (error) {
     next(error);
   }
@@ -297,10 +324,70 @@ exports.reindexUsers = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   try {
-    res.status(403).json({
-      success: false,
-      message: 'User deletion is not permitted. Use deactivation instead.',
+    const { id } = req.params;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(403).json({ success: false, message: 'User deletion is not permitted. Use deactivation instead.' });
+    }
+
+    const { ipAddress, userAgent } = getIpAndAgent(req);
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    await withTransaction(async (client) => {
+      const deleteResult = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+      if (!deleteResult.rows[0]) {
+        throw new Error('User not found');
+      }
+
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'user.deleted',
+        resource: 'user',
+        resourceId: user.employee_id || id,
+        details: JSON.stringify({ name: user.name, email: user.email, role: user.role }),
+        ipAddress,
+        userAgent,
+        result: 'success',
+      }, client);
     });
+
+    await algolia.deleteUser(id).catch(err => console.error('[deleteUser] Algolia deletion skipped:', err.message));
+
+    res.json({ success: true, message: 'User deleted successfully.', data: null });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getDeactivatedUsers = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status
+       FROM users
+       WHERE "accountStatus" = 'inactive'
+       ORDER BY "createdAt" DESC`
+    );
+    res.json({ success: true, message: 'Deactivated users fetched successfully', data: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.reindexUsers = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT id, employee_id, name, email, mobile, role, "accountStatus" as status, "createdAt", "updatedAt" FROM users WHERE "accountStatus" != 'deleted'`
+    );
+    const users = result.rows;
+    if (!users.length) {
+      return res.json(wrapSuccess('No users found to index.', { count: 0 }));
+    }
+    await algolia.indexAllUsers(users);
+    return res.json(wrapSuccess(`Re-indexed ${users.length} users to Algolia.`, { count: users.length }));
   } catch (error) {
     next(error);
   }

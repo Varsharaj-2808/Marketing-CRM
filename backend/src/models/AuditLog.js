@@ -1,15 +1,27 @@
 const { query } = require('../config/db');
 
 const AuditLog = {
-  async create(data) {
+  async create(data, client) {
     const { userId, email, action, resource, resourceId, details, ipAddress, userAgent, result } = data;
-    const res = await query(
+    const db = client || { query };
+    const res = await db.query(
       `INSERT INTO audit_logs ("user_id", email, action, resource, "resourceId", details, "ipAddress", "userAgent", result)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [userId || null, email || '', action || '', resource || '', resourceId || '', details || '', ipAddress || '', userAgent || '', result || 'Success']
     );
-    return res.rows[0];
+    const createdLog = res && res.rows ? res.rows[0] : null;
+    if (createdLog) {
+      try {
+        const algolia = require('../utils/algoliaService');
+        if (algolia && typeof algolia.saveAuditLog === 'function') {
+          await algolia.saveAuditLog(createdLog).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Failed to sync audit log to Algolia:', err.message);
+      }
+    }
+    return createdLog;
   },
 
   async findAll(filters = {}) {
@@ -20,6 +32,15 @@ const AuditLog = {
     if (filters.userId) {
       conditions.push(`"user_id" = $${idx++}`);
       values.push(filters.userId);
+    }
+    if (filters.userIds) {
+      if (filters.userIds.length > 0) {
+        conditions.push(`"user_id" = ANY($${idx++}::uuid[])`);
+        values.push(filters.userIds);
+      } else {
+        // If userIds is empty, we want to return 0 results
+        conditions.push(`1 = 0`);
+      }
     }
     if (filters.action) {
       conditions.push(`action = $${idx++}`);
@@ -45,7 +66,7 @@ const AuditLog = {
     const countResult = await query(`SELECT COUNT(*) FROM audit_logs ${where}`, values);
     const totalRecords = parseInt(countResult.rows[0].count);
 
-    const sql = `SELECT * FROM audit_logs ${where} ORDER BY "createdAt" DESC LIMIT $${idx++} OFFSET $${idx++}`;
+    const sql = `SELECT a.* FROM audit_logs a ${where} ORDER BY "createdAt" DESC LIMIT $${idx++} OFFSET $${idx++}`;
     values.push(limit, offset);
     const result = await query(sql, values);
 

@@ -18,7 +18,7 @@ const Lead = {
     const leadId = await this.getNextLeadId();
     const result = await query(
       `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", "lead_id", stage, "lead_status")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New Lead', 'New Lead')
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New', NULL)
        RETURNING *`,
       [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, service_interested || null, priority, estimated_value || null, creatorId, leadId]
     );
@@ -27,9 +27,12 @@ const Lead = {
 
   async findById(id) {
     const result = await query(
-      `SELECT l.*, u.name as assigned_to_name
+      `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+              bc.category_name, bsc.sub_category_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
        WHERE l.id = $1`,
       [id]
     );
@@ -38,9 +41,12 @@ const Lead = {
 
   async findByLeadId(leadId) {
     const result = await query(
-      `SELECT l.*, u.name as assigned_to_name
+      `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+              bc.category_name, bsc.sub_category_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
        WHERE l.lead_id = $1`,
       [leadId]
     );
@@ -58,17 +64,17 @@ const Lead = {
   },
 
   async findByMobile(mobile) {
-    const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2', [mobile, 'Closed Lost']);
+    const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2 AND lead_status != $3', [mobile, 'Closed Lost', 'Lost']);
     return result.rows[0] || null;
   },
 
   async findByEmail(email) {
-    const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2', [email, 'Closed Lost']);
+    const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2 AND lead_status != $3', [email, 'Closed Lost', 'Lost']);
     return result.rows[0] || null;
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, status, category, sub_category, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
 
     const conditions = [];
     const values = [];
@@ -118,6 +124,11 @@ const Lead = {
       values.push(sub_category);
     }
 
+    if (lead_source) {
+      conditions.push(`l.lead_source = $${idx++}`);
+      values.push(lead_source);
+    }
+
     if (from_date) {
       conditions.push(`l.created_at >= $${idx++}`);
       values.push(from_date);
@@ -154,9 +165,12 @@ const Lead = {
     const totalCount = parseInt(countResult.rows[0].count);
 
     const offset = (page - 1) * limit;
-    const sql = `SELECT l.*, u.name as assigned_to_name
+    const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+                        bc.category_name, bsc.sub_category_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
+                 LEFT JOIN business_categories bc ON l.category = bc.id
+                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -268,9 +282,12 @@ const Lead = {
     const totalCount = parseInt(countResult.rows[0].count);
 
     const offset = (page - 1) * limit;
-    const sql = `SELECT l.*, u.name as assigned_to_name
+    const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+                        bc.category_name, bsc.sub_category_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
+                 LEFT JOIN business_categories bc ON l.category = bc.id
+                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -285,7 +302,7 @@ const Lead = {
       totalCount,
     };
   },
-  async updateStage(id, stage, leadStatus) {
+  async updateStage(id, stage, leadStatus = null) {
     const result = await query(
       `UPDATE leads
        SET stage = $1, lead_status = $2, updated_at = NOW()
@@ -299,7 +316,7 @@ const Lead = {
   async closeLost(id, lostReason) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Lost', lead_status = 'Closed', lost_reason = $1, updated_at = NOW()
+       SET stage = 'Closed', lead_status = 'Lost', lost_reason = $1, updated_at = NOW()
        WHERE id = $2
        RETURNING *`,
       [lostReason, id]
@@ -310,7 +327,7 @@ const Lead = {
   async closeWon(id, finalDealValue, closureDate) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Won', lead_status = 'Closed', final_deal_value = $1, closure_date = $2, updated_at = NOW()
+       SET stage = 'Closed', lead_status = 'Won', final_deal_value = $1, closure_date = $2, updated_at = NOW()
        WHERE id = $3
        RETURNING *`,
       [finalDealValue, closureDate, id]
@@ -321,7 +338,7 @@ const Lead = {
   async reopen(id) {
     const result = await query(
       `UPDATE leads
-       SET stage = 'Contacted', lead_status = 'Active', lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW()
+       SET stage = 'Contacted', lead_status = NULL, lost_reason = NULL, final_deal_value = NULL, closure_date = NULL, updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
       [id]

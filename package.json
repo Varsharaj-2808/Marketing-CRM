@@ -1,17 +1,11 @@
 {
-  "name": "marketing-crm",
+  "name": "marketing-crm-backend-root",
   "version": "1.0.0",
-  "private": true,
-  "description": "Marketing CRM - Documentation sync from Jira",
+  "description": "Root package runner to delegate to backend folder",
   "scripts": {
-    "jira:sync": "node scripts/jira-sync.js"
-  },
-  "dependencies": {
-    "axios": "^1.7.0",
-    "dotenv": "^16.4.0",
-    "xlsx": "^0.18.5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "start": "npm start --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "test": "npm test --prefix backend",
+    "install": "npm install --prefix backend"
   }
 }

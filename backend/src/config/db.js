@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 
 const isSupabase = process.env.DATABASE_URL?.includes('supabase');
 

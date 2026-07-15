@@ -1,5 +1,5 @@
-const errorHandler = (err, req, res, next) => {
-  // ── body-parser malformed JSON ────────────────────────────────
+﻿const errorHandler = (err, req, res, next) => {
+  // ΓöÇΓöÇ body-parser malformed JSON ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   if (
     err.type === 'entity.parse.failed' ||
     (err instanceof SyntaxError && (err.status === 400 || err.statusCode === 400))
@@ -35,7 +35,7 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({ success: false, message: 'Invalid ID format' });
   }
 
-  // ── Ensure response is always sent (never let an error go unhandled) ──
+  // ΓöÇΓöÇ Ensure response is always sent (never let an error go unhandled) ΓöÇΓöÇ
   if (res.headersSent) return next(err);
 
   res.status(err.statusCode || 500).json({

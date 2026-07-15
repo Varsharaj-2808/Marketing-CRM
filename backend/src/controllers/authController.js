@@ -5,6 +5,8 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const SystemSetting = require('../models/SystemSetting');
 const { sendPasswordResetEmail } = require('../utils/emailService');
+const { withTransaction } = require('../utils/transactionHelper');
+const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const getLockoutConfig = async () => {
   try {
@@ -15,14 +17,6 @@ const getLockoutConfig = async () => {
       lockoutWindowMinutes: parseInt(process.env.LOCKOUT_WINDOW_MINUTES || '15'),
       resetTokenExpiryMinutes: parseInt(process.env.RESET_TOKEN_EXPIRY_MINUTES || '30'),
     };
-  }
-};
-
-const logAudit = async (data) => {
-  try {
-    await AuditLog.create(data);
-  } catch (err) {
-    console.error('Audit log error:', err.message);
   }
 };
 
@@ -53,7 +47,7 @@ const generateRefreshToken = (user, rememberMe = false) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password, remember_me, rememberMe } = req.body;
-    const effectiveRememberMe = remember_me !== undefined ? remember_me : rememberMe;
+    const effectiveRememberMe = remember_me || rememberMe;
     const { ipAddress, userAgent } = getIpAndAgent(req);
     const config = await getLockoutConfig();
     const lockoutThreshold = config.lockoutThreshold;
@@ -68,23 +62,23 @@ exports.login = async (req, res, next) => {
 
     const user = await User.findByEmail(email.toLowerCase());
     if (!user) {
-      await logAudit({ action: 'LOGIN_FAILED', details: `Invalid login attempt for email: ${email}`, ipAddress, userAgent, result: 'Failed' });
+      await AuditLog.create({ action: 'user.login_failed', details: `Invalid login attempt for email: ${email}`, ipAddress, userAgent, result: 'failure' });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const accountStatus = user.accountStatus || user.status;
     if (accountStatus === 'inactive') {
-      await logAudit({ userId: user.id, action: 'LOGIN_REJECTED_INACTIVE', details: 'Account is inactive', ipAddress, userAgent, result: 'Failed' });
+      await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: 'Account is inactive', ipAddress, userAgent, result: 'failure' });
       return res.status(403).json({ success: false, message: 'Account is inactive. Contact administrator.' });
     }
 
     if (accountStatus === 'locked' && user.lockoutUntil && new Date(user.lockoutUntil) > new Date()) {
       const retryAfter = Math.ceil((new Date(user.lockoutUntil) - new Date()) / 1000);
-      await logAudit({ userId: user.id, action: 'LOGIN_REJECTED_LOCKED', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'Failed' });
+      await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: `Account locked. Retry after ${retryAfter}s`, ipAddress, userAgent, result: 'failure' });
       return res.status(423).json({
         success: false,
         message: `Account locked. Too many failed attempts. Try again in ${Math.ceil(retryAfter / 60)} minutes.`,
-        locked_until: user.lockoutUntil,
+        data: { locked_until: user.lockoutUntil },
       });
     }
 
@@ -95,23 +89,25 @@ exports.login = async (req, res, next) => {
 
       if (user.failedLoginAttempts >= lockoutThreshold) {
         const lockoutUntil = new Date(Date.now() + lockoutWindowMs);
-        await User.lockAccount(user.id, lockoutUntil, user.failedLoginAttempts);
-        await logAudit({ userId: user.id, action: 'ACCOUNT_LOCKED', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'Failed' });
+        await withTransaction(async (client) => {
+          await User.lockAccount(user.id, lockoutUntil, user.failedLoginAttempts, client);
+          await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: `Account locked after ${user.failedLoginAttempts} failed attempts`, ipAddress, userAgent, result: 'failure' }, client);
+        });
         return res.status(423).json({
           success: false,
           message: `Account locked. Too many failed attempts. Try again in ${config.lockoutWindowMinutes} minutes.`,
-          locked_until: lockoutUntil,
+          data: { locked_until: lockoutUntil },
         });
       }
 
-      await User.incrementFailedAttempts(user.id);
-      await logAudit({ userId: user.id, action: 'LOGIN_FAILED', details: `Invalid password (attempt ${user.failedLoginAttempts})`, ipAddress, userAgent, result: 'Failed' });
+      await withTransaction(async (client) => {
+        await User.incrementFailedAttempts(user.id, client);
+        await AuditLog.create({ userId: user.id, action: 'user.login_failed', details: `Invalid password (attempt ${user.failedLoginAttempts})`, ipAddress, userAgent, result: 'failure' }, client);
+      });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    await User.unlockAccount(user.id);
     const isFirstLogin = !user.lastLoginAt;
-    await User.setLastLogin(user.id);
 
     // Normalize legacy role values before generating JWT
     if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
@@ -120,14 +116,19 @@ exports.login = async (req, res, next) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user, effectiveRememberMe);
     const hashedRefresh = await bcrypt.hash(refreshToken, 12);
-    await User.storeRefreshToken(user.id, hashedRefresh);
 
-    const redirect = user.role === 'Admin' ? '/admin/dashboard' : '/marketing/leads';
-
-    await logAudit({
-      userId: user.id, email: user.email, action: 'LOGIN_SUCCESS', resource: 'Auth',
-      details: 'Successful login', ipAddress, userAgent, result: 'Success',
+    await withTransaction(async (client) => {
+      await User.unlockAccount(user.id, client);
+      await User.setLastLogin(user.id, client);
+      await User.storeRefreshToken(user.id, hashedRefresh, client);
+      await AuditLog.create({
+        userId: user.id, email: user.email, action: 'user.login', resource: 'user',
+        details: 'Successful login', ipAddress, userAgent, result: 'success',
+      }, client);
     });
+
+    const safeUser = User.toResponseUser(user);
+    delete safeUser.mobile;
 
     res.json({
       success: true,
@@ -135,10 +136,8 @@ exports.login = async (req, res, next) => {
       data: {
         token: accessToken,
         refreshToken,
-        token_expires_in: effectiveRememberMe ? '30d' : '7d',
-        user: User.toResponseUser(user),
-        redirect,
-        isFirstLogin,
+        expiresIn: 3600,
+        user: safeUser,
       },
     });
   } catch (error) {
@@ -172,14 +171,21 @@ exports.refreshToken = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
 
+    // Normalize legacy role values before generating JWT (same as login)
+    if (user.role === 'admin' || user.role === 'super_admin') user.role = 'Admin';
+    else if (user.role === 'user' || user.role === 'manager') user.role = 'Marketing Executive';
+
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
     await User.storeRefreshToken(user.id, await bcrypt.hash(newRefreshToken, 12));
 
     res.json({
       success: true,
-      message: 'Token refreshed',
-      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+      message: 'Token refreshed successfully',
+      data: {
+        expiresIn: 3600,
+        token: newAccessToken,
+      },
     });
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
@@ -195,7 +201,14 @@ exports.getProfile = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.json({ success: true, data: User.toSafeUser(user) });
+    const responseData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile || user.mobile_number || '',
+      role: user.role,
+    };
+    res.json({ success: true, data: responseData });
   } catch (error) {
     next(error);
   }
@@ -205,14 +218,15 @@ exports.logout = async (req, res, next) => {
   try {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
-    await User.clearRefreshToken(req.user.id);
-
-    await logAudit({
-      userId: req.user.id, email: req.user.email, action: 'LOGOUT', resource: 'Auth',
-      details: 'User logged out', ipAddress, userAgent, result: 'Success',
+    await withTransaction(async (client) => {
+      await User.clearRefreshToken(req.user.id, client);
+      await AuditLog.create({
+        userId: req.user.id, email: req.user.email, action: 'user.logout', resource: 'user',
+        details: 'User logged out', ipAddress, userAgent, result: 'success',
+      }, client);
     });
 
-    res.json({ success: true, message: 'Logout successful' });
+    res.json({ success: true, message: 'Logout successful', data: null });
   } catch (error) {
     next(error);
   }
@@ -220,11 +234,17 @@ exports.logout = async (req, res, next) => {
 
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email: rawEmail } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
-    if (!email) {
+    if (!rawEmail) {
       return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const email = rawEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Invalid email format' });
     }
 
     const config = await getLockoutConfig();
@@ -237,23 +257,24 @@ exports.forgotPassword = async (req, res, next) => {
       const hashedToken = await bcrypt.hash(resetToken, 12);
       const expiry = new Date(Date.now() + resetTokenExpiryMs);
 
-      await User.storeResetToken(user.id, hashedToken, expiry);
-
-      const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-      await sendPasswordResetEmail(email, resetUrl);
-
-      await logAudit({
-        userId: user.id, email: user.email, action: 'FORGOT_PASSWORD', resource: 'Auth',
-        details: 'Password reset token generated and emailed', ipAddress, userAgent, result: 'Success',
+      await withTransaction(async (client) => {
+        await User.storeResetToken(user.id, hashedToken, expiry, client);
+        await AuditLog.create({
+          userId: user.id, email: user.email, action: 'user.forgot_password', resource: 'user',
+          details: 'Password reset token generated and emailed', ipAddress, userAgent, result: 'success',
+        }, client);
       });
+
+      const resetUrl = `${process.env.APP_URL || 'http://localhost:5173'}/app/reset-password?token=${resetToken}`;
+      await sendPasswordResetEmail(email, resetUrl);
     } else {
-      await logAudit({
-        email, action: 'FORGOT_PASSWORD', resource: 'Auth',
-        details: `Password reset requested for non-existent email: ${email}`, ipAddress, userAgent, result: 'Failed',
+      await AuditLog.create({
+        email, action: 'user.forgot_password', resource: 'user',
+        details: `Password reset requested for non-existent email: ${email}`, ipAddress, userAgent, result: 'failure',
       });
     }
 
-    res.json({ success: true, message: 'If email exists, a password reset link has been sent.' });
+    res.json({ success: true, message: 'Password reset link sent to email', data: null });
   } catch (error) {
     next(error);
   }
@@ -261,7 +282,7 @@ exports.forgotPassword = async (req, res, next) => {
 
 exports.resetPassword = async (req, res, next) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token, newPassword, confirmPassword } = req.body;
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!token || !newPassword) {
@@ -287,10 +308,12 @@ exports.resetPassword = async (req, res, next) => {
     }
 
     if (targetUser.resetTokenExpiry && new Date(targetUser.resetTokenExpiry) < new Date()) {
-      await User.clearResetToken(targetUser.id);
-      await logAudit({
-        userId: targetUser.id, email: targetUser.email, action: 'RESET_PASSWORD',
-        details: 'Reset token expired', ipAddress, userAgent, result: 'Failed',
+      await withTransaction(async (client) => {
+        await User.clearResetToken(targetUser.id, client);
+        await AuditLog.create({
+          userId: targetUser.id, email: targetUser.email, action: 'user.reset_password',
+          details: 'Reset token expired', ipAddress, userAgent, result: 'failure',
+        }, client);
       });
       return res.status(400).json({ success: false, message: 'Invalid token' });
     }
@@ -300,15 +323,16 @@ exports.resetPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'New password must be different from current password' });
     }
 
-    await User.update(targetUser.id, { password: newPassword });
-    await User.clearAllTokens(targetUser.id);
-
-    await logAudit({
-      userId: targetUser.id, email: targetUser.email, action: 'RESET_PASSWORD', resource: 'Auth',
-      details: 'Password reset successfully', ipAddress, userAgent, result: 'Success',
+    await withTransaction(async (client) => {
+      await User.update(targetUser.id, { password: newPassword }, client);
+      await User.clearAllTokens(targetUser.id, client);
+      await AuditLog.create({
+        userId: targetUser.id, email: targetUser.email, action: 'user.reset_password', resource: 'user',
+        details: 'Password reset successfully', ipAddress, userAgent, result: 'success',
+      }, client);
     });
 
-    res.json({ success: true, message: 'Password reset done' });
+    res.json({ success: true, message: 'Password has been reset successfully', data: null });
   } catch (error) {
     next(error);
   }
@@ -324,7 +348,7 @@ exports.changePassword = async (req, res, next) => {
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ success: false, message: 'Min 8 chars required' });
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters long.' });
     }
 
     const user = await User.findById(req.user.id);
@@ -334,11 +358,11 @@ exports.changePassword = async (req, res, next) => {
 
     const isMatch = await User.comparePassword(currentPassword, user.password);
     if (!isMatch) {
-      await logAudit({
-        userId: user.id, email: user.email, action: 'CHANGE_PASSWORD',
-        details: 'Current password is incorrect', ipAddress, userAgent, result: 'Failed',
+      await AuditLog.create({
+        userId: user.id, email: user.email, action: 'user.change_password',
+        details: 'Current password is incorrect', ipAddress, userAgent, result: 'failure',
       });
-      return res.status(400).json({ success: false, message: 'Current password wrong' });
+      return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
     }
 
     const isSameAsCurrent = await User.comparePassword(newPassword, user.password);
@@ -346,15 +370,16 @@ exports.changePassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'New password must be different from current password' });
     }
 
-    await User.update(user.id, { password: newPassword });
-    await User.clearRefreshToken(user.id);
-
-    await logAudit({
-      userId: user.id, email: user.email, action: 'CHANGE_PASSWORD', resource: 'Auth',
-      details: 'Password changed successfully', ipAddress, userAgent, result: 'Success',
+    await withTransaction(async (client) => {
+      await User.update(user.id, { password: newPassword }, client);
+      await User.clearRefreshToken(user.id, client);
+      await AuditLog.create({
+        userId: user.id, email: user.email, action: 'user.change_password', resource: 'user',
+        details: 'Password changed successfully', ipAddress, userAgent, result: 'success',
+      }, client);
     });
 
-    res.json({ success: true, message: 'Password changed' });
+    res.json({ success: true, message: 'Password changed successfully.' });
   } catch (error) {
     next(error);
   }
