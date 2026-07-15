@@ -34,19 +34,58 @@ Edit `.env` and fill in:
 
 ### 3. Create the database
 
-**Option A — Local PostgreSQL:**
+**Option A — Local PostgreSQL (psql):**
 
 ```bash
 # Create the database
 psql -U postgres -c "CREATE DATABASE marketing_crm;"
 
-# Run the schema migration
+# Run the full schema (tables, indexes, constraints, seed data)
+psql -U postgres -d marketing_crm -f database/schema/init.sql
+
+# Verify tables were created
+psql -U postgres -d marketing_crm -c "\dt"
+```
+
+**Option B — Using DATABASE_URL from .env:**
+
+```bash
+# Source the env file, then run the migration
+source .env  # or export $(grep -v '^#' .env | xargs)
+psql "$DATABASE_URL" -f database/schema/init.sql
+```
+
+**Option C — Supabase (SQL Editor):**
+
+1. Go to your Supabase project dashboard
+2. Navigate to **SQL Editor**
+3. Paste the contents of `database/schema/init.sql`
+4. Click **Run**
+
+**Reset / Re-run the schema (drop and recreate):**
+
+```bash
+psql -U postgres -c "DROP DATABASE IF EXISTS marketing_crm;"
+psql -U postgres -c "CREATE DATABASE marketing_crm;"
 psql -U postgres -d marketing_crm -f database/schema/init.sql
 ```
 
-**Option B — Supabase (SQL Editor):**
+**Verify the migration:**
 
-Copy the contents of `database/schema/init.sql` into the Supabase SQL Editor and run it.
+```bash
+# List all tables
+psql -U postgres -d marketing_crm -c "\dt"
+
+# Check table row counts
+psql -U postgres -d marketing_crm -c "
+  SELECT tablename, n_live_tup AS row_estimate
+  FROM pg_stat_user_tables
+  ORDER BY n_live_tup DESC;
+"
+
+# Verify system_settings were seeded
+psql -U postgres -d marketing_crm -c "SELECT * FROM system_settings;"
+```
 
 ### 4. Create the first admin user
 
@@ -105,7 +144,8 @@ src/
   uploads/            - File uploads
 database/
   schema/
-    init.sql          - Full database schema (13 tables + indexes)
+    init.sql          - Full database schema (13 tables + indexes + seed data)
+    README.md         - Schema documentation
 tests/
   unit/               - Jest unit tests
 scripts/              - Utility & debug scripts
