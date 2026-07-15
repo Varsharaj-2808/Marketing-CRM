@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.exe
+*.xlsx
+*.zip
+*.7z
+
+# Ignore Environment Files
+.env
+.env.*
+!.env.example
+
+
+# Ignore Only EPIC Markdown Files
+../EPIC-3/**/*.md
+../EPIC-4/**/*.md
+../EPIC-5/**/*.md
+../EPIC-6/**/*.md
+
