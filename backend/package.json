@@ -2,10 +2,10 @@
   "name": "marketing-crm-backend",
   "version": "1.0.0",
   "description": "Marketing CRM Backend API (Supabase)",
-  "main": "server.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
     "test": "jest --forceExit --detectOpenHandles",
     "lint": "eslint src/"
   },
