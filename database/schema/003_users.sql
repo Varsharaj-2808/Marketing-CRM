@@ -3,9 +3,17 @@
 --   id UUID PK, email, password, firstName, lastName, etc.
 -- Custom application columns added below:
 
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE
+);
+
 ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(20) UNIQUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile VARCHAR(20) UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role users_role_enum NOT NULL DEFAULT 'user';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS "accountStatus" users_accountstatus_enum NOT NULL DEFAULT 'active';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0;
