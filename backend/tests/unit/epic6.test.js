@@ -243,6 +243,7 @@ describe('STORY-6.1.1 ΓÇö GET /admin/dashboard/category-volume', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBeGreaterThan(0);
     expect(res.body.data[0]).toHaveProperty('category');
+    expect(res.body.data[0]).toHaveProperty('sub_category');
     expect(res.body.data[0]).toHaveProperty('count');
     expect(res.body.data[0]).toHaveProperty('percentage');
   });

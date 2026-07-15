@@ -1004,7 +1004,7 @@ exports.closeLeadWon = async (req, res, next) => {
 
 exports.exportLeads = async (req, res, next) => {
   try {
-    const { format, category_id, sub_category_id, status, stage, quality, from, to } = req.query;
+    const { format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to } = req.query;
 
     const validFormats = ['csv', 'excel', 'pdf'];
     if (!validFormats.includes(format)) {
@@ -1022,13 +1022,29 @@ exports.exportLeads = async (req, res, next) => {
       values.push(userId);
     }
 
-    if (category_id) { conditions.push(`category = $${idx++}`); values.push(category_id); }
-    if (sub_category_id) { conditions.push(`sub_category = $${idx++}`); values.push(sub_category_id); }
-    if (status) { conditions.push(`lead_status = $${idx++}`); values.push(status); }
-    if (stage) { conditions.push(`stage = $${idx++}`); values.push(stage); }
-    if (quality) { conditions.push(`priority = $${idx++}`); values.push(quality); }
-    if (from) { conditions.push(`created_at >= $${idx++}`); values.push(from); }
-    if (to) { conditions.push(`created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
+    if (search) {
+      const searchPattern = `%${search}%`;
+      conditions.push(`(
+        l.company_name ILIKE $${idx} OR
+        l.contact_person ILIKE $${idx} OR
+        l.mobile_number ILIKE $${idx} OR
+        l.email ILIKE $${idx} OR
+        l.lead_source ILIKE $${idx} OR
+        l.lead_id ILIKE $${idx}
+      )`);
+      values.push(searchPattern);
+      idx++;
+    }
+
+    if (category_id) { conditions.push(`l.category = $${idx++}`); values.push(category_id); }
+    if (sub_category_id) { conditions.push(`l.sub_category = $${idx++}`); values.push(sub_category_id); }
+    if (status) { conditions.push(`l.lead_status = $${idx++}`); values.push(status); }
+    if (stage) { conditions.push(`l.stage = $${idx++}`); values.push(stage); }
+    if (source) { conditions.push(`l.lead_source = $${idx++}`); values.push(source); }
+    if (priority || quality) { conditions.push(`l.priority ILIKE $${idx++}`); values.push(priority || quality); }
+    if (assigned_to && isAdmin) { conditions.push(`l.assigned_to = $${idx++}`); values.push(assigned_to); }
+    if (from) { conditions.push(`l.created_at >= $${idx++}`); values.push(from); }
+    if (to) { conditions.push(`l.created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
 
     const where = conditions.join(' AND ');
     const sql = `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE ${where} ORDER BY l.created_at DESC`;

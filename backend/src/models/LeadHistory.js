@@ -12,8 +12,8 @@ const LeadHistory = {
       [
         leadId,
         fieldName || null,
-        oldValue || null,
-        newValue || null,
+        oldValue ?? null,
+        newValue ?? null,
         changeSummary || null,
         changedBy || null,
         reason || null,

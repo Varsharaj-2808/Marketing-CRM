@@ -726,7 +726,8 @@ exports.getCategoryVolume = async (req, res, next) => {
     const totalLeads = Number((totalLeadsResult.rows[0] || {}).cnt || 0);
 
     const mappedData = dataResult.rows.map(row => ({
-      category: row.category,
+      category: row.category || 'Uncategorized',
+      sub_category: row.sub_category || 'N/A',
       count: row.lead_count,
       percentage: totalLeads > 0 ? Math.round((row.lead_count / totalLeads) * 100) + '%' : '0%',
     }));
@@ -983,7 +984,7 @@ exports.getLeadVolumeByCategoryMarketing = async (req, res, next) => {
 
 exports.exportAdminLeads = async (req, res, next) => {
   try {
-    const { format, category_id, sub_category_id, status, quality, from, to } = req.query;
+    const { format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to } = req.query;
 
     // STORY-6.3.1: Only csv and excel allowed
     if (!format || !['csv', 'excel'].includes(format)) {
@@ -991,12 +992,16 @@ exports.exportAdminLeads = async (req, res, next) => {
     }
 
     const filters = { page: 1, limit: 10000 };
-    if (category_id)    filters.category     = category_id;
+    if (search)          filters.search       = search;
+    if (category_id)     filters.category     = category_id;
     if (sub_category_id) filters.sub_category = sub_category_id;
-    if (status)         filters.status       = status;
-    if (quality)        filters.priority     = quality;
-    if (from)           filters.from_date    = from;
-    if (to)             filters.to_date      = to;
+    if (status)          filters.status       = status;
+    if (stage)           filters.stage        = stage;
+    if (source)          filters.source       = source;
+    if (priority || quality) filters.priority  = priority || quality;
+    if (assigned_to)     filters.assigned_to  = assigned_to;
+    if (from)            filters.from_date    = from;
+    if (to)              filters.to_date      = to;
 
     const result = await Lead.findAllAdmin(filters);
     const leads = result.data || [];
@@ -1005,10 +1010,16 @@ exports.exportAdminLeads = async (req, res, next) => {
     // Create audit log entry BEFORE zero-check (STORY-6.3.1 Acceptance Criteria 3)
     const { ipAddress, userAgent } = getIpAndAgent(req);
     const appliedFilters = {};
-    if (status)      appliedFilters.status  = status;
-    if (quality)     appliedFilters.quality = quality;
-    if (from)        appliedFilters.from    = from;
-    if (to)          appliedFilters.to      = to;
+    if (search)          appliedFilters.search      = search;
+    if (status)          appliedFilters.status       = status;
+    if (stage)           appliedFilters.stage        = stage;
+    if (source)          appliedFilters.source       = source;
+    if (priority || quality) appliedFilters.priority  = priority || quality;
+    if (assigned_to)     appliedFilters.assigned_to  = assigned_to;
+    if (category_id)     appliedFilters.category     = category_id;
+    if (sub_category_id) appliedFilters.sub_category = sub_category_id;
+    if (from)            appliedFilters.from         = from;
+    if (to)              appliedFilters.to           = to;
 
     let auditId = '';
     try {
