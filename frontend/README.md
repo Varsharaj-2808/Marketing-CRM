@@ -6,22 +6,17 @@ A React.js client built with Vite and a Node.js backend.
 
 ```text
 Repository Root
-│
+├── .vscode
+├── backend/   
 ├── frontend/                  # Frontend application folder
 │   ├── public/                # Static assets
 │   ├── src/                   # React source code
 │   ├── package.json           # Frontend dependencies & scripts
 │   ├── vite.config.js         # Vite configuration
-│   └── ...
+│   └── README.md                  # Project documentation
 │
-├── backend/                   # Backend application folder
-│
-├── EPIC-3/                    # Epic documentation
-├── EPIC-4/                    # Epic documentation
-├── EPIC-5/                    # Epic documentation
-├── EPIC-6/                    # Epic documentation
-│
-└── README.md                  # Project documentation
+├── .gitignore
+
 ```
 
 ---
