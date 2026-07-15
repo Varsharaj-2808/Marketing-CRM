@@ -102,8 +102,8 @@ async function initIndices() {
     await client.setSettings({
       indexName: AUDIT_LOGS_INDEX,
       indexSettings: {
-        searchableAttributes: ['action', 'resource', 'details', 'email'],
-        attributesForFaceting: ['email', 'action', 'resource', 'result'],
+        searchableAttributes: ['action', 'resource', 'details', 'email', 'actor_name', 'actor_role', 'userId'],
+        attributesForFaceting: ['email', 'action', 'resource', 'result', 'userId', 'actor_name'],
         customRanking: ['desc(created_at_timestamp)'],
       }
     });
@@ -816,10 +816,28 @@ module.exports = {
     if (!log) return;
     try {
       const cli = getClient();
+      const createdAtVal = log.created_at || log.createdAt;
+      
+      let actorName = log.actor_name;
+      let actorRole = log.actor_role;
+      const userId = log.user_id || log.userId;
+      if (userId && (!actorName || !actorRole)) {
+        try {
+          const { query } = require('../config/db');
+          const userRes = await query('SELECT name, role FROM users WHERE id = $1', [userId]);
+          if (userRes.rows[0]) {
+            actorName = userRes.rows[0].name;
+            actorRole = userRes.rows[0].role;
+          }
+        } catch (dbErr) {
+          console.error('[saveAuditLog] Failed to fetch user info:', dbErr.message);
+        }
+      }
+
       const record = {
         objectID: log.id,
         id: log.id,
-        userId: log.user_id || log.userId,
+        userId: userId,
         email: log.email,
         action: log.action,
         resource: log.resource,
@@ -828,8 +846,10 @@ module.exports = {
         ipAddress: log.ip_address || log.ipAddress,
         userAgent: log.user_agent || log.userAgent,
         result: log.result,
-        created_at: log.created_at,
-        created_at_timestamp: log.created_at ? Math.floor(new Date(log.created_at).getTime() / 1000) : null,
+        created_at: createdAtVal,
+        created_at_timestamp: createdAtVal ? Math.floor(new Date(createdAtVal).getTime() / 1000) : null,
+        actor_name: actorName || null,
+        actor_role: actorRole || null,
       };
       await cli.saveObject({
         indexName: AUDIT_LOGS_INDEX,
@@ -844,11 +864,22 @@ module.exports = {
     try {
       const cli = getClient();
       const facetFilters = [];
+      let finalSearchQuery = searchQuery || '';
+
       if (filters.actor) {
-        facetFilters.push(`email:${filters.actor}`);
+        if (filters.actor.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          facetFilters.push(`userId:${filters.actor}`);
+        } else if (filters.actor.includes('@')) {
+          facetFilters.push(`email:${filters.actor}`);
+        } else {
+          finalSearchQuery = filters.actor;
+        }
       }
       if (filters.action_type) {
         facetFilters.push(`action:${filters.action_type}`);
+      }
+      if (filters.resource) {
+        facetFilters.push(`resource:${filters.resource}`);
       }
       const numericFilters = [];
       if (filters.from) {
@@ -862,7 +893,7 @@ module.exports = {
       }
 
       const searchParams = {
-        query: searchQuery || '',
+        query: finalSearchQuery,
         page: Math.max(0, page - 1),
         hitsPerPage: limit,
       };
@@ -886,21 +917,36 @@ module.exports = {
     if (!logs || logs.length === 0) return;
     try {
       const cli = getClient();
-      const objects = logs.map(log => ({
-        objectID: log.id,
-        id: log.id,
-        userId: log.user_id || log.userId,
-        email: log.email,
-        action: log.action,
-        resource: log.resource,
-        resourceId: log.resource_id || log.resourceId,
-        details: log.details,
-        ipAddress: log.ip_address || log.ipAddress,
-        userAgent: log.user_agent || log.userAgent,
-        result: log.result,
-        created_at: log.created_at,
-        created_at_timestamp: log.created_at ? Math.floor(new Date(log.created_at).getTime() / 1000) : null,
-      }));
+      const { query } = require('../config/db');
+      
+      const userRes = await query('SELECT id, name, role FROM users');
+      const userMap = {};
+      userRes.rows.forEach(u => {
+        userMap[u.id] = { name: u.name, role: u.role };
+      });
+
+      const objects = logs.map(log => {
+        const createdAtVal = log.created_at || log.createdAt;
+        const userId = log.user_id || log.userId;
+        const user = userMap[userId] || {};
+        return {
+          objectID: log.id,
+          id: log.id,
+          userId: userId,
+          email: log.email,
+          action: log.action,
+          resource: log.resource,
+          resourceId: log.resource_id || log.resourceId,
+          details: log.details,
+          ipAddress: log.ip_address || log.ipAddress,
+          userAgent: log.user_agent || log.userAgent,
+          result: log.result,
+          created_at: createdAtVal,
+          created_at_timestamp: createdAtVal ? Math.floor(new Date(createdAtVal).getTime() / 1000) : null,
+          actor_name: log.actor_name || user.name || null,
+          actor_role: log.actor_role || user.role || null,
+        };
+      });
       await cli.saveObjects({
         indexName: AUDIT_LOGS_INDEX,
         objects,

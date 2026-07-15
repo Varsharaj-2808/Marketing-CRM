@@ -5,8 +5,10 @@ const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const enrichRow = async (row) => {
-  if (row && row.user_id && (row.actor_name === undefined || row.actor_role === undefined)) {
-    const userResult = await query('SELECT name, role FROM users WHERE id = $1', [row.user_id]);
+  if (!row) return row;
+  const userId = row.user_id || row.userId;
+  if (userId && (row.actor_name === undefined || row.actor_role === undefined)) {
+    const userResult = await query('SELECT name, role FROM users WHERE id = $1', [userId]);
     if (userResult.rows[0]) {
       row.actor_name = userResult.rows[0].name;
       row.actor_role = userResult.rows[0].role;
@@ -16,20 +18,25 @@ const enrichRow = async (row) => {
 };
 
 const transformRow = (row) => {
+  const userId = row.user_id || row.userId || null;
+  const createdAt = row.createdAt || row.created_at || null;
+  const actorName = row.actor_name || row.email || 'System';
+  const actorRole = row.actor_role || (userId ? 'User' : 'System');
+
   const transformed = {
     id: row.id,
-    user_id: row.user_id,
+    user_id: userId,
     action: row.action,
     action_type: row.action,
     actor: {
-      id: row.user_id,
-      name: row.actor_name,
-      role: row.actor_role,
+      id: userId,
+      name: actorName,
+      role: actorRole,
     },
     performed_by: {
-      id: row.user_id,
-      name: row.actor_name,
-      role: row.actor_role,
+      id: userId,
+      name: actorName,
+      role: actorRole,
     },
     entity: row.resource,
     entity_affected: row.resource,
@@ -39,13 +46,13 @@ const transformRow = (row) => {
     ip_address: row.ipAddress,
     ipAddress: row.ipAddress,
     details: row.details ? (() => { try { return typeof row.details === 'string' ? JSON.parse(row.details) : row.details; } catch { return row.details; } })() : null,
-    created_at: row.createdAt,
-    createdAt: row.createdAt,
-    timestamp: row.createdAt,
+    created_at: createdAt,
+    createdAt: createdAt,
+    timestamp: createdAt,
     result: row.result,
     userAgent: row.userAgent,
-    actor_name: row.actor_name,
-    actor_role: row.actor_role,
+    actor_name: actorName,
+    actor_role: actorRole,
   };
   return transformed;
 };
@@ -72,6 +79,7 @@ exports.getAuditLogs = async (req, res, next) => {
         {
           actor: userId,
           action_type: action,
+          resource: entity,
           from,
           to,
         },
