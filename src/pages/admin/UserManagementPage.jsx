@@ -146,7 +146,10 @@ export default function UserManagementPage() {
     if (editingUser) {
       const res = await userService.updateUser(editingUser.employee_id, formData);
       if (res.success) {
-        await fetchUsers();
+        const updatedUser = res.data || { ...editingUser, ...formData };
+        setUsers((prev) =>
+          prev.map((u) => (u.employee_id === editingUser.employee_id ? updatedUser : u))
+        );
         showNotification(res.message);
         setShowForm(false);
         setEditingUser(null);
@@ -156,7 +159,9 @@ export default function UserManagementPage() {
     } else {
       const res = await userService.createUser(formData);
       if (res.success) {
-        await fetchUsers();
+        const newUser = res.data || formData;
+        setUsers((prev) => [newUser, ...prev].slice(0, USER_PAGE_SIZE));
+        setUserTotal((prev) => prev + 1);
         showNotification(res.message);
         setShowForm(false);
       } else {
@@ -183,7 +188,17 @@ export default function UserManagementPage() {
     const newStatus = action === 'deactivate' ? 'Inactive' : 'Active';
     const res = await userService.updateUserStatus(targetUser.employee_id, newStatus);
     if (res.success) {
-      await fetchUsers();
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.employee_id === targetUser.employee_id
+            ? { ...u, status: newStatus.toLowerCase() }
+            : u
+        )
+      );
+      if (statusFilter !== 'All' && statusFilter.toLowerCase() !== newStatus.toLowerCase()) {
+        setUsers((prev) => prev.filter((u) => u.employee_id !== targetUser.employee_id));
+        setUserTotal((prev) => Math.max(0, prev - 1));
+      }
       showNotification(res.message);
     } else {
       showNotification(res.message, 'error');

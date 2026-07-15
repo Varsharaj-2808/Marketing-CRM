@@ -44,9 +44,10 @@ export const userService = {
       const payload = res?.data || res || {};
       const list = Array.isArray(payload) ? payload : (payload.users && Array.isArray(payload.users) ? payload.users : (payload.data && Array.isArray(payload.data) ? payload.data : []));
       const normalized = list.map(normalizeUser);
-      const pagination = payload.pagination 
-        ? { ...payload.pagination, total: payload.pagination.totalRecords ?? payload.pagination.total ?? 0 }
-        : { page: params.page || 1, total: res?.data?.pagination?.totalRecords ?? normalized.length, totalPages: res?.data?.pagination?.totalPages || 1 };
+      const resPagination = res?.pagination || payload?.pagination;
+      const pagination = resPagination
+        ? { ...resPagination, total: resPagination.totalRecords ?? resPagination.total ?? 0 }
+        : { page: params.page || 1, total: normalized.length, totalPages: 1 };
       return { success: true, data: normalized, pagination };
     }
 
