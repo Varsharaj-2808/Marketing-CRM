@@ -153,12 +153,26 @@ exports.createFollowup = async (req, res, next) => {
 
     // ΓöÇΓöÇ Lead history entry ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     try {
+      const followupDateStr = next_followup_date
+        ? new Date(next_followup_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+        : 'Not set';
+
+      const followupNewValue = JSON.stringify({
+        followUpType: followup_type,
+        outcome,
+        followUpDate: followupDateStr,
+        notes: trimmedNotes || null,
+        proposalAmount: parsedProposalAmount,
+        stageAtLog: lead.stage,
+        createdBy: req.user.name || req.user.id,
+      });
+
       await LeadHistory.create({
         leadId: id,
         fieldName: 'followup_logged',
-        oldValue: null,
-        newValue: outcome,
-        changeSummary: `Follow-up logged: ${followup_type} ΓÇö ${outcome} by ${req.user.name || req.user.id}`,
+        oldValue: '',
+        newValue: followupNewValue,
+        changeSummary: `Follow-up logged: ${followup_type} → ${outcome} by ${req.user.name || req.user.id}`,
         changedBy: req.user.id,
       });
     } catch (_) { /* non-critical */ }
