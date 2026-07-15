@@ -109,7 +109,6 @@ router.get('/categories/:categoryId/sub-categories/:subCategoryId/in-use', prote
 router.get('/categories/:categoryId/sub-categories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveSubCategories);
 router.get('/categories/:id/in-use', protect, authorize('Admin'), adminController.checkCategoryInUse);
 router.get('/categories/:id', protect, authorize('Admin'), categoryController.getCategory);
-router.get('/categories/:id/in-use', protect, authorize('Admin'), categoryController.checkCategoryInUse);
 router.put('/categories/:id', protect, authorize('Admin'), categoryController.updateCategory);
 router.delete('/categories/:id', protect, authorize('Admin'), categoryController.deleteCategory);
 router.patch('/categories/:id/status', protect, authorize('Admin'), categoryController.patchCategoryStatus);
@@ -119,7 +118,7 @@ router.get('/subcategories/active', protect, authorize('Admin'), categoryControl
 router.get('/subcategories', protect, authorize('Admin'), categoryController.getSubCategories);
 router.post('/subcategories', protect, authorize('Admin'), categoryController.createSubCategory);
 router.get('/subcategories/:id', protect, authorize('Admin'), categoryController.getSubCategory);
-router.get('/subcategories/:id/in-use', protect, authorize('Admin'), categoryController.checkSubCategoryInUse);
+router.get('/subcategories/:id/in-use', protect, authorize('Admin'), adminController.checkSubCategoryInUse);
 router.put('/subcategories/:id', protect, authorize('Admin'), categoryController.updateSubCategory);
 router.delete('/subcategories/:id', protect, authorize('Admin'), categoryController.deleteSubCategory);
 router.patch('/subcategories/:id/status', protect, authorize('Admin'), categoryController.patchSubCategoryStatus);
