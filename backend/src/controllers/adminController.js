@@ -686,7 +686,7 @@ exports.getDashboardKpis = async (req, res, next) => {
 // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 exports.getCategoryVolume = async (req, res, next) => {
   try {
-    const { category_id, from, to } = req.query;
+    const { category_id, sub_category_id, from, to } = req.query;
 
     if (from && !DATE_REGEX_ADMIN.test(from)) {
       return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
@@ -701,6 +701,7 @@ exports.getCategoryVolume = async (req, res, next) => {
     const p = (v) => { values.push(v); return `$${idx++}`; };
 
     if (category_id) conditions.push(`l.category = ${p(category_id)}`);
+    if (sub_category_id) conditions.push(`l.sub_category = ${p(sub_category_id)}`);
     if (from) conditions.push(`l.created_at::date >= ${p(from)}::date`);
     if (to)   conditions.push(`l.created_at::date <= ${p(to)}::date`);
 
@@ -727,7 +728,7 @@ exports.getCategoryVolume = async (req, res, next) => {
 
     const mappedData = dataResult.rows.map(row => ({
       category: row.category || 'Uncategorized',
-      sub_category: row.sub_category || 'N/A',
+      sub_category: row.sub_category || 'No Sub-Category',
       count: row.lead_count,
       percentage: totalLeads > 0 ? Math.round((row.lead_count / totalLeads) * 100) + '%' : '0%',
     }));
@@ -1039,23 +1040,38 @@ exports.exportAdminLeads = async (req, res, next) => {
       // Audit logging failure must not block the export response
     }
 
-    // STORY-6.3.1: Correct column headers
     const EXPORT_HEADERS = [
-      'lead_id', 'company_name', 'category', 'sub_category',
-      'source', 'stage', 'owner', 'estimated_value', 'created_date',
+      'lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'website',
+      'city', 'lead_source', 'category_name', 'sub_category_name', 'priority', 'stage',
+      'lead_status', 'assigned_to_name', 'estimated_value', 'final_deal_value',
+      'lost_reason', 'closure_date', 'next_followup_date', 'service_interested',
+      'created_at', 'updated_at'
     ];
 
     // Map lead fields to export columns
     const mapLead = (lead) => ({
-      lead_id:        lead.lead_id       || '',
-      company_name:   lead.company_name  || '',
-      category:       lead.category      || '',
-      sub_category:   lead.sub_category  || '',
-      source:         lead.lead_source   || '',
-      stage:          lead.stage         || '',
-      owner:          lead.assigned_to_name || lead.assigned_to || '',
+      lead_id: lead.lead_id || '',
+      company_name: lead.company_name || '',
+      contact_person: lead.contact_person || '',
+      mobile_number: lead.mobile_number || '',
+      email: lead.email || '',
+      website: lead.website || '',
+      city: lead.city || '',
+      lead_source: lead.lead_source || '',
+      category_name: lead.category_name || '',
+      sub_category_name: lead.sub_category_name || '',
+      priority: lead.priority || '',
+      stage: lead.stage || '',
+      lead_status: lead.lead_status || '',
+      assigned_to_name: lead.assigned_to_name || '',
       estimated_value: lead.estimated_value != null ? String(lead.estimated_value) : '',
-      created_date:   lead.created_at ? String(lead.created_at).slice(0, 10) : '',
+      final_deal_value: lead.final_deal_value != null ? String(lead.final_deal_value) : '',
+      lost_reason: lead.lost_reason || '',
+      closure_date: lead.closure_date ? String(lead.closure_date).slice(0, 10) : '',
+      next_followup_date: lead.next_followup_date ? String(lead.next_followup_date).slice(0, 10) : '',
+      service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? lead.service_interested : JSON.stringify(lead.service_interested)) : '',
+      created_at: lead.created_at ? String(lead.created_at).slice(0, 19) : '',
+      updated_at: lead.updated_at ? String(lead.updated_at).slice(0, 19) : '',
     });
 
     // STORY-6.3.1 MD test b-004: Zero-record export returns 404
@@ -1086,11 +1102,18 @@ exports.exportAdminLeads = async (req, res, next) => {
 
     if (format === 'excel') {
       const XLSX = require('xlsx');
+      const friendlyHeaders = [
+        'Lead ID', 'Company', 'Contact Person', 'Phone', 'Email', 'Website',
+        'City', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage',
+        'Status', 'Assigned To', 'Budget', 'Expected Revenue',
+        'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
+        'Created Date', 'Updated Date'
+      ];
       const rows = leads.map(lead => {
         const mapped = mapLead(lead);
         return EXPORT_HEADERS.map(h => mapped[h] || '');
       });
-      const ws = XLSX.utils.aoa_to_sheet([EXPORT_HEADERS, ...rows]);
+      const ws = XLSX.utils.aoa_to_sheet([friendlyHeaders, ...rows]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Leads');
       const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -1391,9 +1414,11 @@ exports.sendDailyReminders = async (req, res, next) => {
 exports.reindexLeads = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT l.*, u.name as assigned_to_name
+      `SELECT l.*, u.name as assigned_to_name, bc.category_name, bsc.sub_category_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
        WHERE l.is_deleted = false OR l.is_deleted IS NULL`
     );
     const leads = result.rows;
