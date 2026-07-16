@@ -190,7 +190,12 @@ exports.bulkAssign = async (req, res, next) => {
     });
 
     const finalLeadsResult = await query(
-      `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id IN (${leadPlaceholders})`,
+      `SELECT l.*, u.name as assigned_to_name, bc.category_name, bsc.sub_category_name
+       FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       WHERE l.id IN (${leadPlaceholders})`,
       uniqueIds
     );
     if (algolia && typeof algolia.indexAllLeads === 'function') {

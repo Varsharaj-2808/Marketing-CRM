@@ -3,6 +3,7 @@ const SystemSetting = require('../models/SystemSetting');
 const { query } = require('../config/db');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PAGE_SIZE = 10;
 
 const enrichRow = async (row) => {
   if (!row) return row;
@@ -62,6 +63,11 @@ exports.getAuditLogs = async (req, res, next) => {
     const userId = req.query.actor || req.query.user_id;
     const action = req.query.action_type || req.query.action;
     const entity = req.query.entity_affected || req.query.entity;
+    const employeeName = req.query.employee_name;
+    const actorRole = req.query.role;
+    const entityName = req.query.entity_name;
+    const createdBy = req.query.created_by;
+    const resultFilter = req.query.status || req.query.result;
     let { from, to, page, limit } = req.query;
 
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -80,6 +86,11 @@ exports.getAuditLogs = async (req, res, next) => {
           actor: userId,
           action_type: action,
           resource: entity,
+          employee_name: employeeName,
+          actor_role: actorRole,
+          entity_name: entityName,
+          created_by: createdBy,
+          result: resultFilter,
           from,
           to,
         },

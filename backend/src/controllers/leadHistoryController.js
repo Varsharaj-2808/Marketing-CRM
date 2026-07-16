@@ -8,7 +8,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 exports.getFieldHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { field_name, page = 1, limit = 50 } = req.query;
+    const { field_name, is_system_generated, page = 1, limit = 50 } = req.query;
 
     if (!UUID_REGEX.test(id)) {
       return res.status(400).json({ success: false, message: 'Invalid lead ID' });
@@ -30,8 +30,25 @@ exports.getFieldHistory = async (req, res, next) => {
     if (field_name) {
       filters.fieldName = field_name;
     }
+    if (is_system_generated !== undefined && is_system_generated !== '') {
+      filters.isSystemGenerated = is_system_generated === 'true';
+    }
 
     const result = await LeadHistory.findByLeadId(id, filters);
+
+    const history = result.history.map(h => {
+      if (h.field_name !== 'followup_logged') return h;
+      let meta = h.metadata;
+      if (!meta) return h;
+      if (typeof meta === 'string') {
+        try { meta = JSON.parse(meta); } catch (_) { return h; }
+      }
+      return {
+        ...h,
+        old_value: meta.old_outcome || h.old_value,
+        new_value: meta.new_outcome || h.new_value,
+      };
+    });
 
     res.json({
       success: true,
@@ -39,7 +56,7 @@ exports.getFieldHistory = async (req, res, next) => {
       data: {
         lead_id: id,
         total_changes: result.total_changes,
-        history: result.history,
+        history,
         pagination: {
           page: filters.page,
           limit: filters.limit,
@@ -55,7 +72,7 @@ exports.getFieldHistory = async (req, res, next) => {
 exports.exportFieldHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { format } = req.query;
+    const { format, field_name, is_system_generated } = req.query;
 
     if (format !== 'csv') {
       return res.status(400).json({ success: false, message: 'Format must be csv' });
@@ -70,16 +87,35 @@ exports.exportFieldHistory = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
-    const result = await LeadHistory.findByLeadId(id);
+    if (req.user.role === 'Marketing Executive' && lead.assigned_to !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Not authorized to export this lead's history" });
+    }
+
+    const filters = {};
+    if (field_name) {
+      filters.fieldName = field_name;
+    }
+    if (is_system_generated !== undefined && is_system_generated !== '') {
+      filters.isSystemGenerated = is_system_generated === 'true';
+    }
+
+    const result = await LeadHistory.findByLeadId(id, filters);
 
     if (!result.history || result.history.length === 0) {
       return res.status(404).json({ success: false, message: 'No history found for this lead' });
     }
 
     const headers = 'field_name,old_value,new_value,change_summary,changed_by_name,changed_at,reason\n';
-    const rows = result.history.map(h =>
-      `"${h.field_name || ''}","${(h.old_value || '').replace(/"/g, '""')}","${(h.new_value || '').replace(/"/g, '""')}","${(h.change_summary || '').replace(/"/g, '""')}","${h.changed_by_name || ''}","${h.changed_at || ''}","${(h.reason || '').replace(/"/g, '""')}"`
-    ).join('\n');
+    const rows = result.history.map(h => {
+      let oldVal = h.old_value || '';
+      let newVal = h.new_value || '';
+      if (h.field_name === 'followup_logged' && h.metadata) {
+        const meta = typeof h.metadata === 'string' ? JSON.parse(h.metadata) : h.metadata;
+        if (meta.old_outcome) oldVal = meta.old_outcome;
+        if (meta.new_outcome) newVal = meta.new_outcome;
+      }
+      return `"${h.field_name || ''}","${oldVal.replace(/"/g, '""')}","${newVal.replace(/"/g, '""')}","${(h.change_summary || '').replace(/"/g, '""')}","${h.changed_by_name || ''}","${h.changed_at || ''}","${(h.reason || '').replace(/"/g, '""')}"`;
+    }).join('\n');
 
     const csv = headers + rows;
 
