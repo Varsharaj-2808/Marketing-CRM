@@ -16,11 +16,27 @@ const Lead = {
   async create(data, creatorId) {
     const { company_name, contact_person, mobile_number, email, website, city, lead_source, category, sub_category, service_interested, priority, estimated_value } = data;
     const leadId = await this.getNextLeadId();
+
+    // Ensure service_interested is valid JSON for the JSONB column.
+    let services = service_interested;
+    if (services !== null && services !== undefined) {
+      if (Array.isArray(services) || typeof services === 'object') {
+        services = JSON.stringify(services);
+      } else if (typeof services === 'string') {
+        // If it's already a string, validate it's parseable JSON
+        try {
+          JSON.parse(services);
+        } catch {
+          services = JSON.stringify(services);
+        }
+      }
+    }
+
     const result = await query(
       `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", "lead_id", stage, "lead_status")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New', NULL)
        RETURNING *`,
-      [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, service_interested || null, priority, estimated_value || null, creatorId, leadId]
+      [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, services || null, priority, estimated_value || null, creatorId, leadId]
     );
     return result.rows[0];
   },
