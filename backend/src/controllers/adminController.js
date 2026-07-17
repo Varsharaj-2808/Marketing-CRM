@@ -573,17 +573,19 @@ exports.reopenLead = async (req, res, next) => {
 };
 
 const buildAdminFilter = (req, alias) => {
-  const { category_id, sub_category_id, from, to } = req.query;
+  const { category_id, category, sub_category_id, sub_category, from, to } = req.query;
   const conditions = [`${alias}deleted_at IS NULL`];
   const values = [];
   let idx = 1;
   const p = (v) => { values.push(v); return `$${idx++}`; };
 
-  if (category_id) {
-    conditions.push(`${alias}category = ${p(category_id)}`);
+  const resolvedCategory = category_id || category;
+  if (resolvedCategory) {
+    conditions.push(`${alias}category = ${p(resolvedCategory)}`);
   }
-  if (sub_category_id) {
-    conditions.push(`${alias}sub_category = ${p(sub_category_id)}`);
+  const resolvedSubCategory = sub_category_id || sub_category;
+  if (resolvedSubCategory) {
+    conditions.push(`${alias}sub_category = ${p(resolvedSubCategory)}`);
   }
   if (from) {
     conditions.push(`${alias}created_at >= ${p(from)}`);
@@ -985,27 +987,86 @@ exports.getLeadVolumeByCategoryMarketing = async (req, res, next) => {
 
 exports.exportAdminLeads = async (req, res, next) => {
   try {
-    const { format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to } = req.query;
+    const {
+      format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to,
+      category, sub_category, lead_source, from_date, to_date, service_interested, created_by, city, state, country
+    } = req.query;
 
     // STORY-6.3.1: Only csv and excel allowed
     if (!format || !['csv', 'excel'].includes(format)) {
       return res.status(400).json({ success: false, message: 'Format must be csv or excel' });
     }
 
-    const filters = { page: 1, limit: 10000 };
-    if (search)          filters.search       = search;
-    if (category_id)     filters.category     = category_id;
-    if (sub_category_id) filters.sub_category = sub_category_id;
-    if (status)          filters.status       = status;
-    if (stage)           filters.stage        = stage;
-    if (source)          filters.source       = source;
-    if (priority || quality) filters.priority  = priority || quality;
-    if (assigned_to)     filters.assigned_to  = assigned_to;
-    if (from)            filters.from_date    = from;
-    if (to)              filters.to_date      = to;
+    const resolvedSearch = (search || '').trim() || undefined;
+    const resolvedPriority = (priority || quality || '').trim() || undefined;
+    const resolvedCategory = (category || category_id || '').trim() || undefined;
+    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
+    let resolvedStage = (stage || '').trim() || undefined;
+    if (resolvedStage === 'New Lead') {
+      resolvedStage = 'New';
+    }
+    const resolvedStatus = (status || '').trim() || undefined;
+    const resolvedSource = (source || lead_source || '').trim() || undefined;
+    const resolvedFromDate = (from_date || from || '').trim() || undefined;
+    const resolvedToDate = (to_date || to || '').trim() || undefined;
 
-    const result = await Lead.findAllAdmin(filters);
-    const leads = result.data || [];
+    const filters = {
+      search: resolvedSearch,
+      priority: resolvedPriority,
+      stage: resolvedStage,
+      status: resolvedStatus,
+      category: resolvedCategory,
+      sub_category: resolvedSubCategory,
+      source: resolvedSource,
+      from_date: resolvedFromDate,
+      to_date: resolvedToDate,
+      assigned_to: assigned_to ? String(assigned_to).trim() : undefined,
+      service_interested: service_interested ? String(service_interested).trim() : undefined,
+      created_by: created_by ? String(created_by).trim() : undefined,
+      city: city ? String(city).trim() : undefined,
+      page: 1,
+      limit: 1000000,
+    };
+
+    let leads = [];
+    let algoliaUsed = false;
+
+    if (algolia && typeof algolia.searchLeads === 'function') {
+      try {
+        const algoliaResult = await algolia.searchLeads(
+          resolvedSearch || '',
+          {
+            priority: resolvedPriority,
+            stage: resolvedStage,
+            status: resolvedStatus,
+            category: resolvedCategory,
+            sub_category: resolvedSubCategory,
+            lead_source: resolvedSource,
+            assigned_to: filters.assigned_to,
+            from_date: resolvedFromDate,
+            to_date: resolvedToDate,
+            city: filters.city,
+            state: state ? String(state).trim() : undefined,
+            country: country ? String(country).trim() : undefined,
+          },
+          1,
+          1000000,
+          true,
+          null
+        );
+        if (algoliaResult) {
+          leads = algoliaResult.hits || [];
+          algoliaUsed = true;
+        }
+      } catch (algoliaErr) {
+        console.error('[exportAdminLeads] Algolia search failed, falling back to DB:', algoliaErr.message);
+      }
+    }
+
+    if (!algoliaUsed) {
+      const result = await Lead.findAllAdmin(filters);
+      leads = result.data || [];
+    }
     const recordCount = leads.length;
 
     // Create audit log entry BEFORE zero-check (STORY-6.3.1 Acceptance Criteria 3)
@@ -1021,6 +1082,11 @@ exports.exportAdminLeads = async (req, res, next) => {
     if (sub_category_id) appliedFilters.sub_category = sub_category_id;
     if (from)            appliedFilters.from         = from;
     if (to)              appliedFilters.to           = to;
+    if (service_interested) appliedFilters.service_interested = service_interested;
+    if (created_by)      appliedFilters.created_by   = created_by;
+    if (city)            appliedFilters.city         = city;
+    if (state)           appliedFilters.state        = state;
+    if (country)         appliedFilters.country      = country;
 
     let auditId = '';
     try {
