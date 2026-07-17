@@ -43,6 +43,56 @@ const User = {
     return result.rows;
   },
 
+  async findPaginated({ page = 1, limit = 20, search, role, status, department } = {}) {
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    if (search) {
+      conditions.push(`(LOWER(name) LIKE $${idx} OR LOWER(email) LIKE $${idx} OR LOWER("employee_id") LIKE $${idx} OR mobile LIKE $${idx})`);
+      values.push(`%${search.toLowerCase()}%`);
+      idx++;
+    }
+    if (role) {
+      conditions.push(`role = $${idx++}`);
+      values.push(role);
+    }
+    if (status) {
+      conditions.push(`LOWER("accountStatus") = $${idx++}`);
+      values.push(status.toLowerCase());
+    }
+    if (department) {
+      conditions.push(`department = $${idx++}`);
+      values.push(department);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const countResult = await query(`SELECT COUNT(*) FROM users ${whereClause}`, values);
+    const totalRecords = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(totalRecords / limit) || 1;
+    const offset = (page - 1) * limit;
+
+    const dataResult = await query(
+      `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status, department
+       FROM users ${whereClause}
+       ORDER BY "createdAt" DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      [...values, limit, offset]
+    );
+
+    return {
+      users: dataResult.rows,
+      totalRecords,
+      total: totalRecords,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+      page,
+      limit,
+    };
+  },
+
   async findActiveByRole(role) {
     const result = await query(
       `SELECT id, "employee_id", name as employee_name, email, role,

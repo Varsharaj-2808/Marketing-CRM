@@ -33,7 +33,11 @@ const LeadHistory = {
     
     if (filters.fieldName) {
       params.push(filters.fieldName);
-      sql += ` AND h.field_name = $2`;
+      sql += ` AND h.field_name = $${params.length}`;
+    }
+    if (filters.isSystemGenerated !== undefined) {
+      params.push(filters.isSystemGenerated);
+      sql += ` AND h.is_system_generated = $${params.length}`;
     }
     
     sql += ` ORDER BY h.changed_at DESC`; // Newest first
@@ -55,7 +59,11 @@ const LeadHistory = {
     const countParams = [leadId];
     if (filters.fieldName) {
       countParams.push(filters.fieldName);
-      countSql += ` AND field_name = $2`;
+      countSql += ` AND field_name = $${countParams.length}`;
+    }
+    if (filters.isSystemGenerated !== undefined) {
+      countParams.push(filters.isSystemGenerated);
+      countSql += ` AND is_system_generated = $${countParams.length}`;
     }
     const countResult = await query(countSql, countParams);
     

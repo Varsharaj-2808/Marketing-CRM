@@ -73,6 +73,8 @@ exports.createLead = async (req, res, next) => {
     await LeadHistory.create({
       leadId: lead.id,
       fieldName: 'lead_created',
+      oldValue: null,
+      newValue: `${lead.company_name} - ${lead.contact_person}`,
       changeSummary: `Lead Created by ${req.user.name || req.user.email} on ${new Date().toISOString()}`,
       changedBy: req.user.id,
     });
@@ -531,6 +533,12 @@ exports.getLeadHistory = async (req, res, next) => {
       if (eventType === 'stage') {
         eventType = 'Stage Changed';
       }
+      const metadata = row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata) : null;
+
+      const isFollowup = row.field_name === 'followup_logged';
+      const oldVal = isFollowup ? (metadata?.old_outcome || row.old_value) : row.old_value;
+      const newVal = isFollowup ? (metadata?.new_outcome || row.new_value) : row.new_value;
+
       return {
         id: row.id,
         lead_id: row.lead_id,
@@ -539,10 +547,12 @@ exports.getLeadHistory = async (req, res, next) => {
         changed_by: row.changed_by,
         changed_by_name: row.changed_by_name || row.actor_name,
         event_type: eventType,
-        previous_stage: row.old_value,
-        new_stage: row.new_value,
+        previous_stage: oldVal,
+        new_stage: newVal,
+        old_outcome: isFollowup ? oldVal : null,
+        new_outcome: isFollowup ? newVal : null,
         reason: row.reason || null,
-        metadata: row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata) : null,
+        metadata,
         actor: row.actor_employee_id || row.changed_by_employee_id || null,
         actor_name: row.actor_name || row.changed_by_name || null,
         timestamp: row.changed_at || row.created_at
@@ -1013,12 +1023,12 @@ exports.exportLeads = async (req, res, next) => {
 
     const userId = req.user.id;
     const isAdmin = req.user.role === 'Admin';
-    const conditions = ['deleted_at IS NULL'];
+    const conditions = ['l.deleted_at IS NULL'];
     const values = [];
     let idx = 1;
 
     if (!isAdmin) {
-      conditions.push(`assigned_to = $${idx++}`);
+      conditions.push(`l.assigned_to = $${idx++}`);
       values.push(userId);
     }
 
@@ -1047,18 +1057,63 @@ exports.exportLeads = async (req, res, next) => {
     if (to) { conditions.push(`l.created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
 
     const where = conditions.join(' AND ');
-    const sql = `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE ${where} ORDER BY l.created_at DESC`;
+    const sql = `SELECT l.*,
+                        u.name as assigned_to_name,
+                        bc.category_name,
+                        bsc.sub_category_name
+                 FROM leads l
+                 LEFT JOIN users u ON l.assigned_to = u.id
+                 LEFT JOIN business_categories bc ON l.category = bc.id
+                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                 WHERE ${where}
+                 ORDER BY l.created_at DESC`;
     const result = await query(sql, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
 
+    const EXPORT_HEADERS = [
+      'lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'website',
+      'city', 'lead_source', 'category_name', 'sub_category_name', 'priority', 'stage',
+      'lead_status', 'assigned_to_name', 'estimated_value', 'final_deal_value',
+      'lost_reason', 'closure_date', 'next_followup_date', 'service_interested',
+      'created_at', 'updated_at'
+    ];
+
+    const mapLead = (lead) => ({
+      lead_id: lead.lead_id || '',
+      company_name: lead.company_name || '',
+      contact_person: lead.contact_person || '',
+      mobile_number: lead.mobile_number || '',
+      email: lead.email || '',
+      website: lead.website || '',
+      city: lead.city || '',
+      lead_source: lead.lead_source || '',
+      category_name: lead.category_name || '',
+      sub_category_name: lead.sub_category_name || '',
+      priority: lead.priority || '',
+      stage: lead.stage || '',
+      lead_status: lead.lead_status || '',
+      assigned_to_name: lead.assigned_to_name || '',
+      estimated_value: lead.estimated_value != null ? String(lead.estimated_value) : '',
+      final_deal_value: lead.final_deal_value != null ? String(lead.final_deal_value) : '',
+      lost_reason: lead.lost_reason || '',
+      closure_date: lead.closure_date ? String(lead.closure_date).slice(0, 10) : '',
+      next_followup_date: lead.next_followup_date ? String(lead.next_followup_date).slice(0, 10) : '',
+      service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? lead.service_interested : JSON.stringify(lead.service_interested)) : '',
+      created_at: lead.created_at ? String(lead.created_at).slice(0, 19) : '',
+      updated_at: lead.updated_at ? String(lead.updated_at).slice(0, 19) : '',
+    });
+
     if (format === 'csv') {
-      const headers = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'city', 'lead_source', 'category', 'sub_category', 'priority', 'stage', 'estimated_value'];
-      const csvRows = [headers.join(',')];
+      const csvRows = [EXPORT_HEADERS.join(',')];
       for (const lead of result.rows) {
-        csvRows.push(headers.map(h => { const v = lead[h] != null ? String(lead[h]) : ''; return `"${v.replace(/"/g, '""')}"`; }).join(','));
+        const mapped = mapLead(lead);
+        csvRows.push(EXPORT_HEADERS.map(h => {
+          const v = String(mapped[h] || '');
+          return `"${v.replace(/"/g, '""')}"`;
+        }).join(','));
       }
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=leads.csv');
@@ -1067,9 +1122,18 @@ exports.exportLeads = async (req, res, next) => {
 
     if (format === 'excel') {
       const XLSX = require('xlsx');
-      const headers = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'city', 'lead_source', 'category', 'sub_category', 'priority', 'stage', 'estimated_value'];
-      const rows = result.rows.map(lead => headers.map(h => lead[h] != null ? String(lead[h]) : ''));
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const friendlyHeaders = [
+        'Lead ID', 'Company', 'Contact Person', 'Phone', 'Email', 'Website',
+        'City', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage',
+        'Status', 'Assigned To', 'Budget', 'Expected Revenue',
+        'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
+        'Created Date', 'Updated Date'
+      ];
+      const rows = result.rows.map(lead => {
+        const mapped = mapLead(lead);
+        return EXPORT_HEADERS.map(h => mapped[h] || '');
+      });
+      const ws = XLSX.utils.aoa_to_sheet([friendlyHeaders, ...rows]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Leads');
       const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -1084,12 +1148,12 @@ exports.exportLeads = async (req, res, next) => {
       res.setHeader('Content-Disposition', 'attachment; filename=leads.pdf');
       doc.pipe(res);
 
-      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Mobile', 'Email', 'Source', 'Priority', 'Stage', 'Value'];
-      const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'priority', 'stage', 'estimated_value'];
-      const colWidths = [90, 110, 90, 85, 130, 70, 60, 75, 65];
+      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Phone', 'Email', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage', 'Status', 'Assigned To', 'Budget', 'Created'];
+      const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'category_name', 'sub_category_name', 'priority', 'stage', 'lead_status', 'assigned_to_name', 'estimated_value', 'created_at'];
+      const colWidths = [80, 90, 80, 75, 110, 60, 70, 70, 50, 70, 50, 75, 65, 80];
       let y = 50;
 
-      doc.fontSize(14).font('Helvetica-Bold').text('My Leads Export', 40, 15);
+      doc.fontSize(14).font('Helvetica-Bold').text('Leads Export', 40, 15);
       doc.fontSize(8).font('Helvetica').text(`Generated: ${new Date().toISOString()}`, 40, 32);
       y = 48;
       doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
@@ -1102,7 +1166,12 @@ exports.exportLeads = async (req, res, next) => {
       for (const lead of result.rows) {
         if (y > 540) { doc.addPage(); y = 40; }
         x = 40;
-        cols.forEach((c, i) => { const v = lead[c] != null ? String(lead[c]) : ''; doc.text(v, x + 2, y + 2, { width: colWidths[i] - 4, align: 'left' }); x += colWidths[i]; });
+        cols.forEach((c, i) => {
+          let v = lead[c] != null ? String(lead[c]) : '';
+          if (c === 'created_at' && v.length > 10) v = v.slice(0, 10);
+          doc.text(v, x + 2, y + 2, { width: colWidths[i] - 4, align: 'left' });
+          x += colWidths[i];
+        });
         y += 14;
       }
       doc.end();
