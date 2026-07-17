@@ -32,6 +32,7 @@ router.get('/leads/export', protect, authorize('Admin', 'Marketing Executive'), 
 router.get('/leads/:id', protect, authorize('Admin', 'Marketing Executive'), leadController.getLead);
 
 router.get('/lead-sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
+router.get('/lead_sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
 router.get('/categories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveCategories);
 router.get('/categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessCategories);
 router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessSubCategories);
