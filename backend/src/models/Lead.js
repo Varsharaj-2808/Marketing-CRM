@@ -39,20 +39,15 @@ const Lead = {
       [id]
     );
     const lead = result.rows[0] || null;
-    if (lead && lead.service_interested) {
-      const svcIds = Array.isArray(lead.service_interested) ? lead.service_interested : [];
-      if (svcIds.length > 0) {
-        const isUuid = svcIds.every(v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v));
-        if (isUuid) {
-          const svcResult = await query(
-            `SELECT id::text, name FROM services WHERE id::text = ANY($1)`,
-            [svcIds]
-          );
-          const nameMap = {};
-          svcResult.rows.forEach(r => { nameMap[r.id] = r.name; });
-          lead.service_interested = svcIds.map(v => nameMap[v] || v);
-        }
-      }
+    if (lead && lead.service_interested && Array.isArray(lead.service_interested) && lead.service_interested.length > 0) {
+      const allValues = lead.service_interested.map(v => String(v));
+      const svcResult = await query(
+        `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+        [allValues]
+      );
+      const nameMap = {};
+      svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+      lead.service_interested = allValues.map(v => nameMap[v] || lead.service_interested[allValues.indexOf(v)]);
     }
     return lead;
   },
@@ -71,20 +66,15 @@ const Lead = {
       [leadId]
     );
     const lead = result.rows[0] || null;
-    if (lead && lead.service_interested) {
-      const svcIds = Array.isArray(lead.service_interested) ? lead.service_interested : [];
-      if (svcIds.length > 0) {
-        const isUuid = svcIds.every(v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v));
-        if (isUuid) {
-          const svcResult = await query(
-            `SELECT id::text, name FROM services WHERE id::text = ANY($1)`,
-            [svcIds]
-          );
-          const nameMap = {};
-          svcResult.rows.forEach(r => { nameMap[r.id] = r.name; });
-          lead.service_interested = svcIds.map(v => nameMap[v] || v);
-        }
-      }
+    if (lead && lead.service_interested && Array.isArray(lead.service_interested) && lead.service_interested.length > 0) {
+      const allValues = lead.service_interested.map(v => String(v));
+      const svcResult = await query(
+        `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+        [allValues]
+      );
+      const nameMap = {};
+      svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+      lead.service_interested = allValues.map(v => nameMap[v] || lead.service_interested[allValues.indexOf(v)]);
     }
     return lead;
   },
@@ -348,19 +338,23 @@ const Lead = {
   },
   async _resolveServiceNames(rows) {
     if (!rows || rows.length === 0) return rows;
-    const allIds = new Set();
+    const allValues = new Set();
     rows.forEach(r => {
       if (r.service_interested && Array.isArray(r.service_interested)) {
-        r.service_interested.forEach(v => { if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) allIds.add(v); });
+        r.service_interested.forEach(v => allValues.add(String(v)));
       }
     });
-    if (allIds.size === 0) return rows;
-    const svcResult = await query(`SELECT id::text, name FROM services WHERE id::text = ANY($1)`, [Array.from(allIds)]);
+    if (allValues.size === 0) return rows;
+    const valuesArr = Array.from(allValues);
+    const svcResult = await query(
+      `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [valuesArr]
+    );
     const nameMap = {};
-    svcResult.rows.forEach(r => { nameMap[r.id] = r.name; });
+    svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
     return rows.map(r => {
       if (r.service_interested && Array.isArray(r.service_interested)) {
-        r.service_interested = r.service_interested.map(v => nameMap[v] || v);
+        r.service_interested = r.service_interested.map(v => nameMap[String(v)] || v);
       }
       return r;
     });
