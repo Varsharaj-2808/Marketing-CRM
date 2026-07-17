@@ -492,7 +492,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 exports.getLeadHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { page, limit } = req.query;
+    const { page, limit, field_name, change_type, is_system_generated } = req.query;
 
     if (!UUID_REGEX.test(id)) {
       return res.status(404).json(wrapError('Invalid lead ID format'));
@@ -507,6 +507,23 @@ exports.getLeadHistory = async (req, res, next) => {
       return res.status(403).json(wrapError('Access denied. Lead not assigned to you.'));
     }
 
+    const filters = {};
+    if (field_name) {
+      const fields = field_name.split(',').map(f => f.trim()).filter(Boolean);
+      if (fields.length === 1) {
+        filters.fieldName = fields[0];
+      } else if (fields.length > 1) {
+        filters.fieldNames = fields;
+      }
+    }
+    if (change_type === 'user') {
+      filters.isSystemGenerated = false;
+    } else if (change_type === 'system') {
+      filters.isSystemGenerated = true;
+    } else if (is_system_generated !== undefined && is_system_generated !== '') {
+      filters.isSystemGenerated = is_system_generated === 'true';
+    }
+
     const isPaginated = page !== undefined || limit !== undefined;
     let historyEntries;
     let totalEntries;
@@ -518,14 +535,18 @@ exports.getLeadHistory = async (req, res, next) => {
       if (isNaN(pageNum) || pageNum < 1) {
         return res.status(400).json({ success: false, page: 'Page must be a positive integer', message: 'Page must be a positive integer' });
       }
-      const result = await LeadHistory.findHistoryPaginated(id, pageNum, limitNum);
-      historyEntries = result.data;
-      totalEntries = result.totalEntries;
-      totalPages = result.totalPages;
+      filters.page = pageNum;
+      filters.limit = limitNum;
+      const result = await LeadHistory.findByLeadId(id, filters);
+      historyEntries = result.history;
+      totalEntries = result.total_changes;
+      totalPages = Math.ceil(result.total_changes / limitNum);
     } else {
-      const rowsResult = await LeadHistory.findByLeadId(id);
-      const rows = Array.isArray(rowsResult) ? rowsResult : (rowsResult.history || []);
+      const rowsResult = await LeadHistory.findByLeadId(id, filters);
+      const rows = rowsResult.history || [];
       historyEntries = [...rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      totalEntries = rowsResult.total_changes;
+      totalPages = 1;
     }
 
     const formattedData = historyEntries.map(row => {

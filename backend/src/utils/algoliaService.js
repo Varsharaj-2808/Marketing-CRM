@@ -297,7 +297,7 @@ module.exports = {
         city: lead.city,
         state: lead.state,
         country: lead.country,
-        lead_source: lead.lead_source,
+        lead_source: lead.lead_source_name || lead.lead_source,
         category: lead.category,
         category_name: lead.category_name || null,
         sub_category: lead.sub_category,
@@ -458,7 +458,7 @@ module.exports = {
         city: lead.city,
         state: lead.state,
         country: lead.country,
-        lead_source: lead.lead_source,
+        lead_source: lead.lead_source_name || lead.lead_source,
         category: lead.category,
         category_name: lead.category_name || null,
         sub_category: lead.sub_category,
@@ -1144,11 +1144,12 @@ module.exports = {
       const { query } = require('../config/db');
       const result = await query(
         `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                bc.category_name, bsc.sub_category_name
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
          FROM leads l
          LEFT JOIN users u ON l.assigned_to = u.id
          LEFT JOIN business_categories bc ON l.category = bc.id
          LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
          WHERE l.category = $1`,
         [categoryId]
       );
@@ -1165,11 +1166,12 @@ module.exports = {
       const { query } = require('../config/db');
       const result = await query(
         `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                bc.category_name, bsc.sub_category_name
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
          FROM leads l
          LEFT JOIN users u ON l.assigned_to = u.id
          LEFT JOIN business_categories bc ON l.category = bc.id
          LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
          WHERE l.sub_category = $1`,
         [subCategoryId]
       );
@@ -1186,11 +1188,12 @@ module.exports = {
       const { query } = require('../config/db');
       const result = await query(
         `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                bc.category_name, bsc.sub_category_name
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
          FROM leads l
          LEFT JOIN users u ON l.assigned_to = u.id
          LEFT JOIN business_categories bc ON l.category = bc.id
          LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
          WHERE l.assigned_to = $1`,
         [userId]
       );
