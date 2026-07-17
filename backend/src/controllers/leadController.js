@@ -6,6 +6,44 @@ const { query, getClient } = require('../config/db');
 const PDFDocument = require('pdfkit');
 const algolia = require('../utils/algoliaService');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
+const fs = require('fs');
+
+const LEADS_CACHE_FILE = 'd:/CRM market/backend/active_filters_leads.json';
+
+function readLeadsCache() {
+  try {
+    if (fs.existsSync(LEADS_CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(LEADS_CACHE_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return {};
+}
+
+function writeLeadsCache(cache) {
+  try {
+    fs.writeFileSync(LEADS_CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  } catch (err) {}
+}
+
+function saveLeadsFilter(reqQuery) {
+  writeLeadsCache({
+    search: reqQuery.search || '',
+    priority: reqQuery.priority || reqQuery.quality || '',
+    stage: reqQuery.stage || '',
+    status: reqQuery.status || '',
+    category: reqQuery.category || reqQuery.category_id || '',
+    sub_category: reqQuery.sub_category || reqQuery.sub_category_id || '',
+    source: reqQuery.source || reqQuery.lead_source || '',
+    from: reqQuery.from || reqQuery.from_date || '',
+    to: reqQuery.to || reqQuery.to_date || '',
+    city: reqQuery.city || '',
+    state: reqQuery.state || '',
+    country: reqQuery.country || '',
+    assigned_to: reqQuery.assigned_to || '',
+    service_interested: reqQuery.service_interested || '',
+    created_by: reqQuery.created_by || '',
+  });
+}
 
 const VALID_PRIORITIES = ['Hot', 'Warm', 'Cold'];
 
@@ -244,6 +282,9 @@ exports.getLeads = async (req, res, next) => {
       from, to, from_date, to_date,
       sortBy, sort_by, sortOrder, sort_order, page, limit,
     } = req.query;
+
+    saveLeadsFilter(req.query);
+
     const isAdmin = req.user.role === 'Admin';
 
     const resolvedSearch = (search || '').trim() || undefined;
@@ -359,6 +400,8 @@ exports.getAdminLeads = async (req, res, next) => {
       sortOrder, sort_order,
       page, limit, from_date, to_date, from, to,
     } = req.query;
+
+    saveLeadsFilter(req.query);
 
     const resolvedSearch = (search || '').trim() || undefined;
     const resolvedStatus = (status || '').trim() || undefined;
@@ -1036,11 +1079,30 @@ exports.closeLeadWon = async (req, res, next) => {
 
 exports.exportLeads = async (req, res, next) => {
   try {
-    const {
+    let {
       format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to,
       category, sub_category, lead_source, from_date, to_date, sortBy, sort_by, sortOrder, sort_order,
       service_interested, created_by, city, state, country
     } = req.query;
+
+    const cached = readLeadsCache();
+    if (!search && cached.search) search = cached.search;
+    if (!priority && cached.priority) priority = cached.priority;
+    if (!stage && cached.stage) stage = cached.stage;
+    if (!status && cached.status) status = cached.status;
+    if (!category_id && cached.category_id) category_id = cached.category_id;
+    if (!sub_category_id && cached.sub_category_id) sub_category_id = cached.sub_category_id;
+    if (!category && cached.category) category = cached.category;
+    if (!sub_category && cached.sub_category) sub_category = cached.sub_category;
+    if (!source && cached.source) source = cached.source;
+    if (!from && cached.from) from = cached.from;
+    if (!to && cached.to) to = cached.to;
+    if (!city && cached.city) city = cached.city;
+    if (!state && cached.state) state = cached.state;
+    if (!country && cached.country) country = cached.country;
+    if (!assigned_to && cached.assigned_to) assigned_to = cached.assigned_to;
+    if (!service_interested && cached.service_interested) service_interested = cached.service_interested;
+    if (!created_by && cached.created_by) created_by = cached.created_by;
 
     const validFormats = ['csv', 'excel', 'pdf'];
     if (!validFormats.includes(format)) {
@@ -1062,6 +1124,13 @@ exports.exportLeads = async (req, res, next) => {
     const resolvedSource = (source || lead_source || '').trim() || undefined;
     const resolvedFromDate = (from_date || from || '').trim() || undefined;
     const resolvedToDate = (to_date || to || '').trim() || undefined;
+    const resolvedCity = city ? String(city).trim() : undefined;
+    const resolvedState = state ? String(state).trim() : undefined;
+    const resolvedCountry = country ? String(country).trim() : undefined;
+    const resolvedAssignedTo = assigned_to ? String(assigned_to).trim() : undefined;
+    const resolvedServiceInterested = service_interested ? String(service_interested).trim() : undefined;
+    const resolvedCreatedBy = created_by ? String(created_by).trim() : undefined;
+
     let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
     if (resolvedSortBy) {
       if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
@@ -1086,10 +1155,10 @@ exports.exportLeads = async (req, res, next) => {
             lead_source: resolvedSource,
             from_date: resolvedFromDate,
             to_date: resolvedToDate,
-            city: city ? String(city).trim() : undefined,
-            state: state ? String(state).trim() : undefined,
-            country: country ? String(country).trim() : undefined,
-            assigned_to: assigned_to ? String(assigned_to).trim() : undefined,
+            city: resolvedCity,
+            state: resolvedState,
+            country: resolvedCountry,
+            assigned_to: resolvedAssignedTo,
           },
           1,
           1000000,
@@ -1137,10 +1206,10 @@ exports.exportLeads = async (req, res, next) => {
         to_date: resolvedToDate,
         sortBy: resolvedSortBy,
         sortOrder: resolvedSortOrder,
-        service_interested: service_interested ? String(service_interested).trim() : undefined,
-        created_by: created_by ? String(created_by).trim() : undefined,
-        city: city ? String(city).trim() : undefined,
-        assigned_to: assigned_to ? String(assigned_to).trim() : undefined,
+        service_interested: resolvedServiceInterested,
+        created_by: resolvedCreatedBy,
+        city: resolvedCity,
+        assigned_to: resolvedAssignedTo,
         page: 1,
         limit: 1000000,
       });
@@ -1203,7 +1272,7 @@ exports.exportLeads = async (req, res, next) => {
       const friendlyHeaders = [
         'Lead ID', 'Company', 'Contact Person', 'Phone', 'Email', 'Website',
         'City', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage',
-        'Status', 'Assigned To', 'Budget', 'Expected Revenue',
+        'Status', 'Assigned To', 'Estimated Value', 'Final Deal Value',
         'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
         'Created Date', 'Updated Date'
       ];
@@ -1226,7 +1295,7 @@ exports.exportLeads = async (req, res, next) => {
       res.setHeader('Content-Disposition', 'attachment; filename=leads.pdf');
       doc.pipe(res);
 
-      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Phone', 'Email', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage', 'Status', 'Assigned To', 'Budget', 'Created'];
+      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Phone', 'Email', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage', 'Status', 'Assigned To', 'Estimated Value', 'Created'];
       const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'category_name', 'sub_category_name', 'priority', 'stage', 'lead_status', 'assigned_to_name', 'estimated_value', 'created_at'];
       const colWidths = [80, 90, 80, 75, 110, 60, 70, 70, 50, 70, 50, 75, 65, 80];
       let y = 50;

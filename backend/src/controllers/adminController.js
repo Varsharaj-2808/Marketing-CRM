@@ -13,6 +13,18 @@ const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
 const PDFDocument = require('pdfkit');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
+const fs = require('fs');
+
+const LEADS_CACHE_FILE = 'd:/CRM market/backend/active_filters_leads.json';
+
+function readLeadsCache() {
+  try {
+    if (fs.existsSync(LEADS_CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(LEADS_CACHE_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return {};
+}
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -987,10 +999,29 @@ exports.getLeadVolumeByCategoryMarketing = async (req, res, next) => {
 
 exports.exportAdminLeads = async (req, res, next) => {
   try {
-    const {
+    let {
       format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to,
       category, sub_category, lead_source, from_date, to_date, service_interested, created_by, city, state, country
     } = req.query;
+
+    const cached = readLeadsCache();
+    if (!search && cached.search) search = cached.search;
+    if (!priority && cached.priority) priority = cached.priority;
+    if (!stage && cached.stage) stage = cached.stage;
+    if (!status && cached.status) status = cached.status;
+    if (!category_id && cached.category_id) category_id = cached.category_id;
+    if (!sub_category_id && cached.sub_category_id) sub_category_id = cached.sub_category_id;
+    if (!category && cached.category) category = cached.category;
+    if (!sub_category && cached.sub_category) sub_category = cached.sub_category;
+    if (!source && cached.source) source = cached.source;
+    if (!from && cached.from) from = cached.from;
+    if (!to && cached.to) to = cached.to;
+    if (!city && cached.city) city = cached.city;
+    if (!state && cached.state) state = cached.state;
+    if (!country && cached.country) country = cached.country;
+    if (!assigned_to && cached.assigned_to) assigned_to = cached.assigned_to;
+    if (!service_interested && cached.service_interested) service_interested = cached.service_interested;
+    if (!created_by && cached.created_by) created_by = cached.created_by;
 
     // STORY-6.3.1: Only csv and excel allowed
     if (!format || !['csv', 'excel'].includes(format)) {
@@ -1009,6 +1040,12 @@ exports.exportAdminLeads = async (req, res, next) => {
     const resolvedSource = (source || lead_source || '').trim() || undefined;
     const resolvedFromDate = (from_date || from || '').trim() || undefined;
     const resolvedToDate = (to_date || to || '').trim() || undefined;
+    const resolvedCity = city ? String(city).trim() : undefined;
+    const resolvedState = state ? String(state).trim() : undefined;
+    const resolvedCountry = country ? String(country).trim() : undefined;
+    const resolvedAssignedTo = assigned_to ? String(assigned_to).trim() : undefined;
+    const resolvedServiceInterested = service_interested ? String(service_interested).trim() : undefined;
+    const resolvedCreatedBy = created_by ? String(created_by).trim() : undefined;
 
     const filters = {
       search: resolvedSearch,
@@ -1020,10 +1057,10 @@ exports.exportAdminLeads = async (req, res, next) => {
       source: resolvedSource,
       from_date: resolvedFromDate,
       to_date: resolvedToDate,
-      assigned_to: assigned_to ? String(assigned_to).trim() : undefined,
-      service_interested: service_interested ? String(service_interested).trim() : undefined,
-      created_by: created_by ? String(created_by).trim() : undefined,
-      city: city ? String(city).trim() : undefined,
+      assigned_to: resolvedAssignedTo,
+      service_interested: resolvedServiceInterested,
+      created_by: resolvedCreatedBy,
+      city: resolvedCity,
       page: 1,
       limit: 1000000,
     };
@@ -1042,12 +1079,12 @@ exports.exportAdminLeads = async (req, res, next) => {
             category: resolvedCategory,
             sub_category: resolvedSubCategory,
             lead_source: resolvedSource,
-            assigned_to: filters.assigned_to,
+            assigned_to: resolvedAssignedTo,
             from_date: resolvedFromDate,
             to_date: resolvedToDate,
-            city: filters.city,
-            state: state ? String(state).trim() : undefined,
-            country: country ? String(country).trim() : undefined,
+            city: resolvedCity,
+            state: resolvedState,
+            country: resolvedCountry,
           },
           1,
           1000000,
@@ -1171,7 +1208,7 @@ exports.exportAdminLeads = async (req, res, next) => {
       const friendlyHeaders = [
         'Lead ID', 'Company', 'Contact Person', 'Phone', 'Email', 'Website',
         'City', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage',
-        'Status', 'Assigned To', 'Budget', 'Expected Revenue',
+        'Status', 'Assigned To', 'Estimated Value', 'Final Deal Value',
         'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
         'Created Date', 'Updated Date'
       ];
