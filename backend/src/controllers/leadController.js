@@ -119,10 +119,10 @@ exports.createLead = async (req, res, next) => {
         email: lead.email,
         website: lead.website,
         city: lead.city,
-        lead_source: lead.lead_source,
+        lead_source: finalLead.lead_source_name || lead.lead_source,
         category: lead.category,
         sub_category: lead.sub_category,
-        service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : [],
+        service_interested: finalLead.service_interested || (lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : []),
         priority: lead.priority,
         estimated_value: lead.estimated_value,
         assigned_to: lead.assigned_to,
@@ -214,8 +214,8 @@ exports.getLead = async (req, res, next) => {
       mobile_number: lead.mobile_number,
       email: lead.email,
       city: lead.city,
-      lead_source: lead.lead_source,
-      servicesInterested: lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : [],
+      lead_source: lead.lead_source_name || lead.lead_source,
+      servicesInterested: lead.service_interested || [],
       priority: lead.priority,
       estimated_value: lead.estimated_value,
       assigned_to: lead.assigned_to,
@@ -492,7 +492,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 exports.getLeadHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { page, limit } = req.query;
+    const { page, limit, field_name, change_type, is_system_generated } = req.query;
 
     if (!UUID_REGEX.test(id)) {
       return res.status(404).json(wrapError('Invalid lead ID format'));
@@ -507,6 +507,23 @@ exports.getLeadHistory = async (req, res, next) => {
       return res.status(403).json(wrapError('Access denied. Lead not assigned to you.'));
     }
 
+    const filters = {};
+    if (field_name) {
+      const fields = field_name.split(',').map(f => f.trim()).filter(Boolean);
+      if (fields.length === 1) {
+        filters.fieldName = fields[0];
+      } else if (fields.length > 1) {
+        filters.fieldNames = fields;
+      }
+    }
+    if (change_type === 'user') {
+      filters.isSystemGenerated = false;
+    } else if (change_type === 'system') {
+      filters.isSystemGenerated = true;
+    } else if (is_system_generated !== undefined && is_system_generated !== '') {
+      filters.isSystemGenerated = is_system_generated === 'true';
+    }
+
     const isPaginated = page !== undefined || limit !== undefined;
     let historyEntries;
     let totalEntries;
@@ -518,14 +535,18 @@ exports.getLeadHistory = async (req, res, next) => {
       if (isNaN(pageNum) || pageNum < 1) {
         return res.status(400).json({ success: false, page: 'Page must be a positive integer', message: 'Page must be a positive integer' });
       }
-      const result = await LeadHistory.findHistoryPaginated(id, pageNum, limitNum);
-      historyEntries = result.data;
-      totalEntries = result.totalEntries;
-      totalPages = result.totalPages;
+      filters.page = pageNum;
+      filters.limit = limitNum;
+      const result = await LeadHistory.findByLeadId(id, filters);
+      historyEntries = result.history;
+      totalEntries = result.total_changes;
+      totalPages = Math.ceil(result.total_changes / limitNum);
     } else {
-      const rowsResult = await LeadHistory.findByLeadId(id);
-      const rows = Array.isArray(rowsResult) ? rowsResult : (rowsResult.history || []);
+      const rowsResult = await LeadHistory.findByLeadId(id, filters);
+      const rows = rowsResult.history || [];
       historyEntries = [...rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      totalEntries = rowsResult.total_changes;
+      totalPages = 1;
     }
 
     const formattedData = historyEntries.map(row => {
@@ -1060,11 +1081,13 @@ exports.exportLeads = async (req, res, next) => {
     const sql = `SELECT l.*,
                         u.name as assigned_to_name,
                         bc.category_name,
-                        bsc.sub_category_name
+                        bsc.sub_category_name,
+                        ls.name as lead_source_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN business_categories bc ON l.category = bc.id
                  LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                 LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
                  WHERE ${where}
                  ORDER BY l.created_at DESC`;
     const result = await query(sql, values);
@@ -1089,7 +1112,7 @@ exports.exportLeads = async (req, res, next) => {
       email: lead.email || '',
       website: lead.website || '',
       city: lead.city || '',
-      lead_source: lead.lead_source || '',
+      lead_source: lead.lead_source_name || lead.lead_source || '',
       category_name: lead.category_name || '',
       sub_category_name: lead.sub_category_name || '',
       priority: lead.priority || '',
@@ -1101,7 +1124,7 @@ exports.exportLeads = async (req, res, next) => {
       lost_reason: lead.lost_reason || '',
       closure_date: lead.closure_date ? String(lead.closure_date).slice(0, 10) : '',
       next_followup_date: lead.next_followup_date ? String(lead.next_followup_date).slice(0, 10) : '',
-      service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? lead.service_interested : JSON.stringify(lead.service_interested)) : '',
+      service_interested: lead.service_interested ? (Array.isArray(lead.service_interested) ? lead.service_interested.join(', ') : lead.service_interested) : '',
       created_at: lead.created_at ? String(lead.created_at).slice(0, 19) : '',
       updated_at: lead.updated_at ? String(lead.updated_at).slice(0, 19) : '',
     });

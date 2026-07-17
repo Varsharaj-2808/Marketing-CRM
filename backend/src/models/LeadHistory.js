@@ -31,7 +31,10 @@ const LeadHistory = {
        WHERE h.lead_id = $1`;
     const params = [leadId];
     
-    if (filters.fieldName) {
+    if (filters.fieldNames && Array.isArray(filters.fieldNames) && filters.fieldNames.length > 0) {
+      const placeholders = filters.fieldNames.map(f => { params.push(f); return `$${params.length}`; });
+      sql += ` AND h.field_name IN (${placeholders.join(',')})`;
+    } else if (filters.fieldName) {
       params.push(filters.fieldName);
       sql += ` AND h.field_name = $${params.length}`;
     }
@@ -40,7 +43,7 @@ const LeadHistory = {
       sql += ` AND h.is_system_generated = $${params.length}`;
     }
     
-    sql += ` ORDER BY h.changed_at DESC`; // Newest first
+    sql += ` ORDER BY h.changed_at DESC`;
     
     if (filters.limit) {
       params.push(filters.limit);
@@ -54,10 +57,12 @@ const LeadHistory = {
 
     const result = await query(sql, params);
     
-    // Also return count for pagination
     let countSql = `SELECT COUNT(*) FROM lead_history WHERE lead_id = $1`;
     const countParams = [leadId];
-    if (filters.fieldName) {
+    if (filters.fieldNames && Array.isArray(filters.fieldNames) && filters.fieldNames.length > 0) {
+      const placeholders = filters.fieldNames.map(f => { countParams.push(f); return `$${countParams.length}`; });
+      countSql += ` AND field_name IN (${placeholders.join(',')})`;
+    } else if (filters.fieldName) {
       countParams.push(filters.fieldName);
       countSql += ` AND field_name = $${countParams.length}`;
     }

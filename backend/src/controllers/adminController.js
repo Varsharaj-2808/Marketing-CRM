@@ -1057,7 +1057,7 @@ exports.exportAdminLeads = async (req, res, next) => {
       email: lead.email || '',
       website: lead.website || '',
       city: lead.city || '',
-      lead_source: lead.lead_source || '',
+      lead_source: lead.lead_source_name || lead.lead_source || '',
       category_name: lead.category_name || '',
       sub_category_name: lead.sub_category_name || '',
       priority: lead.priority || '',
@@ -1069,7 +1069,7 @@ exports.exportAdminLeads = async (req, res, next) => {
       lost_reason: lead.lost_reason || '',
       closure_date: lead.closure_date ? String(lead.closure_date).slice(0, 10) : '',
       next_followup_date: lead.next_followup_date ? String(lead.next_followup_date).slice(0, 10) : '',
-      service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? lead.service_interested : JSON.stringify(lead.service_interested)) : '',
+      service_interested: lead.service_interested ? (Array.isArray(lead.service_interested) ? lead.service_interested.join(', ') : lead.service_interested) : '',
       created_at: lead.created_at ? String(lead.created_at).slice(0, 19) : '',
       updated_at: lead.updated_at ? String(lead.updated_at).slice(0, 19) : '',
     });
@@ -1414,11 +1414,13 @@ exports.sendDailyReminders = async (req, res, next) => {
 exports.reindexLeads = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT l.*, u.name as assigned_to_name, bc.category_name, bsc.sub_category_name
+      `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+              bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
        LEFT JOIN business_categories bc ON l.category = bc.id
        LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
        WHERE l.is_deleted = false OR l.is_deleted IS NULL`
     );
     const leads = result.rows;

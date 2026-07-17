@@ -44,29 +44,55 @@ const Lead = {
   async findById(id) {
     const result = await query(
       `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-              bc.category_name, bsc.sub_category_name
+              bc.category_name, bsc.sub_category_name,
+              ls.name as lead_source_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
        LEFT JOIN business_categories bc ON l.category = bc.id
        LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
        WHERE l.id = $1`,
       [id]
     );
-    return result.rows[0] || null;
+    const lead = result.rows[0] || null;
+    if (lead && lead.service_interested && Array.isArray(lead.service_interested) && lead.service_interested.length > 0) {
+      const allValues = lead.service_interested.map(v => String(v));
+      const svcResult = await query(
+        `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+        [allValues]
+      );
+      const nameMap = {};
+      svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+      lead.service_interested = allValues.map(v => nameMap[v] || lead.service_interested[allValues.indexOf(v)]);
+    }
+    return lead;
   },
 
   async findByLeadId(leadId) {
     const result = await query(
       `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-              bc.category_name, bsc.sub_category_name
+              bc.category_name, bsc.sub_category_name,
+              ls.name as lead_source_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
        LEFT JOIN business_categories bc ON l.category = bc.id
        LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
        WHERE l.lead_id = $1`,
       [leadId]
     );
-    return result.rows[0] || null;
+    const lead = result.rows[0] || null;
+    if (lead && lead.service_interested && Array.isArray(lead.service_interested) && lead.service_interested.length > 0) {
+      const allValues = lead.service_interested.map(v => String(v));
+      const svcResult = await query(
+        `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+        [allValues]
+      );
+      const nameMap = {};
+      svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+      lead.service_interested = allValues.map(v => nameMap[v] || lead.service_interested[allValues.indexOf(v)]);
+    }
+    return lead;
   },
 
   async updateAssignedTo(id, assignedToUserId) {
@@ -182,11 +208,13 @@ const Lead = {
 
     const offset = (page - 1) * limit;
     const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                        bc.category_name, bsc.sub_category_name
+                        bc.category_name, bsc.sub_category_name,
+                        ls.name as lead_source_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN business_categories bc ON l.category = bc.id
                  LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                 LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -194,8 +222,10 @@ const Lead = {
 
     const result = await query(sql, values);
 
+    const rows = await this._resolveServiceNames(result.rows);
+
     return {
-      data: result.rows,
+      data: rows,
       page,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
@@ -299,11 +329,13 @@ const Lead = {
 
     const offset = (page - 1) * limit;
     const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                        bc.category_name, bsc.sub_category_name
+                        bc.category_name, bsc.sub_category_name,
+                        ls.name as lead_source_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN business_categories bc ON l.category = bc.id
                  LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                 LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -311,12 +343,37 @@ const Lead = {
 
     const result = await query(sql, values);
 
+    const rows = await this._resolveServiceNames(result.rows);
+
     return {
-      data: result.rows,
+      data: rows,
       page,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
     };
+  },
+  async _resolveServiceNames(rows) {
+    if (!rows || rows.length === 0) return rows;
+    const allValues = new Set();
+    rows.forEach(r => {
+      if (r.service_interested && Array.isArray(r.service_interested)) {
+        r.service_interested.forEach(v => allValues.add(String(v)));
+      }
+    });
+    if (allValues.size === 0) return rows;
+    const valuesArr = Array.from(allValues);
+    const svcResult = await query(
+      `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [valuesArr]
+    );
+    const nameMap = {};
+    svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+    return rows.map(r => {
+      if (r.service_interested && Array.isArray(r.service_interested)) {
+        r.service_interested = r.service_interested.map(v => nameMap[String(v)] || v);
+      }
+      return r;
+    });
   },
   async updateStage(id, stage, leadStatus = null) {
     const result = await query(
