@@ -238,7 +238,7 @@ exports.exportLeads = async (req, res, next) => {
       const uniqueIds = [...new Set(lead_ids)];
       const placeholders = uniqueIds.map((_, i) => `$${i + 1}`).join(', ');
       const leadResult = await query(
-        `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id IN (${placeholders})`,
+        `SELECT l.*, u.name as assigned_to_name, ls.name as lead_source_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name WHERE l.id IN (${placeholders})`,
         uniqueIds
       );
 
@@ -252,7 +252,7 @@ exports.exportLeads = async (req, res, next) => {
       leads = leadResult.rows;
     } else {
       const leadResult = await query(
-        `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id ORDER BY l.created_at DESC`
+        `SELECT l.*, u.name as assigned_to_name, ls.name as lead_source_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name ORDER BY l.created_at DESC`
       );
       leads = leadResult.rows;
     }
@@ -283,7 +283,7 @@ exports.exportLeads = async (req, res, next) => {
           escapeCsvField(lead.contact_person || ''),
           lead.mobile_number || '',
           escapeCsvField(lead.email || ''),
-          escapeCsvField(lead.lead_source || ''),
+          escapeCsvField(lead.lead_source_name || lead.lead_source || ''),
           escapeCsvField(lead.category || ''),
           lead.priority || '',
           lead.stage || '',
@@ -305,7 +305,7 @@ exports.exportLeads = async (req, res, next) => {
         'Contact Person': lead.contact_person || '',
         'Mobile': lead.mobile_number || '',
         'Email': lead.email || '',
-        'Lead Source': lead.lead_source || '',
+        'Lead Source': lead.lead_source_name || lead.lead_source || '',
         'Category': lead.category || '',
         'Priority': lead.priority || '',
         'Stage': lead.stage || '',
