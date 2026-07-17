@@ -1057,7 +1057,7 @@ exports.exportAdminLeads = async (req, res, next) => {
       email: lead.email || '',
       website: lead.website || '',
       city: lead.city || '',
-      lead_source: lead.lead_source || '',
+      lead_source: lead.lead_source_name || lead.lead_source || '',
       category_name: lead.category_name || '',
       sub_category_name: lead.sub_category_name || '',
       priority: lead.priority || '',
@@ -1069,7 +1069,7 @@ exports.exportAdminLeads = async (req, res, next) => {
       lost_reason: lead.lost_reason || '',
       closure_date: lead.closure_date ? String(lead.closure_date).slice(0, 10) : '',
       next_followup_date: lead.next_followup_date ? String(lead.next_followup_date).slice(0, 10) : '',
-      service_interested: lead.service_interested ? (typeof lead.service_interested === 'string' ? lead.service_interested : JSON.stringify(lead.service_interested)) : '',
+      service_interested: lead.service_interested ? (Array.isArray(lead.service_interested) ? lead.service_interested.join(', ') : lead.service_interested) : '',
       created_at: lead.created_at ? String(lead.created_at).slice(0, 19) : '',
       updated_at: lead.updated_at ? String(lead.updated_at).slice(0, 19) : '',
     });
