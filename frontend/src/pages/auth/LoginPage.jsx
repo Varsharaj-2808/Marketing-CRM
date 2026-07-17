@@ -97,11 +97,7 @@ export default function LoginPage() {
                 security
               </span>
             </div>
-            <h1 className="font-display-lg text-xl md:text-2xl tracking-tight mb-1"
-              style={{ background: 'linear-gradient(135deg, #3525cd, #712ae2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-            >
-              ApexCRM
-            </h1>
+
             <div className="flex flex-col gap-0.5">
               <h2 className="font-headline-md text-headline-md text-on-surface">Welcome Back</h2>
               <p className="font-body-md text-body-md text-on-surface-variant/70">
@@ -172,63 +168,15 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-5" style={{ animation: 'fade-in-up 0.6s 0.28s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
-            <button
-              type="button"
-              onClick={() => setShowDemo((p) => !p)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl text-label-sm text-on-surface-variant/50 hover:text-on-surface-variant hover:bg-white/20 transition-all duration-300"
-            >
-              <span
-                className={`material-symbols-outlined text-base transition-transform duration-300 ${showDemo ? 'rotate-180' : ''}`}
-              >
-                expand_more
-              </span>
-              Demo Credentials
-            </button>
 
-            {showDemo && (
-              <div className="mt-3 space-y-2 animate-slide-up">
-                {DEMO_ACCOUNTS.map((account) => (
-                  <button
-                    key={account.id}
-                    type="button"
-                    onClick={() => fillCredentials(account)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/20 hover:bg-white/35 border border-white/20 hover:border-primary/30 transition-all duration-300 group"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f46e5]/10 to-[#712ae2]/10 flex items-center justify-center ring-1 ring-[#4f46e5]/10 group-hover:ring-[#4f46e5]/30 transition-all shrink-0">
-                      <span
-                        className="material-symbols-outlined text-primary text-sm"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        {account.role === 'Admin' ? 'admin_panel_settings' : 'badge'}
-                      </span>
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="font-label-md text-label-md text-on-surface truncate">{account.role}</p>
-                      <p className="font-body-md text-body-md text-on-surface-variant/60 truncate">{account.email}</p>
-                    </div>
-                    <span className="text-label-sm text-primary/60 group-hover:text-primary font-medium transition-colors shrink-0">
-                      Use
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
           <div className="mt-6 pt-6 border-t border-outline-variant/30 text-center" style={{ animation: 'fade-in-up 0.6s 0.35s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
-            <p className="font-body-md text-label-sm text-on-surface-variant/50 mb-3">
-              Protected by Enterprise-grade AES-256 Encryption
-            </p>
             <Link to="/app/forgot-password" className="font-label-sm text-label-sm text-primary hover:text-primary/80 transition-colors">
               Forgot Password?
             </Link>
           </div>
         </div>
 
-        <div className="fixed bottom-4 flex items-center justify-center gap-2 opacity-50">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-label-sm font-label-sm text-on-surface-variant">Global Systems Operational</span>
-        </div>
+
       </main>
   );
 }

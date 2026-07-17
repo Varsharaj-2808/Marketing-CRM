@@ -94,7 +94,7 @@ function formatCurrency(value) {
   if (value === null || value === undefined) return null;
   const num = Number(value);
   if (isNaN(num)) return null;
-  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function getTimelineMeta(type) {

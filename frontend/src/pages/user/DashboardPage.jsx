@@ -346,7 +346,7 @@ export default function DashboardPage() {
                 <div className="w-px bg-outline-variant/20"></div>
                 <div>
                   <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest mb-0.5">Budget Spent</p>
-                  <p className="text-headline-md font-headline-md text-on-surface">$14.2k</p>
+                  <p className="text-headline-md font-headline-md text-on-surface">₹14.2k</p>
                 </div>
               </div>
             </div>
