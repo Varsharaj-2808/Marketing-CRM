@@ -119,13 +119,13 @@ exports.createLead = async (req, res, next) => {
         email: lead.email,
         website: lead.website,
         city: lead.city,
-        lead_source: finalLead.lead_source_name || lead.lead_source,
+        lead_source: (finalLead && finalLead.lead_source_name) || lead.lead_source,
         category: lead.category,
         sub_category: lead.sub_category,
-        service_interested: finalLead.service_interested || (lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : []),
+        service_interested: (finalLead && finalLead.service_interested) || (lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : []),
         priority: lead.priority,
         estimated_value: lead.estimated_value,
-        assigned_to: lead.assigned_to,
+        assigned_to: (finalLead && (finalLead.assigned_employee_id || finalLead.assigned_to)) || lead.assigned_to,
         stage: lead.stage,
         lead_status: lead.lead_status,
         created_at: lead.created_at,
@@ -218,7 +218,7 @@ exports.getLead = async (req, res, next) => {
       servicesInterested: lead.service_interested || [],
       priority: lead.priority,
       estimated_value: lead.estimated_value,
-      assigned_to: lead.assigned_to,
+      assigned_to: lead.assigned_employee_id || lead.assigned_to,
       stage: lead.stage,
       next_followup_date: lead.next_followup_date || null,
       final_deal_value: lead.final_deal_value || null,
@@ -333,7 +333,7 @@ exports.getLeads = async (req, res, next) => {
       limit: parseInt(limit) || 20,
     });
 
-    const arrayData = result.data.map(addOverdueFlag);
+    const arrayData = result.data.map(r => addOverdueFlag({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to }));
     res.json({
       success: true,
       message: 'Leads fetched successfully',
@@ -479,7 +479,7 @@ exports.getAdminLeads = async (req, res, next) => {
         totalPages: result.totalPages,
         totalCount: result.totalCount,
         limit: result.limit || limitNum,
-        data: result.data,
+        data: result.data.map(r => ({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to })),
       },
     });
   } catch (error) {
@@ -492,7 +492,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 exports.getLeadHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { page, limit, field_name, change_type, is_system_generated } = req.query;
+    const { page, limit, field, field_name, change_type, is_system_generated } = req.query;
 
     if (!UUID_REGEX.test(id)) {
       return res.status(404).json(wrapError('Invalid lead ID format'));
@@ -508,8 +508,9 @@ exports.getLeadHistory = async (req, res, next) => {
     }
 
     const filters = {};
-    if (field_name) {
-      const fields = field_name.split(',').map(f => f.trim()).filter(Boolean);
+    const rawFieldName = field_name || field;
+    if (rawFieldName) {
+      const fields = rawFieldName.split(',').map(f => f.trim()).filter(Boolean);
       if (fields.length === 1) {
         filters.fieldName = fields[0];
       } else if (fields.length > 1) {
@@ -1035,7 +1036,11 @@ exports.closeLeadWon = async (req, res, next) => {
 
 exports.exportLeads = async (req, res, next) => {
   try {
-    const { format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to } = req.query;
+    const {
+      format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to,
+      category, sub_category, lead_source, from_date, to_date, sortBy, sort_by, sortOrder, sort_order,
+      service_interested, created_by, city, state, country
+    } = req.query;
 
     const validFormats = ['csv', 'excel', 'pdf'];
     if (!validFormats.includes(format)) {
@@ -1044,55 +1049,105 @@ exports.exportLeads = async (req, res, next) => {
 
     const userId = req.user.id;
     const isAdmin = req.user.role === 'Admin';
-    const conditions = ['l.deleted_at IS NULL'];
-    const values = [];
-    let idx = 1;
 
-    if (!isAdmin) {
-      conditions.push(`l.assigned_to = $${idx++}`);
-      values.push(userId);
+    const resolvedSearch = (search || '').trim() || undefined;
+    const resolvedPriority = (priority || quality || '').trim() || undefined;
+    const resolvedCategory = (category || category_id || '').trim() || undefined;
+    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
+    let resolvedStage = (stage || '').trim() || undefined;
+    if (resolvedStage === 'New Lead') {
+      resolvedStage = 'New';
+    }
+    const resolvedStatus = (status || '').trim() || undefined;
+    const resolvedSource = (source || lead_source || '').trim() || undefined;
+    const resolvedFromDate = (from_date || from || '').trim() || undefined;
+    const resolvedToDate = (to_date || to || '').trim() || undefined;
+    let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    if (resolvedSortBy) {
+      if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
+      if (resolvedSortBy === 'estimatedValue') resolvedSortBy = 'estimated_value';
+      if (resolvedSortBy === 'source') resolvedSortBy = 'lead_source';
+    }
+    const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
+
+    let leads = [];
+    let algoliaUsed = false;
+
+    if (algolia && typeof algolia.searchLeads === 'function') {
+      try {
+        const algoliaResult = await algolia.searchLeads(
+          resolvedSearch || '',
+          {
+            priority: resolvedPriority,
+            stage: resolvedStage,
+            status: resolvedStatus,
+            category: resolvedCategory,
+            sub_category: resolvedSubCategory,
+            lead_source: resolvedSource,
+            from_date: resolvedFromDate,
+            to_date: resolvedToDate,
+            city: city ? String(city).trim() : undefined,
+            state: state ? String(state).trim() : undefined,
+            country: country ? String(country).trim() : undefined,
+            assigned_to: assigned_to ? String(assigned_to).trim() : undefined,
+          },
+          1,
+          1000000,
+          isAdmin,
+          req.user.id
+        );
+        if (algoliaResult) {
+          leads = algoliaResult.hits || [];
+          algoliaUsed = true;
+
+          // Apply sorting if requested
+          if (resolvedSortBy) {
+            const sortField = resolvedSortBy;
+            const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
+            leads.sort((a, b) => {
+              const valA = a[sortField];
+              const valB = b[sortField];
+              if (valA === valB) return 0;
+              if (valA === null || valA === undefined) return 1;
+              if (valB === null || valB === undefined) return -1;
+              if (typeof valA === 'string') {
+                return valA.localeCompare(valB) * sortDir;
+              }
+              return (valA - valB) * sortDir;
+            });
+          }
+        }
+      } catch (algoliaErr) {
+        console.error('[exportLeads] Algolia search failed, falling back to DB:', algoliaErr.message);
+      }
     }
 
-    if (search) {
-      const searchPattern = `%${search}%`;
-      conditions.push(`(
-        l.company_name ILIKE $${idx} OR
-        l.contact_person ILIKE $${idx} OR
-        l.mobile_number ILIKE $${idx} OR
-        l.email ILIKE $${idx} OR
-        l.lead_source ILIKE $${idx} OR
-        l.lead_id ILIKE $${idx}
-      )`);
-      values.push(searchPattern);
-      idx++;
+    if (!algoliaUsed) {
+      const result = await Lead.findAll({
+        userId,
+        isAdmin,
+        search: resolvedSearch,
+        priority: resolvedPriority,
+        stage: resolvedStage,
+        status: resolvedStatus,
+        category: resolvedCategory,
+        sub_category: resolvedSubCategory,
+        lead_source: resolvedSource,
+        from_date: resolvedFromDate,
+        to_date: resolvedToDate,
+        sortBy: resolvedSortBy,
+        sortOrder: resolvedSortOrder,
+        service_interested: service_interested ? String(service_interested).trim() : undefined,
+        created_by: created_by ? String(created_by).trim() : undefined,
+        city: city ? String(city).trim() : undefined,
+        assigned_to: assigned_to ? String(assigned_to).trim() : undefined,
+        page: 1,
+        limit: 1000000,
+      });
+      leads = result.data || [];
     }
 
-    if (category_id) { conditions.push(`l.category = $${idx++}`); values.push(category_id); }
-    if (sub_category_id) { conditions.push(`l.sub_category = $${idx++}`); values.push(sub_category_id); }
-    if (status) { conditions.push(`l.lead_status = $${idx++}`); values.push(status); }
-    if (stage) { conditions.push(`l.stage = $${idx++}`); values.push(stage); }
-    if (source) { conditions.push(`l.lead_source = $${idx++}`); values.push(source); }
-    if (priority || quality) { conditions.push(`l.priority ILIKE $${idx++}`); values.push(priority || quality); }
-    if (assigned_to && isAdmin) { conditions.push(`l.assigned_to = $${idx++}`); values.push(assigned_to); }
-    if (from) { conditions.push(`l.created_at >= $${idx++}`); values.push(from); }
-    if (to) { conditions.push(`l.created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
-
-    const where = conditions.join(' AND ');
-    const sql = `SELECT l.*,
-                        u.name as assigned_to_name,
-                        bc.category_name,
-                        bsc.sub_category_name,
-                        ls.name as lead_source_name
-                 FROM leads l
-                 LEFT JOIN users u ON l.assigned_to = u.id
-                 LEFT JOIN business_categories bc ON l.category = bc.id
-                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
-                 LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
-                 WHERE ${where}
-                 ORDER BY l.created_at DESC`;
-    const result = await query(sql, values);
-
-    if (result.rows.length === 0) {
+    if (leads.length === 0) {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
 
@@ -1131,7 +1186,7 @@ exports.exportLeads = async (req, res, next) => {
 
     if (format === 'csv') {
       const csvRows = [EXPORT_HEADERS.join(',')];
-      for (const lead of result.rows) {
+      for (const lead of leads) {
         const mapped = mapLead(lead);
         csvRows.push(EXPORT_HEADERS.map(h => {
           const v = String(mapped[h] || '');
@@ -1152,7 +1207,7 @@ exports.exportLeads = async (req, res, next) => {
         'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
         'Created Date', 'Updated Date'
       ];
-      const rows = result.rows.map(lead => {
+      const rows = leads.map(lead => {
         const mapped = mapLead(lead);
         return EXPORT_HEADERS.map(h => mapped[h] || '');
       });
@@ -1186,7 +1241,7 @@ exports.exportLeads = async (req, res, next) => {
       y += 16;
       doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
       doc.font('Helvetica').fontSize(6);
-      for (const lead of result.rows) {
+      for (const lead of leads) {
         if (y > 540) { doc.addPage(); y = 40; }
         x = 40;
         cols.forEach((c, i) => {
@@ -1201,7 +1256,7 @@ exports.exportLeads = async (req, res, next) => {
       return;
     }
 
-    res.json({ success: true, message: 'Leads exported successfully', data: result.rows });
+    res.json({ success: true, message: 'Leads exported successfully', data: leads });
   } catch (error) {
     next(error);
   }

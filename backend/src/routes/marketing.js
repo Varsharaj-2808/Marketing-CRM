@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
@@ -9,6 +9,8 @@ const { query } = require('../config/db');
 router.get('/leads/:id/field-history', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.getFieldHistory);
 router.all('/leads/:id/field-history', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.rejectMutation);
 router.get('/leads/:id/lead-history', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeadHistory);
+router.get('/leads/:id/field-history/export', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.exportFieldHistory);
+router.get('/leads/export/history/:id/download', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.exportFieldHistory);
 
 const adminController = require('../controllers/adminController');
 const assignController = require('../controllers/assignController');

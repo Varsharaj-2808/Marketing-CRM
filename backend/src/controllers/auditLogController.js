@@ -115,9 +115,11 @@ exports.getAuditLogs = async (req, res, next) => {
     const filters = {};
     if (userId) {
       if (!UUID_REGEX.test(userId)) {
-        // If it's not a UUID, treat it as a name search
-        const usersResult = await query('SELECT id FROM users WHERE name ILIKE $1', [`%${userId}%`]);
+        // If it's not a UUID, treat it as a name or email search
+        const usersResult = await query('SELECT id, email FROM users WHERE name ILIKE $1 OR email ILIKE $1', [`%${userId}%`]);
         filters.userIds = usersResult.rows.map(u => u.id);
+        filters.emails = usersResult.rows.map(u => u.email).filter(Boolean);
+        filters.actorSearch = userId;
       } else {
         filters.userId = userId;
       }
@@ -125,7 +127,11 @@ exports.getAuditLogs = async (req, res, next) => {
     if (action) filters.action = action;
     if (entity) filters.resource = entity;
     if (from) filters.from = new Date(from);
-    if (to) filters.to = new Date(to);
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      filters.to = toDate;
+    }
     if (page) filters.page = parseInt(page);
     if (limit) filters.limit = parseInt(limit);
 
@@ -192,12 +198,24 @@ exports.exportAuditLogs = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
     }
 
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
+
     const filters = {
       from: new Date(from),
-      to: new Date(to),
+      to: toDate,
       limit: 100000
     };
-    if (actor) filters.userId = actor;
+    if (actor) {
+      if (!UUID_REGEX.test(actor)) {
+        const usersResult = await query('SELECT id, email FROM users WHERE name ILIKE $1 OR email ILIKE $1', [`%${actor}%`]);
+        filters.userIds = usersResult.rows.map(u => u.id);
+        filters.emails = usersResult.rows.map(u => u.email).filter(Boolean);
+        filters.actorSearch = actor;
+      } else {
+        filters.userId = actor;
+      }
+    }
     if (action_type) filters.action = action_type;
     if (entity_affected || entity) filters.resource = entity_affected || entity;
 

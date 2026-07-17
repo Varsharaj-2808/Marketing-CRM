@@ -100,7 +100,7 @@ const Lead = {
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20, assigned_to, city, service_interested, created_by } = filters;
 
     const conditions = [];
     const values = [];
@@ -165,6 +165,38 @@ const Lead = {
       values.push(to_date.includes('T') ? to_date : `${to_date}T23:59:59.999Z`);
     }
 
+    if (isAdmin && assigned_to) {
+      conditions.push(`l.assigned_to = $${idx++}`);
+      values.push(assigned_to);
+    }
+
+    if (city) {
+      conditions.push(`l.city ILIKE $${idx++}`);
+      values.push(city);
+    }
+
+    if (service_interested) {
+      conditions.push(`EXISTS (
+        SELECT 1 
+        FROM jsonb_array_elements_text(l.service_interested) AS svc
+        LEFT JOIN services s ON s.id::text = svc OR s.name = svc
+        WHERE svc = $${idx} OR s.name = $${idx} OR s.id::text = $${idx}
+      )`);
+      values.push(service_interested);
+      idx++;
+    }
+
+    if (created_by) {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM lead_history lh 
+        LEFT JOIN users u_creator ON lh.changed_by = u_creator.id
+        WHERE lh.lead_id = l.id AND lh.field_name = 'lead_created' 
+          AND (lh.changed_by = $${idx} OR u_creator.employee_id = $${idx} OR u_creator.name = $${idx})
+      )`);
+      values.push(created_by);
+      idx++;
+    }
+
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
     const allowedSortColumns = {
@@ -218,7 +250,7 @@ const Lead = {
   async findAllAdmin(filters = {}) {
     const {
       search, status, priority, stage, source, category, sub_category, assigned_to, sortBy, sortOrder,
-      page = 1, limit = 25, from_date, to_date,
+      page = 1, limit = 25, from_date, to_date, city, service_interested, created_by,
     } = filters;
 
     const conditions = [];
@@ -282,6 +314,33 @@ const Lead = {
     if (to_date) {
       conditions.push(`l.created_at <= $${idx++}`);
       values.push(to_date.includes('T') ? to_date : `${to_date}T23:59:59.999Z`);
+    }
+
+    if (city) {
+      conditions.push(`l.city ILIKE $${idx++}`);
+      values.push(city);
+    }
+
+    if (service_interested) {
+      conditions.push(`EXISTS (
+        SELECT 1 
+        FROM jsonb_array_elements_text(l.service_interested) AS svc
+        LEFT JOIN services s ON s.id::text = svc OR s.name = svc
+        WHERE svc = $${idx} OR s.name = $${idx} OR s.id::text = $${idx}
+      )`);
+      values.push(service_interested);
+      idx++;
+    }
+
+    if (created_by) {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM lead_history lh 
+        LEFT JOIN users u_creator ON lh.changed_by = u_creator.id
+        WHERE lh.lead_id = l.id AND lh.field_name = 'lead_created' 
+          AND (lh.changed_by = $${idx} OR u_creator.employee_id = $${idx} OR u_creator.name = $${idx})
+      )`);
+      values.push(created_by);
+      idx++;
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

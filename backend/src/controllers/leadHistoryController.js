@@ -1,18 +1,56 @@
-﻿const LeadHistory = require('../models/LeadHistory');
+const LeadHistory = require('../models/LeadHistory');
 const Lead = require('../models/Lead');
 const { query } = require('../config/db');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
+const fs = require('fs');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const CACHE_FILE = 'd:/CRM market/backend/active_filters.json';
+
+function readCache() {
+  try {
+    if (fs.existsSync(CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return {};
+}
+
+function writeCache(cache) {
+  try {
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  } catch (err) {}
+}
+
 function parseFilters(query) {
-  const { field_name, change_type, is_system_generated, page, limit } = query;
+  const field = query.field || query.field_name || query.fieldName;
+  const change_type = query.change_type || query.changeType;
+  const is_system_generated = query.is_system_generated || query.isSystemGenerated;
+  const from = query.from || query.from_date || query.fromDate;
+  const to = query.to || query.to_date || query.toDate;
+  const search = query.search || query.searchQuery;
+  const page = query.page;
+  const limit = query.limit;
+
   const filters = {};
   if (page) filters.page = parseInt(page);
   if (limit) filters.limit = parseInt(limit);
 
-  if (field_name) {
-    const fields = field_name.split(',').map(f => f.trim()).filter(Boolean);
+  if (field) {
+    const fields = String(field)
+      .split(',')
+      .map(f => {
+        const cleaned = f.trim().toLowerCase().replace(/[\s_-]+/g, '');
+        if (cleaned === 'followuplogged') return 'followup_logged';
+        if (cleaned === 'leadcreated') return 'lead_created';
+        if (cleaned === 'assignedto') return 'assigned_to';
+        if (cleaned === 'leadreopened') return 'Lead Reopened';
+        if (cleaned === 'stage') return 'stage';
+        if (cleaned === 'status' || cleaned === 'leadstatus') return 'status';
+        return f.trim();
+      })
+      .filter(Boolean);
     if (fields.length === 1) {
       filters.fieldName = fields[0];
     } else if (fields.length > 1) {
@@ -21,13 +59,23 @@ function parseFilters(query) {
   }
 
   if (change_type) {
-    if (change_type === 'user') {
+    const ct = String(change_type).toLowerCase().trim();
+    if (ct === 'user') {
       filters.isSystemGenerated = false;
-    } else if (change_type === 'system') {
+    } else if (ct === 'system') {
       filters.isSystemGenerated = true;
     }
   } else if (is_system_generated !== undefined && is_system_generated !== '') {
-    filters.isSystemGenerated = is_system_generated === 'true';
+    filters.isSystemGenerated = String(is_system_generated) === 'true';
+  }
+
+  if (from) filters.from = from;
+  if (to) {
+    filters.to = String(to).includes('T') ? to : `${to}T23:59:59.999Z`;
+  }
+
+  if (search && String(search).trim()) {
+    filters.search = String(search).trim();
   }
 
   return filters;
@@ -51,6 +99,23 @@ exports.getFieldHistory = async (req, res, next) => {
     }
 
     const filters = parseFilters(req.query);
+    
+    // Cache active filters for this lead
+    const cacheKey = `${req.user.id}:${id}`;
+    const cachedFilters = { ...filters };
+    delete cachedFilters.page;
+    delete cachedFilters.limit;
+    try {
+      const cache = readCache();
+      cache[cacheKey] = {
+        filters: cachedFilters,
+        timestamp: Date.now()
+      };
+      writeCache(cache);
+    } catch (err) {
+      console.error('Failed to write filters cache:', err.message);
+    }
+
     if (!filters.page) filters.page = parseInt(req.query.page) || 1;
     if (!filters.limit) filters.limit = parseInt(req.query.limit) || 50;
 
@@ -111,7 +176,25 @@ exports.exportFieldHistory = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Not authorized to export this lead's history" });
     }
 
-    const filters = parseFilters(req.query);
+    let filters = parseFilters(req.query);
+    
+    // Fallback to cached active filters if frontend query string is empty
+    const queryKeys = Object.keys(req.query).filter(k => k !== 'format' && k !== '_');
+    if (queryKeys.length === 0) {
+      const cacheKey = `${req.user.id}:${id}`;
+      try {
+        const cache = readCache();
+        const cached = cache[cacheKey];
+        if (cached && (Date.now() - cached.timestamp < 30 * 60 * 1000)) {
+          filters = { ...cached.filters };
+        }
+      } catch (err) {
+        console.error('Failed to read filters cache:', err.message);
+      }
+    }
+    
+    delete filters.page;
+    delete filters.limit;
 
     const result = await LeadHistory.findByLeadId(id, filters);
 
