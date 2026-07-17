@@ -240,9 +240,9 @@ exports.exportFieldHistory = async (req, res, next) => {
       `"${r.field_name}","${r.old_value.replace(/"/g, '""')}","${r.new_value.replace(/"/g, '""')}","${r.change_summary.replace(/"/g, '""')}","${r.changed_by_name}","${r.changed_at}","${r.reason.replace(/"/g, '""')}"`
     ).join('\n');
 
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="lead-history-${id}.csv"`);
-    res.status(200).send(csvHeaders + csvRows);
+    res.status(200).send('\uFEFF' + csvHeaders + csvRows);
   } catch (error) {
     next(error);
   }

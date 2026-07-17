@@ -1182,6 +1182,8 @@ exports.exportAdminLeads = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
 
+    await enrichLeadsWithDisplayNames(leads);
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
     if (format === 'csv') {
@@ -1195,8 +1197,8 @@ exports.exportAdminLeads = async (req, res, next) => {
           }).join(',')
         );
       }
-      const csv = csvRows.join('\n');
-      res.setHeader('Content-Type', 'text/csv');
+      const csv = '\uFEFF' + csvRows.join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="leads-export-${timestamp}.csv"`);
       res.setHeader('X-Record-Count', String(recordCount));
       res.setHeader('X-Audit-Log-Id', String(auditId));
@@ -1264,9 +1266,9 @@ exports.exportReport = async (req, res, next) => {
       if (format === 'csv') {
         const csvRows = [headers.join(',')];
         csvRows.push(...rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')));
-        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename=lead-conversion.csv');
-        return res.send(csvRows.join('\n'));
+        return res.send('\uFEFF' + csvRows.join('\n'));
       }
 
       if (format === 'excel') {
@@ -1309,9 +1311,9 @@ exports.exportReport = async (req, res, next) => {
       if (format === 'csv') {
         const csvRows = [headers.join(',')];
         csvRows.push(...rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')));
-        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename=category-breakdown.csv');
-        return res.send(csvRows.join('\n'));
+        return res.send('\uFEFF' + csvRows.join('\n'));
       }
 
       if (format === 'excel') {
@@ -1580,4 +1582,111 @@ exports.testEmail = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+const enrichLeadsWithDisplayNames = async (leadsList) => {
+  if (!leadsList || leadsList.length === 0) return;
+
+  const categoryIds = new Set();
+  const subCategoryIds = new Set();
+  const userIds = new Set();
+  const sourceIds = new Set();
+  const serviceIds = new Set();
+
+  leadsList.forEach(l => {
+    if (l.category) categoryIds.add(String(l.category));
+    if (l.sub_category) subCategoryIds.add(String(l.sub_category));
+    if (l.assigned_to) userIds.add(String(l.assigned_to));
+    if (l.lead_source) sourceIds.add(String(l.lead_source));
+    if (l.service_interested) {
+      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
+      svcs.forEach(s => serviceIds.add(String(s)));
+    }
+  });
+
+  const categoryMap = {};
+  const subCategoryMap = {};
+  const userMap = {};
+  const sourceMap = {};
+  const serviceMap = {};
+
+  if (categoryIds.size > 0) {
+    const ids = Array.from(categoryIds);
+    const res = await query(
+      `SELECT id::text, category_name FROM business_categories WHERE id::text = ANY($1) OR category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      categoryMap[r.id] = r.category_name;
+      categoryMap[r.category_name] = r.category_name;
+    });
+  }
+
+  if (subCategoryIds.size > 0) {
+    const ids = Array.from(subCategoryIds);
+    const res = await query(
+      `SELECT id::text, sub_category_name FROM business_sub_categories WHERE id::text = ANY($1) OR sub_category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      subCategoryMap[r.id] = r.sub_category_name;
+      subCategoryMap[r.sub_category_name] = r.sub_category_name;
+    });
+  }
+
+  if (userIds.size > 0) {
+    const ids = Array.from(userIds);
+    const res = await query(
+      `SELECT id::text, employee_id, name FROM users WHERE id::text = ANY($1) OR employee_id = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      const display = r.employee_id && r.name ? `${r.employee_id} (${r.name})` : (r.name || r.employee_id || '');
+      userMap[r.id] = display;
+      userMap[r.employee_id] = display;
+    });
+  }
+
+  if (sourceIds.size > 0) {
+    const ids = Array.from(sourceIds);
+    const res = await query(
+      `SELECT id::text, name FROM lead_sources WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      sourceMap[r.id] = r.name;
+      sourceMap[r.name] = r.name;
+    });
+  }
+
+  if (serviceIds.size > 0) {
+    const ids = Array.from(serviceIds);
+    const res = await query(
+      `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      serviceMap[r.id] = r.name;
+      serviceMap[r.name] = r.name;
+    });
+  }
+
+  leadsList.forEach(l => {
+    const srcKey = l.lead_source ? String(l.lead_source) : '';
+    l.lead_source_name = sourceMap[srcKey] || l.lead_source_name || l.lead_source || '';
+
+    const catKey = l.category ? String(l.category) : '';
+    l.category_name = categoryMap[catKey] || l.category_name || l.category || '';
+
+    const subCatKey = l.sub_category ? String(l.sub_category) : '';
+    l.sub_category_name = subCategoryMap[subCatKey] || l.sub_category_name || l.sub_category || '';
+
+    const userKey = l.assigned_to ? String(l.assigned_to) : '';
+    l.assigned_to_name = userMap[userKey] || l.assigned_to_name || l.assigned_to || '';
+
+    if (l.service_interested) {
+      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
+      l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+    }
+  });
 };

@@ -1,55 +1,57 @@
 {
   "741106e9-f51a-4912-9d8f-73022e638b7b:cc7ad726-8dae-4a4d-8c8b-a92b7dcdeb02": {
-    "filters": {},
-    "timestamp": 1784284355965
+    "filters": {
+      "fieldName": "assigned_to"
+    },
+    "timestamp": 1784288408089
   },
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb:11111111-1111-1111-1111-111111111111": {
     "filters": {},
-    "timestamp": 1784283671129
+    "timestamp": 1784287786763
   },
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:11111111-1111-1111-1111-111111111111": {
     "filters": {},
-    "timestamp": 1784283672500
+    "timestamp": 1784287787136
   },
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb:22222222-2222-2222-2222-222222222222": {
     "filters": {
       "fieldName": "stage"
     },
-    "timestamp": 1784283671449
+    "timestamp": 1784287786816
   },
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb:33333333-3333-3333-3333-333333333333": {
     "filters": {},
-    "timestamp": 1784283671500
+    "timestamp": 1784287786836
   },
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb:44444444-4444-4444-4444-444444444444": {
     "filters": {},
-    "timestamp": 1784283671655
+    "timestamp": 1784287786919
   },
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb:88888888-8888-8888-8888-888888888888": {
     "filters": {},
-    "timestamp": 1784283672273
+    "timestamp": 1784287787030
   },
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:10101010-1010-1010-1010-101010101010": {
     "filters": {},
-    "timestamp": 1784283672424
+    "timestamp": 1784287787115
   },
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:12121212-1212-1212-1212-121212121212": {
     "filters": {
       "fieldName": "assigned_to"
     },
-    "timestamp": 1784283672802
+    "timestamp": 1784287787162
   },
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:16161616-1616-1616-1616-161616161616": {
     "filters": {},
-    "timestamp": 1784283673414
+    "timestamp": 1784287787265
   },
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:75757575-7575-7575-7575-757575757575": {
     "filters": {},
-    "timestamp": 1784283675309
+    "timestamp": 1784287788247
   },
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:76767676-7676-7676-7676-767676767676": {
     "filters": {},
-    "timestamp": 1784283675337
+    "timestamp": 1784287788301
   },
   "741106e9-f51a-4912-9d8f-73022e638b7b:a77a120b-1320-4d7a-b3e4-bb2ff4da80a5": {
     "filters": {
