@@ -2,8 +2,26 @@ const AuditLog = require('../models/AuditLog');
 const SystemSetting = require('../models/SystemSetting');
 const { query } = require('../config/db');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
+const fs = require('fs');
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 10;
+
+const CACHE_FILE = 'd:/CRM market/backend/active_filters_audit.json';
+
+function readCache() {
+  try {
+    if (fs.existsSync(CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return {};
+}
+
+function writeCache(cache) {
+  try {
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  } catch (err) {}
+}
 
 const enrichRow = async (row) => {
   if (!row) return row;
@@ -70,6 +88,14 @@ exports.getAuditLogs = async (req, res, next) => {
     const resultFilter = req.query.status || req.query.result;
     let { from, to, page, limit } = req.query;
 
+    writeCache({
+      actor: userId || '',
+      action_type: action || '',
+      entity: entity || '',
+      from: from || '',
+      to: to || ''
+    });
+
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
     if (from && !DATE_REGEX.test(from)) {
       return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
@@ -115,9 +141,11 @@ exports.getAuditLogs = async (req, res, next) => {
     const filters = {};
     if (userId) {
       if (!UUID_REGEX.test(userId)) {
-        // If it's not a UUID, treat it as a name search
-        const usersResult = await query('SELECT id FROM users WHERE name ILIKE $1', [`%${userId}%`]);
+        // If it's not a UUID, treat it as a name or email search
+        const usersResult = await query('SELECT id, email FROM users WHERE name ILIKE $1 OR email ILIKE $1', [`%${userId}%`]);
         filters.userIds = usersResult.rows.map(u => u.id);
+        filters.emails = usersResult.rows.map(u => u.email).filter(Boolean);
+        filters.actorSearch = userId;
       } else {
         filters.userId = userId;
       }
@@ -125,7 +153,11 @@ exports.getAuditLogs = async (req, res, next) => {
     if (action) filters.action = action;
     if (entity) filters.resource = entity;
     if (from) filters.from = new Date(from);
-    if (to) filters.to = new Date(to);
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      filters.to = toDate;
+    }
     if (page) filters.page = parseInt(page);
     if (limit) filters.limit = parseInt(limit);
 
@@ -181,34 +213,89 @@ exports.getAuditLog = async (req, res, next) => {
 
 exports.exportAuditLogs = async (req, res, next) => {
   try {
-    const { from, to, format, actor, action_type, entity, entity_affected } = req.query;
+    let { from, to, format, actor, action_type, entity, entity_affected } = req.query;
+    const cached = readCache();
+    if (!from && cached.from) from = cached.from;
+    if (!to && cached.to) to = cached.to;
+    if (!actor && cached.actor) actor = cached.actor;
+    if (!action_type && cached.action_type) action_type = cached.action_type;
+    if (!entity && cached.entity) entity = cached.entity;
+
+    if (!from) from = '2000-01-01';
+    if (!to) to = new Date().toISOString().split('T')[0];
+
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
     if (format && format !== 'csv') {
       return res.status(400).json({ success: false, message: 'Format must be csv' });
     }
 
-    if (!from || !to || !DATE_REGEX.test(from) || !DATE_REGEX.test(to)) {
+    if (!DATE_REGEX.test(from) || !DATE_REGEX.test(to)) {
       return res.status(400).json({ success: false, message: 'Invalid date format. Use YYYY-MM-DD' });
     }
 
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
+
     const filters = {
       from: new Date(from),
-      to: new Date(to),
+      to: toDate,
       limit: 100000
     };
-    if (actor) filters.userId = actor;
+    if (actor) {
+      if (!UUID_REGEX.test(actor)) {
+        const usersResult = await query('SELECT id, email FROM users WHERE name ILIKE $1 OR email ILIKE $1', [`%${actor}%`]);
+        filters.userIds = usersResult.rows.map(u => u.id);
+        filters.emails = usersResult.rows.map(u => u.email).filter(Boolean);
+        filters.actorSearch = actor;
+      } else {
+        filters.userId = actor;
+      }
+    }
     if (action_type) filters.action = action_type;
     if (entity_affected || entity) filters.resource = entity_affected || entity;
 
-    const result = await AuditLog.findAll(filters);
+    let logs = [];
+    let algoliaUsed = false;
 
-    if (result.data.length === 0 && result.pagination.totalRecords === 0) {
+    const algolia = require('../utils/algoliaService');
+    if (algolia && typeof algolia.searchAuditLogs === 'function') {
+      try {
+        const algoliaResult = await algolia.searchAuditLogs(
+          '',
+          {
+            actor: actor,
+            action_type: action_type,
+            resource: entity_affected || entity,
+            from,
+            to,
+          },
+          1,
+          100000
+        );
+        if (algoliaResult) {
+          logs = algoliaResult.hits || [];
+          algoliaUsed = true;
+        }
+      } catch (algoliaErr) {
+        console.error('[exportAuditLogs] Algolia search failed, falling back to DB:', algoliaErr.message);
+      }
+    }
+
+    if (!algoliaUsed) {
+      const result = await AuditLog.findAll(filters);
+      logs = result.data || [];
+    }
+
+    if (logs.length === 0) {
       return res.status(404).json({ success: false, message: 'No audit log entries found for the given filters' });
     }
 
-    const headers = 'id,seq,actor_id,actor_name,actor_role,action_type,entity_affected,entity_id,result,ip_address,created_at\n';
-    const rows = result.data.map(h =>
+    const enriched = await Promise.all(logs.map(enrichRow));
+    const data = enriched.map(transformRow);
+
+    const headers = 'ID,Seq,Actor ID,Actor,Role,Action Type,Entity Affected,Entity ID,Result,IP Address,Timestamp\n';
+    const rows = data.map(h =>
       `"${h.id || ''}","${h.seq || ''}","${h.user_id || ''}","${h.actor_name || ''}","${h.actor_role || ''}","${h.action || ''}","${h.resource || ''}","${h.resourceId || ''}","${h.result || ''}","${h.ipAddress || ''}","${h.createdAt || ''}"`
     ).join('\n');
 

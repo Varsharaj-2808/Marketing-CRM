@@ -13,6 +13,18 @@ const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
 const PDFDocument = require('pdfkit');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
+const fs = require('fs');
+
+const LEADS_CACHE_FILE = 'd:/CRM market/backend/active_filters_leads.json';
+
+function readLeadsCache() {
+  try {
+    if (fs.existsSync(LEADS_CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(LEADS_CACHE_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return {};
+}
 
 const getIpAndAgent = (req) => ({
   ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip,
@@ -573,17 +585,19 @@ exports.reopenLead = async (req, res, next) => {
 };
 
 const buildAdminFilter = (req, alias) => {
-  const { category_id, sub_category_id, from, to } = req.query;
+  const { category_id, category, sub_category_id, sub_category, from, to } = req.query;
   const conditions = [`${alias}deleted_at IS NULL`];
   const values = [];
   let idx = 1;
   const p = (v) => { values.push(v); return `$${idx++}`; };
 
-  if (category_id) {
-    conditions.push(`${alias}category = ${p(category_id)}`);
+  const resolvedCategory = category_id || category;
+  if (resolvedCategory) {
+    conditions.push(`${alias}category = ${p(resolvedCategory)}`);
   }
-  if (sub_category_id) {
-    conditions.push(`${alias}sub_category = ${p(sub_category_id)}`);
+  const resolvedSubCategory = sub_category_id || sub_category;
+  if (resolvedSubCategory) {
+    conditions.push(`${alias}sub_category = ${p(resolvedSubCategory)}`);
   }
   if (from) {
     conditions.push(`${alias}created_at >= ${p(from)}`);
@@ -985,27 +999,111 @@ exports.getLeadVolumeByCategoryMarketing = async (req, res, next) => {
 
 exports.exportAdminLeads = async (req, res, next) => {
   try {
-    const { format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to } = req.query;
+    let {
+      format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to,
+      category, sub_category, lead_source, from_date, to_date, service_interested, created_by, city, state, country
+    } = req.query;
+
+    const cached = readLeadsCache();
+    if (!search && cached.search) search = cached.search;
+    if (!priority && cached.priority) priority = cached.priority;
+    if (!stage && cached.stage) stage = cached.stage;
+    if (!status && cached.status) status = cached.status;
+    if (!category_id && cached.category_id) category_id = cached.category_id;
+    if (!sub_category_id && cached.sub_category_id) sub_category_id = cached.sub_category_id;
+    if (!category && cached.category) category = cached.category;
+    if (!sub_category && cached.sub_category) sub_category = cached.sub_category;
+    if (!source && cached.source) source = cached.source;
+    if (!from && cached.from) from = cached.from;
+    if (!to && cached.to) to = cached.to;
+    if (!city && cached.city) city = cached.city;
+    if (!state && cached.state) state = cached.state;
+    if (!country && cached.country) country = cached.country;
+    if (!assigned_to && cached.assigned_to) assigned_to = cached.assigned_to;
+    if (!service_interested && cached.service_interested) service_interested = cached.service_interested;
+    if (!created_by && cached.created_by) created_by = cached.created_by;
 
     // STORY-6.3.1: Only csv and excel allowed
     if (!format || !['csv', 'excel'].includes(format)) {
       return res.status(400).json({ success: false, message: 'Format must be csv or excel' });
     }
 
-    const filters = { page: 1, limit: 10000 };
-    if (search)          filters.search       = search;
-    if (category_id)     filters.category     = category_id;
-    if (sub_category_id) filters.sub_category = sub_category_id;
-    if (status)          filters.status       = status;
-    if (stage)           filters.stage        = stage;
-    if (source)          filters.source       = source;
-    if (priority || quality) filters.priority  = priority || quality;
-    if (assigned_to)     filters.assigned_to  = assigned_to;
-    if (from)            filters.from_date    = from;
-    if (to)              filters.to_date      = to;
+    const resolvedSearch = (search || '').trim() || undefined;
+    const resolvedPriority = (priority || quality || '').trim() || undefined;
+    const resolvedCategory = (category || category_id || '').trim() || undefined;
+    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
+    let resolvedStage = (stage || '').trim() || undefined;
+    if (resolvedStage === 'New Lead') {
+      resolvedStage = 'New';
+    }
+    const resolvedStatus = (status || '').trim() || undefined;
+    const resolvedSource = (source || lead_source || '').trim() || undefined;
+    const resolvedFromDate = (from_date || from || '').trim() || undefined;
+    const resolvedToDate = (to_date || to || '').trim() || undefined;
+    const resolvedCity = city ? String(city).trim() : undefined;
+    const resolvedState = state ? String(state).trim() : undefined;
+    const resolvedCountry = country ? String(country).trim() : undefined;
+    const resolvedAssignedTo = assigned_to ? String(assigned_to).trim() : undefined;
+    const resolvedServiceInterested = service_interested ? String(service_interested).trim() : undefined;
+    const resolvedCreatedBy = created_by ? String(created_by).trim() : undefined;
 
-    const result = await Lead.findAllAdmin(filters);
-    const leads = result.data || [];
+    const filters = {
+      search: resolvedSearch,
+      priority: resolvedPriority,
+      stage: resolvedStage,
+      status: resolvedStatus,
+      category: resolvedCategory,
+      sub_category: resolvedSubCategory,
+      source: resolvedSource,
+      from_date: resolvedFromDate,
+      to_date: resolvedToDate,
+      assigned_to: resolvedAssignedTo,
+      service_interested: resolvedServiceInterested,
+      created_by: resolvedCreatedBy,
+      city: resolvedCity,
+      page: 1,
+      limit: 1000000,
+    };
+
+    let leads = [];
+    let algoliaUsed = false;
+
+    if (algolia && typeof algolia.searchLeads === 'function') {
+      try {
+        const algoliaResult = await algolia.searchLeads(
+          resolvedSearch || '',
+          {
+            priority: resolvedPriority,
+            stage: resolvedStage,
+            status: resolvedStatus,
+            category: resolvedCategory,
+            sub_category: resolvedSubCategory,
+            lead_source: resolvedSource,
+            assigned_to: resolvedAssignedTo,
+            from_date: resolvedFromDate,
+            to_date: resolvedToDate,
+            city: resolvedCity,
+            state: resolvedState,
+            country: resolvedCountry,
+          },
+          1,
+          1000000,
+          true,
+          null
+        );
+        if (algoliaResult) {
+          leads = algoliaResult.hits || [];
+          algoliaUsed = true;
+        }
+      } catch (algoliaErr) {
+        console.error('[exportAdminLeads] Algolia search failed, falling back to DB:', algoliaErr.message);
+      }
+    }
+
+    if (!algoliaUsed) {
+      const result = await Lead.findAllAdmin(filters);
+      leads = result.data || [];
+    }
     const recordCount = leads.length;
 
     // Create audit log entry BEFORE zero-check (STORY-6.3.1 Acceptance Criteria 3)
@@ -1021,6 +1119,11 @@ exports.exportAdminLeads = async (req, res, next) => {
     if (sub_category_id) appliedFilters.sub_category = sub_category_id;
     if (from)            appliedFilters.from         = from;
     if (to)              appliedFilters.to           = to;
+    if (service_interested) appliedFilters.service_interested = service_interested;
+    if (created_by)      appliedFilters.created_by   = created_by;
+    if (city)            appliedFilters.city         = city;
+    if (state)           appliedFilters.state        = state;
+    if (country)         appliedFilters.country      = country;
 
     let auditId = '';
     try {
@@ -1079,6 +1182,8 @@ exports.exportAdminLeads = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
 
+    await enrichLeadsWithDisplayNames(leads);
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
     if (format === 'csv') {
@@ -1092,8 +1197,8 @@ exports.exportAdminLeads = async (req, res, next) => {
           }).join(',')
         );
       }
-      const csv = csvRows.join('\n');
-      res.setHeader('Content-Type', 'text/csv');
+      const csv = '\uFEFF' + csvRows.join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="leads-export-${timestamp}.csv"`);
       res.setHeader('X-Record-Count', String(recordCount));
       res.setHeader('X-Audit-Log-Id', String(auditId));
@@ -1105,7 +1210,7 @@ exports.exportAdminLeads = async (req, res, next) => {
       const friendlyHeaders = [
         'Lead ID', 'Company', 'Contact Person', 'Phone', 'Email', 'Website',
         'City', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage',
-        'Status', 'Assigned To', 'Budget', 'Expected Revenue',
+        'Status', 'Assigned To', 'Estimated Value', 'Final Deal Value',
         'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
         'Created Date', 'Updated Date'
       ];
@@ -1161,9 +1266,9 @@ exports.exportReport = async (req, res, next) => {
       if (format === 'csv') {
         const csvRows = [headers.join(',')];
         csvRows.push(...rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')));
-        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename=lead-conversion.csv');
-        return res.send(csvRows.join('\n'));
+        return res.send('\uFEFF' + csvRows.join('\n'));
       }
 
       if (format === 'excel') {
@@ -1206,9 +1311,9 @@ exports.exportReport = async (req, res, next) => {
       if (format === 'csv') {
         const csvRows = [headers.join(',')];
         csvRows.push(...rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')));
-        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename=category-breakdown.csv');
-        return res.send(csvRows.join('\n'));
+        return res.send('\uFEFF' + csvRows.join('\n'));
       }
 
       if (format === 'excel') {
@@ -1477,4 +1582,111 @@ exports.testEmail = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+const enrichLeadsWithDisplayNames = async (leadsList) => {
+  if (!leadsList || leadsList.length === 0) return;
+
+  const categoryIds = new Set();
+  const subCategoryIds = new Set();
+  const userIds = new Set();
+  const sourceIds = new Set();
+  const serviceIds = new Set();
+
+  leadsList.forEach(l => {
+    if (l.category) categoryIds.add(String(l.category));
+    if (l.sub_category) subCategoryIds.add(String(l.sub_category));
+    if (l.assigned_to) userIds.add(String(l.assigned_to));
+    if (l.lead_source) sourceIds.add(String(l.lead_source));
+    if (l.service_interested) {
+      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
+      svcs.forEach(s => serviceIds.add(String(s)));
+    }
+  });
+
+  const categoryMap = {};
+  const subCategoryMap = {};
+  const userMap = {};
+  const sourceMap = {};
+  const serviceMap = {};
+
+  if (categoryIds.size > 0) {
+    const ids = Array.from(categoryIds);
+    const res = await query(
+      `SELECT id::text, category_name FROM business_categories WHERE id::text = ANY($1) OR category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      categoryMap[r.id] = r.category_name;
+      categoryMap[r.category_name] = r.category_name;
+    });
+  }
+
+  if (subCategoryIds.size > 0) {
+    const ids = Array.from(subCategoryIds);
+    const res = await query(
+      `SELECT id::text, sub_category_name FROM business_sub_categories WHERE id::text = ANY($1) OR sub_category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      subCategoryMap[r.id] = r.sub_category_name;
+      subCategoryMap[r.sub_category_name] = r.sub_category_name;
+    });
+  }
+
+  if (userIds.size > 0) {
+    const ids = Array.from(userIds);
+    const res = await query(
+      `SELECT id::text, employee_id, name FROM users WHERE id::text = ANY($1) OR employee_id = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      const display = r.employee_id && r.name ? `${r.employee_id} (${r.name})` : (r.name || r.employee_id || '');
+      userMap[r.id] = display;
+      userMap[r.employee_id] = display;
+    });
+  }
+
+  if (sourceIds.size > 0) {
+    const ids = Array.from(sourceIds);
+    const res = await query(
+      `SELECT id::text, name FROM lead_sources WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      sourceMap[r.id] = r.name;
+      sourceMap[r.name] = r.name;
+    });
+  }
+
+  if (serviceIds.size > 0) {
+    const ids = Array.from(serviceIds);
+    const res = await query(
+      `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      serviceMap[r.id] = r.name;
+      serviceMap[r.name] = r.name;
+    });
+  }
+
+  leadsList.forEach(l => {
+    const srcKey = l.lead_source ? String(l.lead_source) : '';
+    l.lead_source_name = sourceMap[srcKey] || l.lead_source_name || l.lead_source || '';
+
+    const catKey = l.category ? String(l.category) : '';
+    l.category_name = categoryMap[catKey] || l.category_name || l.category || '';
+
+    const subCatKey = l.sub_category ? String(l.sub_category) : '';
+    l.sub_category_name = subCategoryMap[subCatKey] || l.sub_category_name || l.sub_category || '';
+
+    const userKey = l.assigned_to ? String(l.assigned_to) : '';
+    l.assigned_to_name = userMap[userKey] || l.assigned_to_name || l.assigned_to || '';
+
+    if (l.service_interested) {
+      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
+      l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+    }
+  });
 };

@@ -133,6 +133,7 @@ router.delete('/services/:id', protect, authorize('Admin'), adminController.dele
 
 // Lead Sources CRUD
 router.get('/lead_sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
+router.get('/lead-sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
 router.post('/lead_sources', protect, authorize('Admin'), adminController.createLeadSource);
 router.put('/lead_sources/:id', protect, authorize('Admin'), adminController.updateLeadSource);
 router.delete('/lead_sources/:id', protect, authorize('Admin'), adminController.deleteLeadSource);

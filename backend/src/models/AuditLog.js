@@ -33,12 +33,24 @@ const AuditLog = {
       conditions.push(`"user_id" = $${idx++}`);
       values.push(filters.userId);
     }
-    if (filters.userIds) {
-      if (filters.userIds.length > 0) {
-        conditions.push(`"user_id" = ANY($${idx++}::uuid[])`);
+    if (filters.userIds || filters.emails || filters.actorSearch) {
+      const subConditions = [];
+      if (filters.userIds && filters.userIds.length > 0) {
+        subConditions.push(`"user_id" = ANY($${idx++}::uuid[])`);
         values.push(filters.userIds);
+      }
+      if (filters.emails && filters.emails.length > 0) {
+        subConditions.push(`email = ANY($${idx++}::text[])`);
+        values.push(filters.emails);
+      }
+      if (filters.actorSearch) {
+        subConditions.push(`email ILIKE $${idx++}`);
+        values.push(`%${filters.actorSearch}%`);
+      }
+      
+      if (subConditions.length > 0) {
+        conditions.push(`(${subConditions.join(' OR ')})`);
       } else {
-        // If userIds is empty, we want to return 0 results
         conditions.push(`1 = 0`);
       }
     }
