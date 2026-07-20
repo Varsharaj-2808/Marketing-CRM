@@ -402,7 +402,7 @@ exports.getAdminLeads = async (req, res, next) => {
       return res.status(400).json(wrapError('from_date must be a valid date'));
     }
 
-    if (algolia && typeof algolia.searchLeads === 'function') {
+    if (false && algolia && typeof algolia.searchLeads === 'function') {
       const algoliaResult = await algolia.searchLeads(
         resolvedSearch || '',
         {
