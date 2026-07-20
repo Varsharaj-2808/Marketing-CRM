@@ -15,6 +15,9 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+const path = require('path');
+app.use('/exports', express.static(path.join(__dirname, '..', 'exports')));
+
 app.use((err, req, res, next) => {
   if (
     err.type === 'entity.parse.failed' ||

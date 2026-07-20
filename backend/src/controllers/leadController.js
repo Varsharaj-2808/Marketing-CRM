@@ -6,6 +6,44 @@ const { query, getClient } = require('../config/db');
 const PDFDocument = require('pdfkit');
 const algolia = require('../utils/algoliaService');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
+const fs = require('fs');
+
+const LEADS_CACHE_FILE = 'd:/CRM market/backend/active_filters_leads.json';
+
+function readLeadsCache() {
+  try {
+    if (fs.existsSync(LEADS_CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(LEADS_CACHE_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return {};
+}
+
+function writeLeadsCache(cache) {
+  try {
+    fs.writeFileSync(LEADS_CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  } catch (err) {}
+}
+
+function saveLeadsFilter(reqQuery) {
+  writeLeadsCache({
+    search: reqQuery.search || '',
+    priority: reqQuery.priority || reqQuery.quality || '',
+    stage: reqQuery.stage || '',
+    status: reqQuery.status || '',
+    category: reqQuery.category || reqQuery.category_id || '',
+    sub_category: reqQuery.sub_category || reqQuery.sub_category_id || '',
+    source: reqQuery.source || reqQuery.lead_source || '',
+    from: reqQuery.from || reqQuery.from_date || '',
+    to: reqQuery.to || reqQuery.to_date || '',
+    city: reqQuery.city || '',
+    state: reqQuery.state || '',
+    country: reqQuery.country || '',
+    assigned_to: reqQuery.assigned_to || '',
+    service_interested: reqQuery.service_interested || '',
+    created_by: reqQuery.created_by || '',
+  });
+}
 
 const VALID_PRIORITIES = ['Hot', 'Warm', 'Cold'];
 
@@ -119,13 +157,13 @@ exports.createLead = async (req, res, next) => {
         email: lead.email,
         website: lead.website,
         city: lead.city,
-        lead_source: finalLead.lead_source_name || lead.lead_source,
+        lead_source: (finalLead && finalLead.lead_source_name) || lead.lead_source,
         category: lead.category,
         sub_category: lead.sub_category,
-        service_interested: finalLead.service_interested || (lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : []),
+        service_interested: (finalLead && finalLead.service_interested) || (lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : []),
         priority: lead.priority,
         estimated_value: lead.estimated_value,
-        assigned_to: lead.assigned_to,
+        assigned_to: (finalLead && (finalLead.assigned_employee_id || finalLead.assigned_to)) || lead.assigned_to,
         stage: lead.stage,
         lead_status: lead.lead_status,
         created_at: lead.created_at,
@@ -218,7 +256,7 @@ exports.getLead = async (req, res, next) => {
       servicesInterested: lead.service_interested || [],
       priority: lead.priority,
       estimated_value: lead.estimated_value,
-      assigned_to: lead.assigned_to,
+      assigned_to: lead.assigned_employee_id || lead.assigned_to,
       stage: lead.stage,
       next_followup_date: lead.next_followup_date || null,
       final_deal_value: lead.final_deal_value || null,
@@ -244,6 +282,9 @@ exports.getLeads = async (req, res, next) => {
       from, to, from_date, to_date,
       sortBy, sort_by, sortOrder, sort_order, page, limit,
     } = req.query;
+
+    saveLeadsFilter(req.query);
+
     const isAdmin = req.user.role === 'Admin';
 
     const resolvedSearch = (search || '').trim() || undefined;
@@ -333,7 +374,7 @@ exports.getLeads = async (req, res, next) => {
       limit: parseInt(limit) || 20,
     });
 
-    const arrayData = result.data.map(addOverdueFlag);
+    const arrayData = result.data.map(r => addOverdueFlag({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to }));
     res.json({
       success: true,
       message: 'Leads fetched successfully',
@@ -359,6 +400,8 @@ exports.getAdminLeads = async (req, res, next) => {
       sortOrder, sort_order,
       page, limit, from_date, to_date, from, to,
     } = req.query;
+
+    saveLeadsFilter(req.query);
 
     const resolvedSearch = (search || '').trim() || undefined;
     const resolvedStatus = (status || '').trim() || undefined;
@@ -479,7 +522,7 @@ exports.getAdminLeads = async (req, res, next) => {
         totalPages: result.totalPages,
         totalCount: result.totalCount,
         limit: result.limit || limitNum,
-        data: result.data,
+        data: result.data.map(r => ({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to })),
       },
     });
   } catch (error) {
@@ -492,7 +535,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 exports.getLeadHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { page, limit, field_name, change_type, is_system_generated } = req.query;
+    const { page, limit, field, field_name, change_type, is_system_generated } = req.query;
 
     if (!UUID_REGEX.test(id)) {
       return res.status(404).json(wrapError('Invalid lead ID format'));
@@ -508,8 +551,9 @@ exports.getLeadHistory = async (req, res, next) => {
     }
 
     const filters = {};
-    if (field_name) {
-      const fields = field_name.split(',').map(f => f.trim()).filter(Boolean);
+    const rawFieldName = field_name || field;
+    if (rawFieldName) {
+      const fields = rawFieldName.split(',').map(f => f.trim()).filter(Boolean);
       if (fields.length === 1) {
         filters.fieldName = fields[0];
       } else if (fields.length > 1) {
@@ -1035,7 +1079,30 @@ exports.closeLeadWon = async (req, res, next) => {
 
 exports.exportLeads = async (req, res, next) => {
   try {
-    const { format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to } = req.query;
+    let {
+      format, search, category_id, sub_category_id, status, stage, source, quality, priority, assigned_to, from, to,
+      category, sub_category, lead_source, from_date, to_date, sortBy, sort_by, sortOrder, sort_order,
+      service_interested, created_by, city, state, country
+    } = req.query;
+
+    const cached = readLeadsCache();
+    if (!search && cached.search) search = cached.search;
+    if (!priority && cached.priority) priority = cached.priority;
+    if (!stage && cached.stage) stage = cached.stage;
+    if (!status && cached.status) status = cached.status;
+    if (!category_id && cached.category_id) category_id = cached.category_id;
+    if (!sub_category_id && cached.sub_category_id) sub_category_id = cached.sub_category_id;
+    if (!category && cached.category) category = cached.category;
+    if (!sub_category && cached.sub_category) sub_category = cached.sub_category;
+    if (!source && cached.source) source = cached.source;
+    if (!from && cached.from) from = cached.from;
+    if (!to && cached.to) to = cached.to;
+    if (!city && cached.city) city = cached.city;
+    if (!state && cached.state) state = cached.state;
+    if (!country && cached.country) country = cached.country;
+    if (!assigned_to && cached.assigned_to) assigned_to = cached.assigned_to;
+    if (!service_interested && cached.service_interested) service_interested = cached.service_interested;
+    if (!created_by && cached.created_by) created_by = cached.created_by;
 
     const validFormats = ['csv', 'excel', 'pdf'];
     if (!validFormats.includes(format)) {
@@ -1044,57 +1111,116 @@ exports.exportLeads = async (req, res, next) => {
 
     const userId = req.user.id;
     const isAdmin = req.user.role === 'Admin';
-    const conditions = ['l.deleted_at IS NULL'];
-    const values = [];
-    let idx = 1;
 
-    if (!isAdmin) {
-      conditions.push(`l.assigned_to = $${idx++}`);
-      values.push(userId);
+    const resolvedSearch = (search || '').trim() || undefined;
+    const resolvedPriority = (priority || quality || '').trim() || undefined;
+    const resolvedCategory = (category || category_id || '').trim() || undefined;
+    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
+    let resolvedStage = (stage || '').trim() || undefined;
+    if (resolvedStage === 'New Lead') {
+      resolvedStage = 'New';
+    }
+    const resolvedStatus = (status || '').trim() || undefined;
+    const resolvedSource = (source || lead_source || '').trim() || undefined;
+    const resolvedFromDate = (from_date || from || '').trim() || undefined;
+    const resolvedToDate = (to_date || to || '').trim() || undefined;
+    const resolvedCity = city ? String(city).trim() : undefined;
+    const resolvedState = state ? String(state).trim() : undefined;
+    const resolvedCountry = country ? String(country).trim() : undefined;
+    const resolvedAssignedTo = assigned_to ? String(assigned_to).trim() : undefined;
+    const resolvedServiceInterested = service_interested ? String(service_interested).trim() : undefined;
+    const resolvedCreatedBy = created_by ? String(created_by).trim() : undefined;
+
+    let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    if (resolvedSortBy) {
+      if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
+      if (resolvedSortBy === 'estimatedValue') resolvedSortBy = 'estimated_value';
+      if (resolvedSortBy === 'source') resolvedSortBy = 'lead_source';
+    }
+    const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
+
+    let leads = [];
+    let algoliaUsed = false;
+
+    if (algolia && typeof algolia.searchLeads === 'function') {
+      try {
+        const algoliaResult = await algolia.searchLeads(
+          resolvedSearch || '',
+          {
+            priority: resolvedPriority,
+            stage: resolvedStage,
+            status: resolvedStatus,
+            category: resolvedCategory,
+            sub_category: resolvedSubCategory,
+            lead_source: resolvedSource,
+            from_date: resolvedFromDate,
+            to_date: resolvedToDate,
+            city: resolvedCity,
+            state: resolvedState,
+            country: resolvedCountry,
+            assigned_to: resolvedAssignedTo,
+          },
+          1,
+          1000000,
+          isAdmin,
+          req.user.id
+        );
+        if (algoliaResult) {
+          leads = algoliaResult.hits || [];
+          algoliaUsed = true;
+
+          // Apply sorting if requested
+          if (resolvedSortBy) {
+            const sortField = resolvedSortBy;
+            const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
+            leads.sort((a, b) => {
+              const valA = a[sortField];
+              const valB = b[sortField];
+              if (valA === valB) return 0;
+              if (valA === null || valA === undefined) return 1;
+              if (valB === null || valB === undefined) return -1;
+              if (typeof valA === 'string') {
+                return valA.localeCompare(valB) * sortDir;
+              }
+              return (valA - valB) * sortDir;
+            });
+          }
+        }
+      } catch (algoliaErr) {
+        console.error('[exportLeads] Algolia search failed, falling back to DB:', algoliaErr.message);
+      }
     }
 
-    if (search) {
-      const searchPattern = `%${search}%`;
-      conditions.push(`(
-        l.company_name ILIKE $${idx} OR
-        l.contact_person ILIKE $${idx} OR
-        l.mobile_number ILIKE $${idx} OR
-        l.email ILIKE $${idx} OR
-        l.lead_source ILIKE $${idx} OR
-        l.lead_id ILIKE $${idx}
-      )`);
-      values.push(searchPattern);
-      idx++;
+    if (!algoliaUsed) {
+      const result = await Lead.findAll({
+        userId,
+        isAdmin,
+        search: resolvedSearch,
+        priority: resolvedPriority,
+        stage: resolvedStage,
+        status: resolvedStatus,
+        category: resolvedCategory,
+        sub_category: resolvedSubCategory,
+        lead_source: resolvedSource,
+        from_date: resolvedFromDate,
+        to_date: resolvedToDate,
+        sortBy: resolvedSortBy,
+        sortOrder: resolvedSortOrder,
+        service_interested: resolvedServiceInterested,
+        created_by: resolvedCreatedBy,
+        city: resolvedCity,
+        assigned_to: resolvedAssignedTo,
+        page: 1,
+        limit: 1000000,
+      });
+      leads = result.data || [];
     }
 
-    if (category_id) { conditions.push(`l.category = $${idx++}`); values.push(category_id); }
-    if (sub_category_id) { conditions.push(`l.sub_category = $${idx++}`); values.push(sub_category_id); }
-    if (status) { conditions.push(`l.lead_status = $${idx++}`); values.push(status); }
-    if (stage) { conditions.push(`l.stage = $${idx++}`); values.push(stage); }
-    if (source) { conditions.push(`l.lead_source = $${idx++}`); values.push(source); }
-    if (priority || quality) { conditions.push(`l.priority ILIKE $${idx++}`); values.push(priority || quality); }
-    if (assigned_to && isAdmin) { conditions.push(`l.assigned_to = $${idx++}`); values.push(assigned_to); }
-    if (from) { conditions.push(`l.created_at >= $${idx++}`); values.push(from); }
-    if (to) { conditions.push(`l.created_at <= $${idx++}`); values.push(to + 'T23:59:59.999Z'); }
-
-    const where = conditions.join(' AND ');
-    const sql = `SELECT l.*,
-                        u.name as assigned_to_name,
-                        bc.category_name,
-                        bsc.sub_category_name,
-                        ls.name as lead_source_name
-                 FROM leads l
-                 LEFT JOIN users u ON l.assigned_to = u.id
-                 LEFT JOIN business_categories bc ON l.category = bc.id
-                 LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
-                 LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
-                 WHERE ${where}
-                 ORDER BY l.created_at DESC`;
-    const result = await query(sql, values);
-
-    if (result.rows.length === 0) {
+    if (leads.length === 0) {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
     }
+
+    await enrichLeadsWithDisplayNames(leads);
 
     const EXPORT_HEADERS = [
       'lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'website',
@@ -1131,16 +1257,16 @@ exports.exportLeads = async (req, res, next) => {
 
     if (format === 'csv') {
       const csvRows = [EXPORT_HEADERS.join(',')];
-      for (const lead of result.rows) {
+      for (const lead of leads) {
         const mapped = mapLead(lead);
         csvRows.push(EXPORT_HEADERS.map(h => {
           const v = String(mapped[h] || '');
           return `"${v.replace(/"/g, '""')}"`;
         }).join(','));
       }
-      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename=leads.csv');
-      return res.send(csvRows.join('\n'));
+      return res.send('\uFEFF' + csvRows.join('\n'));
     }
 
     if (format === 'excel') {
@@ -1148,11 +1274,11 @@ exports.exportLeads = async (req, res, next) => {
       const friendlyHeaders = [
         'Lead ID', 'Company', 'Contact Person', 'Phone', 'Email', 'Website',
         'City', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage',
-        'Status', 'Assigned To', 'Budget', 'Expected Revenue',
+        'Status', 'Assigned To', 'Estimated Value', 'Final Deal Value',
         'Lost Reason', 'Closure Date', 'Next Follow-up', 'Services Interested',
         'Created Date', 'Updated Date'
       ];
-      const rows = result.rows.map(lead => {
+      const rows = leads.map(lead => {
         const mapped = mapLead(lead);
         return EXPORT_HEADERS.map(h => mapped[h] || '');
       });
@@ -1171,7 +1297,7 @@ exports.exportLeads = async (req, res, next) => {
       res.setHeader('Content-Disposition', 'attachment; filename=leads.pdf');
       doc.pipe(res);
 
-      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Phone', 'Email', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage', 'Status', 'Assigned To', 'Budget', 'Created'];
+      const pdfHeaders = ['Lead ID', 'Company', 'Contact', 'Phone', 'Email', 'Source', 'Category', 'Sub Category', 'Priority', 'Stage', 'Status', 'Assigned To', 'Estimated Value', 'Created'];
       const cols = ['lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'lead_source', 'category_name', 'sub_category_name', 'priority', 'stage', 'lead_status', 'assigned_to_name', 'estimated_value', 'created_at'];
       const colWidths = [80, 90, 80, 75, 110, 60, 70, 70, 50, 70, 50, 75, 65, 80];
       let y = 50;
@@ -1186,7 +1312,7 @@ exports.exportLeads = async (req, res, next) => {
       y += 16;
       doc.moveTo(40, y).lineTo(40 + colWidths.reduce((a, b) => a + b, 0), y).stroke();
       doc.font('Helvetica').fontSize(6);
-      for (const lead of result.rows) {
+      for (const lead of leads) {
         if (y > 540) { doc.addPage(); y = 40; }
         x = 40;
         cols.forEach((c, i) => {
@@ -1201,7 +1327,7 @@ exports.exportLeads = async (req, res, next) => {
       return;
     }
 
-    res.json({ success: true, message: 'Leads exported successfully', data: result.rows });
+    res.json({ success: true, message: 'Leads exported successfully', data: leads });
   } catch (error) {
     next(error);
   }
@@ -1395,5 +1521,112 @@ exports.closeLead = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+const enrichLeadsWithDisplayNames = async (leadsList) => {
+  if (!leadsList || leadsList.length === 0) return;
+
+  const categoryIds = new Set();
+  const subCategoryIds = new Set();
+  const userIds = new Set();
+  const sourceIds = new Set();
+  const serviceIds = new Set();
+
+  leadsList.forEach(l => {
+    if (l.category) categoryIds.add(String(l.category));
+    if (l.sub_category) subCategoryIds.add(String(l.sub_category));
+    if (l.assigned_to) userIds.add(String(l.assigned_to));
+    if (l.lead_source) sourceIds.add(String(l.lead_source));
+    if (l.service_interested) {
+      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
+      svcs.forEach(s => serviceIds.add(String(s)));
+    }
+  });
+
+  const categoryMap = {};
+  const subCategoryMap = {};
+  const userMap = {};
+  const sourceMap = {};
+  const serviceMap = {};
+
+  if (categoryIds.size > 0) {
+    const ids = Array.from(categoryIds);
+    const res = await query(
+      `SELECT id::text, category_name FROM business_categories WHERE id::text = ANY($1) OR category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      categoryMap[r.id] = r.category_name;
+      categoryMap[r.category_name] = r.category_name;
+    });
+  }
+
+  if (subCategoryIds.size > 0) {
+    const ids = Array.from(subCategoryIds);
+    const res = await query(
+      `SELECT id::text, sub_category_name FROM business_sub_categories WHERE id::text = ANY($1) OR sub_category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      subCategoryMap[r.id] = r.sub_category_name;
+      subCategoryMap[r.sub_category_name] = r.sub_category_name;
+    });
+  }
+
+  if (userIds.size > 0) {
+    const ids = Array.from(userIds);
+    const res = await query(
+      `SELECT id::text, employee_id, name FROM users WHERE id::text = ANY($1) OR employee_id = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      const display = r.employee_id && r.name ? `${r.employee_id} (${r.name})` : (r.name || r.employee_id || '');
+      userMap[r.id] = display;
+      userMap[r.employee_id] = display;
+    });
+  }
+
+  if (sourceIds.size > 0) {
+    const ids = Array.from(sourceIds);
+    const res = await query(
+      `SELECT id::text, name FROM lead_sources WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      sourceMap[r.id] = r.name;
+      sourceMap[r.name] = r.name;
+    });
+  }
+
+  if (serviceIds.size > 0) {
+    const ids = Array.from(serviceIds);
+    const res = await query(
+      `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      serviceMap[r.id] = r.name;
+      serviceMap[r.name] = r.name;
+    });
+  }
+
+  leadsList.forEach(l => {
+    const srcKey = l.lead_source ? String(l.lead_source) : '';
+    l.lead_source_name = sourceMap[srcKey] || l.lead_source_name || l.lead_source || '';
+
+    const catKey = l.category ? String(l.category) : '';
+    l.category_name = categoryMap[catKey] || l.category_name || l.category || '';
+
+    const subCatKey = l.sub_category ? String(l.sub_category) : '';
+    l.sub_category_name = subCategoryMap[subCatKey] || l.sub_category_name || l.sub_category || '';
+
+    const userKey = l.assigned_to ? String(l.assigned_to) : '';
+    l.assigned_to_name = userMap[userKey] || l.assigned_to_name || l.assigned_to || '';
+
+    if (l.service_interested) {
+      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
+      l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+    }
+  });
 };
 
