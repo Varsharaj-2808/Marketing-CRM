@@ -7,8 +7,9 @@ const PDFDocument = require('pdfkit');
 const algolia = require('../utils/algoliaService');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 const fs = require('fs');
+const path = require('path');
 
-const LEADS_CACHE_FILE = 'd:/CRM market/backend/active_filters_leads.json';
+const LEADS_CACHE_FILE = path.join(__dirname, '..', '..', 'active_filters_leads.json');
 
 function readLeadsCache() {
   try {
@@ -25,23 +26,36 @@ function writeLeadsCache(cache) {
   } catch (err) {}
 }
 
+function sanitizeVal(val) {
+  if (val === undefined || val === null) return '';
+  if (Array.isArray(val)) return val[0] !== undefined ? String(val[0]) : '';
+  let str = String(val).trim();
+  if (str.startsWith('[') && str.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) return parsed[0] !== undefined ? String(parsed[0]) : '';
+    } catch (e) {}
+  }
+  return str;
+}
+
 function saveLeadsFilter(reqQuery) {
   writeLeadsCache({
-    search: reqQuery.search || '',
-    priority: reqQuery.priority || reqQuery.quality || '',
-    stage: reqQuery.stage || '',
-    status: reqQuery.status || '',
-    category: reqQuery.category || reqQuery.category_id || '',
-    sub_category: reqQuery.sub_category || reqQuery.sub_category_id || '',
-    source: reqQuery.source || reqQuery.lead_source || '',
-    from: reqQuery.from || reqQuery.from_date || '',
-    to: reqQuery.to || reqQuery.to_date || '',
-    city: reqQuery.city || '',
-    state: reqQuery.state || '',
-    country: reqQuery.country || '',
-    assigned_to: reqQuery.assigned_to || '',
-    service_interested: reqQuery.service_interested || '',
-    created_by: reqQuery.created_by || '',
+    search: sanitizeVal(reqQuery.search),
+    priority: sanitizeVal(reqQuery.priority || reqQuery.quality),
+    stage: sanitizeVal(reqQuery.stage),
+    status: sanitizeVal(reqQuery.status),
+    category: sanitizeVal(reqQuery.category || reqQuery.category_id),
+    sub_category: sanitizeVal(reqQuery.sub_category || reqQuery.sub_category_id),
+    source: sanitizeVal(reqQuery.source || reqQuery.lead_source),
+    from: sanitizeVal(reqQuery.from || reqQuery.from_date),
+    to: sanitizeVal(reqQuery.to || reqQuery.to_date),
+    city: sanitizeVal(reqQuery.city),
+    state: sanitizeVal(reqQuery.state),
+    country: sanitizeVal(reqQuery.country),
+    assigned_to: sanitizeVal(reqQuery.assigned_to),
+    service_interested: sanitizeVal(reqQuery.service_interested),
+    created_by: sanitizeVal(reqQuery.created_by),
   });
 }
 
@@ -144,6 +158,9 @@ exports.createLead = async (req, res, next) => {
       }).catch(err => console.error('[createLead] Admin notification skipped:', err.message));
     }
 
+    const [resolvedLead] = await Lead._resolveServiceNames([finalLead || lead]);
+    const leadObj = resolvedLead || finalLead || lead;
+
     res.status(201).json({
       success: true,
       message: 'Lead created successfully.',
@@ -157,13 +174,15 @@ exports.createLead = async (req, res, next) => {
         email: lead.email,
         website: lead.website,
         city: lead.city,
-        lead_source: (finalLead && finalLead.lead_source_name) || lead.lead_source,
+        lead_source: leadObj.lead_source_name || lead.lead_source,
         category: lead.category,
         sub_category: lead.sub_category,
-        service_interested: (finalLead && finalLead.service_interested) || (lead.service_interested ? (typeof lead.service_interested === 'string' ? JSON.parse(lead.service_interested) : lead.service_interested) : []),
+        category_name: leadObj.category_name || null,
+        sub_category_name: leadObj.sub_category_name || null,
+        service_interested: leadObj.service_interested || [],
         priority: lead.priority,
         estimated_value: lead.estimated_value,
-        assigned_to: (finalLead && (finalLead.assigned_employee_id || finalLead.assigned_to)) || lead.assigned_to,
+        assigned_to: leadObj.assigned_employee_id || leadObj.assigned_to || lead.assigned_to,
         stage: lead.stage,
         lead_status: lead.lead_status,
         created_at: lead.created_at,
@@ -253,6 +272,7 @@ exports.getLead = async (req, res, next) => {
       email: lead.email,
       city: lead.city,
       lead_source: lead.lead_source_name || lead.lead_source,
+      service_interested: lead.service_interested || [],
       servicesInterested: lead.service_interested || [],
       priority: lead.priority,
       estimated_value: lead.estimated_value,
@@ -287,19 +307,19 @@ exports.getLeads = async (req, res, next) => {
 
     const isAdmin = req.user.role === 'Admin';
 
-    const resolvedSearch = (search || '').trim() || undefined;
-    const resolvedPriority = (priority || quality || '').trim() || undefined;
-    const resolvedCategory = (category || category_id || '').trim() || undefined;
-    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
-    let resolvedStage = (stage || '').trim() || undefined;
+    const resolvedSearch = sanitizeVal(search) || undefined;
+    const resolvedPriority = sanitizeVal(priority || quality) || undefined;
+    const resolvedCategory = sanitizeVal(category || category_id) || undefined;
+    const resolvedSubCategory = sanitizeVal(sub_category || sub_category_id) || undefined;
+    let resolvedStage = sanitizeVal(stage) || undefined;
     if (resolvedStage === 'New Lead') {
       resolvedStage = 'New';
     }
-    const resolvedStatus = (status || '').trim() || undefined;
-    const resolvedSource = (source || lead_source || '').trim() || undefined;
-    const resolvedFromDate = (from_date || from || '').trim() || undefined;
-    const resolvedToDate = (to_date || to || '').trim() || undefined;
-    let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    const resolvedStatus = sanitizeVal(status) || undefined;
+    const resolvedSource = sanitizeVal(source || lead_source) || undefined;
+    const resolvedFromDate = sanitizeVal(from_date || from) || undefined;
+    const resolvedToDate = sanitizeVal(to_date || to) || undefined;
+    let resolvedSortBy = sanitizeVal(sortBy || sort_by) || undefined;
     if (resolvedSortBy) {
       if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
       if (resolvedSortBy === 'estimatedValue') resolvedSortBy = 'estimated_value';
@@ -327,7 +347,7 @@ exports.getLeads = async (req, res, next) => {
       );
 
       if (algoliaResult) {
-        let hits = algoliaResult.hits;
+        let hits = await Lead._resolveServiceNames(algoliaResult.hits || []);
         if (resolvedSortBy) {
           const sortField = resolvedSortBy;
           const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
@@ -375,9 +395,20 @@ exports.getLeads = async (req, res, next) => {
     });
 
     const arrayData = result.data.map(r => addOverdueFlag({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to }));
+
+    const pagination = {
+      page: result.page,
+      limit: parseInt(limit) || 20,
+      total: result.totalCount,
+      totalPages: result.totalPages,
+      total_records: result.totalCount,
+      total_pages: result.totalPages,
+    };
+
     res.json({
       success: true,
       message: 'Leads fetched successfully',
+      pagination,
       data: arrayData,
       page: result.page,
       totalPages: result.totalPages,
@@ -403,18 +434,18 @@ exports.getAdminLeads = async (req, res, next) => {
 
     saveLeadsFilter(req.query);
 
-    const resolvedSearch = (search || '').trim() || undefined;
-    const resolvedStatus = (status || '').trim() || undefined;
-    const resolvedPriority = (priority || quality || '').trim() || undefined;
-    let resolvedStage = (stage || '').trim() || undefined;
+    const resolvedSearch = sanitizeVal(search) || undefined;
+    const resolvedStatus = sanitizeVal(status) || undefined;
+    const resolvedPriority = sanitizeVal(priority || quality) || undefined;
+    let resolvedStage = sanitizeVal(stage) || undefined;
     if (resolvedStage === 'New Lead') {
       resolvedStage = 'New';
     }
-    const resolvedSource = (source || '').trim() || undefined;
-    const resolvedCategory = (category || category_id || '').trim() || undefined;
-    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
-    const resolvedAssignedTo = (assigned_to || '').trim() || undefined;
-    let resolvedSortBy = (sortBy || sort_by || '').trim() || undefined;
+    const resolvedSource = sanitizeVal(source) || undefined;
+    const resolvedCategory = sanitizeVal(category || category_id) || undefined;
+    const resolvedSubCategory = sanitizeVal(sub_category || sub_category_id) || undefined;
+    const resolvedAssignedTo = sanitizeVal(assigned_to) || undefined;
+    let resolvedSortBy = sanitizeVal(sortBy || sort_by) || undefined;
     if (resolvedSortBy) {
       if (resolvedSortBy === 'createdAt') resolvedSortBy = 'created_at';
       if (resolvedSortBy === 'estimatedValue') resolvedSortBy = 'estimated_value';
@@ -466,7 +497,7 @@ exports.getAdminLeads = async (req, res, next) => {
       );
 
       if (algoliaResult) {
-        let hits = algoliaResult.hits;
+        let hits = await Lead._resolveServiceNames(algoliaResult.hits || []);
         if (resolvedSortBy) {
           const sortField = resolvedSortBy;
           const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
@@ -514,9 +545,19 @@ exports.getAdminLeads = async (req, res, next) => {
       to_date: resolvedToDate,
     });
 
+    const pagination = {
+      page: result.page,
+      limit: result.limit || limitNum,
+      total: result.totalCount,
+      totalPages: result.totalPages,
+      total_records: result.totalCount,
+      total_pages: result.totalPages,
+    };
+
     res.json({
       success: true,
       message: 'Leads fetched successfully',
+      pagination,
       data: {
         page: result.page,
         totalPages: result.totalPages,
@@ -1085,25 +1126,6 @@ exports.exportLeads = async (req, res, next) => {
       service_interested, created_by, city, state, country
     } = req.query;
 
-    const cached = readLeadsCache();
-    if (!search && cached.search) search = cached.search;
-    if (!priority && cached.priority) priority = cached.priority;
-    if (!stage && cached.stage) stage = cached.stage;
-    if (!status && cached.status) status = cached.status;
-    if (!category_id && cached.category_id) category_id = cached.category_id;
-    if (!sub_category_id && cached.sub_category_id) sub_category_id = cached.sub_category_id;
-    if (!category && cached.category) category = cached.category;
-    if (!sub_category && cached.sub_category) sub_category = cached.sub_category;
-    if (!source && cached.source) source = cached.source;
-    if (!from && cached.from) from = cached.from;
-    if (!to && cached.to) to = cached.to;
-    if (!city && cached.city) city = cached.city;
-    if (!state && cached.state) state = cached.state;
-    if (!country && cached.country) country = cached.country;
-    if (!assigned_to && cached.assigned_to) assigned_to = cached.assigned_to;
-    if (!service_interested && cached.service_interested) service_interested = cached.service_interested;
-    if (!created_by && cached.created_by) created_by = cached.created_by;
-
     const validFormats = ['csv', 'excel', 'pdf'];
     if (!validFormats.includes(format)) {
       return res.status(400).json({ success: false, message: 'Format must be csv, excel, or pdf' });
@@ -1112,18 +1134,18 @@ exports.exportLeads = async (req, res, next) => {
     const userId = req.user.id;
     const isAdmin = req.user.role === 'Admin';
 
-    const resolvedSearch = (search || '').trim() || undefined;
-    const resolvedPriority = (priority || quality || '').trim() || undefined;
-    const resolvedCategory = (category || category_id || '').trim() || undefined;
-    const resolvedSubCategory = (sub_category || sub_category_id || '').trim() || undefined;
-    let resolvedStage = (stage || '').trim() || undefined;
+    const resolvedSearch = sanitizeVal(search) || undefined;
+    const resolvedPriority = sanitizeVal(priority || quality) || undefined;
+    const resolvedCategory = sanitizeVal(category || category_id) || undefined;
+    const resolvedSubCategory = sanitizeVal(sub_category || sub_category_id) || undefined;
+    let resolvedStage = sanitizeVal(stage) || undefined;
     if (resolvedStage === 'New Lead') {
       resolvedStage = 'New';
     }
-    const resolvedStatus = (status || '').trim() || undefined;
-    const resolvedSource = (source || lead_source || '').trim() || undefined;
-    const resolvedFromDate = (from_date || from || '').trim() || undefined;
-    const resolvedToDate = (to_date || to || '').trim() || undefined;
+    const resolvedStatus = sanitizeVal(status) || undefined;
+    const resolvedSource = sanitizeVal(source || lead_source) || undefined;
+    const resolvedFromDate = sanitizeVal(from_date || from) || undefined;
+    const resolvedToDate = sanitizeVal(to_date || to) || undefined;
     const resolvedCity = city ? String(city).trim() : undefined;
     const resolvedState = state ? String(state).trim() : undefined;
     const resolvedCountry = country ? String(country).trim() : undefined;
@@ -1140,81 +1162,80 @@ exports.exportLeads = async (req, res, next) => {
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
 
     let leads = [];
-    let algoliaUsed = false;
 
-    if (algolia && typeof algolia.searchLeads === 'function') {
-      try {
-        const algoliaResult = await algolia.searchLeads(
-          resolvedSearch || '',
-          {
-            priority: resolvedPriority,
-            stage: resolvedStage,
-            status: resolvedStatus,
-            category: resolvedCategory,
-            sub_category: resolvedSubCategory,
-            lead_source: resolvedSource,
-            from_date: resolvedFromDate,
-            to_date: resolvedToDate,
-            city: resolvedCity,
-            state: resolvedState,
-            country: resolvedCountry,
-            assigned_to: resolvedAssignedTo,
-          },
-          1,
-          1000000,
-          isAdmin,
-          req.user.id
-        );
-        if (algoliaResult) {
-          leads = algoliaResult.hits || [];
-          algoliaUsed = true;
-
-          // Apply sorting if requested
-          if (resolvedSortBy) {
-            const sortField = resolvedSortBy;
-            const sortDir = resolvedSortOrder && resolvedSortOrder.toLowerCase() === 'asc' ? 1 : -1;
-            leads.sort((a, b) => {
-              const valA = a[sortField];
-              const valB = b[sortField];
-              if (valA === valB) return 0;
-              if (valA === null || valA === undefined) return 1;
-              if (valB === null || valB === undefined) return -1;
-              if (typeof valA === 'string') {
-                return valA.localeCompare(valB) * sortDir;
-              }
-              return (valA - valB) * sortDir;
-            });
-          }
-        }
-      } catch (algoliaErr) {
-        console.error('[exportLeads] Algolia search failed, falling back to DB:', algoliaErr.message);
+    // ── When a search query is active, resolve the matching lead IDs from Algolia
+    // so the export mirrors exactly what the search results list shows the user.
+    // Falls back to SQL ILIKE if Algolia is unreachable.
+    let algoliaIds = null;
+    if (resolvedSearch && algolia && typeof algolia.getAllLeadIdsBySearch === 'function') {
+      algoliaIds = await algolia.getAllLeadIdsBySearch(
+        resolvedSearch,
+        {
+          priority: resolvedPriority,
+          stage: resolvedStage,
+          status: resolvedStatus,
+          category: resolvedCategory,
+          sub_category: resolvedSubCategory,
+          lead_source: resolvedSource,
+          assigned_to: resolvedAssignedTo,
+          from_date: resolvedFromDate,
+          to_date: resolvedToDate,
+        },
+        isAdmin,
+        isAdmin ? null : userId,
+      );
+      // algoliaIds === null means Algolia failed — fall back to SQL
+      if (algoliaIds !== null && algoliaIds.length === 0) {
+        return res.status(404).json({ success: false, message: 'No leads found for the given search' });
       }
     }
 
-    if (!algoliaUsed) {
-      const result = await Lead.findAll({
-        userId,
-        isAdmin,
-        search: resolvedSearch,
-        priority: resolvedPriority,
-        stage: resolvedStage,
-        status: resolvedStatus,
-        category: resolvedCategory,
-        sub_category: resolvedSubCategory,
-        lead_source: resolvedSource,
-        from_date: resolvedFromDate,
-        to_date: resolvedToDate,
-        sortBy: resolvedSortBy,
-        sortOrder: resolvedSortOrder,
-        service_interested: resolvedServiceInterested,
-        created_by: resolvedCreatedBy,
-        city: resolvedCity,
-        assigned_to: resolvedAssignedTo,
-        page: 1,
-        limit: 1000000,
-      });
-      leads = result.data || [];
-    }
+    const result = isAdmin
+      ? await Lead.findAllAdmin({
+          // When Algolia resolved IDs, pass them — `search` is ignored in that branch
+          ids: algoliaIds || undefined,
+          search: algoliaIds ? undefined : resolvedSearch,
+          priority: resolvedPriority,
+          stage: resolvedStage,
+          status: resolvedStatus,
+          category: resolvedCategory,
+          sub_category: resolvedSubCategory,
+          source: resolvedSource,
+          from_date: resolvedFromDate,
+          to_date: resolvedToDate,
+          sortBy: resolvedSortBy,
+          sortOrder: resolvedSortOrder,
+          service_interested: resolvedServiceInterested,
+          created_by: resolvedCreatedBy,
+          city: resolvedCity,
+          assigned_to: resolvedAssignedTo,
+          page: 1,
+          limit: 1000000,
+        })
+      : await Lead.findAll({
+          userId,
+          isAdmin: false,
+          ids: algoliaIds || undefined,
+          search: algoliaIds ? undefined : resolvedSearch,
+          priority: resolvedPriority,
+          stage: resolvedStage,
+          status: resolvedStatus,
+          category: resolvedCategory,
+          sub_category: resolvedSubCategory,
+          lead_source: resolvedSource,
+          from_date: resolvedFromDate,
+          to_date: resolvedToDate,
+          sortBy: resolvedSortBy,
+          sortOrder: resolvedSortOrder,
+          service_interested: resolvedServiceInterested,
+          created_by: resolvedCreatedBy,
+          city: resolvedCity,
+          assigned_to: resolvedAssignedTo,
+          page: 1,
+          limit: 1000000,
+        });
+
+    leads = result.data || [];
 
     if (leads.length === 0) {
       return res.status(404).json({ success: false, message: 'No leads found for the given filters' });
@@ -1538,8 +1559,12 @@ const enrichLeadsWithDisplayNames = async (leadsList) => {
     if (l.assigned_to) userIds.add(String(l.assigned_to));
     if (l.lead_source) sourceIds.add(String(l.lead_source));
     if (l.service_interested) {
-      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
-      svcs.forEach(s => serviceIds.add(String(s)));
+      let svcs = l.service_interested;
+      if (typeof svcs === 'string') {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      const arr = Array.isArray(svcs) ? svcs : [svcs];
+      arr.forEach(s => serviceIds.add(String(s)));
     }
   });
 
@@ -1624,8 +1649,17 @@ const enrichLeadsWithDisplayNames = async (leadsList) => {
     l.assigned_to_name = userMap[userKey] || l.assigned_to_name || l.assigned_to || '';
 
     if (l.service_interested) {
-      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
-      l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+      let svcs = l.service_interested;
+      const isString = typeof svcs === 'string';
+      if (isString) {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      if (Array.isArray(svcs)) {
+        l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+      } else if (svcs) {
+        const mappedName = serviceMap[String(svcs)] || String(svcs);
+        l.service_interested = isString ? mappedName : [mappedName];
+      }
     }
   });
 };

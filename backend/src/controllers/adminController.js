@@ -1539,6 +1539,11 @@ exports.reindexLeads = async (req, res, next) => {
   }
 };
 
+exports.exportAdminLeads = (req, res, next) => {
+  const leadController = require('./leadController');
+  return leadController.exportLeads(req, res, next);
+};
+
 exports.testEmail = async (req, res, next) => {
   try {
     const { to, subject, message } = req.body;
@@ -1599,8 +1604,12 @@ const enrichLeadsWithDisplayNames = async (leadsList) => {
     if (l.assigned_to) userIds.add(String(l.assigned_to));
     if (l.lead_source) sourceIds.add(String(l.lead_source));
     if (l.service_interested) {
-      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
-      svcs.forEach(s => serviceIds.add(String(s)));
+      let svcs = l.service_interested;
+      if (typeof svcs === 'string') {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      const arr = Array.isArray(svcs) ? svcs : [svcs];
+      arr.forEach(s => serviceIds.add(String(s)));
     }
   });
 
@@ -1685,8 +1694,17 @@ const enrichLeadsWithDisplayNames = async (leadsList) => {
     l.assigned_to_name = userMap[userKey] || l.assigned_to_name || l.assigned_to || '';
 
     if (l.service_interested) {
-      const svcs = Array.isArray(l.service_interested) ? l.service_interested : [l.service_interested];
-      l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+      let svcs = l.service_interested;
+      const isString = typeof svcs === 'string';
+      if (isString) {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      if (Array.isArray(svcs)) {
+        l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+      } else if (svcs) {
+        const mappedName = serviceMap[String(svcs)] || String(svcs);
+        l.service_interested = isString ? mappedName : [mappedName];
+      }
     }
   });
 };

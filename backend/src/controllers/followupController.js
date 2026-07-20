@@ -141,13 +141,16 @@ exports.createFollowup = async (req, res, next) => {
       leadUpdated = { proposal_value: parsedProposalAmount };
     }
 
-    // Sync updated lead to Algolia
+    // Sync updated lead & followup to Algolia
     try {
       const LeadModel = require('../models/Lead');
       const algoliaSvc = require('../utils/algoliaService');
       const updatedLead = await LeadModel.findById(id);
       if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
         await algoliaSvc.saveLead(updatedLead).catch(() => {});
+      }
+      if (followup && algoliaSvc && typeof algoliaSvc.saveFollowup === 'function') {
+        await algoliaSvc.saveFollowup(followup).catch(() => {});
       }
     } catch (_) { /* non-critical */ }
 
@@ -624,6 +627,47 @@ exports.addCorrection = async (req, res, next) => {
     }
 
     const updated = await Followup.addCorrection(fid, correction_notes.trim(), req.user.id);
+
+    // Lead History entry
+    try {
+      await LeadHistory.create({
+        leadId: id,
+        fieldName: 'followup_logged',
+        oldValue: followup.outcome || '',
+        newValue: `Follow-up corrected: ${correction_notes.trim()}`,
+        changeSummary: `Follow-up correction added by ${req.user.name || req.user.id}: ${correction_notes.trim()}`,
+        changedBy: req.user.id,
+        metadata: { old_outcome: followup.outcome, new_outcome: followup.outcome, correction_notes: correction_notes.trim() },
+      });
+    } catch (_) { /* non-critical */ }
+
+    // Audit log
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email || '',
+        action: 'FOLLOWUP_UPDATED',
+        resource: 'Followup',
+        resourceId: fid,
+        details: JSON.stringify({ correction_notes: correction_notes.trim() }),
+        ipAddress: getIp(req),
+        userAgent: req.headers['user-agent'] || '',
+        result: 'Success',
+      });
+    } catch (_) { /* non-critical */ }
+
+    // Algolia sync
+    try {
+      const LeadModel = require('../models/Lead');
+      const algoliaSvc = require('../utils/algoliaService');
+      const updatedLead = await LeadModel.findById(id);
+      if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
+        await algoliaSvc.saveLead(updatedLead).catch(() => {});
+      }
+      if (updated && algoliaSvc && typeof algoliaSvc.saveFollowup === 'function') {
+        await algoliaSvc.saveFollowup({ ...followup, ...updated }).catch(() => {});
+      }
+    } catch (_) { /* non-critical */ }
 
     if (req.user.role === 'Marketing Executive') {
       Notification.notifyAdmins({

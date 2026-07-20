@@ -35,13 +35,45 @@ const AuditLog = {
     }
     if (filters.userIds || filters.emails || filters.actorSearch) {
       const subConditions = [];
-      if (filters.userIds && filters.userIds.length > 0) {
-        subConditions.push(`"user_id" = ANY($${idx++}::uuid[])`);
-        values.push(filters.userIds);
+      if (filters.userIds) {
+        let uids = filters.userIds;
+        if (typeof uids === 'string') {
+          try { uids = JSON.parse(uids); } catch (e) { uids = [uids]; }
+        }
+        if (!Array.isArray(uids)) uids = [uids];
+        const flatUids = [];
+        uids.forEach(u => {
+          let val = u;
+          if (typeof val === 'string' && val.startsWith('[') && val.endsWith(']')) {
+            try { val = JSON.parse(val); } catch (e) {}
+          }
+          if (Array.isArray(val)) {
+            val.forEach(v => { if (v) flatUids.push(String(v)); });
+          } else if (val !== null && val !== undefined && val !== '') {
+            flatUids.push(String(val));
+          }
+        });
+        if (flatUids.length > 0) {
+          const isAllUuid = flatUids.every(u => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u));
+          if (isAllUuid) {
+            subConditions.push(`"user_id" = ANY($${idx++}::uuid[])`);
+          } else {
+            subConditions.push(`"user_id"::text = ANY($${idx++}::text[])`);
+          }
+          values.push(flatUids);
+        }
       }
-      if (filters.emails && filters.emails.length > 0) {
-        subConditions.push(`email = ANY($${idx++}::text[])`);
-        values.push(filters.emails);
+      if (filters.emails) {
+        let ems = filters.emails;
+        if (typeof ems === 'string') {
+          try { ems = JSON.parse(ems); } catch (e) { ems = [ems]; }
+        }
+        if (!Array.isArray(ems)) ems = [ems];
+        ems = ems.filter(Boolean).map(String);
+        if (ems.length > 0) {
+          subConditions.push(`email = ANY($${idx++}::text[])`);
+          values.push(ems);
+        }
       }
       if (filters.actorSearch) {
         subConditions.push(`email ILIKE $${idx++}`);
@@ -97,9 +129,17 @@ const AuditLog = {
     let sql = `SELECT * FROM audit_logs WHERE resource = $1 AND "resourceId" = $2`;
     const params = [resource, resourceId];
 
-    if (actions && actions.length > 0) {
-      sql += ` AND action = ANY($3)`;
-      params.push(actions);
+    if (actions) {
+      let acts = actions;
+      if (typeof acts === 'string') {
+        try { acts = JSON.parse(acts); } catch (e) { acts = [acts]; }
+      }
+      if (!Array.isArray(acts)) acts = [acts];
+      acts = acts.filter(Boolean).map(String);
+      if (acts.length > 0) {
+        sql += ` AND action = ANY($3)`;
+        params.push(acts);
+      }
     }
 
     sql += ` ORDER BY created_at DESC`;

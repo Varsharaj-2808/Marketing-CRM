@@ -302,7 +302,30 @@ module.exports = {
         category_name: lead.category_name || null,
         sub_category: lead.sub_category,
         sub_category_name: lead.sub_category_name || null,
-        service_interested: lead.service_interested,
+        service_interested: await (async () => {
+          let svcs = lead.service_interested;
+          if (!svcs) return null;
+          let parsed = svcs;
+          const isString = typeof parsed === 'string';
+          if (isString) {
+            try { parsed = JSON.parse(parsed); } catch (e) {}
+          }
+          const isArray = Array.isArray(parsed);
+          const arr = isArray ? parsed : [parsed];
+          const uuids = arr.filter(v => v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v)));
+          if (uuids.length > 0) {
+            try {
+              const { query } = require('../config/db');
+              const res = await query(`SELECT id::text, name FROM services WHERE id::text = ANY($1)`, [uuids]);
+              const map = {};
+              res.rows.forEach(r => map[r.id] = r.name);
+              if (isArray) return arr.map(v => map[String(v)] || String(v));
+              const mapped = map[String(parsed)] || String(parsed);
+              return isString ? mapped : [mapped];
+            } catch (e) {}
+          }
+          return svcs;
+        })(),
         priority: lead.priority,
         estimated_value: lead.estimated_value ? parseFloat(lead.estimated_value) : null,
         assigned_to: lead.assigned_to,
@@ -325,6 +348,72 @@ module.exports = {
       });
     } catch (err) {
       console.error('Algolia saveLead failed:', err.message);
+    }
+  },
+
+  /**
+   * Browse ALL Algolia pages for a given search query + filters and return an
+   * array of every matching lead UUID.  Used by exportLeads so the exported
+   * file exactly mirrors the Algolia search results shown in the UI.
+   */
+  async getAllLeadIdsBySearch(searchQuery, filters = {}, isAdmin = false, userId = null) {
+    try {
+      const cli = getSearchClient();
+      if (!cli) return null;
+
+      const facetFilters = [];
+      if (!isAdmin && userId) facetFilters.push(`assigned_to:${userId}`);
+      if (filters.priority && filters.priority !== 'All') facetFilters.push(`priority:${filters.priority}`);
+      if (filters.stage && filters.stage !== 'All') {
+        let stg = filters.stage === 'New Lead' ? 'New' : filters.stage;
+        facetFilters.push(`stage:${stg}`);
+      }
+      if (filters.status && filters.status !== 'All') facetFilters.push(`status:${filters.status}`);
+      if (filters.category && filters.category !== 'All') facetFilters.push(`category:${filters.category}`);
+      if (filters.sub_category && filters.sub_category !== 'All') facetFilters.push(`sub_category:${filters.sub_category}`);
+      if (filters.lead_source && filters.lead_source !== 'All') facetFilters.push(`lead_source:${filters.lead_source}`);
+      if (filters.assigned_to && filters.assigned_to !== 'All') {
+        const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        facetFilters.push(uuidRe.test(filters.assigned_to)
+          ? `assigned_to:${filters.assigned_to}`
+          : `assigned_employee_id:${filters.assigned_to}`);
+      }
+
+      const numericFilters = [];
+      if (filters.from_date) {
+        numericFilters.push(`created_at_timestamp >= ${Math.floor(new Date(filters.from_date).getTime() / 1000)}`);
+      }
+      if (filters.to_date) {
+        const toStr = filters.to_date.includes('T') ? filters.to_date : `${filters.to_date}T23:59:59.999Z`;
+        numericFilters.push(`created_at_timestamp <= ${Math.floor(new Date(toStr).getTime() / 1000)}`);
+      }
+
+      const ids = [];
+      let page = 0;
+      let nbPages = 1;
+      const PAGE_SIZE = 1000; // max Algolia allows per page
+
+      do {
+        const searchParams = {
+          query: searchQuery || '',
+          page,
+          hitsPerPage: PAGE_SIZE,
+          attributesToRetrieve: ['objectID'],
+        };
+        if (facetFilters.length > 0) searchParams.facetFilters = facetFilters;
+        if (numericFilters.length > 0) searchParams.numericFilters = numericFilters;
+
+        const result = await cli.searchSingleIndex({ indexName: LEADS_INDEX, searchParams });
+        if (!result) break;
+        nbPages = result.nbPages || 1;
+        (result.hits || []).forEach(h => ids.push(h.objectID));
+        page++;
+      } while (page < nbPages);
+
+      return ids;
+    } catch (err) {
+      console.error('Algolia getAllLeadIdsBySearch failed:', err.message);
+      return null; // caller falls back to SQL search
     }
   },
 
@@ -445,8 +534,10 @@ module.exports = {
   async indexAllLeads(leads) {
     if (!leads || leads.length === 0) return;
     try {
+      const Lead = require('../models/Lead');
+      const resolvedLeads = await Lead._resolveServiceNames(leads);
       const cli = getWriteClient();
-      const objects = leads.map(lead => ({
+      const objects = resolvedLeads.map(lead => ({
         objectID: lead.id,
         id: lead.id,
         lead_id: lead.lead_id,

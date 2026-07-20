@@ -130,8 +130,8 @@ exports.getFieldHistory = async (req, res, next) => {
       }
       return {
         ...h,
-        old_value: meta.old_outcome || h.old_value,
-        new_value: meta.new_outcome || h.new_value,
+        old_value: meta.old_outcome !== undefined ? String(meta.old_outcome) : h.old_value,
+        new_value: meta.new_outcome !== undefined ? String(meta.new_outcome) : h.new_value,
       };
     });
 
@@ -207,8 +207,8 @@ exports.exportFieldHistory = async (req, res, next) => {
       let newVal = h.new_value || '';
       if (h.field_name === 'followup_logged' && h.metadata) {
         const meta = typeof h.metadata === 'string' ? JSON.parse(h.metadata) : h.metadata;
-        if (meta.old_outcome) oldVal = meta.old_outcome;
-        if (meta.new_outcome) newVal = meta.new_outcome;
+        if (meta.old_outcome !== undefined) oldVal = String(meta.old_outcome);
+        if (meta.new_outcome !== undefined) newVal = String(meta.new_outcome);
       }
       return {
         field_name: h.field_name || '',
