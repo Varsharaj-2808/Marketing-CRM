@@ -1126,6 +1126,33 @@ exports.exportLeads = async (req, res, next) => {
       service_interested, created_by, city, state, country
     } = req.query;
 
+    // ── Fallback: extract missing filter params from the browser Referer header ──
+    // The frontend export call only sends format + filter params but omits
+    // search, source, assigned_to, and sort.  The Referer URL contains the full
+    // leads page query string (e.g. ?search=pentaxial&source=Website&...) so we
+    // parse it here and use it as a fallback for any param not already provided.
+    try {
+      const referer = req.headers['referer'] || req.headers['referrer'] || '';
+      if (referer) {
+        const refUrl = new URL(referer);
+        const rp = refUrl.searchParams;
+        if (!search     && rp.get('search'))     search      = rp.get('search');
+        if (!source     && rp.get('source'))     source      = rp.get('source');
+        if (!assigned_to && rp.get('assignedTo')) assigned_to = rp.get('assignedTo');
+        if (!sortBy     && rp.get('sortBy'))     sortBy      = rp.get('sortBy');
+        if (!sortOrder  && rp.get('sortOrder'))  sortOrder   = rp.get('sortOrder');
+        if (!status     && rp.get('status'))     status      = rp.get('status');
+        if (!stage      && rp.get('stage'))      stage       = rp.get('stage');
+        if (!priority   && rp.get('priority'))   priority    = rp.get('priority');
+        if (!category_id && rp.get('category'))  category_id = rp.get('category');
+        if (!sub_category_id && rp.get('subCategory')) sub_category_id = rp.get('subCategory');
+        if (!from       && rp.get('dateFrom'))   from        = rp.get('dateFrom');
+        if (!to         && rp.get('dateTo'))     to          = rp.get('dateTo');
+      }
+    } catch (_) {
+      // Referer parsing is best-effort — ignore any error
+    }
+
     const validFormats = ['csv', 'excel', 'pdf'];
     if (!validFormats.includes(format)) {
       return res.status(400).json({ success: false, message: 'Format must be csv, excel, or pdf' });
@@ -1162,6 +1189,7 @@ exports.exportLeads = async (req, res, next) => {
     const resolvedSortOrder = (sortOrder || sort_order || '').trim() || undefined;
 
     let leads = [];
+
 
     // ── When a search query is active, resolve the matching lead IDs from Algolia
     // so the export mirrors exactly what the search results list shows the user.

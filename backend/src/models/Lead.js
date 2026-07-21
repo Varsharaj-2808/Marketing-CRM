@@ -37,8 +37,25 @@ const Lead = {
 
     const cleanCategory = isUuid(cleanSingleVal(category)) ? cleanSingleVal(category) : null;
     const cleanSubCategory = isUuid(cleanSingleVal(sub_category)) ? cleanSingleVal(sub_category) : null;
-    const cleanLeadSource = cleanSingleVal(lead_source);
     const cleanCreatorId = isUuid(cleanSingleVal(creatorId)) ? cleanSingleVal(creatorId) : creatorId;
+
+    // Resolve lead_source: UUID → use directly | numeric ID → look up UUID/name | name string → use as-is
+    let cleanLeadSource = cleanSingleVal(lead_source);
+    if (cleanLeadSource && !isUuid(cleanLeadSource) && !isNaN(Number(cleanLeadSource)) && Number.isInteger(Number(cleanLeadSource))) {
+      // Numeric ID from old local DB schema — look up by integer id or name
+      try {
+        const srcResult = await query(
+          `SELECT id::text, name FROM lead_sources WHERE id::text = $1`,
+          [cleanLeadSource]
+        );
+        if (srcResult && srcResult.rows && srcResult.rows[0]) {
+          // Prefer UUID if the live DB has UUIDs, otherwise fall back to name
+          cleanLeadSource = isUuid(srcResult.rows[0].id) ? srcResult.rows[0].id : srcResult.rows[0].name;
+        }
+      } catch (e) {
+        // keep cleanLeadSource as-is on error
+      }
+    }
 
     let services = service_interested !== undefined ? service_interested : servicesInterested;
     if (services !== null && services !== undefined) {
@@ -60,8 +77,14 @@ const Lead = {
       });
 
       if (flat.length > 0) {
-        const hasNumericIds = flat.some(v => !isNaN(Number(v)) && Number.isInteger(Number(v)));
-        if (hasNumericIds) {
+        const hasUuidIds = flat.every(v => isUuid(v));
+        const hasNumericIds = !hasUuidIds && flat.some(v => !isNaN(Number(v)) && Number.isInteger(Number(v)));
+
+        if (hasUuidIds) {
+          // Live DB: UUIDs passed directly — use as-is
+          services = flat;
+        } else if (hasNumericIds) {
+          // Old local DB: integer IDs — look up by id or name
           try {
             const svcResult = await query(
               `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
@@ -78,6 +101,7 @@ const Lead = {
             services = flat;
           }
         } else {
+          // Name strings — use as-is
           services = flat;
         }
       } else {
@@ -483,67 +507,60 @@ const Lead = {
   },
   async _resolveServiceNames(rows) {
     if (!rows || rows.length === 0) return rows;
-    const allValues = new Set();
+
+    // Collect all UUID values from service_interested across all rows
+    const allUuids = new Set();
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
     rows.forEach(r => {
-      if (r.service_interested) {
-        let svcs = r.service_interested;
-        if (typeof svcs === 'string') {
-          try { svcs = JSON.parse(svcs); } catch (e) {}
-        }
-        if (Array.isArray(svcs)) {
-          svcs.forEach(v => {
-            if (v && !isNaN(Number(v))) allValues.add(String(v));
-          });
-        } else if (svcs && !isNaN(Number(svcs))) {
-          allValues.add(String(svcs));
-        }
+      if (!r.service_interested) return;
+      let svcs = r.service_interested;
+      if (typeof svcs === 'string') {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
       }
-    });
-    if (allValues.size === 0) {
-      return rows.map(r => {
-        if (r.service_interested) {
-          let svcs = r.service_interested;
-          if (typeof svcs === 'string') {
-            try {
-              const p = JSON.parse(svcs);
-              if (p !== null && p !== undefined) svcs = p;
-            } catch (e) {}
-          }
-          if (Array.isArray(svcs)) {
-            r.service_interested = svcs.length === 1 ? svcs[0] : (svcs.length > 1 ? svcs : null);
-          }
+      const arr = Array.isArray(svcs) ? svcs : [svcs];
+      arr.forEach(v => {
+        if (v && UUID_RE.test(String(v).trim())) {
+          allUuids.add(String(v).trim());
         }
-        return r;
       });
-    }
-    const valuesArr = Array.from(allValues);
+    });
+
+    // Build UUID → name map
     const nameMap = {};
-    try {
-      const svcResult = await query(
-        `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
-        [valuesArr]
-      );
-      if (svcResult && svcResult.rows) {
-        svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+    if (allUuids.size > 0) {
+      try {
+        const svcResult = await query(
+          `SELECT id::text, name FROM services WHERE id = ANY($1::uuid[])`,
+          [Array.from(allUuids)]
+        );
+        if (svcResult && svcResult.rows) {
+          svcResult.rows.forEach(r => { nameMap[r.id] = r.name; });
+        }
+      } catch (err) {
+        console.warn('[Lead._resolveServiceNames] Lookup skipped:', err.message);
       }
-    } catch (err) {
-      console.warn('[Lead._resolveServiceNames] Lookup skipped:', err.message);
     }
+
+    // Map each row's service_interested UUIDs → display names
     return rows.map(r => {
-      if (r.service_interested) {
-        let svcs = r.service_interested;
-        if (typeof svcs === 'string') {
-          try {
-            const parsed = JSON.parse(svcs);
-            if (parsed !== null && parsed !== undefined) svcs = parsed;
-          } catch (e) {}
-        }
-        if (Array.isArray(svcs)) {
-          const mapped = svcs.map(v => nameMap[String(v)] || String(v));
-          r.service_interested = mapped.length === 1 ? mapped[0] : (mapped.length > 1 ? mapped : null);
-        } else if (svcs !== null && svcs !== undefined && svcs !== '') {
-          r.service_interested = nameMap[String(svcs)] || String(svcs);
-        }
+      if (!r.service_interested) return r;
+      let svcs = r.service_interested;
+      if (typeof svcs === 'string') {
+        try {
+          const p = JSON.parse(svcs);
+          if (p !== null && p !== undefined) svcs = p;
+        } catch (e) {}
+      }
+      if (Array.isArray(svcs)) {
+        const mapped = svcs.map(v => {
+          const s = String(v).trim();
+          return nameMap[s] || s;   // UUID → name; fallback keeps value as-is
+        }).filter(Boolean);
+        r.service_interested = mapped.length === 1 ? mapped[0] : (mapped.length > 1 ? mapped : null);
+      } else if (svcs !== null && svcs !== undefined && svcs !== '') {
+        const s = String(svcs).trim();
+        r.service_interested = nameMap[s] || s;
       }
       return r;
     });
