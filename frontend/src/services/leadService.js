@@ -64,6 +64,23 @@ export async function fetchAdminLeads(params = {}) {
 export async function fetchMarketingLeads(params = {}) {
   return await apiClient("/marketing/leads", { params });
 }
+export async function updateAdminLeadFull(id, data) {
+  return await apiClient(`/admin/leads/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+}
+export async function updateAdminLeadPartial(id, data) {
+  return await apiClient(`/admin/leads/${id}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+export async function deleteAdminLead(id) {
+  return await apiClient(`/admin/leads/${id}`, {
+    method: "DELETE",
+  });
+}
 export async function fetchLeadById(id, cacheBuster) {
   return await apiClient(`/marketing/leads/${id}`);
 }

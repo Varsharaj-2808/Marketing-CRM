@@ -75,10 +75,18 @@ export default function FieldHistory({ leadId, isAdminRoute, visible = false, va
 
   const [fieldFilter, setFieldFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [allFieldNames, setAllFieldNames] = useState([]);
 
   const [exporting, setExporting] = useState(false);
 
   const loadedRef = useRef(false);
+
+  useEffect(() => {
+    setAllFieldNames([]);
+    setFieldFilter('');
+    setSourceFilter('all');
+    loadedRef.current = false;
+  }, [leadId]);
 
   const fetchData = useCallback(async (pageNum = 1, append = false) => {
     setLoading(true);
@@ -185,6 +193,15 @@ export default function FieldHistory({ leadId, isAdminRoute, visible = false, va
   });
 
   const uniqueFieldNames = determineUniqueFieldNames(history);
+
+  useEffect(() => {
+    if (uniqueFieldNames.length > 0) {
+      setAllFieldNames((prev) => Array.from(new Set([...prev, ...uniqueFieldNames])).sort());
+    }
+  }, [history]);
+
+  const displayFields = Array.from(new Set([...allFieldNames, ...uniqueFieldNames])).sort();
+  const showFieldSelect = displayFields.length > 1 || fieldFilter !== '';
   const showExportBtn = isAdmin;
 
   function handleRetry() {
@@ -232,7 +249,7 @@ export default function FieldHistory({ leadId, isAdminRoute, visible = false, va
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        {uniqueFieldNames.length > 1 && (
+        {showFieldSelect && (
           <div className="flex items-center gap-2">
             <label htmlFor="field-filter" className="text-label-sm text-on-surface-variant">Field:</label>
             <select
@@ -242,7 +259,7 @@ export default function FieldHistory({ leadId, isAdminRoute, visible = false, va
               className="bg-surface-container-low border border-outline-variant/30 rounded-lg px-2.5 py-1.5 text-label-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none"
             >
               <option value="">All Fields</option>
-              {uniqueFieldNames.map((name) => (
+              {displayFields.map((name) => (
                 <option key={name} value={name}>{toHumanReadableFieldName(name)}</option>
               ))}
             </select>
