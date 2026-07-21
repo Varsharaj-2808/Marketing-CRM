@@ -1,4 +1,4 @@
-﻿const { query, getClient } = require('../config/db');
+const { query, getClient } = require('../config/db');
 const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
@@ -190,7 +190,14 @@ exports.bulkAssign = async (req, res, next) => {
     });
 
     const finalLeadsResult = await query(
-      `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id IN (${leadPlaceholders})`,
+      `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+              bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
+       FROM leads l
+       LEFT JOIN users u ON l.assigned_to = u.id
+       LEFT JOIN business_categories bc ON l.category = bc.id
+       LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
+       WHERE l.id IN (${leadPlaceholders})`,
       uniqueIds
     );
     if (algolia && typeof algolia.indexAllLeads === 'function') {
@@ -233,7 +240,7 @@ exports.exportLeads = async (req, res, next) => {
       const uniqueIds = [...new Set(lead_ids)];
       const placeholders = uniqueIds.map((_, i) => `$${i + 1}`).join(', ');
       const leadResult = await query(
-        `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id IN (${placeholders})`,
+        `SELECT l.*, u.name as assigned_to_name, ls.name as lead_source_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name WHERE l.id IN (${placeholders})`,
         uniqueIds
       );
 
@@ -247,10 +254,12 @@ exports.exportLeads = async (req, res, next) => {
       leads = leadResult.rows;
     } else {
       const leadResult = await query(
-        `SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id ORDER BY l.created_at DESC`
+        `SELECT l.*, u.name as assigned_to_name, ls.name as lead_source_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name ORDER BY l.created_at DESC`
       );
       leads = leadResult.rows;
     }
+
+    await enrichLeadsWithDisplayNames(leads);
 
     const exportsDir = path.join(__dirname, '..', '..', 'exports');
     if (!fs.existsSync(exportsDir)) {
@@ -278,8 +287,8 @@ exports.exportLeads = async (req, res, next) => {
           escapeCsvField(lead.contact_person || ''),
           lead.mobile_number || '',
           escapeCsvField(lead.email || ''),
-          escapeCsvField(lead.lead_source || ''),
-          escapeCsvField(lead.category || ''),
+          escapeCsvField(lead.lead_source_name || lead.lead_source || ''),
+          escapeCsvField(lead.category_name || lead.category || ''),
           lead.priority || '',
           lead.stage || '',
           lead.estimated_value != null ? lead.estimated_value : '',
@@ -300,8 +309,8 @@ exports.exportLeads = async (req, res, next) => {
         'Contact Person': lead.contact_person || '',
         'Mobile': lead.mobile_number || '',
         'Email': lead.email || '',
-        'Lead Source': lead.lead_source || '',
-        'Category': lead.category || '',
+        'Lead Source': lead.lead_source_name || lead.lead_source || '',
+        'Category': lead.category_name || lead.category || '',
         'Priority': lead.priority || '',
         'Stage': lead.stage || '',
         'Estimated Value': lead.estimated_value != null ? lead.estimated_value : '',
@@ -342,3 +351,123 @@ function escapeCsvField(value) {
   }
   return str;
 }
+
+const enrichLeadsWithDisplayNames = async (leadsList) => {
+  if (!leadsList || leadsList.length === 0) return;
+
+  const categoryIds = new Set();
+  const subCategoryIds = new Set();
+  const userIds = new Set();
+  const sourceIds = new Set();
+  const serviceIds = new Set();
+
+  leadsList.forEach(l => {
+    if (l.category) categoryIds.add(String(l.category));
+    if (l.sub_category) subCategoryIds.add(String(l.sub_category));
+    if (l.assigned_to) userIds.add(String(l.assigned_to));
+    if (l.lead_source) sourceIds.add(String(l.lead_source));
+    if (l.service_interested) {
+      let svcs = l.service_interested;
+      if (typeof svcs === 'string') {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      const arr = Array.isArray(svcs) ? svcs : [svcs];
+      arr.forEach(s => serviceIds.add(String(s)));
+    }
+  });
+
+  const categoryMap = {};
+  const subCategoryMap = {};
+  const userMap = {};
+  const sourceMap = {};
+  const serviceMap = {};
+
+  if (categoryIds.size > 0) {
+    const ids = Array.from(categoryIds);
+    const res = await query(
+      `SELECT id::text, category_name FROM business_categories WHERE id::text = ANY($1) OR category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      categoryMap[r.id] = r.category_name;
+      categoryMap[r.category_name] = r.category_name;
+    });
+  }
+
+  if (subCategoryIds.size > 0) {
+    const ids = Array.from(subCategoryIds);
+    const res = await query(
+      `SELECT id::text, sub_category_name FROM business_sub_categories WHERE id::text = ANY($1) OR sub_category_name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      subCategoryMap[r.id] = r.sub_category_name;
+      subCategoryMap[r.sub_category_name] = r.sub_category_name;
+    });
+  }
+
+  if (userIds.size > 0) {
+    const ids = Array.from(userIds);
+    const res = await query(
+      `SELECT id::text, employee_id, name FROM users WHERE id::text = ANY($1) OR employee_id = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      const display = r.employee_id && r.name ? `${r.employee_id} (${r.name})` : (r.name || r.employee_id || '');
+      userMap[r.id] = display;
+      userMap[r.employee_id] = display;
+    });
+  }
+
+  if (sourceIds.size > 0) {
+    const ids = Array.from(sourceIds);
+    const res = await query(
+      `SELECT id::text, name FROM lead_sources WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      sourceMap[r.id] = r.name;
+      sourceMap[r.name] = r.name;
+    });
+  }
+
+  if (serviceIds.size > 0) {
+    const ids = Array.from(serviceIds);
+    const res = await query(
+      `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+      [ids]
+    );
+    res.rows.forEach(r => {
+      serviceMap[r.id] = r.name;
+      serviceMap[r.name] = r.name;
+    });
+  }
+
+  leadsList.forEach(l => {
+    const srcKey = l.lead_source ? String(l.lead_source) : '';
+    l.lead_source_name = sourceMap[srcKey] || l.lead_source_name || l.lead_source || '';
+
+    const catKey = l.category ? String(l.category) : '';
+    l.category_name = categoryMap[catKey] || l.category_name || l.category || '';
+
+    const subCatKey = l.sub_category ? String(l.sub_category) : '';
+    l.sub_category_name = subCategoryMap[subCatKey] || l.sub_category_name || l.sub_category || '';
+
+    const userKey = l.assigned_to ? String(l.assigned_to) : '';
+    l.assigned_to_name = userMap[userKey] || l.assigned_to_name || l.assigned_to || '';
+
+    if (l.service_interested) {
+      let svcs = l.service_interested;
+      const isString = typeof svcs === 'string';
+      if (isString) {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      if (Array.isArray(svcs)) {
+        l.service_interested = svcs.map(s => serviceMap[String(s)] || String(s));
+      } else if (svcs) {
+        const mappedName = serviceMap[String(svcs)] || String(svcs);
+        l.service_interested = isString ? mappedName : [mappedName];
+      }
+    }
+  });
+};

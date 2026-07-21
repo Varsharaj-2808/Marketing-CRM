@@ -1,10 +1,13 @@
-﻿const { Pool } = require('pg');
+const { Pool } = require('pg');
 
 const isSupabase = process.env.DATABASE_URL?.includes('supabase');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ...(isSupabase ? { ssl: { rejectUnauthorized: false } } : {}),
+  max: 15, // Reduced from 20 to 15 to match Supabase session mode pool_size limit
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 pool.on('error', (err) => {

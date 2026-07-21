@@ -9,64 +9,151 @@ const Lead = {
       ) + 1 AS next_seq FROM leads WHERE "lead_id" LIKE $1`,
       [`LD-${year}-%`]
     );
-    const nextSeq = result.rows[0].next_seq;
+    const nextSeq = result && result.rows && result.rows[0] && result.rows[0].next_seq !== undefined ? result.rows[0].next_seq : 1;
     return `LD-${year}-${String(nextSeq).padStart(5, '0')}`;
   },
 
   async create(data, creatorId) {
-    const { company_name, contact_person, mobile_number, email, website, city, lead_source, category, sub_category, service_interested, priority, estimated_value } = data;
+    const { company_name, contact_person, mobile_number, email, website, city, lead_source, category, sub_category, service_interested, servicesInterested, priority, estimated_value } = data;
     const leadId = await this.getNextLeadId();
 
-    // Ensure service_interested is valid JSON for the JSONB column.
-    let services = service_interested;
-    if (services !== null && services !== undefined) {
-      if (Array.isArray(services) || typeof services === 'object') {
-        services = JSON.stringify(services);
-      } else if (typeof services === 'string') {
-        // If it's already a string, validate it's parseable JSON
-        try {
-          JSON.parse(services);
-        } catch {
-          services = JSON.stringify(services);
+    const isUuid = (val) => val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(val).trim());
+
+    const cleanSingleVal = (val) => {
+      if (val === null || val === undefined) return null;
+      let v = val;
+      if (Array.isArray(v)) v = v[0];
+      if (typeof v === 'string') {
+        v = v.trim();
+        if (v.startsWith('[') && v.endsWith(']')) {
+          try {
+            const p = JSON.parse(v);
+            if (Array.isArray(p)) v = p[0];
+          } catch (e) {}
         }
+      }
+      return v ? String(v).trim() : null;
+    };
+
+    const cleanCategory = isUuid(cleanSingleVal(category)) ? cleanSingleVal(category) : null;
+    const cleanSubCategory = isUuid(cleanSingleVal(sub_category)) ? cleanSingleVal(sub_category) : null;
+    const cleanCreatorId = isUuid(cleanSingleVal(creatorId)) ? cleanSingleVal(creatorId) : creatorId;
+
+    // Resolve lead_source: UUID → use directly | numeric ID → look up UUID/name | name string → use as-is
+    let cleanLeadSource = cleanSingleVal(lead_source);
+    if (cleanLeadSource && !isUuid(cleanLeadSource) && !isNaN(Number(cleanLeadSource)) && Number.isInteger(Number(cleanLeadSource))) {
+      // Numeric ID from old local DB schema — look up by integer id or name
+      try {
+        const srcResult = await query(
+          `SELECT id::text, name FROM lead_sources WHERE id::text = $1`,
+          [cleanLeadSource]
+        );
+        if (srcResult && srcResult.rows && srcResult.rows[0]) {
+          // Prefer UUID if the live DB has UUIDs, otherwise fall back to name
+          cleanLeadSource = isUuid(srcResult.rows[0].id) ? srcResult.rows[0].id : srcResult.rows[0].name;
+        }
+      } catch (e) {
+        // keep cleanLeadSource as-is on error
       }
     }
 
+    let services = service_interested !== undefined ? service_interested : servicesInterested;
+    if (services !== null && services !== undefined) {
+      if (typeof services === 'string') {
+        try { services = JSON.parse(services); } catch (e) {}
+      }
+      const arr = Array.isArray(services) ? services : [services];
+      const flat = [];
+      arr.forEach(item => {
+        let val = item;
+        if (typeof val === 'string' && val.startsWith('[') && val.endsWith(']')) {
+          try { val = JSON.parse(val); } catch (e) {}
+        }
+        if (Array.isArray(val)) {
+          val.forEach(v => { if (v) flat.push(String(v)); });
+        } else if (val !== null && val !== undefined && val !== '') {
+          flat.push(String(val));
+        }
+      });
+
+      if (flat.length > 0) {
+        const hasUuidIds = flat.every(v => isUuid(v));
+        const hasNumericIds = !hasUuidIds && flat.some(v => !isNaN(Number(v)) && Number.isInteger(Number(v)));
+
+        if (hasUuidIds) {
+          // Live DB: UUIDs passed directly — use as-is
+          services = flat;
+        } else if (hasNumericIds) {
+          // Old local DB: integer IDs — look up by id or name
+          try {
+            const svcResult = await query(
+              `SELECT id::text, name FROM services WHERE id::text = ANY($1) OR name = ANY($1)`,
+              [flat]
+            );
+            if (svcResult && svcResult.rows) {
+              const nameMap = {};
+              svcResult.rows.forEach(r => { nameMap[r.id] = r.name; nameMap[r.name] = r.name; });
+              services = flat.map(v => nameMap[v] || v);
+            } else {
+              services = flat;
+            }
+          } catch (e) {
+            services = flat;
+          }
+        } else {
+          // Name strings — use as-is
+          services = flat;
+        }
+      } else {
+        services = null;
+      }
+    }
+    const jsonServices = services ? JSON.stringify(services) : null;
     const result = await query(
       `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", "lead_id", stage, "lead_status")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New', NULL)
        RETURNING *`,
-      [company_name, contact_person, mobile_number, email || null, website || null, city || null, lead_source, category, sub_category || null, services || null, priority, estimated_value || null, creatorId, leadId]
+      [company_name, contact_person, mobile_number, email || null, website || null, city || null, cleanLeadSource, cleanCategory, cleanSubCategory, jsonServices, priority, estimated_value || null, cleanCreatorId, leadId]
     );
-    return result.rows[0];
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async findById(id) {
     const result = await query(
       `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-              bc.category_name, bsc.sub_category_name
+              bc.category_name, bsc.sub_category_name,
+              ls.name as lead_source_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
        LEFT JOIN business_categories bc ON l.category = bc.id
        LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
        WHERE l.id = $1`,
       [id]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async findByLeadId(leadId) {
     const result = await query(
       `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-              bc.category_name, bsc.sub_category_name
+              bc.category_name, bsc.sub_category_name,
+              ls.name as lead_source_name
        FROM leads l
        LEFT JOIN users u ON l.assigned_to = u.id
        LEFT JOIN business_categories bc ON l.category = bc.id
        LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+       LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
        WHERE l.lead_id = $1`,
       [leadId]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async updateAssignedTo(id, assignedToUserId) {
@@ -76,21 +163,27 @@ const Lead = {
        RETURNING *`,
       [assignedToUserId, id]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async findByMobile(mobile) {
     const result = await query('SELECT * FROM leads WHERE "mobile_number" = $1 AND stage != $2 AND lead_status != $3', [mobile, 'Closed Lost', 'Lost']);
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async findByEmail(email) {
     const result = await query('SELECT * FROM leads WHERE email = $1 AND stage != $2 AND lead_status != $3', [email, 'Closed Lost', 'Lost']);
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async findAll(filters = {}) {
-    const { userId, isAdmin, search, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20 } = filters;
+    const { userId, isAdmin, search, ids, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20, assigned_to, city, service_interested, created_by } = filters;
 
     const conditions = [];
     const values = [];
@@ -101,33 +194,42 @@ const Lead = {
       values.push(userId);
     }
 
-    if (search) {
-      const searchPattern = `%${search}%`;
-      conditions.push(`(
-        l.company_name ILIKE $${idx} OR
-        l.contact_person ILIKE $${idx} OR
-        l.mobile_number ILIKE $${idx} OR
-        l.email ILIKE $${idx} OR
-        l.lead_source ILIKE $${idx} OR
-        l.lead_id ILIKE $${idx}
-      )`);
-      values.push(searchPattern);
+    // When Algolia returns a specific set of IDs (e.g. for export), scope the
+    // query to exactly those leads instead of using SQL ILIKE.
+    if (ids && ids.length > 0) {
+      conditions.push(`l.id = ANY($${idx++})`);
+      values.push(ids);
+    } else if (search) {
+      conditions.push(`(l.company_name ILIKE $${idx} OR l.contact_person ILIKE $${idx} OR l.email ILIKE $${idx} OR l.mobile_number ILIKE $${idx} OR l.city ILIKE $${idx} OR l.lead_id ILIKE $${idx})`);
+      values.push(`%${search}%`);
       idx++;
     }
 
-    if (priority) {
-      conditions.push(`l.priority ILIKE $${idx++}`);
+    if (priority && priority !== 'All') {
+      conditions.push(`l.priority = $${idx++}`);
       values.push(priority);
     }
 
-    if (stage) {
-      conditions.push(`l.stage = $${idx++}`);
-      values.push(stage);
+    if (stage && stage !== 'All') {
+      if (stage === 'Active') {
+        conditions.push(`l.stage != 'Closed' AND (l.lead_status IS NULL OR (l.lead_status != 'Won' AND l.lead_status != 'Lost'))`);
+      } else if (stage === 'Won' || stage === 'Lost') {
+        conditions.push(`(l.stage = 'Closed' OR l.stage = $${idx}) AND l.lead_status = $${idx}`);
+        values.push(stage);
+        idx++;
+      } else {
+        conditions.push(`l.stage = $${idx++}`);
+        values.push(stage);
+      }
     }
 
-    if (status) {
-      conditions.push(`l.lead_status = $${idx++}`);
-      values.push(status);
+    if (status && status !== 'All') {
+      if (status === 'Active') {
+        conditions.push(`l.stage != 'Closed' AND (l.lead_status IS NULL OR (l.lead_status != 'Won' AND l.lead_status != 'Lost'))`);
+      } else {
+        conditions.push(`l.lead_status = $${idx++}`);
+        values.push(status);
+      }
     }
 
     if (category) {
@@ -141,8 +243,9 @@ const Lead = {
     }
 
     if (lead_source) {
-      conditions.push(`l.lead_source = $${idx++}`);
+      conditions.push(`(l.lead_source = $${idx} OR ls.name ILIKE $${idx})`);
       values.push(lead_source);
+      idx++;
     }
 
     if (from_date) {
@@ -152,7 +255,35 @@ const Lead = {
 
     if (to_date) {
       conditions.push(`l.created_at <= $${idx++}`);
-      values.push(to_date.includes('T') ? to_date : `${to_date}T23:59:59.999Z`);
+      values.push(`${to_date} 23:59:59`);
+    }
+
+    if (assigned_to) {
+      conditions.push(`(l.assigned_to = $${idx} OR u.employee_id = $${idx} OR u.name ILIKE $${idx})`);
+      values.push(assigned_to);
+      idx++;
+    }
+
+    if (city) {
+      conditions.push(`l.city ILIKE $${idx++}`);
+      values.push(`%${city}%`);
+    }
+
+    if (service_interested) {
+      conditions.push(`$${idx} = ANY(l.service_interested)`);
+      values.push(service_interested);
+      idx++;
+    }
+
+    if (created_by) {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM lead_history lh 
+        LEFT JOIN users u_creator ON lh.changed_by = u_creator.id
+        WHERE lh.lead_id = l.id AND lh.field_name = 'lead_created' 
+          AND (lh.changed_by = $${idx} OR u_creator.employee_id = $${idx} OR u_creator.name = $${idx})
+      )`);
+      values.push(created_by);
+      idx++;
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -170,23 +301,35 @@ const Lead = {
       created_at: 'l.created_at',
       updated_at: 'l.updated_at',
     };
-
     const sortCol = allowedSortColumns[sortBy] || 'l.created_at';
-    const sortDir = sortOrder && sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const sortDir = sortOrder && sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    const countResult = await query(
-      `SELECT COUNT(*) FROM leads l ${where}`,
-      values
-    );
-    const totalCount = parseInt(countResult.rows[0].count);
+    // Use a correlated subquery for lead_sources to avoid duplicate rows that
+    // the OR condition could produce.
+    const lsJoin = `LEFT JOIN LATERAL (
+      SELECT name FROM lead_sources
+      WHERE id::text = l.lead_source OR name = l.lead_source
+      LIMIT 1
+    ) ls ON true`;
+
+    const countSql = `SELECT COUNT(*) FROM leads l
+                      LEFT JOIN users u ON l.assigned_to = u.id
+                      LEFT JOIN business_categories bc ON l.category = bc.id
+                      LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                      ${lsJoin}
+                      ${where}`;
+    const countRes = await query(countSql, values);
+    const totalCount = parseInt(countRes.rows[0].count, 10);
 
     const offset = (page - 1) * limit;
     const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                        bc.category_name, bsc.sub_category_name
+                        bc.category_name, bsc.sub_category_name,
+                        ls.name as lead_source_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN business_categories bc ON l.category = bc.id
                  LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                 ${lsJoin}
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -194,55 +337,58 @@ const Lead = {
 
     const result = await query(sql, values);
 
+    const rows = await this._resolveServiceNames(result.rows);
+
     return {
-      data: result.rows,
+      data: rows,
       page,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
     };
   },
   async findAllAdmin(filters = {}) {
-    const {
-      search, status, priority, stage, source, category, sub_category, assigned_to, sortBy, sortOrder,
-      page = 1, limit = 25, from_date, to_date,
-    } = filters;
+    const { search, ids, priority, stage, status, category, sub_category, lead_source, from_date, to_date, sortBy, sortOrder, page = 1, limit = 20, assigned_to, city, service_interested, created_by } = filters;
 
     const conditions = [];
     const values = [];
     let idx = 1;
 
-    if (search) {
-      const searchPattern = `%${search}%`;
-      conditions.push(`(
-        l.company_name ILIKE $${idx} OR
-        l.contact_person ILIKE $${idx} OR
-        l.mobile_number ILIKE $${idx} OR
-        l.email ILIKE $${idx} OR
-        l.lead_source ILIKE $${idx} OR
-        l.lead_id ILIKE $${idx}
-      )`);
-      values.push(searchPattern);
+    // When Algolia returns a specific set of IDs (e.g. for export), scope the
+    // query to exactly those leads instead of using SQL ILIKE.
+    if (ids && ids.length > 0) {
+      conditions.push(`l.id = ANY($${idx++})`);
+      values.push(ids);
+    } else if (search) {
+      conditions.push(`(l.company_name ILIKE $${idx} OR l.contact_person ILIKE $${idx} OR l.email ILIKE $${idx} OR l.mobile_number ILIKE $${idx} OR l.city ILIKE $${idx} OR l.lead_id ILIKE $${idx})`);
+      values.push(`%${search}%`);
       idx++;
     }
 
-    if (status) {
-      conditions.push(`l.lead_status = $${idx++}`);
-      values.push(status);
-    }
-
-    if (priority) {
-      conditions.push(`l.priority ILIKE $${idx++}`);
+    if (priority && priority !== 'All') {
+      conditions.push(`l.priority = $${idx++}`);
       values.push(priority);
     }
 
-    if (stage) {
-      conditions.push(`l.stage = $${idx++}`);
-      values.push(stage);
+    if (stage && stage !== 'All') {
+      if (stage === 'Active') {
+        conditions.push(`l.stage != 'Closed' AND (l.lead_status IS NULL OR (l.lead_status != 'Won' AND l.lead_status != 'Lost'))`);
+      } else if (stage === 'Won' || stage === 'Lost') {
+        conditions.push(`(l.stage = 'Closed' OR l.stage = $${idx}) AND l.lead_status = $${idx}`);
+        values.push(stage);
+        idx++;
+      } else {
+        conditions.push(`l.stage = $${idx++}`);
+        values.push(stage);
+      }
     }
 
-    if (source) {
-      conditions.push(`l.lead_source = $${idx++}`);
-      values.push(source);
+    if (status && status !== 'All') {
+      if (status === 'Active') {
+        conditions.push(`l.stage != 'Closed' AND (l.lead_status IS NULL OR (l.lead_status != 'Won' AND l.lead_status != 'Lost'))`);
+      } else {
+        conditions.push(`l.lead_status = $${idx++}`);
+        values.push(status);
+      }
     }
 
     if (category) {
@@ -255,9 +401,10 @@ const Lead = {
       values.push(sub_category);
     }
 
-    if (assigned_to) {
-      conditions.push(`l.assigned_to = $${idx++}`);
-      values.push(assigned_to);
+    if (lead_source) {
+      conditions.push(`(l.lead_source = $${idx} OR ls.name ILIKE $${idx})`);
+      values.push(lead_source);
+      idx++;
     }
 
     if (from_date) {
@@ -267,7 +414,35 @@ const Lead = {
 
     if (to_date) {
       conditions.push(`l.created_at <= $${idx++}`);
-      values.push(to_date.includes('T') ? to_date : `${to_date}T23:59:59.999Z`);
+      values.push(`${to_date} 23:59:59`);
+    }
+
+    if (assigned_to) {
+      conditions.push(`(l.assigned_to = $${idx} OR u.employee_id = $${idx} OR u.name ILIKE $${idx})`);
+      values.push(assigned_to);
+      idx++;
+    }
+
+    if (city) {
+      conditions.push(`l.city ILIKE $${idx++}`);
+      values.push(`%${city}%`);
+    }
+
+    if (service_interested) {
+      conditions.push(`$${idx} = ANY(l.service_interested)`);
+      values.push(service_interested);
+      idx++;
+    }
+
+    if (created_by) {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM lead_history lh 
+        LEFT JOIN users u_creator ON lh.changed_by = u_creator.id
+        WHERE lh.lead_id = l.id AND lh.field_name = 'lead_created' 
+          AND (lh.changed_by = $${idx} OR u_creator.employee_id = $${idx} OR u_creator.name = $${idx})
+      )`);
+      values.push(created_by);
+      idx++;
     }
 
     const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -285,25 +460,35 @@ const Lead = {
       created_at: 'l.created_at',
       updated_at: 'l.updated_at',
     };
-
-    this.VALID_SORT_FIELDS = Object.keys(allowedSortColumns);
-
     const sortCol = allowedSortColumns[sortBy] || 'l.created_at';
-    const sortDir = sortOrder && sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const sortDir = sortOrder && sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    const countResult = await query(
-      `SELECT COUNT(*) FROM leads l ${where}`,
-      values
-    );
-    const totalCount = parseInt(countResult.rows[0].count);
+    // Use a correlated subquery for lead_sources to avoid duplicate rows that
+    // the OR condition (`ls.id::text = ... OR ls.name = ...`) could produce.
+    const lsJoin = `LEFT JOIN LATERAL (
+      SELECT name FROM lead_sources
+      WHERE id::text = l.lead_source OR name = l.lead_source
+      LIMIT 1
+    ) ls ON true`;
+
+    const countSql = `SELECT COUNT(*) FROM leads l
+                      LEFT JOIN users u ON l.assigned_to = u.id
+                      LEFT JOIN business_categories bc ON l.category = bc.id
+                      LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                      ${lsJoin}
+                      ${where}`;
+    const countRes = await query(countSql, values);
+    const totalCount = parseInt(countRes.rows[0].count, 10);
 
     const offset = (page - 1) * limit;
     const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                        bc.category_name, bsc.sub_category_name
+                        bc.category_name, bsc.sub_category_name,
+                        ls.name as lead_source_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN business_categories bc ON l.category = bc.id
                  LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+                 ${lsJoin}
                  ${where}
                  ORDER BY ${sortCol} ${sortDir}
                  LIMIT $${idx++} OFFSET $${idx++}`;
@@ -311,12 +496,74 @@ const Lead = {
 
     const result = await query(sql, values);
 
+    const rows = await this._resolveServiceNames(result.rows);
+
     return {
-      data: result.rows,
+      data: rows,
       page,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
     };
+  },
+  async _resolveServiceNames(rows) {
+    if (!rows || rows.length === 0) return rows;
+
+    // Collect all UUID values from service_interested across all rows
+    const allUuids = new Set();
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    rows.forEach(r => {
+      if (!r.service_interested) return;
+      let svcs = r.service_interested;
+      if (typeof svcs === 'string') {
+        try { svcs = JSON.parse(svcs); } catch (e) {}
+      }
+      const arr = Array.isArray(svcs) ? svcs : [svcs];
+      arr.forEach(v => {
+        if (v && UUID_RE.test(String(v).trim())) {
+          allUuids.add(String(v).trim());
+        }
+      });
+    });
+
+    // Build UUID → name map
+    const nameMap = {};
+    if (allUuids.size > 0) {
+      try {
+        const svcResult = await query(
+          `SELECT id::text, name FROM services WHERE id = ANY($1::uuid[])`,
+          [Array.from(allUuids)]
+        );
+        if (svcResult && svcResult.rows) {
+          svcResult.rows.forEach(r => { nameMap[r.id] = r.name; });
+        }
+      } catch (err) {
+        console.warn('[Lead._resolveServiceNames] Lookup skipped:', err.message);
+      }
+    }
+
+    // Map each row's service_interested UUIDs → display names
+    return rows.map(r => {
+      if (!r.service_interested) return r;
+      let svcs = r.service_interested;
+      if (typeof svcs === 'string') {
+        try {
+          const p = JSON.parse(svcs);
+          if (p !== null && p !== undefined) svcs = p;
+        } catch (e) {}
+      }
+      if (Array.isArray(svcs)) {
+        const mapped = svcs.map(v => {
+          const s = String(v).trim();
+          return nameMap[s] || s;   // UUID → name; fallback keeps value as-is
+        }).filter(Boolean);
+        r.service_interested = mapped.length === 1 ? mapped[0] : (mapped.length > 1 ? mapped : null);
+      } else if (svcs !== null && svcs !== undefined && svcs !== '') {
+        const s = String(svcs).trim();
+        r.service_interested = nameMap[s] || s;
+      }
+      return r;
+    });
   },
   async updateStage(id, stage, leadStatus = null) {
     const result = await query(
@@ -326,7 +573,9 @@ const Lead = {
        RETURNING *`,
       [stage, leadStatus, id]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async closeLost(id, lostReason) {
@@ -337,7 +586,9 @@ const Lead = {
        RETURNING *`,
       [lostReason, id]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async closeWon(id, finalDealValue, closureDate) {
@@ -348,7 +599,9 @@ const Lead = {
        RETURNING *`,
       [finalDealValue, closureDate, id]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 
   async reopen(id) {
@@ -359,7 +612,9 @@ const Lead = {
        RETURNING *`,
       [id]
     );
-    return result.rows[0] || null;
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
   },
 };
 

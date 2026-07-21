@@ -1,5 +1,4 @@
 ﻿const errorHandler = (err, req, res, next) => {
-  // ΓöÇΓöÇ body-parser malformed JSON ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   if (
     err.type === 'entity.parse.failed' ||
     (err instanceof SyntaxError && (err.status === 400 || err.statusCode === 400))
@@ -7,8 +6,8 @@
     return res.status(400).json({ error: 'Invalid JSON in request body' });
   }
 
-  console.error(`Error: ${err.message}`);
-  console.error(err.stack);
+  console.error(`[Error] ${err.message}`);
+  if (err.stack) console.error(err.stack);
 
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map((e) => e.message);
@@ -35,13 +34,31 @@
     return res.status(400).json({ success: false, message: 'Invalid ID format' });
   }
 
-  // ΓöÇΓöÇ Ensure response is always sent (never let an error go unhandled) ΓöÇΓöÇ
+  const isDbError = err.code && (
+    err.code.startsWith('ECONN') ||
+    err.code === '57P01' ||
+    err.code === '57P02' ||
+    err.code === '57P03' ||
+    err.code === '08006' ||
+    err.code === '08001' ||
+    err.code === '08003' ||
+    err.code === '08004' ||
+    err.code === '08P01' ||
+    err.message?.includes('connection') ||
+    err.message?.includes('terminated') ||
+    err.message?.includes('timeout') ||
+    err.message?.includes('ECONNREFUSED') ||
+    err.message?.includes('ENOTFOUND')
+  );
+
   if (res.headersSent) return next(err);
 
-  res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || 'Internal server error',
-  });
+  const status = isDbError ? 503 : (err.statusCode || 500);
+  const message = isDbError
+    ? 'Service temporarily unavailable. Please try again.'
+    : (err.message || 'Internal server error');
+
+  res.status(status).json({ success: false, message });
 };
 
 module.exports = errorHandler;

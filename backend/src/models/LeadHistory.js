@@ -1,4 +1,4 @@
-﻿const { query } = require('../config/db');
+const { query } = require('../config/db');
 
 const LeadHistory = {
   async create(data, client = null) {
@@ -31,12 +31,48 @@ const LeadHistory = {
        WHERE h.lead_id = $1`;
     const params = [leadId];
     
-    if (filters.fieldName) {
+    if (filters.fieldNames && Array.isArray(filters.fieldNames) && filters.fieldNames.length > 0) {
+      const orClauses = [];
+      filters.fieldNames.forEach(f => {
+        params.push(f);
+        const p1 = `$${params.length}`;
+        params.push(f.toLowerCase().replace(/[\s_-]+/g, ''));
+        const p2 = `$${params.length}`;
+        orClauses.push(`(LOWER(h.field_name) = ${p1} OR REPLACE(LOWER(h.field_name), ' ', '_') = ${p1} OR REPLACE(REPLACE(LOWER(h.field_name), ' ', ''), '_', '') = ${p2})`);
+      });
+      sql += ` AND (${orClauses.join(' OR ')})`;
+    } else if (filters.fieldName) {
       params.push(filters.fieldName);
-      sql += ` AND h.field_name = $2`;
+      const p1 = `$${params.length}`;
+      params.push(filters.fieldName.toLowerCase().replace(/[\s_-]+/g, ''));
+      const p2 = `$${params.length}`;
+      sql += ` AND (LOWER(h.field_name) = ${p1} OR REPLACE(LOWER(h.field_name), ' ', '_') = ${p1} OR REPLACE(REPLACE(LOWER(h.field_name), ' ', ''), '_', '') = ${p2})`;
+    }
+    if (filters.isSystemGenerated !== undefined) {
+      params.push(filters.isSystemGenerated);
+      sql += ` AND h.is_system_generated = $${params.length}`;
+    }
+    if (filters.from) {
+      params.push(filters.from);
+      sql += ` AND h.changed_at >= $${params.length}`;
+    }
+    if (filters.to) {
+      params.push(filters.to);
+      sql += ` AND h.changed_at <= $${params.length}`;
+    }
+    if (filters.search) {
+      params.push(`%${filters.search}%`);
+      sql += ` AND (
+        h.field_name ILIKE $${params.length} OR
+        h.old_value ILIKE $${params.length} OR
+        h.new_value ILIKE $${params.length} OR
+        h.change_summary ILIKE $${params.length} OR
+        h.reason ILIKE $${params.length} OR
+        u.name ILIKE $${params.length}
+      )`;
     }
     
-    sql += ` ORDER BY h.changed_at DESC`; // Newest first
+    sql += ` ORDER BY h.changed_at DESC`;
     
     if (filters.limit) {
       params.push(filters.limit);
@@ -50,12 +86,47 @@ const LeadHistory = {
 
     const result = await query(sql, params);
     
-    // Also return count for pagination
-    let countSql = `SELECT COUNT(*) FROM lead_history WHERE lead_id = $1`;
+    let countSql = `SELECT COUNT(*) FROM lead_history h LEFT JOIN users u ON h.changed_by = u.id WHERE h.lead_id = $1`;
     const countParams = [leadId];
-    if (filters.fieldName) {
+    if (filters.fieldNames && Array.isArray(filters.fieldNames) && filters.fieldNames.length > 0) {
+      const orClauses = [];
+      filters.fieldNames.forEach(f => {
+        countParams.push(f);
+        const p1 = `$${countParams.length}`;
+        countParams.push(f.toLowerCase().replace(/[\s_-]+/g, ''));
+        const p2 = `$${countParams.length}`;
+        orClauses.push(`(LOWER(h.field_name) = ${p1} OR REPLACE(LOWER(h.field_name), ' ', '_') = ${p1} OR REPLACE(REPLACE(LOWER(h.field_name), ' ', ''), '_', '') = ${p2})`);
+      });
+      countSql += ` AND (${orClauses.join(' OR ')})`;
+    } else if (filters.fieldName) {
       countParams.push(filters.fieldName);
-      countSql += ` AND field_name = $2`;
+      const p1 = `$${countParams.length}`;
+      countParams.push(filters.fieldName.toLowerCase().replace(/[\s_-]+/g, ''));
+      const p2 = `$${countParams.length}`;
+      countSql += ` AND (LOWER(h.field_name) = ${p1} OR REPLACE(LOWER(h.field_name), ' ', '_') = ${p1} OR REPLACE(REPLACE(LOWER(h.field_name), ' ', ''), '_', '') = ${p2})`;
+    }
+    if (filters.isSystemGenerated !== undefined) {
+      countParams.push(filters.isSystemGenerated);
+      countSql += ` AND h.is_system_generated = $${countParams.length}`;
+    }
+    if (filters.from) {
+      countParams.push(filters.from);
+      countSql += ` AND h.changed_at >= $${countParams.length}`;
+    }
+    if (filters.to) {
+      countParams.push(filters.to);
+      countSql += ` AND h.changed_at <= $${countParams.length}`;
+    }
+    if (filters.search) {
+      countParams.push(`%${filters.search}%`);
+      countSql += ` AND (
+        h.field_name ILIKE $${countParams.length} OR
+        h.old_value ILIKE $${countParams.length} OR
+        h.new_value ILIKE $${countParams.length} OR
+        h.change_summary ILIKE $${countParams.length} OR
+        h.reason ILIKE $${countParams.length} OR
+        u.name ILIKE $${countParams.length}
+      )`;
     }
     const countResult = await query(countSql, countParams);
     

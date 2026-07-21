@@ -1,19 +1,45 @@
 const { algoliasearch } = require('algoliasearch');
 
 const appId = process.env.ALGOLIA_APP_ID || '';
-const apiKey = process.env.ALGOLIA_WRITE_KEY || '';
+const writeKey = process.env.ALGOLIA_WRITE_KEY || '';
+const searchKey = process.env.ALGOLIA_SEARCH_KEY || '';
+const adminKey = process.env.ALGOLIA_ADMIN_KEY || '';
 
-let client = null;
-if (appId && apiKey) {
-  client = algoliasearch(appId, apiKey);
+let writeClient = null;
+let searchClient = null;
+let adminClient = null;
+
+if (appId && writeKey) {
+  writeClient = algoliasearch(appId, writeKey);
+}
+if (appId && searchKey) {
+  searchClient = algoliasearch(appId, searchKey);
+}
+if (appId && adminKey) {
+  adminClient = algoliasearch(appId, adminKey);
+} else if (appId && writeKey) {
+  adminClient = algoliasearch(appId, writeKey);
 }
 
-// Helper to check if client is initialized
-const getClient = () => {
-  if (!client) {
-    throw new Error('Algolia client not initialized. Check your environment variables.');
+const getWriteClient = () => {
+  if (!writeClient) {
+    throw new Error('Algolia write client not initialized. Check ALGOLIA_APP_ID and ALGOLIA_WRITE_KEY.');
   }
-  return client;
+  return writeClient;
+};
+
+const getSearchClient = () => {
+  if (!searchClient) {
+    throw new Error('Algolia search client not initialized. Check ALGOLIA_APP_ID and ALGOLIA_SEARCH_KEY.');
+  }
+  return searchClient;
+};
+
+const getAdminClient = () => {
+  if (!adminClient) {
+    throw new Error('Algolia admin client not initialized. Check ALGOLIA_APP_ID and ALGOLIA_ADMIN_KEY.');
+  }
+  return adminClient;
 };
 
 // Index names
@@ -28,6 +54,7 @@ const FOLLOWUPS_INDEX = 'followups';
 
 // Configure indices settings
 async function initIndices() {
+  const client = getAdminClient();
   if (!client) return;
   try {
     // 1. Users
@@ -62,8 +89,8 @@ async function initIndices() {
     await client.setSettings({
       indexName: CATEGORIES_INDEX,
       indexSettings: {
-        searchableAttributes: ['category_name', 'name'],
-        attributesForFaceting: ['status'],
+        searchableAttributes: ['category_name', 'name', 'subcategory_name', 'sub_category_name', 'parent_category_name'],
+        attributesForFaceting: ['status', 'type', 'parent_category_name'],
         customRanking: ['desc(createdAt)'],
       }
     });
@@ -102,8 +129,8 @@ async function initIndices() {
     await client.setSettings({
       indexName: AUDIT_LOGS_INDEX,
       indexSettings: {
-        searchableAttributes: ['action', 'resource', 'details', 'email', 'actor_name', 'actor_role', 'userId'],
-        attributesForFaceting: ['email', 'action', 'resource', 'result', 'userId', 'actor_name'],
+        searchableAttributes: ['action', 'resource', 'details', 'email', 'actor_name', 'actor_role', 'userId', 'resourceId', 'result', 'ipAddress', 'entity_name'],
+        attributesForFaceting: ['email', 'action', 'resource', 'result', 'userId', 'actor_name', 'actor_role', 'entity_name'],
         customRanking: ['desc(created_at_timestamp)'],
       }
     });
@@ -125,12 +152,12 @@ async function initIndices() {
 }
 
 // Call on startup
-initIndices();
+initIndices().catch(() => {});
 
 module.exports = {
   async testConnection() {
     try {
-      const cli = getClient();
+      const cli = getAdminClient();
       const res = await cli.listIndices();
       return !!res;
     } catch (err) {
@@ -143,7 +170,7 @@ module.exports = {
   async saveUser(user) {
     if (!user) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const record = {
         objectID: user.id,
         id: user.id,
@@ -176,7 +203,7 @@ module.exports = {
   async deleteUser(id) {
     if (!id) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       await cli.deleteObject({
         indexName: USERS_INDEX,
         objectID: id,
@@ -188,7 +215,7 @@ module.exports = {
 
   async searchUsers(searchQuery, filters = {}, page = 1, limit = 20) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       if (filters.role && filters.role !== 'All') {
         facetFilters.push(`role:${filters.role}`);
@@ -228,7 +255,7 @@ module.exports = {
   async indexAllUsers(users) {
     if (!users || users.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const objects = users.map(user => ({
         objectID: user.id,
         id: user.id,
@@ -257,7 +284,7 @@ module.exports = {
   async saveLead(lead) {
     if (!lead) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const record = {
         objectID: lead.id,
         id: lead.id,
@@ -270,12 +297,35 @@ module.exports = {
         city: lead.city,
         state: lead.state,
         country: lead.country,
-        lead_source: lead.lead_source,
+        lead_source: lead.lead_source_name || lead.lead_source,
         category: lead.category,
         category_name: lead.category_name || null,
         sub_category: lead.sub_category,
         sub_category_name: lead.sub_category_name || null,
-        service_interested: lead.service_interested,
+        service_interested: await (async () => {
+          let svcs = lead.service_interested;
+          if (!svcs) return null;
+          let parsed = svcs;
+          const isString = typeof parsed === 'string';
+          if (isString) {
+            try { parsed = JSON.parse(parsed); } catch (e) {}
+          }
+          const isArray = Array.isArray(parsed);
+          const arr = isArray ? parsed : [parsed];
+          const uuids = arr.filter(v => v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v)));
+          if (uuids.length > 0) {
+            try {
+              const { query } = require('../config/db');
+              const res = await query(`SELECT id::text, name FROM services WHERE id::text = ANY($1)`, [uuids]);
+              const map = {};
+              res.rows.forEach(r => map[r.id] = r.name);
+              if (isArray) return arr.map(v => map[String(v)] || String(v));
+              const mapped = map[String(parsed)] || String(parsed);
+              return isString ? mapped : [mapped];
+            } catch (e) {}
+          }
+          return svcs;
+        })(),
         priority: lead.priority,
         estimated_value: lead.estimated_value ? parseFloat(lead.estimated_value) : null,
         assigned_to: lead.assigned_to,
@@ -301,10 +351,76 @@ module.exports = {
     }
   },
 
+  /**
+   * Browse ALL Algolia pages for a given search query + filters and return an
+   * array of every matching lead UUID.  Used by exportLeads so the exported
+   * file exactly mirrors the Algolia search results shown in the UI.
+   */
+  async getAllLeadIdsBySearch(searchQuery, filters = {}, isAdmin = false, userId = null) {
+    try {
+      const cli = getSearchClient();
+      if (!cli) return null;
+
+      const facetFilters = [];
+      if (!isAdmin && userId) facetFilters.push(`assigned_to:${userId}`);
+      if (filters.priority && filters.priority !== 'All') facetFilters.push(`priority:${filters.priority}`);
+      if (filters.stage && filters.stage !== 'All') {
+        let stg = filters.stage === 'New Lead' ? 'New' : filters.stage;
+        facetFilters.push(`stage:${stg}`);
+      }
+      if (filters.status && filters.status !== 'All') facetFilters.push(`status:${filters.status}`);
+      if (filters.category && filters.category !== 'All') facetFilters.push(`category:${filters.category}`);
+      if (filters.sub_category && filters.sub_category !== 'All') facetFilters.push(`sub_category:${filters.sub_category}`);
+      if (filters.lead_source && filters.lead_source !== 'All') facetFilters.push(`lead_source:${filters.lead_source}`);
+      if (filters.assigned_to && filters.assigned_to !== 'All') {
+        const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        facetFilters.push(uuidRe.test(filters.assigned_to)
+          ? `assigned_to:${filters.assigned_to}`
+          : `assigned_employee_id:${filters.assigned_to}`);
+      }
+
+      const numericFilters = [];
+      if (filters.from_date) {
+        numericFilters.push(`created_at_timestamp >= ${Math.floor(new Date(filters.from_date).getTime() / 1000)}`);
+      }
+      if (filters.to_date) {
+        const toStr = filters.to_date.includes('T') ? filters.to_date : `${filters.to_date}T23:59:59.999Z`;
+        numericFilters.push(`created_at_timestamp <= ${Math.floor(new Date(toStr).getTime() / 1000)}`);
+      }
+
+      const ids = [];
+      let page = 0;
+      let nbPages = 1;
+      const PAGE_SIZE = 1000; // max Algolia allows per page
+
+      do {
+        const searchParams = {
+          query: searchQuery || '',
+          page,
+          hitsPerPage: PAGE_SIZE,
+          attributesToRetrieve: ['objectID'],
+        };
+        if (facetFilters.length > 0) searchParams.facetFilters = facetFilters;
+        if (numericFilters.length > 0) searchParams.numericFilters = numericFilters;
+
+        const result = await cli.searchSingleIndex({ indexName: LEADS_INDEX, searchParams });
+        if (!result) break;
+        nbPages = result.nbPages || 1;
+        (result.hits || []).forEach(h => ids.push(h.objectID));
+        page++;
+      } while (page < nbPages);
+
+      return ids;
+    } catch (err) {
+      console.error('Algolia getAllLeadIdsBySearch failed:', err.message);
+      return null; // caller falls back to SQL search
+    }
+  },
+
   async deleteLead(id) {
     if (!id) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       await cli.deleteObject({
         indexName: LEADS_INDEX,
         objectID: id,
@@ -316,7 +432,7 @@ module.exports = {
 
   async searchLeads(searchQuery, filters = {}, page = 1, limit = 20, isAdmin = false, userId = null) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       let hasAssignedToFilter = false;
 
@@ -418,8 +534,10 @@ module.exports = {
   async indexAllLeads(leads) {
     if (!leads || leads.length === 0) return;
     try {
-      const cli = getClient();
-      const objects = leads.map(lead => ({
+      const Lead = require('../models/Lead');
+      const resolvedLeads = await Lead._resolveServiceNames(leads);
+      const cli = getWriteClient();
+      const objects = resolvedLeads.map(lead => ({
         objectID: lead.id,
         id: lead.id,
         lead_id: lead.lead_id,
@@ -431,7 +549,7 @@ module.exports = {
         city: lead.city,
         state: lead.state,
         country: lead.country,
-        lead_source: lead.lead_source,
+        lead_source: lead.lead_source_name || lead.lead_source,
         category: lead.category,
         category_name: lead.category_name || null,
         sub_category: lead.sub_category,
@@ -466,15 +584,19 @@ module.exports = {
   async saveCategory(cat) {
     if (!cat) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const record = {
         objectID: cat.id,
         id: cat.id,
         category_name: cat.category_name || cat.name,
         name: cat.category_name || cat.name,
+        subcategory_name: cat.subcategory_name || cat.sub_category_name || null,
+        sub_category_name: cat.subcategory_name || cat.sub_category_name || null,
+        parent_category_name: cat.parent_category_name || null,
         status: cat.status || (cat.isActive ? 'Active' : 'Inactive'),
         isActive: cat.isActive ?? (cat.status === 'Active'),
         type: cat.type || 'category',
+        category_id: cat.category_id || null,
         createdAt: cat.createdAt || cat.created_at,
         updatedAt: cat.updatedAt || cat.updated_at,
       };
@@ -484,8 +606,12 @@ module.exports = {
       });
 
       // Relational update: Sync category name changes to leads
-      if (cat.id && (cat.category_name || cat.name)) {
+      if (cat.type === 'category' && cat.id && (cat.category_name || cat.name)) {
         await this.syncLeadsForCategory(cat.id, cat.category_name || cat.name);
+      }
+      // Relational update: Sync subcategory name changes to leads
+      if (cat.type === 'subcategory' && cat.id) {
+        await this.syncLeadsForSubCategory(cat.id, cat.subcategory_name || cat.sub_category_name || cat.category_name || cat.name);
       }
     } catch (err) {
       console.error('Algolia saveCategory failed:', err.message);
@@ -495,7 +621,7 @@ module.exports = {
   async deleteCategory(id) {
     if (!id) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       await cli.deleteObject({
         indexName: CATEGORIES_INDEX,
         objectID: id,
@@ -505,15 +631,18 @@ module.exports = {
     }
   },
 
-  async searchCategories(searchQuery, status = 'All', page = 1, limit = 20, type = null) {
+  async searchCategories(searchQuery, status = 'All', page = 1, limit = 20, type = null, parentCategoryName = null) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       if (status && status !== 'All') {
         facetFilters.push(`status:${status}`);
       }
       if (type) {
         facetFilters.push(`type:${type}`);
+      }
+      if (parentCategoryName) {
+        facetFilters.push(`parent_category_name:${parentCategoryName}`);
       }
       const searchParams = {
         query: searchQuery || '',
@@ -536,15 +665,19 @@ module.exports = {
   async indexAllCategories(categories) {
     if (!categories || categories.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const objects = categories.map(cat => ({
         objectID: cat.id,
         id: cat.id,
         category_name: cat.category_name || cat.name,
         name: cat.category_name || cat.name,
+        subcategory_name: cat.subcategory_name || cat.sub_category_name || null,
+        sub_category_name: cat.subcategory_name || cat.sub_category_name || null,
+        parent_category_name: cat.parent_category_name || null,
         status: cat.status || (cat.isActive ? 'Active' : 'Inactive'),
         isActive: cat.isActive ?? (cat.status === 'Active'),
         type: cat.type || 'category',
+        category_id: cat.category_id || null,
         createdAt: cat.createdAt || cat.created_at,
         updatedAt: cat.updatedAt || cat.updated_at,
       }));
@@ -561,7 +694,7 @@ module.exports = {
   async saveService(service) {
     if (!service) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const record = {
         objectID: service.id,
         id: service.id,
@@ -583,7 +716,7 @@ module.exports = {
   async deleteService(id) {
     if (!id) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       await cli.deleteObject({
         indexName: SERVICES_INDEX,
         objectID: id,
@@ -595,7 +728,7 @@ module.exports = {
 
   async searchServices(searchQuery, status = 'All', page = 1, limit = 20) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       if (status && status !== 'All') {
         facetFilters.push(`status:${status}`);
@@ -621,7 +754,7 @@ module.exports = {
   async indexAllServices(services) {
     if (!services || services.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const objects = services.map(svc => ({
         objectID: svc.id,
         id: svc.id,
@@ -644,7 +777,7 @@ module.exports = {
   async saveLeadSource(source) {
     if (!source) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const record = {
         objectID: source.id,
         id: source.id,
@@ -666,7 +799,7 @@ module.exports = {
   async deleteLeadSource(id) {
     if (!id) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       await cli.deleteObject({
         indexName: LEAD_SOURCES_INDEX,
         objectID: id,
@@ -678,7 +811,7 @@ module.exports = {
 
   async searchLeadSources(searchQuery, status = 'All', page = 1, limit = 20) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       if (status && status !== 'All') {
         facetFilters.push(`status:${status}`);
@@ -704,7 +837,7 @@ module.exports = {
   async indexAllLeadSources(sources) {
     if (!sources || sources.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const objects = sources.map(src => ({
         objectID: src.id,
         id: src.id,
@@ -727,7 +860,7 @@ module.exports = {
   async saveNotification(notif) {
     if (!notif) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const record = {
         objectID: notif.id,
         id: notif.id,
@@ -750,7 +883,7 @@ module.exports = {
   async deleteNotification(id) {
     if (!id) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       await cli.deleteObject({
         indexName: NOTIFICATIONS_INDEX,
         objectID: id,
@@ -762,7 +895,7 @@ module.exports = {
 
   async searchNotifications(searchQuery, filters = {}, page = 1, limit = 20) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       if (filters.user_id) {
         facetFilters.push(`user_id:${filters.user_id}`);
@@ -791,7 +924,7 @@ module.exports = {
   async indexAllNotifications(notifications) {
     if (!notifications || notifications.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const objects = notifications.map(notif => ({
         objectID: notif.id,
         id: notif.id,
@@ -815,7 +948,7 @@ module.exports = {
   async saveAuditLog(log) {
     if (!log) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const createdAtVal = log.created_at || log.createdAt;
       
       let actorName = log.actor_name;
@@ -842,6 +975,7 @@ module.exports = {
         action: log.action,
         resource: log.resource,
         resourceId: log.resource_id || log.resourceId,
+        entity_name: log.entity_name || log.resourceId || '',
         details: log.details,
         ipAddress: log.ip_address || log.ipAddress,
         userAgent: log.user_agent || log.userAgent,
@@ -862,25 +996,58 @@ module.exports = {
 
   async searchAuditLogs(searchQuery, filters = {}, page = 1, limit = 20) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       let finalSearchQuery = searchQuery || '';
 
+      // Actor filter - UUID, email, or name search
       if (filters.actor) {
         if (filters.actor.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
           facetFilters.push(`userId:${filters.actor}`);
         } else if (filters.actor.includes('@')) {
           facetFilters.push(`email:${filters.actor}`);
         } else {
-          finalSearchQuery = filters.actor;
+          // Name search - combine with text query
+          finalSearchQuery = finalSearchQuery ? `${finalSearchQuery} ${filters.actor}` : filters.actor;
         }
       }
+
+      // Employee name filter
+      if (filters.employee_name) {
+        facetFilters.push(`actor_name:${filters.employee_name}`);
+      }
+
+      // Action type filter
       if (filters.action_type) {
         facetFilters.push(`action:${filters.action_type}`);
       }
+
+      // Resource/entity filter
       if (filters.resource) {
         facetFilters.push(`resource:${filters.resource}`);
       }
+
+      // Entity name filter
+      if (filters.entity_name) {
+        facetFilters.push(`entity_name:${filters.entity_name}`);
+      }
+
+      // Role filter
+      if (filters.actor_role) {
+        facetFilters.push(`actor_role:${filters.actor_role}`);
+      }
+
+      // Result/status filter
+      if (filters.result) {
+        facetFilters.push(`result:${filters.result}`);
+      }
+
+      // Created by (userId) filter
+      if (filters.created_by && !filters.actor) {
+        facetFilters.push(`userId:${filters.created_by}`);
+      }
+
+      // Date range filters
       const numericFilters = [];
       if (filters.from) {
         const fromTimestamp = Math.floor(new Date(filters.from).getTime() / 1000);
@@ -916,7 +1083,7 @@ module.exports = {
   async indexAllAuditLogs(logs) {
     if (!logs || logs.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const { query } = require('../config/db');
       
       const userRes = await query('SELECT id, name, role FROM users');
@@ -937,6 +1104,7 @@ module.exports = {
           action: log.action,
           resource: log.resource,
           resourceId: log.resource_id || log.resourceId,
+          entity_name: log.entity_name || log.resourceId || '',
           details: log.details,
           ipAddress: log.ip_address || log.ipAddress,
           userAgent: log.user_agent || log.userAgent,
@@ -960,7 +1128,7 @@ module.exports = {
   async saveFollowup(fup) {
     if (!fup) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       let company_name = fup.company_name;
       let contact_person = fup.contact_person;
       let lead_quality = fup.lead_quality;
@@ -1006,7 +1174,7 @@ module.exports = {
 
   async searchFollowups(searchQuery, filters = {}, page = 1, limit = 20) {
     try {
-      const cli = getClient();
+      const cli = getSearchClient();
       const facetFilters = [];
       if (filters.lead_id) {
         facetFilters.push(`lead_id:${filters.lead_id}`);
@@ -1035,7 +1203,7 @@ module.exports = {
   async indexAllFollowups(followups) {
     if (!followups || followups.length === 0) return;
     try {
-      const cli = getClient();
+      const cli = getWriteClient();
       const objects = followups.map(fup => ({
         objectID: fup.id,
         id: fup.id,
@@ -1067,11 +1235,12 @@ module.exports = {
       const { query } = require('../config/db');
       const result = await query(
         `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                bc.category_name, bsc.sub_category_name
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
          FROM leads l
          LEFT JOIN users u ON l.assigned_to = u.id
          LEFT JOIN business_categories bc ON l.category = bc.id
          LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
          WHERE l.category = $1`,
         [categoryId]
       );
@@ -1088,11 +1257,12 @@ module.exports = {
       const { query } = require('../config/db');
       const result = await query(
         `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                bc.category_name, bsc.sub_category_name
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
          FROM leads l
          LEFT JOIN users u ON l.assigned_to = u.id
          LEFT JOIN business_categories bc ON l.category = bc.id
          LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
          WHERE l.sub_category = $1`,
         [subCategoryId]
       );
@@ -1109,11 +1279,12 @@ module.exports = {
       const { query } = require('../config/db');
       const result = await query(
         `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
-                bc.category_name, bsc.sub_category_name
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
          FROM leads l
          LEFT JOIN users u ON l.assigned_to = u.id
          LEFT JOIN business_categories bc ON l.category = bc.id
          LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
          WHERE l.assigned_to = $1`,
         [userId]
       );
