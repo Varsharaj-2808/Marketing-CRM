@@ -23,17 +23,50 @@ function writeCache(cache) {
   } catch (err) {}
 }
 
-const enrichRow = async (row) => {
-  if (!row) return row;
-  const userId = row.user_id || row.userId;
-  if (userId && (row.actor_name === undefined || row.actor_role === undefined)) {
-    const userResult = await query('SELECT name, role FROM users WHERE id = $1', [userId]);
-    if (userResult.rows[0]) {
-      row.actor_name = userResult.rows[0].name;
-      row.actor_role = userResult.rows[0].role;
+const enrichRows = async (rows) => {
+  if (!rows || rows.length === 0) return rows;
+
+  const userIdsToFetch = [];
+  rows.forEach(row => {
+    const userId = row.user_id || row.userId;
+    if (userId && (row.actor_name === undefined || row.actor_role === undefined)) {
+      userIdsToFetch.push(userId);
+    }
+  });
+
+  const uniqueUserIds = [...new Set(userIdsToFetch)];
+  const userMap = {};
+
+  if (uniqueUserIds.length > 0) {
+    try {
+      const isAllUuid = uniqueUserIds.every(u => UUID_REGEX.test(u));
+      const userResult = await query(
+        isAllUuid 
+          ? 'SELECT id, name, role FROM users WHERE id = ANY($1::uuid[])'
+          : 'SELECT id, name, role FROM users WHERE id::text = ANY($1::text[])', 
+        [uniqueUserIds]
+      );
+      userResult.rows.forEach(u => {
+        userMap[u.id] = { name: u.name, role: u.role };
+      });
+    } catch (err) {
+      console.error('Failed to fetch users for enrichment:', err.message);
     }
   }
-  return row;
+
+  return rows.map(row => {
+    const userId = row.user_id || row.userId;
+    if (userId && userMap[userId]) {
+      row.actor_name = userMap[userId].name;
+      row.actor_role = userMap[userId].role;
+    }
+    return row;
+  });
+};
+
+const enrichRow = async (row) => {
+  const rows = await enrichRows(row ? [row] : []);
+  return rows[0] || row;
 };
 
 const transformRow = (row) => {
@@ -124,7 +157,7 @@ exports.getAuditLogs = async (req, res, next) => {
         parseInt(limit) || PAGE_SIZE || 10
       );
       if (algoliaResult) {
-        const enriched = await Promise.all(algoliaResult.hits.map(enrichRow));
+        const enriched = await enrichRows(algoliaResult.hits);
         const data = enriched.map(transformRow);
         const pagination = {
           page: parseInt(page) || 1,
@@ -163,7 +196,7 @@ exports.getAuditLogs = async (req, res, next) => {
 
     const result = await AuditLog.findAll(filters);
 
-    const enriched = await Promise.all(result.data.map(enrichRow));
+    const enriched = await enrichRows(result.data);
     const data = enriched.map(transformRow);
     const pagination = {
       page: result.pagination.page,
@@ -291,7 +324,7 @@ exports.exportAuditLogs = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No audit log entries found for the given filters' });
     }
 
-    const enriched = await Promise.all(logs.map(enrichRow));
+    const enriched = await enrichRows(logs);
     const data = enriched.map(transformRow);
 
     const headers = 'ID,Seq,Actor ID,Actor,Role,Action Type,Entity Affected,Entity ID,Result,IP Address,Timestamp\n';
