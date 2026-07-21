@@ -54,8 +54,8 @@ async function searchSubCategories(q) {
     if (!result || !result.hits) return [];
     return result.hits.map((h) => ({
       id: h.id,
-      title: h.category_name || h.name,
-      subtitle: h.parent_category_name ? `Sub-Category · ${h.parent_category_name}` : 'Sub-Category',
+      title: h.subcategory_name || h.sub_category_name || h.category_name || h.name,
+      subtitle: h.parent_category_name ? `${h.parent_category_name} > Sub-Category` : 'Sub-Category',
       icon: 'label',
     }));
   } catch {

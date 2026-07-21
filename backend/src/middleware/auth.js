@@ -18,7 +18,14 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: msg });
     }
 
-    const result = await query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    let result;
+    try {
+      result = await query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    } catch (dbErr) {
+      console.error('[protect] DB error looking up user:', dbErr.message);
+      return res.status(503).json({ success: false, message: 'Service temporarily unavailable. Please try again.' });
+    }
+
     const user = result.rows[0];
     if (!user) {
       const isAuthUrl = req.originalUrl && req.originalUrl.includes('auth');
@@ -41,6 +48,7 @@ const protect = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error('[protect] Unexpected error:', error.message);
     next(error);
   }
 };

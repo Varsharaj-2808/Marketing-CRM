@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const { protectStageManagement, authorizeStageManagement } = require('../middleware/authStageManagement');
@@ -9,6 +9,8 @@ const { query } = require('../config/db');
 router.get('/leads/:id/field-history', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.getFieldHistory);
 router.all('/leads/:id/field-history', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.rejectMutation);
 router.get('/leads/:id/lead-history', protect, authorize('Admin', 'Marketing Executive'), leadController.getLeadHistory);
+router.get('/leads/:id/field-history/export', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.exportFieldHistory);
+router.get('/leads/export/history/:id/download', protect, authorize('Admin', 'Marketing Executive'), leadHistoryController.exportFieldHistory);
 
 const adminController = require('../controllers/adminController');
 const assignController = require('../controllers/assignController');
@@ -31,6 +33,7 @@ router.get('/leads/export', protect, authorize('Admin', 'Marketing Executive'), 
 router.get('/leads/:id', protect, authorize('Admin', 'Marketing Executive'), leadController.getLead);
 
 router.get('/lead-sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
+router.get('/lead_sources', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadSources);
 router.get('/categories/active', protect, authorize('Admin', 'Marketing Executive'), categoryController.getActiveCategories);
 router.get('/categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessCategories);
 router.get('/categories/:categoryId/sub-categories', protect, authorize('Admin', 'Marketing Executive'), adminController.getBusinessSubCategories);

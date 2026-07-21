@@ -656,7 +656,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.blur(amountInput);
 
     await waitFor(() => {
-      expect(amountInput.value).toContain('$50,000.00');
+      expect(amountInput.value).toContain('₹50,000.00');
     });
   });
 
@@ -771,7 +771,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.blur(amountInput);
 
     await waitFor(() => {
-      expect(amountInput.value).toContain('$0.00');
+      expect(amountInput.value).toContain('₹0.00');
     });
 
     const submitBtn = screen.getByRole('button', { name: /Submit/i });
@@ -795,7 +795,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.change(amountInput, { target: { value: '999999999.99' } });
     fireEvent.blur(amountInput);
     await waitFor(() => {
-      expect(amountInput.value).toContain('$999,999,999.99');
+      expect(amountInput.value).toContain('₹99,99,99,999.99');
     });
 
     fireEvent.change(amountInput, { target: { value: '1000000000' } });
@@ -816,7 +816,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     fireEvent.blur(amountInput);
 
     await waitFor(() => {
-      expect(amountInput.value).toBe('$123.46');
+      expect(amountInput.value).toBe('₹123.46');
     });
   });
 
@@ -1275,7 +1275,7 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     expect(interestedBadge.className).toContain('green');
   });
 
-  it('test-ep-4.1.1-f-042: Verify proposal amount formatted as $X,XXX.XX', async () => {
+  it('test-ep-4.1.1-f-042: Verify proposal amount formatted as ₹X,XX,XXX.XX', async () => {
     setUser(marketingUser);
     global.fetch = buildFetchMock(DEFAULT_LEAD, TIMELINE_WITH_ENTRIES);
     renderLeadDetails('/marketing/leads/lead-100');
@@ -1283,8 +1283,8 @@ describe('LeadFollowUpPage - STORY-4.1.1 follow-up management', () => {
     await screen.findByText(/Acme Corp/i);
 
     await waitFor(() => {
-      expect(screen.getByText(/\$25,000\.00/)).toBeInTheDocument();
-      expect(screen.getByText(/\$75,000\.00/)).toBeInTheDocument();
+      expect(screen.getByText(/₹25,000\.00/)).toBeInTheDocument();
+      expect(screen.getByText(/₹75,000\.00/)).toBeInTheDocument();
     });
   });
 

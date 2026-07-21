@@ -141,7 +141,7 @@ exports.createFollowup = async (req, res, next) => {
       leadUpdated = { proposal_value: parsedProposalAmount };
     }
 
-    // Sync updated lead to Algolia
+    // Sync updated lead & followup to Algolia
     try {
       const LeadModel = require('../models/Lead');
       const algoliaSvc = require('../utils/algoliaService');
@@ -149,31 +149,38 @@ exports.createFollowup = async (req, res, next) => {
       if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
         await algoliaSvc.saveLead(updatedLead).catch(() => {});
       }
+      if (followup && algoliaSvc && typeof algoliaSvc.saveFollowup === 'function') {
+        await algoliaSvc.saveFollowup(followup).catch(() => {});
+      }
     } catch (_) { /* non-critical */ }
 
     // ΓöÇΓöÇ Lead history entry ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     try {
-      const followupDateStr = next_followup_date
-        ? new Date(next_followup_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
-        : 'Not set';
+      // Fetch the previous follow-up outcome (exclude the one we just created)
+      let previousOutcome = '';
+      try {
+        const prevResult = await query(
+          `SELECT outcome FROM followups WHERE lead_id = $1 AND id != $2 ORDER BY created_at DESC LIMIT 1`,
+          [id, followup.id]
+        );
+        if (prevResult.rows[0]) {
+          previousOutcome = prevResult.rows[0].outcome || '';
+        }
+      } catch (_) { /* non-critical */ }
 
-      const followupNewValue = JSON.stringify({
-        followUpType: followup_type,
-        outcome,
-        followUpDate: followupDateStr,
-        notes: trimmedNotes || null,
-        proposalAmount: parsedProposalAmount,
-        stageAtLog: lead.stage,
-        createdBy: req.user.name || req.user.id,
-      });
+      const trimmedNotesPreview = trimmedNotes
+        ? trimmedNotes.substring(0, 50) + (trimmedNotes.length > 50 ? '...' : '')
+        : '';
+      const followupNewValue = `${followup_type} → ${outcome}${trimmedNotesPreview ? ' (' + trimmedNotesPreview + ')' : ''}`;
 
       await LeadHistory.create({
         leadId: id,
         fieldName: 'followup_logged',
-        oldValue: '',
+        oldValue: previousOutcome,
         newValue: followupNewValue,
         changeSummary: `Follow-up logged: ${followup_type} → ${outcome} by ${req.user.name || req.user.id}`,
         changedBy: req.user.id,
+        metadata: { old_outcome: previousOutcome, new_outcome: outcome },
       });
     } catch (_) { /* non-critical */ }
 
@@ -339,6 +346,26 @@ exports.getTimeline = async (req, res, next) => {
     const historyResult = await LeadHistory.findByLeadId(id);
     const historyRows = Array.isArray(historyResult) ? historyResult : (historyResult.history || []);
 
+    // Resolve any UUIDs stored in assignment old_value/new_value to employee IDs
+    let uuidToEmpId = {};
+    const assignmentRows = historyRows.filter((h) => h.field_name === 'assigned_to');
+    if (assignmentRows.length > 0) {
+      const uuids = new Set();
+      for (const h of assignmentRows) {
+        if (h.old_value && UUID_REGEX.test(h.old_value)) uuids.add(h.old_value);
+        if (h.new_value && UUID_REGEX.test(h.new_value)) uuids.add(h.new_value);
+      }
+      if (uuids.size > 0) {
+        try {
+          const placeholders = Array.from(uuids).map((_, i) => `$${i + 1}`).join(', ');
+          const resolved = await query(`SELECT id, employee_id FROM users WHERE id IN (${placeholders})`, Array.from(uuids));
+          for (const row of resolved.rows) {
+            uuidToEmpId[row.id] = row.employee_id;
+          }
+        } catch (_) { /* non-critical */ }
+      }
+    }
+
     // Fetch followup entries
     const followupRows = await Followup.findByLeadId(id);
 
@@ -349,10 +376,21 @@ exports.getTimeline = async (req, res, next) => {
       else if (h.field_name === 'assigned_to') type = 'assigned';
       else if (h.field_name === 'followup_logged') type = 'followup';
 
+      let description = h.change_summary || null;
+      if (h.field_name === 'assigned_to') {
+        const oldVal = (h.old_value && UUID_REGEX.test(h.old_value))
+          ? (uuidToEmpId[h.old_value] || h.old_value)
+          : (h.old_value || 'Unassigned');
+        const newVal = (h.new_value && UUID_REGEX.test(h.new_value))
+          ? (uuidToEmpId[h.new_value] || h.new_value)
+          : (h.new_value || h.old_value || '');
+        description = `Lead reassigned from ${oldVal} to ${newVal}`;
+      }
+
       return {
         id: h.id,
         type,
-        description: h.change_summary || null,
+        description,
         created_at: h.changed_at || h.created_at,
         actor: h.changed_by_name || null,
       };
@@ -589,6 +627,47 @@ exports.addCorrection = async (req, res, next) => {
     }
 
     const updated = await Followup.addCorrection(fid, correction_notes.trim(), req.user.id);
+
+    // Lead History entry
+    try {
+      await LeadHistory.create({
+        leadId: id,
+        fieldName: 'followup_logged',
+        oldValue: followup.outcome || '',
+        newValue: `Follow-up corrected: ${correction_notes.trim()}`,
+        changeSummary: `Follow-up correction added by ${req.user.name || req.user.id}: ${correction_notes.trim()}`,
+        changedBy: req.user.id,
+        metadata: { old_outcome: followup.outcome, new_outcome: followup.outcome, correction_notes: correction_notes.trim() },
+      });
+    } catch (_) { /* non-critical */ }
+
+    // Audit log
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email || '',
+        action: 'FOLLOWUP_UPDATED',
+        resource: 'Followup',
+        resourceId: fid,
+        details: JSON.stringify({ correction_notes: correction_notes.trim() }),
+        ipAddress: getIp(req),
+        userAgent: req.headers['user-agent'] || '',
+        result: 'Success',
+      });
+    } catch (_) { /* non-critical */ }
+
+    // Algolia sync
+    try {
+      const LeadModel = require('../models/Lead');
+      const algoliaSvc = require('../utils/algoliaService');
+      const updatedLead = await LeadModel.findById(id);
+      if (updatedLead && algoliaSvc && typeof algoliaSvc.saveLead === 'function') {
+        await algoliaSvc.saveLead(updatedLead).catch(() => {});
+      }
+      if (updated && algoliaSvc && typeof algoliaSvc.saveFollowup === 'function') {
+        await algoliaSvc.saveFollowup({ ...followup, ...updated }).catch(() => {});
+      }
+    } catch (_) { /* non-critical */ }
 
     if (req.user.role === 'Marketing Executive') {
       Notification.notifyAdmins({

@@ -126,34 +126,31 @@ exports.createUser = async (req, res, next) => {
 exports.getUsers = async (req, res, next) => {
   try {
     const { search, role, status, department, page, limit } = req.query;
+    const parsedPage = parseInt(page) || 1;
+    const parsedLimit = parseInt(limit) || 20;
 
+    const result = await User.findPaginated({
+      page: parsedPage,
+      limit: parsedLimit,
+      search: search || '',
+      role: role || '',
+      status: status || '',
+      department: department || '',
+    });
 
-
-    if (algolia && typeof algolia.searchUsers === 'function') {
-      const algoliaResult = await algolia.searchUsers(
-        search || '',
-        { role, status, department },
-        parseInt(page) || 1,
-        parseInt(limit) || 20
-      );
-
-      if (algoliaResult) {
-        return res.json({
-          success: true,
-          message: 'Users fetched successfully',
-          data: algoliaResult.hits,
-          pagination: {
-            page: parseInt(page) || 1,
-            limit: parseInt(limit) || 20,
-            totalRecords: algoliaResult.nbHits,
-            totalPages: algoliaResult.nbPages,
-          },
-        });
-      }
-    }
-
-    const users = await User.findAll();
-    res.json({ success: true, message: 'Users fetched successfully', data: users });
+    res.json({
+      success: true,
+      message: 'Users fetched successfully',
+      data: result.users,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
+      },
+    });
   } catch (error) {
     next(error);
   }

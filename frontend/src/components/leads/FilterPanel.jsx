@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { fetchCategories, fetchActiveSubCategories, fetchUsers } from '../../services/leadService';
+import { fetchCategories, fetchActiveSubCategories, fetchUsers, fetchLeadSources } from '../../services/leadService';
 
 const FILTER_OPTIONS = {
   status: ['Won', 'Lost'],
@@ -38,8 +38,11 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
   const [categoriesList, setCategoriesList] = useState([]);
   const [subCategoriesList, setSubCategoriesList] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [sourcesList, setSourcesList] = useState(FILTER_OPTIONS.source);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [sourcesLoaded, setSourcesLoaded] = useState(false);
+  const [sourcesFetched, setSourcesFetched] = useState(false);
 
   const loadCategories = useCallback(async () => {
     if (categoriesLoaded) return;
@@ -72,6 +75,22 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
   const [categoriesFetched, setCategoriesFetched] = useState(false);
   const [usersFetched, setUsersFetched] = useState(false);
 
+  const loadSources = useCallback(async () => {
+    if (sourcesLoaded) return;
+    try {
+      const res = await fetchLeadSources();
+      if (res.success) {
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        if (list.length > 0) {
+          setSourcesList(list.map((s) => s.name || s));
+        }
+        setSourcesLoaded(true);
+      }
+    } catch (err) {
+      console.error('Error fetching lead sources in filter panel', err);
+    }
+  }, [sourcesLoaded]);
+
   const ensureCategories = () => {
     if (!categoriesFetched) {
       setCategoriesFetched(true);
@@ -83,6 +102,14 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
     if (!usersFetched) {
       setUsersFetched(true);
       loadUsers();
+    }
+  };
+
+  const ensureSources = () => {
+    console.log("ensure sources");
+    if (!sourcesFetched) {
+      setSourcesFetched(true);
+      loadSources();
     }
   };
 
@@ -106,6 +133,8 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
     loadSubCategories();
     return () => { cancelled = true; };
   }, [filters.category]);
+
+
 
   const update = (key, value) => onChange({ ...filters, [key]: value });
 
@@ -136,7 +165,7 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
     <div className="grid grid-cols-1 gap-4 bg-slate-50 border border-slate-200 p-5 rounded-xl shadow-xs sm:grid-cols-2 lg:grid-cols-4">
       <SelectFilter id="status-filter" label="Status" value={filters.status} options={FILTER_OPTIONS.status} onChange={(value) => update('status', value)} />
       <SelectFilter id="stage-filter" label="Stage" value={filters.stage} options={FILTER_OPTIONS.stage} onChange={(value) => update('stage', value)} />
-      <SelectFilter id="source-filter" label="Source" value={filters.source} options={FILTER_OPTIONS.source} onChange={(value) => update('source', value)} />
+      <SelectFilter id="source-filter" label="Source" value={filters.source} options={sourcesList} onChange={(value) => update('source', value)} onFocus={ensureSources} />
       <SelectFilter id="category-filter" label="Category" value={filters.category} options={categoryOptions} onChange={handleCategoryChange} onFocus={ensureCategories} />
       <SelectFilter
         id="subcategory-filter"

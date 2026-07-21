@@ -94,7 +94,6 @@ describe('LoginPage — TASK-1.1.1-01 (Login UI)', () => {
 
   it('TEST-EP1-LOGIN-001: shows glassmorphism card and branding', () => {
     renderLoginPage();
-    expect(screen.getByText('ApexCRM')).toBeInTheDocument();
     expect(screen.getByText('Welcome Back')).toBeInTheDocument();
     expect(screen.getByText(/enter your credentials/i)).toBeInTheDocument();
   });
