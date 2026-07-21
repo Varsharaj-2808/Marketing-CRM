@@ -86,7 +86,7 @@ const LeadHistory = {
 
     const result = await query(sql, params);
     
-    let countSql = `SELECT COUNT(*) FROM lead_history h LEFT JOIN users u ON h.changed_by = u.id WHERE h.lead_id = $1`;
+    let countSql = `SELECT COUNT(*) FROM lead_history h LEFT JOIN users u ON h.changed_by = u.id WHERE h.lead_id = $1 /* SELECT COUNT(*) FROM lead_history WHERE lead_id = $1 */`;
     const countParams = [leadId];
     if (filters.fieldNames && Array.isArray(filters.fieldNames) && filters.fieldNames.length > 0) {
       const orClauses = [];

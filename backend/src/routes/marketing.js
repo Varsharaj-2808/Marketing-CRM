@@ -41,9 +41,9 @@ router.get('/subcategories/active', protect, authorize('Admin', 'Marketing Execu
 router.get('/services', protect, authorize('Admin', 'Marketing Executive'), adminController.getServices);
 
 // STORY-6.2.1 — ME Dashboard
-router.get('/dashboard/cards', protect, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getCards);
-router.get('/dashboard/conversion-rate', protect, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getConversionRate);
-router.get('/dashboard', protect, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getCombinedDashboard);
+router.get('/dashboard/cards', protect, authorize('Marketing Executive'), marketingDashboardController.getCards);
+router.get('/dashboard/conversion-rate', protect, authorize('Marketing Executive'), marketingDashboardController.getConversionRate);
+router.get('/dashboard', protect, authorize('Marketing Executive'), marketingDashboardController.getCombinedDashboard);
 
 // Legacy dashboard (kept for other uses)
 router.get('/dashboard/kpis', protect, authorize('Admin', 'Marketing Executive'), adminController.getDashboardKpisMarketing);
@@ -53,13 +53,8 @@ router.get('/dashboard/lead-volume-by-category', protect, authorize('Admin', 'Ma
 router.get('/dashboard/category/lead-volume', protect, authorize('Admin', 'Marketing Executive'), adminController.getLeadVolumeByCategoryMarketing);
 
 // Follow-up list views (must be before /:id wildcard routes)
-router.get('/followups/today', protect, (req, res, next) => {
-  if (req.user.role === 'Admin' && typeof query === 'function' && query.mock) {
-    return res.status(403).json({ success: false, status_code: 403, message: 'This endpoint is restricted to Marketing Executive role' });
-  }
-  next();
-}, authorize('Admin', 'Marketing Executive'), marketingDashboardController.getTodayFollowups);
-router.get('/followups/overdue', protect, authorize('Admin', 'Marketing Executive'), followupController.getOverdueFollowups);
+router.get('/followups/today', protect, authorize('Marketing Executive'), marketingDashboardController.getTodayFollowups);
+router.get('/followups/overdue', protect, authorize('Marketing Executive'), followupController.getOverdueFollowups);
 
 // Enhanced timeline (replaces assignController.getTimeline)
 router.get('/leads/:id/timeline', protect, authorize('Admin', 'Marketing Executive'), followupController.getTimeline);

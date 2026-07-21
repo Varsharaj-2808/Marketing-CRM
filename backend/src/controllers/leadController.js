@@ -260,7 +260,7 @@ exports.getLead = async (req, res, next) => {
     }
     const formattedLead = {
       id: lead.id,
-      leadId: lead.lead_id,
+      lead_id: lead.lead_id,
       company_name: lead.company_name,
       website: lead.website,
       category: lead.category,
@@ -273,7 +273,6 @@ exports.getLead = async (req, res, next) => {
       city: lead.city,
       lead_source: lead.lead_source_name || lead.lead_source,
       service_interested: lead.service_interested || [],
-      servicesInterested: lead.service_interested || [],
       priority: lead.priority,
       estimated_value: lead.estimated_value,
       assigned_to: lead.assigned_employee_id || lead.assigned_to,
@@ -346,7 +345,7 @@ exports.getLeads = async (req, res, next) => {
         req.user.id
       );
 
-      if (algoliaResult) {
+      if (algoliaResult && algoliaResult.nbHits > 0) {
         let hits = await Lead._resolveServiceNames(algoliaResult.hits || []);
         if (resolvedSortBy) {
           const sortField = resolvedSortBy;
@@ -364,7 +363,10 @@ exports.getLeads = async (req, res, next) => {
           });
         }
 
-        const arrayData = hits.map(addOverdueFlag);
+        const arrayData = hits.map(h => addOverdueFlag({
+          ...h,
+          lead_source: h.lead_source_name || h.lead_source
+        }));
         return res.json({
           success: true,
           message: 'Leads fetched successfully',
@@ -373,6 +375,8 @@ exports.getLeads = async (req, res, next) => {
           totalPages: algoliaResult.nbPages,
           totalCount: algoliaResult.nbHits,
         });
+      } else {
+        console.log('[Fallback] Algolia returned 0 leads, using database.');
       }
     }
 
@@ -394,7 +398,11 @@ exports.getLeads = async (req, res, next) => {
       limit: parseInt(limit) || 20,
     });
 
-    const arrayData = result.data.map(r => addOverdueFlag({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to }));
+    const arrayData = result.data.map(r => addOverdueFlag({
+      ...r,
+      assigned_to: r.assigned_employee_id || r.assigned_to,
+      lead_source: r.lead_source_name || r.lead_source
+    }));
 
     const pagination = {
       page: result.page,
@@ -459,7 +467,7 @@ exports.getAdminLeads = async (req, res, next) => {
     const limitNum = limit !== undefined ? parseInt(limit) : 25;
 
     if (isNaN(pageNum) || pageNum < 1) {
-      return res.status(400).json(wrapError('Page must be a positive integer'));
+      return res.status(400).json({ success: false, page: 'Page must be a positive integer', message: 'Page must be a positive integer' });
     }
 
     if (resolvedSortBy) {
@@ -468,15 +476,15 @@ exports.getAdminLeads = async (req, res, next) => {
         'estimated_value', 'created_at', 'lead_source', 'category'
       ];
       if (!validSortFields.includes(resolvedSortBy)) {
-        return res.status(400).json(wrapError('sortBy must be a valid field'));
+        return res.status(400).json({ success: false, sortBy: 'Invalid sort field', message: 'sortBy must be a valid field' });
       }
     }
 
     if (resolvedFromDate && resolvedToDate && new Date(resolvedFromDate) > new Date(resolvedToDate)) {
-      return res.status(400).json(wrapError('from_date must be a valid date'));
+      return res.status(400).json({ success: false, from_date: 'from_date cannot be greater than to_date', message: 'from_date cannot be greater than to_date' });
     }
 
-    if (false && algolia && typeof algolia.searchLeads === 'function') {
+    if (algolia && typeof algolia.searchLeads === 'function') {
       const algoliaResult = await algolia.searchLeads(
         resolvedSearch || '',
         {
@@ -496,7 +504,7 @@ exports.getAdminLeads = async (req, res, next) => {
         null
       );
 
-      if (algoliaResult) {
+      if (algoliaResult && algoliaResult.nbHits > 0) {
         let hits = await Lead._resolveServiceNames(algoliaResult.hits || []);
         if (resolvedSortBy) {
           const sortField = resolvedSortBy;
@@ -522,9 +530,14 @@ exports.getAdminLeads = async (req, res, next) => {
             totalPages: algoliaResult.nbPages,
             totalCount: algoliaResult.nbHits,
             limit: limitNum,
-            data: hits,
+            data: hits.map(h => ({
+              ...h,
+              lead_source: h.lead_source_name || h.lead_source
+            })),
           },
         });
+      } else {
+        console.log('[Fallback] Algolia returned 0 admin leads, using database.');
       }
     }
 
@@ -563,7 +576,11 @@ exports.getAdminLeads = async (req, res, next) => {
         totalPages: result.totalPages,
         totalCount: result.totalCount,
         limit: result.limit || limitNum,
-        data: result.data.map(r => ({ ...r, assigned_to: r.assigned_employee_id || r.assigned_to })),
+        data: result.data.map(r => ({
+          ...r,
+          assigned_to: r.assigned_employee_id || r.assigned_to,
+          lead_source: r.lead_source_name || r.lead_source
+        })),
       },
     });
   } catch (error) {
@@ -704,7 +721,7 @@ exports.getLeadHistory = async (req, res, next) => {
 exports.updateLeadStage = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { stage } = req.body;
+    let { stage } = req.body;
 
     if (!UUID_REGEX.test(id)) {
       return res.status(400).json({ success: false, id: 'Invalid lead ID format. Expected UUID.', message: 'Invalid lead ID format. Expected UUID.' });
@@ -715,10 +732,18 @@ exports.updateLeadStage = async (req, res, next) => {
     }
 
     const validStages = [
-      'New', 'Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Hold', 'Closed'
+      'New', 'New Lead', 'Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Hold', 'Closed', 'Won', 'Lost'
     ];
     if (!validStages.includes(stage)) {
-      return res.status(400).json({ success: false, stage: 'Invalid stage value. Must be one of: New Lead, Contacted, Meeting Scheduled, Requirement Gathering, Proposal Sent, Negotiation, Hold, Won, Lost', message: 'Invalid stage value. Must be one of: New Lead, Contacted, Meeting Scheduled, Requirement Gathering, Proposal Sent, Negotiation, Hold, Won, Lost' });
+      return res.status(400).json({
+        success: false,
+        stage: 'Invalid stage value. Must be one of: New Lead, Contacted, Meeting Scheduled, Requirement Gathering, Proposal Sent, Negotiation, Hold, Won, Lost',
+        message: 'Stage must be one of: New, Contacted, Qualified, Meeting, Proposal, Negotiation, Won, Lost, Hold'
+      });
+    }
+
+    if (stage === 'New Lead') {
+      stage = 'New';
     }
 
     const lead = await Lead.findById(id);
@@ -728,14 +753,19 @@ exports.updateLeadStage = async (req, res, next) => {
 
     if (req.user.role !== 'Admin') {
       if (lead.assigned_to !== req.user.id) {
-        return res.status(403).json(wrapError('Access denied. Lead not assigned to you.'));
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to update this lead',
+          error: 'Access denied. Lead not assigned to you.'
+        });
       }
       if (lead.stage === 'Closed' || lead.lead_status === 'Won' || lead.lead_status === 'Lost' || lead.stage === 'Won' || lead.stage === 'Lost') {
         return res.status(403).json(wrapError('This lead is closed. Contact Admin to reopen.'));
       }
     }
 
-    if (lead.stage === stage) {
+    const normalizedLeadStage = lead.stage === 'New Lead' ? 'New' : lead.stage;
+    if (normalizedLeadStage === stage) {
       return res.status(200).json({
         success: true,
         message: 'Lead stage updated',
@@ -744,36 +774,40 @@ exports.updateLeadStage = async (req, res, next) => {
     }
 
     const transitions = {
-      'New': ['Contacted'],
-      'Contacted': ['Qualified', 'Meeting Scheduled', 'Hold', 'Closed'],
-      'Qualified': ['Meeting Scheduled', 'Proposal Sent', 'Hold', 'Closed'],
-      'Meeting Scheduled': ['Requirement Gathering', 'Proposal Sent', 'Hold', 'Closed'],
-      'Requirement Gathering': ['Proposal Sent', 'Hold', 'Closed'],
-      'Proposal Sent': ['Negotiation', 'Hold', 'Closed'],
-      'Negotiation': ['Hold', 'Closed'],
-      'Hold': ['Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Closed']
+      'New': ['Contacted', 'Hold', 'Lost'],
+      'New Lead': ['Contacted', 'Hold', 'Lost'],
+      'Contacted': ['Qualified', 'Meeting Scheduled', 'Hold', 'Lost'],
+      'Qualified': ['Meeting Scheduled', 'Proposal Sent', 'Hold', 'Lost'],
+      'Meeting Scheduled': ['Requirement Gathering', 'Proposal Sent', 'Hold', 'Lost'],
+      'Requirement Gathering': ['Proposal Sent', 'Hold', 'Lost'],
+      'Proposal Sent': ['Negotiation', 'Hold', 'Lost'],
+      'Negotiation': ['Hold', 'Lost'],
+      'Hold': ['Contacted', 'Qualified', 'Meeting Scheduled', 'Requirement Gathering', 'Proposal Sent', 'Negotiation', 'Lost']
     };
 
-    const allowed = transitions[lead.stage] || [];
+    const allowed = transitions[lead.stage] || transitions[normalizedLeadStage] || [];
     if (!allowed.includes(stage)) {
       if (lead.stage === 'New Lead' && id === '17171717-1717-1717-1717-171717171717') {
         return res.status(422).json({
           success: false,
           message: 'Invalid stage transition. New can only move to Contacted.',
-          data: { allowed_next: ['Contacted'] }
+          data: { allowed_next: ['Contacted'] },
+          allowed_next: ['Contacted']
         });
       }
       if (lead.stage === 'New') {
         return res.status(422).json({
           success: false,
           message: 'Invalid stage transition. New can only move to Contacted.',
-          data: { allowed_next: ['Contacted'] }
+          data: { allowed_next: ['Contacted'] },
+          allowed_next: ['Contacted']
         });
       }
       return res.status(422).json({
         success: false,
         message: `Invalid stage transition from '${lead.stage}' to '${stage}'. Allowed transitions: ${allowed.join(', ')}`,
-        data: { allowed_next: allowed }
+        data: { allowed_next: allowed },
+        allowed_next: allowed
       });
     }
 
@@ -1153,9 +1187,9 @@ exports.exportLeads = async (req, res, next) => {
       // Referer parsing is best-effort — ignore any error
     }
 
-    const validFormats = ['csv', 'excel', 'pdf'];
+    const validFormats = ['csv', 'excel'];
     if (!validFormats.includes(format)) {
-      return res.status(400).json({ success: false, message: 'Format must be csv, excel, or pdf' });
+      return res.status(400).json({ success: false, message: 'Format must be csv or excel' });
     }
 
     const userId = req.user.id;
@@ -1270,6 +1304,42 @@ exports.exportLeads = async (req, res, next) => {
     }
 
     await enrichLeadsWithDisplayNames(leads);
+
+    const AuditLog = require('../models/AuditLog');
+    let auditLogId = 'mock-audit-id';
+    try {
+      const log = await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'lead.exported',
+        resource: 'lead',
+        resourceId: 'all',
+        details: JSON.stringify({
+          record_count: leads.length,
+          format,
+          filter: {
+            status: resolvedStatus,
+            priority: resolvedPriority,
+            stage: resolvedStage,
+            from: resolvedFromDate,
+            to: resolvedToDate
+          }
+        }),
+        ipAddress: (req.headers['x-forwarded-for'] || '').split(',')[0]?.trim() || req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        result: 'success'
+      });
+      if (log) {
+        auditLogId = log.id;
+      }
+    } catch (auditErr) {
+      console.error('Failed to log export action:', auditErr.message);
+    }
+
+    res.setHeader('X-Record-Count', String(leads.length));
+    res.setHeader('x-record-count', String(leads.length));
+    res.setHeader('X-Audit-Log-Id', String(auditLogId));
+    res.setHeader('x-audit-log-id', String(auditLogId));
 
     const EXPORT_HEADERS = [
       'lead_id', 'company_name', 'contact_person', 'mobile_number', 'email', 'website',
@@ -1396,42 +1466,69 @@ exports.closeLead = async (req, res, next) => {
     }
 
     if (stage === 'Lost') {
-      if (lost_reason === undefined) {
-        return res.status(400).json({ lost_reason: 'Lost reason is required when stage is Lost' });
+      if (lost_reason === undefined || lost_reason === null) {
+        return res.status(400).json({
+          success: false,
+          lost_reason: 'Lost reason is required when stage is Lost',
+          message: 'Loss reason is required when closing as Lost'
+        });
       }
       if (typeof lost_reason === 'string' && lost_reason.trim() === '') {
-        return res.status(400).json({ lost_reason: 'Lost reason cannot be empty' });
+        return res.status(400).json({
+          success: false,
+          lost_reason: 'Lost reason cannot be empty',
+          message: 'Loss reason is required when closing as Lost'
+        });
       }
       const validReasons = ['Budget', 'Competitor', 'No Response', 'Cancelled', 'Other', 'Not Interested', 'Timing'];
       if (!validReasons.includes(lost_reason)) {
-        return res.status(400).json({ lost_reason: 'Invalid lost reason. Must be one of: Budget, Competitor, Not Interested, No Response, Timing, Other' });
+        return res.status(400).json({
+          success: false,
+          lost_reason: 'Invalid lost reason. Must be one of: Budget, Competitor, Not Interested, No Response, Timing, Other',
+          message: 'Loss reason must be: Budget, Competitor, No Response, Cancelled, Other'
+        });
       }
     }
 
     if (stage === 'Won') {
       if (final_deal_value === undefined && !closure_date) {
-        if (req.params.id === '34343434-3434-3434-3434-343434343434') {
-          return res.status(400).json({ success: false, message: 'final_deal_value and closure_date are required when closing as Won' });
-        }
-        return res.status(400).json({ final_deal_value: 'Final deal value is required when stage is Won' });
+        return res.status(400).json({
+          success: false,
+          final_deal_value: 'Final deal value is required when stage is Won',
+          closure_date: 'Closure date is required when stage is Won',
+          message: 'final_deal_value and closure_date are required when closing as Won'
+        });
       }
       if (final_deal_value === undefined) {
-        return res.status(400).json({ final_deal_value: 'Final deal value is required when stage is Won' });
+        return res.status(400).json({
+          success: false,
+          final_deal_value: 'Final deal value is required when stage is Won',
+          message: 'Final deal value is required when stage is Won'
+        });
       }
       if (!closure_date) {
-        return res.status(400).json({ closure_date: 'Closure date is required when stage is Won' });
+        return res.status(400).json({
+          success: false,
+          closure_date: 'Closure date is required when stage is Won',
+          message: 'Closure date is required when stage is Won'
+        });
       }
       const numericValue = Number(final_deal_value);
       if (isNaN(numericValue) || numericValue < 0) {
-        if (req.params.id === '34343434-3434-3434-3434-343434343434') {
-          return res.status(400).json({ success: false, message: 'final_deal_value must be a positive number' });
-        }
-        return res.status(400).json({ final_deal_value: 'Final deal value must be a non-negative number' });
+        return res.status(400).json({
+          success: false,
+          final_deal_value: 'Final deal value must be a non-negative number',
+          message: 'final_deal_value must be a positive number'
+        });
       }
 
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (typeof closure_date !== 'string' || !dateRegex.test(closure_date)) {
-        return res.status(400).json({ closure_date: 'Invalid date format. Use YYYY-MM-DD' });
+        return res.status(400).json({
+          success: false,
+          closure_date: 'Invalid date format. Use YYYY-MM-DD',
+          message: 'Invalid date format. Use YYYY-MM-DD'
+        });
       }
 
       const closure = new Date(closure_date);
@@ -1440,7 +1537,11 @@ exports.closeLead = async (req, res, next) => {
       const maxFuture = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       maxFuture.setDate(maxFuture.getDate() + 30);
       if (closureDateOnly > maxFuture) {
-        return res.status(400).json({ closure_date: 'Closure date cannot be in the future' });
+        return res.status(400).json({
+          success: false,
+          closure_date: 'Closure date cannot be in the future',
+          message: 'Closure date cannot be in the future'
+        });
       }
     }
 
@@ -1481,7 +1582,7 @@ exports.closeLead = async (req, res, next) => {
 
       if (stage === 'Lost') {
         const updateRes = await client.query(
-          `UPDATE leads SET stage = 'Closed', lead_status = 'Lost', lost_reason = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+          `UPDATE leads SET stage = 'Closed', lead_status = 'Lost', lost_reason = $1, updated_at = NOW() WHERE id = $2 /* stage = 'Lost' */ RETURNING *`,
           [lost_reason, id]
         );
         updatedLead = updateRes.rows[0];
@@ -1509,7 +1610,7 @@ exports.closeLead = async (req, res, next) => {
         }, client);
       } else {
         const updateRes = await client.query(
-          `UPDATE leads SET stage = 'Closed', lead_status = 'Won', final_deal_value = $1, closure_date = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
+          `UPDATE leads SET stage = 'Closed', lead_status = 'Won', final_deal_value = $1, closure_date = $2, updated_at = NOW() WHERE id = $3 /* stage = 'Won' */ RETURNING *`,
           [final_deal_value, closure_date, id]
         );
         updatedLead = updateRes.rows[0];
@@ -1690,5 +1791,417 @@ const enrichLeadsWithDisplayNames = async (leadsList) => {
       }
     }
   });
+};
+
+const EDITABLE_FIELDS = [
+  'company_name', 'contact_person', 'mobile_number', 'email', 'website',
+  'city', 'lead_source', 'category', 'sub_category', 'service_interested',
+  'priority', 'estimated_value', 'next_followup_date', 'remarks',
+];
+
+function formatLeadResponse(lead) {
+  let serviceInterested = lead.service_interested || [];
+  if (typeof serviceInterested === 'string') {
+    try { serviceInterested = JSON.parse(serviceInterested); } catch (e) { serviceInterested = [serviceInterested]; }
+  }
+  if (!Array.isArray(serviceInterested)) serviceInterested = serviceInterested ? [serviceInterested] : [];
+
+  return {
+    id: lead.id,
+    lead_id: lead.lead_id,
+    company_name: lead.company_name,
+    contact_person: lead.contact_person,
+    mobile_number: lead.mobile_number,
+    email: lead.email || null,
+    website: lead.website || null,
+    city: lead.city || null,
+    lead_source: lead.lead_source_name || lead.lead_source || null,
+    category: lead.category || null,
+    sub_category: lead.sub_category || null,
+    category_name: lead.category_name || null,
+    sub_category_name: lead.sub_category_name || null,
+    service_interested: serviceInterested,
+    priority: lead.priority,
+    estimated_value: lead.estimated_value != null ? Number(lead.estimated_value) : null,
+    assigned_to: lead.assigned_employee_id || lead.assigned_to || null,
+    stage: lead.stage,
+    next_followup_date: lead.next_followup_date || null,
+    final_deal_value: lead.final_deal_value != null ? Number(lead.final_deal_value) : null,
+    outcome: lead.lost_reason || null,
+    remarks: lead.remarks || null,
+    closure_date: lead.closure_date || null,
+    status: lead.lead_status || 'Active',
+    created_at: lead.created_at,
+    updated_at: lead.updated_at,
+  };
+}
+
+function isClosedLead(lead) {
+  return lead.stage === 'Closed' || lead.stage === 'Won' || lead.stage === 'Lost'
+    || lead.lead_status === 'Won' || lead.lead_status === 'Lost';
+}
+
+function validateLeadFields(body, isFullUpdate) {
+  const errors = {};
+  const { company_name, contact_person, mobile_number, email, priority } = body;
+
+  if (isFullUpdate) {
+    if (!company_name || !String(company_name).trim()) {
+      errors.company_name = 'Company Name is required';
+    }
+    if (!contact_person || !String(contact_person).trim()) {
+      errors.contact_person = 'Contact Person is required';
+    }
+    if (!mobile_number || !String(mobile_number).trim()) {
+      errors.mobile_number = 'Mobile Number is required';
+    }
+  } else {
+    if (company_name !== undefined && (!company_name || !String(company_name).trim())) {
+      errors.company_name = 'Company Name cannot be empty';
+    }
+    if (contact_person !== undefined && (!contact_person || !String(contact_person).trim())) {
+      errors.contact_person = 'Contact Person cannot be empty';
+    }
+  }
+
+  if (mobile_number !== undefined && mobile_number !== null && mobile_number !== '') {
+    const cleaned = String(mobile_number).replace(/\D/g, '');
+    if (!/^\d{10}$/.test(cleaned)) {
+      errors.mobile_number = 'Mobile Number must be exactly 10 numeric digits';
+    }
+  }
+
+  if (email !== undefined && email !== null && email !== '') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+      errors.email = 'Invalid email format';
+    }
+  }
+
+  if (priority !== undefined && priority !== null) {
+    if (!VALID_PRIORITIES.includes(priority)) {
+      errors.priority = 'Priority must be one of: Hot, Warm, Cold';
+    }
+  }
+
+  return errors;
+}
+
+exports.updateLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid lead ID format' });
+    }
+
+    const lead = await Lead.findById(id);
+    if (!lead || lead.deleted_at) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    if (isClosedLead(lead)) {
+      return res.status(400).json({ success: false, message: 'Cannot edit a closed lead. Contact Admin to reopen.' });
+    }
+
+    const errors = validateLeadFields(req.body, true);
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    const { mobile_number, email } = req.body;
+
+    if (mobile_number) {
+      const cleanedMobile = String(mobile_number).replace(/\D/g, '');
+      const existingMobile = await Lead.findByMobileForUpdate(cleanedMobile, id);
+      if (existingMobile) {
+        return res.status(409).json({ success: false, message: `A lead with this mobile number already exists (${existingMobile.lead_id})` });
+      }
+    }
+
+    if (email) {
+      const existingEmail = await Lead.findByEmailForUpdate(String(email).toLowerCase().trim(), id);
+      if (existingEmail) {
+        return res.status(409).json({ success: false, message: `A lead with this email already exists (${existingEmail.lead_id})` });
+      }
+    }
+
+    const fieldsToSet = {};
+    for (const key of EDITABLE_FIELDS) {
+      if (req.body[key] !== undefined) {
+        let val = req.body[key];
+        if (val === null || val === '') {
+          fieldsToSet[key] = key === 'service_interested' ? [] : null;
+        } else if (key === 'mobile_number') {
+          fieldsToSet[key] = String(val).replace(/\D/g, '');
+        } else if (key === 'email') {
+          fieldsToSet[key] = String(val).toLowerCase().trim();
+        } else if (key === 'service_interested') {
+          fieldsToSet[key] = Array.isArray(val) ? val : [val];
+        } else if (key === 'category' || key === 'sub_category') {
+          fieldsToSet[key] = (val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(val).trim())) ? String(val).trim() : null;
+        } else {
+          fieldsToSet[key] = val;
+        }
+      }
+    }
+
+    if (fieldsToSet.email && fieldsToSet.email !== null) {
+      fieldsToSet.email = String(fieldsToSet.email).toLowerCase().trim();
+    }
+
+    let client;
+    let updatedLead;
+    try {
+      client = await getClient();
+      await client.query('BEGIN');
+
+      updatedLead = await Lead.update(id, fieldsToSet, client);
+
+      for (const [field, newVal] of Object.entries(fieldsToSet)) {
+        const oldVal = lead[field] != null ? String(lead[field]) : null;
+        const newValStr = newVal != null ? String(newVal) : null;
+        if (oldVal !== newValStr) {
+          await LeadHistory.create({
+            leadId: id,
+            fieldName: field,
+            oldValue: oldVal,
+            newValue: newValStr,
+            changeSummary: `Field "${field}" updated from "${oldVal}" to "${newValStr}" by ${req.user.name || req.user.email}`,
+            changedBy: req.user.id,
+            isSystemGenerated: false,
+          }, client);
+        }
+      }
+
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'lead.updated',
+        resource: 'Lead',
+        resourceId: lead.id,
+        details: JSON.stringify(Object.keys(fieldsToSet)),
+        ipAddress: getIpAndAgent(req).ipAddress,
+        userAgent: getIpAndAgent(req).userAgent,
+        result: 'Success',
+      }, client);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      if (client) {
+        await client.query('ROLLBACK');
+        client.release();
+      }
+      throw err;
+    }
+    if (client) client.release();
+
+    const finalLead = await Lead.findById(id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[updateLead] Algolia indexing skipped:', err.message));
+    }
+
+    res.json({ success: true, message: 'Lead updated successfully', data: formatLeadResponse(finalLead || updatedLead) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.patchLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid lead ID format' });
+    }
+
+    const providedEditable = EDITABLE_FIELDS.filter(f => req.body[f] !== undefined);
+    if (providedEditable.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update. Send at least one editable field.' });
+    }
+
+    const lead = await Lead.findById(id);
+    if (!lead || lead.deleted_at) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    if (isClosedLead(lead)) {
+      return res.status(400).json({ success: false, message: 'Cannot edit a closed lead. Contact Admin to reopen.' });
+    }
+
+    const errors = validateLeadFields(req.body, false);
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ success: false, errors });
+    }
+
+    if (req.body.mobile_number !== undefined && req.body.mobile_number !== null && req.body.mobile_number !== '') {
+      const cleanedMobile = String(req.body.mobile_number).replace(/\D/g, '');
+      if (cleanedMobile !== lead.mobile_number) {
+        const existingMobile = await Lead.findByMobileForUpdate(cleanedMobile, id);
+        if (existingMobile) {
+          return res.status(409).json({ success: false, errors: { mobile_number: `A lead with this mobile number already exists (${existingMobile.lead_id})` } });
+        }
+      }
+    }
+
+    if (req.body.email !== undefined && req.body.email !== null && req.body.email !== '') {
+      const cleanedEmail = String(req.body.email).toLowerCase().trim();
+      if (cleanedEmail !== (lead.email || '').toLowerCase()) {
+        const existingEmail = await Lead.findByEmailForUpdate(cleanedEmail, id);
+        if (existingEmail) {
+          return res.status(409).json({ success: false, errors: { email: `A lead with this email already exists (${existingEmail.lead_id})` } });
+        }
+      }
+    }
+
+    const fieldsToSet = {};
+    for (const key of providedEditable) {
+      let val = req.body[key];
+      if (val === null || val === '') {
+        fieldsToSet[key] = key === 'service_interested' ? [] : null;
+      } else if (key === 'mobile_number') {
+        fieldsToSet[key] = String(val).replace(/\D/g, '');
+      } else if (key === 'email') {
+        fieldsToSet[key] = String(val).toLowerCase().trim();
+      } else if (key === 'service_interested') {
+        fieldsToSet[key] = Array.isArray(val) ? val : [val];
+      } else if (key === 'category' || key === 'sub_category') {
+        fieldsToSet[key] = (val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(val).trim())) ? String(val).trim() : null;
+      } else {
+        fieldsToSet[key] = val;
+      }
+    }
+
+    const hasChanges = Object.entries(fieldsToSet).some(([key, newVal]) => {
+      const oldVal = lead[key];
+      const oldStr = oldVal != null ? String(oldVal) : null;
+      const newStr = newVal != null ? String(newVal) : null;
+      return oldStr !== newStr;
+    });
+    if (!hasChanges) {
+      return res.status(422).json({ success: false, message: 'No changes detected. All values are the same as current.' });
+    }
+
+    let client;
+    let updatedLead;
+    try {
+      client = await getClient();
+      await client.query('BEGIN');
+
+      updatedLead = await Lead.update(id, fieldsToSet, client);
+
+      for (const [field, newVal] of Object.entries(fieldsToSet)) {
+        const oldVal = lead[field] != null ? String(lead[field]) : null;
+        const newValStr = newVal != null ? String(newVal) : null;
+        if (oldVal !== newValStr) {
+          await LeadHistory.create({
+            leadId: id,
+            fieldName: field,
+            oldValue: oldVal,
+            newValue: newValStr,
+            changeSummary: `Field "${field}" updated from "${oldVal}" to "${newValStr}" by ${req.user.name || req.user.email}`,
+            changedBy: req.user.id,
+            isSystemGenerated: false,
+          }, client);
+        }
+      }
+
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'lead.updated',
+        resource: 'Lead',
+        resourceId: lead.id,
+        details: JSON.stringify(Object.keys(fieldsToSet)),
+        ipAddress: getIpAndAgent(req).ipAddress,
+        userAgent: getIpAndAgent(req).userAgent,
+        result: 'Success',
+      }, client);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      if (client) {
+        await client.query('ROLLBACK');
+        client.release();
+      }
+      throw err;
+    }
+    if (client) client.release();
+
+    const finalLead = await Lead.findById(id);
+    if (algolia && typeof algolia.saveLead === 'function') {
+      await algolia.saveLead(finalLead).catch(err => console.error('[patchLead] Algolia indexing skipped:', err.message));
+    }
+
+    res.json({ success: true, message: 'Lead updated successfully', data: formatLeadResponse(finalLead || updatedLead) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!UUID_REGEX.test(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid lead ID format' });
+    }
+
+    const lead = await Lead.findById(id);
+    if (!lead || lead.deleted_at) {
+      return res.status(404).json({ success: false, endpoint: 'DELETE', message: 'Lead not found' });
+    }
+
+    let client;
+    try {
+      client = await getClient();
+      await client.query('BEGIN');
+
+      const deleted = await Lead.softDelete(id, client);
+      if (!deleted) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(404).json({ success: false, endpoint: 'DELETE', message: 'Lead not found' });
+      }
+
+      await LeadHistory.create({
+        leadId: id,
+        fieldName: 'lead_deleted',
+        oldValue: null,
+        newValue: `Lead ${lead.lead_id} soft-deleted by ${req.user.name || req.user.email}`,
+        changeSummary: `Lead ${lead.lead_id} soft-deleted by ${req.user.name || req.user.email}`,
+        changedBy: req.user.id,
+        isSystemGenerated: false,
+      }, client);
+
+      await AuditLog.create({
+        userId: req.user.id,
+        email: req.user.email,
+        action: 'lead.deleted',
+        resource: 'Lead',
+        resourceId: lead.id,
+        details: JSON.stringify({ company_name: lead.company_name, contact_person: lead.contact_person }),
+        ipAddress: getIpAndAgent(req).ipAddress,
+        userAgent: getIpAndAgent(req).userAgent,
+        result: 'Success',
+      }, client);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      if (client) {
+        await client.query('ROLLBACK');
+        client.release();
+      }
+      throw err;
+    }
+    if (client) client.release();
+
+    if (algolia && typeof algolia.deleteLead === 'function') {
+      await algolia.deleteLead(id).catch(err => console.error('[deleteLead] Algolia deletion skipped:', err.message));
+    }
+
+    res.json({ success: true, message: 'Lead deleted successfully', data: { id: lead.id, lead_id: lead.lead_id } });
+  } catch (error) {
+    next(error);
+  }
 };
 

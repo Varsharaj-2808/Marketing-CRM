@@ -21,6 +21,378 @@ if (appId && adminKey) {
   adminClient = algoliasearch(appId, writeKey);
 }
 
+// ---- Circuit Breaker ----
+let algoliaBlocked = false;
+let blockExpiry = 0;
+let isRecovering = false;
+const BLOCK_COOLDOWN_MS = 5 * 60 * 1000;
+
+function isCurrentlyBlocked() {
+  if (!algoliaBlocked) return false;
+  if (Date.now() >= blockExpiry) {
+    algoliaBlocked = false;
+    blockExpiry = 0;
+    console.log('[Algolia] Cooldown expired — retrying Algolia.');
+    recoverAndReindex().catch(err => console.error('[Algolia] Recovery re-index failed:', err.message));
+    return false;
+  }
+  return true;
+}
+
+function markBlocked() {
+  if (!algoliaBlocked) {
+    console.log('[Algolia] Algolia is currently unavailable. Switching to PostgreSQL fallback. Will retry in 5 minutes.');
+  }
+  algoliaBlocked = true;
+  blockExpiry = Date.now() + BLOCK_COOLDOWN_MS;
+}
+
+function isBlockedError(err) {
+  if (!err || !err.message) return false;
+  const msg = err.message.toLowerCase();
+  return msg.includes('blocked') || msg.includes('this operation cannot be processed')
+    || msg.includes('forbidden') || msg.includes('unauthorized')
+    || (err.statusCode === 403) || (err.statusCode === 429);
+}
+
+// ---- Recovery Re-Index ----
+async function recoverAndReindex() {
+  if (isRecovering) {
+    console.log('[Algolia Recovery] Already in progress, skipping.');
+    return;
+  }
+  isRecovering = true;
+  const startTime = Date.now();
+  console.log('[Algolia Recovery] Starting full re-index from PostgreSQL...');
+
+  try {
+    const { query } = require('../config/db');
+
+    // 1. Users
+    try {
+      const userRes = await query(`SELECT id, "employee_id", name, email, mobile, role, "accountStatus" as status, department, designation, "createdAt", "updatedAt" FROM users`);
+      const users = userRes.rows;
+      if (users.length > 0) {
+        const cli = getWriteClient();
+        const objects = users.map(u => ({
+          objectID: u.id, id: u.id, employee_id: u.employee_id,
+          name: u.name, employee_name: u.name, email: u.email, mobile: u.mobile,
+          role: u.role, status: u.status, department: u.department, designation: u.designation,
+          createdAt: u.createdAt, updatedAt: u.updatedAt,
+        }));
+        await cli.saveObjects({ indexName: USERS_INDEX, objects });
+        console.log(`[Algolia Recovery] Users: ${users.length} indexed.`);
+      }
+      const userIDs = new Set(users.map(u => u.id));
+      const algoliaUsers = await browseAllIndex(getSearchClient(), USERS_INDEX);
+      const orphanedUsers = algoliaUsers.filter(id => !userIDs.has(id));
+      if (orphanedUsers.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: USERS_INDEX, objectIDs: orphanedUsers });
+        console.log(`[Algolia Recovery] Users: ${orphanedUsers.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Users failed:', err.message);
+    }
+
+    // 2. Leads
+    try {
+      const leadRes = await query(
+        `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
+                bc.category_name, bsc.sub_category_name, ls.name as lead_source_name
+         FROM leads l
+         LEFT JOIN users u ON l.assigned_to = u.id
+         LEFT JOIN business_categories bc ON l.category = bc.id
+         LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
+         LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name`
+      );
+      const leads = leadRes.rows;
+      if (leads.length > 0) {
+        const resolvedLeads = await require('../models/Lead')._resolveServiceNames(leads);
+        const cli = getWriteClient();
+        const objects = resolvedLeads.map(lead => ({
+          objectID: lead.id, id: lead.id, lead_id: lead.lead_id,
+          company_name: lead.company_name, contact_person: lead.contact_person,
+          mobile_number: lead.mobile_number, email: lead.email, website: lead.website,
+          city: lead.city, state: lead.state, country: lead.country,
+          lead_source: lead.lead_source_name || lead.lead_source,
+          category: lead.category, category_name: lead.category_name || null,
+          sub_category: lead.sub_category, sub_category_name: lead.sub_category_name || null,
+          service_interested: lead.service_interested,
+          priority: lead.priority,
+          estimated_value: lead.estimated_value ? parseFloat(lead.estimated_value) : null,
+          assigned_to: lead.assigned_to, assigned_employee_id: lead.assigned_employee_id || null,
+          assigned_to_name: lead.assigned_to_name || null, stage: lead.stage,
+          status: lead.lead_status || lead.status, created_at: lead.created_at,
+          created_at_timestamp: lead.created_at ? Math.floor(new Date(lead.created_at).getTime() / 1000) : null,
+          updated_at: lead.updated_at, assigned_at: lead.assigned_at,
+          lost_reason: lead.lost_reason,
+          final_deal_value: lead.final_deal_value ? parseFloat(lead.final_deal_value) : null,
+          closure_date: lead.closure_date, next_followup_date: lead.next_followup_date,
+        }));
+        await cli.saveObjects({ indexName: LEADS_INDEX, objects });
+        console.log(`[Algolia Recovery] Leads: ${leads.length} indexed.`);
+      }
+      const leadIDs = new Set(leads.map(l => l.id));
+      const algoliaLeads = await browseAllIndex(getSearchClient(), LEADS_INDEX);
+      const orphanedLeads = algoliaLeads.filter(id => !leadIDs.has(id));
+      if (orphanedLeads.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: LEADS_INDEX, objectIDs: orphanedLeads });
+        console.log(`[Algolia Recovery] Leads: ${orphanedLeads.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Leads failed:', err.message);
+    }
+
+    // 3. Categories
+    try {
+      const catRes = await query(`SELECT * FROM business_categories`);
+      const subCatRes = await query(`SELECT * FROM business_sub_categories`);
+      const categories = catRes.rows.map(c => ({ ...c, type: 'category', category_name: c.category_name || c.name }));
+      const subCategories = subCatRes.rows.map(s => ({ ...s, type: 'subcategory', category_name: s.sub_category_name || s.name }));
+      const allCats = [...categories, ...subCategories];
+      if (allCats.length > 0) {
+        const cli = getWriteClient();
+        const objects = allCats.map(c => ({
+          objectID: c.id, id: c.id,
+          category_name: c.category_name || c.name, name: c.category_name || c.name,
+          subcategory_name: c.sub_category_name || null,
+          sub_category_name: c.sub_category_name || null,
+          parent_category_name: c.parent_category_name || null,
+          status: c.status || (c.is_active ? 'Active' : 'Inactive'),
+          isActive: c.is_active, type: c.type,
+          category_id: c.category_id || null,
+          createdAt: c.created_at || c.createdAt, updatedAt: c.updated_at || c.updatedAt,
+        }));
+        await cli.saveObjects({ indexName: CATEGORIES_INDEX, objects });
+        console.log(`[Algolia Recovery] Categories: ${allCats.length} indexed.`);
+      }
+      const catIDs = new Set(allCats.map(c => c.id));
+      const algoliaCats = await browseAllIndex(getSearchClient(), CATEGORIES_INDEX);
+      const orphanedCats = algoliaCats.filter(id => !catIDs.has(id));
+      if (orphanedCats.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: CATEGORIES_INDEX, objectIDs: orphanedCats });
+        console.log(`[Algolia Recovery] Categories: ${orphanedCats.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Categories failed:', err.message);
+    }
+
+    // 4. Services
+    try {
+      const svcRes = await query(`SELECT * FROM services`);
+      const services = svcRes.rows;
+      if (services.length > 0) {
+        const cli = getWriteClient();
+        const objects = services.map(s => ({
+          objectID: s.id, id: s.id, name: s.name,
+          status: s.status || (s.is_active ? 'Active' : 'Inactive'),
+          isActive: s.is_active, createdAt: s.created_at || s.createdAt, updatedAt: s.updated_at || s.updatedAt,
+        }));
+        await cli.saveObjects({ indexName: SERVICES_INDEX, objects });
+        console.log(`[Algolia Recovery] Services: ${services.length} indexed.`);
+      }
+      const svcIDs = new Set(services.map(s => s.id));
+      const algoliaSvcs = await browseAllIndex(getSearchClient(), SERVICES_INDEX);
+      const orphanedSvcs = algoliaSvcs.filter(id => !svcIDs.has(id));
+      if (orphanedSvcs.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: SERVICES_INDEX, objectIDs: orphanedSvcs });
+        console.log(`[Algolia Recovery] Services: ${orphanedSvcs.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Services failed:', err.message);
+    }
+
+    // 5. Lead Sources
+    try {
+      const lsRes = await query(`SELECT * FROM lead_sources`);
+      const sources = lsRes.rows;
+      if (sources.length > 0) {
+        const cli = getWriteClient();
+        const objects = sources.map(s => ({
+          objectID: s.id, id: s.id, name: s.name,
+          status: s.status || (s.is_active ? 'Active' : 'Inactive'),
+          isActive: s.is_active, createdAt: s.created_at || s.createdAt, updatedAt: s.updated_at || s.updatedAt,
+        }));
+        await cli.saveObjects({ indexName: LEAD_SOURCES_INDEX, objects });
+        console.log(`[Algolia Recovery] Lead Sources: ${sources.length} indexed.`);
+      }
+      const lsIDs = new Set(sources.map(s => s.id));
+      const algoliaLS = await browseAllIndex(getSearchClient(), LEAD_SOURCES_INDEX);
+      const orphanedLS = algoliaLS.filter(id => !lsIDs.has(id));
+      if (orphanedLS.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: LEAD_SOURCES_INDEX, objectIDs: orphanedLS });
+        console.log(`[Algolia Recovery] Lead Sources: ${orphanedLS.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Lead Sources failed:', err.message);
+    }
+
+    // 6. Notifications
+    try {
+      const notifRes = await query(`SELECT * FROM notifications`);
+      const notifications = notifRes.rows;
+      if (notifications.length > 0) {
+        const cli = getWriteClient();
+        const objects = notifications.map(n => ({
+          objectID: n.id, id: n.id, user_id: n.user_id,
+          notification_type: n.notification_type, message: n.message,
+          is_read: n.is_read || false, created_at: n.created_at,
+          created_at_timestamp: n.created_at ? Math.floor(new Date(n.created_at).getTime() / 1000) : null,
+        }));
+        await cli.saveObjects({ indexName: NOTIFICATIONS_INDEX, objects });
+        console.log(`[Algolia Recovery] Notifications: ${notifications.length} indexed.`);
+      }
+      const notifIDs = new Set(notifications.map(n => n.id));
+      const algoliaNotifs = await browseAllIndex(getSearchClient(), NOTIFICATIONS_INDEX);
+      const orphanedNotifs = algoliaNotifs.filter(id => !notifIDs.has(id));
+      if (orphanedNotifs.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: NOTIFICATIONS_INDEX, objectIDs: orphanedNotifs });
+        console.log(`[Algolia Recovery] Notifications: ${orphanedNotifs.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Notifications failed:', err.message);
+    }
+
+    // 7. Audit Logs
+    try {
+      const auditRes = await query(
+        `SELECT a.*, u.name as actor_name, u.role as actor_role
+         FROM audit_logs a
+         LEFT JOIN users u ON a."userId" = u.id`
+      );
+      const logs = auditRes.rows;
+      if (logs.length > 0) {
+        const cli = getWriteClient();
+        const objects = logs.map(log => {
+          const createdAtVal = log.created_at || log.createdAt;
+          return {
+            objectID: log.id, id: log.id,
+            userId: log.userId, email: log.email, action: log.action,
+            resource: log.resource, resourceId: log.resourceId,
+            entity_name: log.entity_name || log.resourceId || '',
+            details: log.details, ipAddress: log.ipAddress,
+            userAgent: log.userAgent, result: log.result,
+            created_at: createdAtVal,
+            created_at_timestamp: createdAtVal ? Math.floor(new Date(createdAtVal).getTime() / 1000) : null,
+            actor_name: log.actor_name || null, actor_role: log.actor_role || null,
+          };
+        });
+        await cli.saveObjects({ indexName: AUDIT_LOGS_INDEX, objects });
+        console.log(`[Algolia Recovery] Audit Logs: ${logs.length} indexed.`);
+      }
+      const auditIDs = new Set(logs.map(l => l.id));
+      const algoliaAudit = await browseAllIndex(getSearchClient(), AUDIT_LOGS_INDEX);
+      const orphanedAudit = algoliaAudit.filter(id => !auditIDs.has(id));
+      if (orphanedAudit.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: AUDIT_LOGS_INDEX, objectIDs: orphanedAudit });
+        console.log(`[Algolia Recovery] Audit Logs: ${orphanedAudit.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Audit Logs failed:', err.message);
+    }
+
+    // 8. Followups
+    try {
+      const fupRes = await query(
+        `SELECT f.*, l.company_name, l.contact_person, l.priority as lead_quality
+         FROM followups f
+         LEFT JOIN leads l ON f.lead_id = l.id`
+      );
+      const followups = fupRes.rows;
+      if (followups.length > 0) {
+        const cli = getWriteClient();
+        const objects = followups.map(f => ({
+          objectID: f.id, id: f.id, lead_id: f.lead_id,
+          company_name: f.company_name, contact_person: f.contact_person,
+          lead_quality: f.lead_quality, followup_type: f.followup_type,
+          outcome: f.outcome, notes: f.notes, created_by: f.created_by,
+          created_at: f.created_at,
+          created_at_timestamp: f.created_at ? Math.floor(new Date(f.created_at).getTime() / 1000) : null,
+          next_followup_date: f.next_followup_date,
+          next_followup_date_timestamp: f.next_followup_date ? Math.floor(new Date(f.next_followup_date).getTime() / 1000) : null,
+        }));
+        await cli.saveObjects({ indexName: FOLLOWUPS_INDEX, objects });
+        console.log(`[Algolia Recovery] Followups: ${followups.length} indexed.`);
+      }
+      const fupIDs = new Set(followups.map(f => f.id));
+      const algoliaFups = await browseAllIndex(getSearchClient(), FOLLOWUPS_INDEX);
+      const orphanedFups = algoliaFups.filter(id => !fupIDs.has(id));
+      if (orphanedFups.length > 0) {
+        const cli = getWriteClient();
+        await cli.deleteObjects({ indexName: FOLLOWUPS_INDEX, objectIDs: orphanedFups });
+        console.log(`[Algolia Recovery] Followups: ${orphanedFups.length} orphaned records deleted.`);
+      }
+    } catch (err) {
+      console.error('[Algolia Recovery] Followups failed:', err.message);
+    }
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[Algolia Recovery] Full re-index completed in ${elapsed}s. Algolia is now consistent with PostgreSQL.`);
+  } catch (err) {
+    console.error('[Algolia Recovery] Unexpected error:', err.message);
+  } finally {
+    isRecovering = false;
+  }
+}
+
+async function startupAutoIndex() {
+  if (!writeClient || !searchClient) {
+    console.log('[Algolia Startup] Algolia not configured, skipping auto-index.');
+    return;
+  }
+  try {
+    const indices = [USERS_INDEX, LEADS_INDEX, CATEGORIES_INDEX, SERVICES_INDEX, LEAD_SOURCES_INDEX, NOTIFICATIONS_INDEX, AUDIT_LOGS_INDEX, FOLLOWUPS_INDEX];
+    const emptyIndices = [];
+    for (const idx of indices) {
+      try {
+        const r = await searchClient.searchSingleIndex({
+          indexName: idx,
+          searchParams: { query: '', hitsPerPage: 0 },
+        });
+        if (r.nbHits === 0) emptyIndices.push(idx);
+      } catch (err) {
+        emptyIndices.push(idx);
+      }
+    }
+    if (emptyIndices.length > 0) {
+      console.log(`[Algolia Startup] Empty indexes detected: ${emptyIndices.join(', ')}. Starting full re-index from PostgreSQL...`);
+      await recoverAndReindex();
+    } else {
+      console.log('[Algolia Startup] All indexes populated, no re-index needed.');
+    }
+  } catch (err) {
+    console.error('[Algolia Startup] Auto-index check failed:', err.message);
+  }
+}
+
+async function browseAllIndex(client, indexName) {
+  const ids = [];
+  let page = 0;
+  let nbPages = 1;
+  try {
+    do {
+      const result = await client.searchSingleIndex({
+        indexName,
+        searchParams: { query: '', page, hitsPerPage: 1000, attributesToRetrieve: ['objectID'] },
+      });
+      if (!result) break;
+      nbPages = result.nbPages || 1;
+      (result.hits || []).forEach(h => ids.push(h.objectID));
+      page++;
+    } while (page < nbPages);
+  } catch (err) {
+    console.error(`[Algolia Recovery] browseAllIndex failed for ${indexName}:`, err.message);
+  }
+  return ids;
+}
+
 const getWriteClient = () => {
   if (!writeClient) {
     throw new Error('Algolia write client not initialized. Check ALGOLIA_APP_ID and ALGOLIA_WRITE_KEY.');
@@ -54,10 +426,13 @@ const FOLLOWUPS_INDEX = 'followups';
 
 // Configure indices settings
 async function initIndices() {
+  if (isCurrentlyBlocked()) {
+    console.log('[Algolia] Skipping initIndices — Algolia is blocked. Will retry after cooldown.');
+    return;
+  }
   const client = getAdminClient();
   if (!client) return;
   try {
-    // 1. Users
     await client.setSettings({
       indexName: USERS_INDEX,
       indexSettings: {
@@ -67,7 +442,6 @@ async function initIndices() {
       }
     });
 
-    // 2. Leads
     await client.setSettings({
       indexName: LEADS_INDEX,
       indexSettings: {
@@ -85,7 +459,6 @@ async function initIndices() {
       }
     });
 
-    // 3. Categories
     await client.setSettings({
       indexName: CATEGORIES_INDEX,
       indexSettings: {
@@ -95,7 +468,6 @@ async function initIndices() {
       }
     });
 
-    // 4. Services
     await client.setSettings({
       indexName: SERVICES_INDEX,
       indexSettings: {
@@ -105,7 +477,6 @@ async function initIndices() {
       }
     });
 
-    // 5. Lead Sources
     await client.setSettings({
       indexName: LEAD_SOURCES_INDEX,
       indexSettings: {
@@ -115,7 +486,6 @@ async function initIndices() {
       }
     });
 
-    // 6. Notifications
     await client.setSettings({
       indexName: NOTIFICATIONS_INDEX,
       indexSettings: {
@@ -125,7 +495,6 @@ async function initIndices() {
       }
     });
 
-    // 7. Audit Logs
     await client.setSettings({
       indexName: AUDIT_LOGS_INDEX,
       indexSettings: {
@@ -135,7 +504,6 @@ async function initIndices() {
       }
     });
 
-    // 8. Followups
     await client.setSettings({
       indexName: FOLLOWUPS_INDEX,
       indexSettings: {
@@ -145,23 +513,27 @@ async function initIndices() {
       }
     });
 
-    console.log('Algolia index settings configured successfully.');
+    console.log('[Algolia] Index settings configured successfully.');
   } catch (err) {
-    console.error('Failed to configure Algolia index settings:', err.message);
+    if (isBlockedError(err)) {
+      markBlocked();
+    } else {
+      console.error('[Algolia] initIndices failed:', err.message);
+    }
   }
 }
 
-// Call on startup
 initIndices().catch(() => {});
 
 module.exports = {
   async testConnection() {
+    if (isCurrentlyBlocked()) return false;
     try {
       const cli = getAdminClient();
       const res = await cli.listIndices();
       return !!res;
     } catch (err) {
-      console.error('Algolia testConnection failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] testConnection failed:', err.message); }
       return false;
     }
   },
@@ -169,6 +541,7 @@ module.exports = {
   // ---- Users Sync ----
   async saveUser(user) {
     if (!user) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const record = {
@@ -191,17 +564,17 @@ module.exports = {
         body: record,
       });
 
-      // Relational update: Sync assigned user name changes to leads
       if (user.id && user.name) {
         await this.syncLeadsForUser(user.id, user.name);
       }
     } catch (err) {
-      console.error('Algolia saveUser failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveUser failed:', err.message); }
     }
   },
 
   async deleteUser(id) {
     if (!id) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       await cli.deleteObject({
@@ -209,11 +582,12 @@ module.exports = {
         objectID: id,
       });
     } catch (err) {
-      console.error('Algolia deleteUser failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] deleteUser failed:', err.message); }
     }
   },
 
   async searchUsers(searchQuery, filters = {}, page = 1, limit = 20) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -245,15 +619,18 @@ module.exports = {
         searchParams,
       });
 
+      console.log('[Algolia] Search succeeded: searchUsers');
       return result;
     } catch (err) {
-      console.error('Algolia searchUsers failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchUsers failed:', err.message);
       return null;
     }
   },
 
   async indexAllUsers(users) {
     if (!users || users.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const objects = users.map(user => ({
@@ -276,13 +653,14 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllUsers failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllUsers failed:', err.message); }
     }
   },
 
   // ---- Leads Sync ----
   async saveLead(lead) {
     if (!lead) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const record = {
@@ -347,16 +725,12 @@ module.exports = {
         body: record,
       });
     } catch (err) {
-      console.error('Algolia saveLead failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveLead failed:', err.message); }
     }
   },
 
-  /**
-   * Browse ALL Algolia pages for a given search query + filters and return an
-   * array of every matching lead UUID.  Used by exportLeads so the exported
-   * file exactly mirrors the Algolia search results shown in the UI.
-   */
   async getAllLeadIdsBySearch(searchQuery, filters = {}, isAdmin = false, userId = null) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       if (!cli) return null;
@@ -391,7 +765,7 @@ module.exports = {
       const ids = [];
       let page = 0;
       let nbPages = 1;
-      const PAGE_SIZE = 1000; // max Algolia allows per page
+      const PAGE_SIZE = 1000;
 
       do {
         const searchParams = {
@@ -412,13 +786,15 @@ module.exports = {
 
       return ids;
     } catch (err) {
-      console.error('Algolia getAllLeadIdsBySearch failed:', err.message);
-      return null; // caller falls back to SQL search
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] getAllLeadIdsBySearch failed:', err.message);
+      return null;
     }
   },
 
   async deleteLead(id) {
     if (!id) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       await cli.deleteObject({
@@ -426,11 +802,12 @@ module.exports = {
         objectID: id,
       });
     } catch (err) {
-      console.error('Algolia deleteLead failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] deleteLead failed:', err.message); }
     }
   },
 
   async searchLeads(searchQuery, filters = {}, page = 1, limit = 20, isAdmin = false, userId = null) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -524,15 +901,18 @@ module.exports = {
         }
       }
 
+      console.log('[Algolia] Search succeeded: searchLeads');
       return result;
     } catch (err) {
-      console.error('Algolia searchLeads failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchLeads failed:', err.message);
       return null;
     }
   },
 
   async indexAllLeads(leads) {
     if (!leads || leads.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const Lead = require('../models/Lead');
       const resolvedLeads = await Lead._resolveServiceNames(leads);
@@ -576,13 +956,14 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllLeads failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllLeads failed:', err.message); }
     }
   },
 
   // ---- Categories Sync ----
   async saveCategory(cat) {
     if (!cat) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const record = {
@@ -605,21 +986,20 @@ module.exports = {
         body: record,
       });
 
-      // Relational update: Sync category name changes to leads
       if (cat.type === 'category' && cat.id && (cat.category_name || cat.name)) {
         await this.syncLeadsForCategory(cat.id, cat.category_name || cat.name);
       }
-      // Relational update: Sync subcategory name changes to leads
       if (cat.type === 'subcategory' && cat.id) {
         await this.syncLeadsForSubCategory(cat.id, cat.subcategory_name || cat.sub_category_name || cat.category_name || cat.name);
       }
     } catch (err) {
-      console.error('Algolia saveCategory failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveCategory failed:', err.message); }
     }
   },
 
   async deleteCategory(id) {
     if (!id) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       await cli.deleteObject({
@@ -627,11 +1007,12 @@ module.exports = {
         objectID: id,
       });
     } catch (err) {
-      console.error('Algolia deleteCategory failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] deleteCategory failed:', err.message); }
     }
   },
 
   async searchCategories(searchQuery, status = 'All', page = 1, limit = 20, type = null, parentCategoryName = null) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -652,18 +1033,22 @@ module.exports = {
       if (facetFilters.length > 0) {
         searchParams.facetFilters = facetFilters;
       }
-      return await cli.searchSingleIndex({
+      const result = await cli.searchSingleIndex({
         indexName: CATEGORIES_INDEX,
         searchParams,
       });
+      console.log('[Algolia] Search succeeded: searchCategories');
+      return result;
     } catch (err) {
-      console.error('Algolia searchCategories failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchCategories failed:', err.message);
       return null;
     }
   },
 
   async indexAllCategories(categories) {
     if (!categories || categories.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const objects = categories.map(cat => ({
@@ -686,13 +1071,14 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllCategories failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllCategories failed:', err.message); }
     }
   },
 
   // ---- Services Sync ----
   async saveService(service) {
     if (!service) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const record = {
@@ -709,12 +1095,13 @@ module.exports = {
         body: record,
       });
     } catch (err) {
-      console.error('Algolia saveService failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveService failed:', err.message); }
     }
   },
 
   async deleteService(id) {
     if (!id) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       await cli.deleteObject({
@@ -722,11 +1109,12 @@ module.exports = {
         objectID: id,
       });
     } catch (err) {
-      console.error('Algolia deleteService failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] deleteService failed:', err.message); }
     }
   },
 
   async searchServices(searchQuery, status = 'All', page = 1, limit = 20) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -741,18 +1129,22 @@ module.exports = {
       if (facetFilters.length > 0) {
         searchParams.facetFilters = facetFilters;
       }
-      return await cli.searchSingleIndex({
+      const result = await cli.searchSingleIndex({
         indexName: SERVICES_INDEX,
         searchParams,
       });
+      console.log('[Algolia] Search succeeded: searchServices');
+      return result;
     } catch (err) {
-      console.error('Algolia searchServices failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchServices failed:', err.message);
       return null;
     }
   },
 
   async indexAllServices(services) {
     if (!services || services.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const objects = services.map(svc => ({
@@ -769,13 +1161,14 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllServices failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllServices failed:', err.message); }
     }
   },
 
   // ---- Lead Sources Sync ----
   async saveLeadSource(source) {
     if (!source) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const record = {
@@ -792,12 +1185,13 @@ module.exports = {
         body: record,
       });
     } catch (err) {
-      console.error('Algolia saveLeadSource failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveLeadSource failed:', err.message); }
     }
   },
 
   async deleteLeadSource(id) {
     if (!id) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       await cli.deleteObject({
@@ -805,11 +1199,12 @@ module.exports = {
         objectID: id,
       });
     } catch (err) {
-      console.error('Algolia deleteLeadSource failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] deleteLeadSource failed:', err.message); }
     }
   },
 
   async searchLeadSources(searchQuery, status = 'All', page = 1, limit = 20) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -824,18 +1219,22 @@ module.exports = {
       if (facetFilters.length > 0) {
         searchParams.facetFilters = facetFilters;
       }
-      return await cli.searchSingleIndex({
+      const result = await cli.searchSingleIndex({
         indexName: LEAD_SOURCES_INDEX,
         searchParams,
       });
+      console.log('[Algolia] Search succeeded: searchLeadSources');
+      return result;
     } catch (err) {
-      console.error('Algolia searchLeadSources failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchLeadSources failed:', err.message);
       return null;
     }
   },
 
   async indexAllLeadSources(sources) {
     if (!sources || sources.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const objects = sources.map(src => ({
@@ -852,13 +1251,14 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllLeadSources failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllLeadSources failed:', err.message); }
     }
   },
 
   // ---- Notifications Sync ----
   async saveNotification(notif) {
     if (!notif) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const record = {
@@ -876,12 +1276,13 @@ module.exports = {
         body: record,
       });
     } catch (err) {
-      console.error('Algolia saveNotification failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveNotification failed:', err.message); }
     }
   },
 
   async deleteNotification(id) {
     if (!id) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       await cli.deleteObject({
@@ -889,11 +1290,12 @@ module.exports = {
         objectID: id,
       });
     } catch (err) {
-      console.error('Algolia deleteNotification failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] deleteNotification failed:', err.message); }
     }
   },
 
   async searchNotifications(searchQuery, filters = {}, page = 1, limit = 20) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -911,18 +1313,22 @@ module.exports = {
       if (facetFilters.length > 0) {
         searchParams.facetFilters = facetFilters;
       }
-      return await cli.searchSingleIndex({
+      const result = await cli.searchSingleIndex({
         indexName: NOTIFICATIONS_INDEX,
         searchParams,
       });
+      console.log('[Algolia] Search succeeded: searchNotifications');
+      return result;
     } catch (err) {
-      console.error('Algolia searchNotifications failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchNotifications failed:', err.message);
       return null;
     }
   },
 
   async indexAllNotifications(notifications) {
     if (!notifications || notifications.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const objects = notifications.map(notif => ({
@@ -940,17 +1346,18 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllNotifications failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllNotifications failed:', err.message); }
     }
   },
 
   // ---- Audit Logs Sync ----
   async saveAuditLog(log) {
     if (!log) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const createdAtVal = log.created_at || log.createdAt;
-      
+
       let actorName = log.actor_name;
       let actorRole = log.actor_role;
       const userId = log.user_id || log.userId;
@@ -963,7 +1370,7 @@ module.exports = {
             actorRole = userRes.rows[0].role;
           }
         } catch (dbErr) {
-          console.error('[saveAuditLog] Failed to fetch user info:', dbErr.message);
+          console.error('[Algolia] saveAuditLog user lookup failed:', dbErr.message);
         }
       }
 
@@ -990,64 +1397,55 @@ module.exports = {
         body: record,
       });
     } catch (err) {
-      console.error('Algolia saveAuditLog failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveAuditLog failed:', err.message); }
     }
   },
 
   async searchAuditLogs(searchQuery, filters = {}, page = 1, limit = 20) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
       let finalSearchQuery = searchQuery || '';
 
-      // Actor filter - UUID, email, or name search
       if (filters.actor) {
         if (filters.actor.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
           facetFilters.push(`userId:${filters.actor}`);
         } else if (filters.actor.includes('@')) {
           facetFilters.push(`email:${filters.actor}`);
         } else {
-          // Name search - combine with text query
           finalSearchQuery = finalSearchQuery ? `${finalSearchQuery} ${filters.actor}` : filters.actor;
         }
       }
 
-      // Employee name filter
       if (filters.employee_name) {
         facetFilters.push(`actor_name:${filters.employee_name}`);
       }
 
-      // Action type filter
       if (filters.action_type) {
         facetFilters.push(`action:${filters.action_type}`);
       }
 
-      // Resource/entity filter
       if (filters.resource) {
         facetFilters.push(`resource:${filters.resource}`);
       }
 
-      // Entity name filter
       if (filters.entity_name) {
         facetFilters.push(`entity_name:${filters.entity_name}`);
       }
 
-      // Role filter
       if (filters.actor_role) {
         facetFilters.push(`actor_role:${filters.actor_role}`);
       }
 
-      // Result/status filter
       if (filters.result) {
         facetFilters.push(`result:${filters.result}`);
       }
 
-      // Created by (userId) filter
       if (filters.created_by && !filters.actor) {
         facetFilters.push(`userId:${filters.created_by}`);
       }
 
-      // Date range filters
       const numericFilters = [];
       if (filters.from) {
         const fromTimestamp = Math.floor(new Date(filters.from).getTime() / 1000);
@@ -1070,22 +1468,26 @@ module.exports = {
       if (numericFilters.length > 0) {
         searchParams.numericFilters = numericFilters;
       }
-      return await cli.searchSingleIndex({
+      const result = await cli.searchSingleIndex({
         indexName: AUDIT_LOGS_INDEX,
         searchParams,
       });
+      console.log('[Algolia] Search succeeded: searchAuditLogs');
+      return result;
     } catch (err) {
-      console.error('Algolia searchAuditLogs failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchAuditLogs failed:', err.message);
       return null;
     }
   },
 
   async indexAllAuditLogs(logs) {
     if (!logs || logs.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const { query } = require('../config/db');
-      
+
       const userRes = await query('SELECT id, name, role FROM users');
       const userMap = {};
       userRes.rows.forEach(u => {
@@ -1120,13 +1522,14 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllAuditLogs failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllAuditLogs failed:', err.message); }
     }
   },
 
   // ---- Followups Sync ----
   async saveFollowup(fup) {
     if (!fup) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       let company_name = fup.company_name;
@@ -1143,7 +1546,7 @@ module.exports = {
             lead_quality = leadRes.rows[0].priority;
           }
         } catch (dbErr) {
-          console.error('[saveFollowup] Failed to fetch lead info:', dbErr.message);
+          console.error('[Algolia] saveFollowup lead lookup failed:', dbErr.message);
         }
       }
 
@@ -1168,11 +1571,12 @@ module.exports = {
         body: record,
       });
     } catch (err) {
-      console.error('Algolia saveFollowup failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] saveFollowup failed:', err.message); }
     }
   },
 
   async searchFollowups(searchQuery, filters = {}, page = 1, limit = 20) {
+    if (isCurrentlyBlocked()) return null;
     try {
       const cli = getSearchClient();
       const facetFilters = [];
@@ -1190,18 +1594,22 @@ module.exports = {
       if (facetFilters.length > 0) {
         searchParams.facetFilters = facetFilters;
       }
-      return await cli.searchSingleIndex({
+      const result = await cli.searchSingleIndex({
         indexName: FOLLOWUPS_INDEX,
         searchParams,
       });
+      console.log('[Algolia] Search succeeded: searchFollowups');
+      return result;
     } catch (err) {
-      console.error('Algolia searchFollowups failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); return null; }
+      console.error('[Algolia] searchFollowups failed:', err.message);
       return null;
     }
   },
 
   async indexAllFollowups(followups) {
     if (!followups || followups.length === 0) return;
+    if (isCurrentlyBlocked()) return;
     try {
       const cli = getWriteClient();
       const objects = followups.map(fup => ({
@@ -1225,7 +1633,7 @@ module.exports = {
         objects,
       });
     } catch (err) {
-      console.error('Algolia indexAllFollowups failed:', err.message);
+      if (isBlockedError(err)) { markBlocked(); } else { console.error('[Algolia] indexAllFollowups failed:', err.message); }
     }
   },
 
@@ -1248,7 +1656,7 @@ module.exports = {
         await this.indexAllLeads(result.rows);
       }
     } catch (err) {
-      console.error('Algolia syncLeadsForCategory failed:', err.message);
+      console.error('[Algolia] syncLeadsForCategory failed:', err.message);
     }
   },
 
@@ -1270,7 +1678,7 @@ module.exports = {
         await this.indexAllLeads(result.rows);
       }
     } catch (err) {
-      console.error('Algolia syncLeadsForSubCategory failed:', err.message);
+      console.error('[Algolia] syncLeadsForSubCategory failed:', err.message);
     }
   },
 
@@ -1292,7 +1700,11 @@ module.exports = {
         await this.indexAllLeads(result.rows);
       }
     } catch (err) {
-      console.error('Algolia syncLeadsForUser failed:', err.message);
+      console.error('[Algolia] syncLeadsForUser failed:', err.message);
     }
-  }
+  },
+
+  recoverAndReindex,
+  startupAutoIndex,
+  isRecovering: () => isRecovering,
 };

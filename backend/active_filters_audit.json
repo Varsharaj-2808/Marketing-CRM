@@ -1,7 +1,7 @@
 {
-  "actor": "admin user",
-  "action_type": "user.login_failed",
+  "actor": "",
+  "action_type": "",
   "entity": "",
-  "from": "2026-07-17",
-  "to": "2026-07-17"
+  "from": "",
+  "to": ""
 }

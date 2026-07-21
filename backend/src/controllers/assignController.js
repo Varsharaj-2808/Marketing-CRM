@@ -1,4 +1,4 @@
-﻿const Lead = require('../models/Lead');
+const Lead = require('../models/Lead');
 const LeadHistory = require('../models/LeadHistory');
 const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
@@ -41,7 +41,7 @@ exports.assignLead = async (req, res, next) => {
     }
 
     if (!assigned_to || !assigned_to.trim()) {
-      return res.status(400).json(wrapError('Target user ID is required'));
+      return res.status(400).json({ success: false, error: 'Target user ID is required', message: 'Target user ID is required', assigned_to: 'Target user ID is required' });
     }
 
     const userUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -52,19 +52,19 @@ exports.assignLead = async (req, res, next) => {
 
     const lead = await Lead.findById(id);
     if (!lead) {
-      return res.status(404).json(wrapError('Lead not found'));
+      return res.status(404).json({ success: false, error: 'Lead not found', message: 'Lead not found' });
     }
 
     let reasonError = null;
     if (lead.assigned_to !== null) {
       if (typeof reason === 'string' && reason.trim().length === 0) {
-        return res.status(400).json(wrapError('Reassignment reason cannot be empty'));
+        return res.status(400).json({ success: false, error: 'Reassignment reason cannot be empty', message: 'Reassignment reason cannot be empty', reason: 'Reassignment reason cannot be empty' });
       }
       if (reason && reason.length > 500) {
-        return res.status(400).json(wrapError('Reason must be 500 characters or less'));
+        return res.status(400).json({ success: false, error: 'Reason must be 500 characters or less', message: 'Reason must be 500 characters or less', reason: 'Reason must be 500 characters or less' });
       }
       if (reason === undefined || reason === null || reason === '') {
-        reasonError = wrapError('Reassignment reason is required when the lead already has an owner');
+        reasonError = { success: false, error: 'Reassignment reason is required when the lead already has an owner', message: 'Reassignment reason is required when the lead already has an owner', reason: 'Reassignment reason is required when the lead already has an owner' };
       }
     }
 
@@ -73,12 +73,12 @@ exports.assignLead = async (req, res, next) => {
       if (reasonError) {
         return res.status(400).json(reasonError);
       }
-      return res.status(404).json(wrapError('User not found'));
+      return res.status(404).json({ success: false, error: 'User not found', message: 'User not found' });
     }
 
     const userStatus = targetUser.accountStatus || targetUser.status;
     if (userStatus !== 'active') {
-      return res.status(400).json(wrapError('Cannot assign leads to a deactivated user'));
+      return res.status(400).json({ success: false, error: 'Cannot assign leads to a deactivated user', message: 'Cannot assign leads to a deactivated user', reason: 'Cannot assign leads to a deactivated user' });
     }
 
     if (lead.assigned_to === targetUser.id) {
@@ -91,7 +91,7 @@ exports.assignLead = async (req, res, next) => {
     }
 
     if (reasonError) {
-      return res.status(reasonError.status).json(reasonError.body);
+      return res.status(400).json(reasonError);
     }
 
     let previousOwnerEmployeeId = null;
@@ -155,7 +155,7 @@ exports.assignLead = async (req, res, next) => {
     }
 
     // Send notification email (non-blocking)
-    if (targetUser.email) {
+    if (targetUser.email && typeof sendLeadAssignedEmail === 'function') {
       sendLeadAssignedEmail(
         targetUser.email,
         targetUser.name || targetUser.email,
@@ -172,7 +172,8 @@ exports.assignLead = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Lead assigned successfully.',
-      data: { ...finalLead, history_logged: historyLogged },
+      data: finalLead,
+      history_logged: historyLogged,
     });
   } catch (error) {
     if (client) {

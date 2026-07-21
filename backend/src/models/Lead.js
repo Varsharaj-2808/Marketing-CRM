@@ -130,7 +130,7 @@ const Lead = {
        LEFT JOIN business_categories bc ON l.category = bc.id
        LEFT JOIN business_sub_categories bsc ON l.sub_category = bsc.id
        LEFT JOIN lead_sources ls ON l.lead_source = ls.id::text OR l.lead_source = ls.name
-       WHERE l.id = $1`,
+       WHERE l.id = $1 /* SELECT l.*, u.name as assigned_to_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.id = $1 */`,
       [id]
     );
     if (!result.rows[0]) return null;
@@ -259,9 +259,16 @@ const Lead = {
     }
 
     if (assigned_to) {
-      conditions.push(`(l.assigned_to = $${idx} OR u.employee_id = $${idx} OR u.name ILIKE $${idx})`);
-      values.push(assigned_to);
-      idx++;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(String(assigned_to).trim())) {
+        conditions.push(`l.assigned_to = $${idx}`);
+        values.push(assigned_to);
+        idx++;
+      } else {
+        conditions.push(`(u.employee_id = $${idx} OR u.name ILIKE $${idx})`);
+        values.push(assigned_to);
+        idx++;
+      }
     }
 
     if (city) {
@@ -270,7 +277,7 @@ const Lead = {
     }
 
     if (service_interested) {
-      conditions.push(`$${idx} = ANY(l.service_interested)`);
+      conditions.push(`l.service_interested ? $${idx}`);
       values.push(service_interested);
       idx++;
     }
@@ -319,7 +326,7 @@ const Lead = {
                       ${lsJoin}
                       ${where}`;
     const countRes = await query(countSql, values);
-    const totalCount = parseInt(countRes.rows[0].count, 10);
+    const totalCount = countRes && countRes.rows && countRes.rows[0] ? parseInt(countRes.rows[0].count, 10) || 0 : 0;
 
     const offset = (page - 1) * limit;
     const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
@@ -342,7 +349,7 @@ const Lead = {
     return {
       data: rows,
       page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: totalCount === 0 ? 0 : (Math.ceil(totalCount / limit) || 1),
       totalCount,
     };
   },
@@ -418,9 +425,16 @@ const Lead = {
     }
 
     if (assigned_to) {
-      conditions.push(`(l.assigned_to = $${idx} OR u.employee_id = $${idx} OR u.name ILIKE $${idx})`);
-      values.push(assigned_to);
-      idx++;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(String(assigned_to).trim())) {
+        conditions.push(`l.assigned_to = $${idx}`);
+        values.push(assigned_to);
+        idx++;
+      } else {
+        conditions.push(`(u.employee_id = $${idx} OR u.name ILIKE $${idx})`);
+        values.push(assigned_to);
+        idx++;
+      }
     }
 
     if (city) {
@@ -429,7 +443,7 @@ const Lead = {
     }
 
     if (service_interested) {
-      conditions.push(`$${idx} = ANY(l.service_interested)`);
+      conditions.push(`l.service_interested ? $${idx}`);
       values.push(service_interested);
       idx++;
     }
@@ -478,7 +492,7 @@ const Lead = {
                       ${lsJoin}
                       ${where}`;
     const countRes = await query(countSql, values);
-    const totalCount = parseInt(countRes.rows[0].count, 10);
+    const totalCount = countRes && countRes.rows && countRes.rows[0] ? parseInt(countRes.rows[0].count, 10) || 0 : 0;
 
     const offset = (page - 1) * limit;
     const sql = `SELECT l.*, u.name as assigned_to_name, u.employee_id as assigned_employee_id,
@@ -501,7 +515,7 @@ const Lead = {
     return {
       data: rows,
       page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: totalCount === 0 ? 0 : (Math.ceil(totalCount / limit) || 1),
       totalCount,
     };
   },
@@ -557,7 +571,7 @@ const Lead = {
           const s = String(v).trim();
           return nameMap[s] || s;   // UUID → name; fallback keeps value as-is
         }).filter(Boolean);
-        r.service_interested = mapped.length === 1 ? mapped[0] : (mapped.length > 1 ? mapped : null);
+        r.service_interested = mapped.length > 0 ? mapped : null;
       } else if (svcs !== null && svcs !== undefined && svcs !== '') {
         const s = String(svcs).trim();
         r.service_interested = nameMap[s] || s;
@@ -615,6 +629,70 @@ const Lead = {
     if (!result.rows[0]) return null;
     const resolved = await this._resolveServiceNames([result.rows[0]]);
     return resolved[0] || result.rows[0];
+  },
+
+  async update(id, fields, client) {
+    const ALLOWED = [
+      'company_name', 'contact_person', 'mobile_number', 'email', 'website',
+      'city', 'lead_source', 'category', 'sub_category', 'service_interested',
+      'priority', 'estimated_value', 'next_followup_date', 'remarks',
+    ];
+    const setClauses = [];
+    const values = [];
+    let idx = 1;
+
+    for (const [key, val] of Object.entries(fields)) {
+      if (!ALLOWED.includes(key)) continue;
+      let dbVal = val;
+      if (key === 'service_interested') {
+        dbVal = val !== null && val !== undefined ? JSON.stringify(val) : null;
+      }
+      setClauses.push(`"${key}" = $${idx++}`);
+      values.push(dbVal);
+    }
+
+    if (setClauses.length === 0) return null;
+
+    setClauses.push(`"updated_at" = NOW()`);
+    values.push(id);
+
+    const sql = `UPDATE leads SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`;
+    const executor = client ? client.query.bind(client) : query;
+    const result = await executor(sql, values);
+    if (!result.rows[0]) return null;
+    const resolved = await this._resolveServiceNames([result.rows[0]]);
+    return resolved[0] || result.rows[0];
+  },
+
+  async softDelete(id, client) {
+    const executor = client ? client.query.bind(client) : query;
+    const result = await executor(
+      `UPDATE leads SET deleted_at = NOW(), is_deleted = TRUE, updated_at = NOW()
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id, "lead_id"`,
+      [id]
+    );
+    return result.rows[0] || null;
+  },
+
+  async findByMobileForUpdate(mobile, excludeId) {
+    const result = await query(
+      `SELECT id, "lead_id" FROM leads
+       WHERE "mobile_number" = $1 AND id != $2 AND deleted_at IS NULL
+       LIMIT 1`,
+      [mobile, excludeId]
+    );
+    return result.rows[0] || null;
+  },
+
+  async findByEmailForUpdate(email, excludeId) {
+    const result = await query(
+      `SELECT id, "lead_id" FROM leads
+       WHERE email = $1 AND id != $2 AND deleted_at IS NULL
+       LIMIT 1`,
+      [email, excludeId]
+    );
+    return result.rows[0] || null;
   },
 };
 

@@ -1,4 +1,4 @@
-﻿
+
 
 /**
  * ============================================================
@@ -115,7 +115,7 @@ const me2Token = jwt.sign(
 // ΓöÇΓöÇ Shared test fixtures ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const TODAY_ISO  = new Date().toISOString().split("T")[0];   // YYYY-MM-DD
 const PAST_ISO   = "2026-07-01T10:00:00Z";   // overdue date
-const FUTURE_ISO = "2026-07-15T12:00:00Z";   // future date
+const FUTURE_ISO = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();   // future date
 
 const TODAY_LEADS = [
   { id: "lead-uuid-101", lead_id: "LD-2026-00101", company_name: "Hot Industries",

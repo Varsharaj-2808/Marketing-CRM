@@ -89,7 +89,17 @@ exports.createFollowup = async (req, res, next) => {
     }
 
     if (Object.keys(errors).length > 0) {
-      return res.status(400).json({ success: false, message: 'Validation failed', data: { errors } });
+      const errorMsg = Object.values(errors).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: errorMsg,
+        error: errorMsg,
+        body: {
+          error: errorMsg,
+          errors: errors
+        },
+        data: { errors }
+      });
     }
 
     // ΓöÇΓöÇ Lead existence & ownership ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -229,7 +239,10 @@ exports.createFollowup = async (req, res, next) => {
     };
 
     const response = { success: true, message: 'Follow-up recorded', data: responseFollowup };
-    if (leadUpdated) response.data.lead_updated = leadUpdated;
+    if (leadUpdated) {
+      response.lead_updated = leadUpdated;
+      response.data.lead_updated = leadUpdated;
+    }
 
     if (req.user.role === 'Marketing Executive') {
       Notification.notifyAdmins({
