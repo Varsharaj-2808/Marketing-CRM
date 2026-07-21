@@ -6,7 +6,7 @@ exports.getNotifications = async (req, res, next) => {
     const algolia = require('../utils/algoliaService');
     if (algolia && typeof algolia.searchNotifications === 'function') {
       const algoliaResult = await algolia.searchNotifications('', { user_id: req.user.id });
-      if (algoliaResult) {
+      if (algoliaResult && algoliaResult.nbHits > 0) {
         const hits = algoliaResult.hits;
         const unreadCount = hits.filter(n => !n.is_read).length;
         return res.json({ success: true, message: 'Notifications fetched successfully', data: hits, unread_count: unreadCount });
@@ -24,7 +24,7 @@ exports.getNotifications = async (req, res, next) => {
 exports.getNotificationCount = async (req, res, next) => {
   try {
     const count = await Notification.getUnreadCount(req.user.id);
-    res.json(wrapSuccess('Unread count fetched', { unread_count: count }));
+    res.json({ success: true, message: 'Unread count fetched', unread_count: count, data: { unread_count: count } });
   } catch (error) {
     next(error);
   }

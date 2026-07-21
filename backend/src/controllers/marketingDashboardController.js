@@ -203,12 +203,12 @@ exports.getCombinedDashboard = async (req, res, next) => {
       message: 'Combined dashboard fetched successfully',
       data: {
         cards,
-        conversion_rate: { won, lost, rate },
-        meta: {
-          assigned_to: userId,
-          generated_at: new Date().toISOString(),
-        },
+        conversion_rate: { won, lost, rate }
       },
+      meta: {
+        assigned_to: userId,
+        generated_at: new Date().toISOString()
+      }
     });
   } catch (error) {
     next(error);

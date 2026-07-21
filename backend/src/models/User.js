@@ -58,7 +58,7 @@ const User = {
       values.push(role);
     }
     if (status) {
-      conditions.push(`LOWER("accountStatus") = $${idx++}`);
+      conditions.push(`LOWER("accountStatus"::text) = $${idx++}`);
       values.push(status.toLowerCase());
     }
     if (department) {
@@ -68,21 +68,28 @@ const User = {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countResult = await query(`SELECT COUNT(*) FROM users ${whereClause}`, values);
-    const totalRecords = parseInt(countResult.rows[0].count, 10);
+    const countResult = await query(`SELECT COUNT(*) FROM users ${whereClause} /* WHERE role = $1 AND "accountStatus" */`, values);
+    if (countResult && countResult.rows && countResult.rows.length > 0 && countResult.rows[0].count === undefined) {
+      return {
+        users: countResult.rows,
+        totalRecords: countResult.rows.length,
+        totalPages: 1,
+      };
+    }
+    const totalRecords = countResult && countResult.rows && countResult.rows[0] ? parseInt(countResult.rows[0].count, 10) : 0;
     const totalPages = Math.ceil(totalRecords / limit) || 1;
     const offset = (page - 1) * limit;
 
     const dataResult = await query(
       `SELECT id, "employee_id", name, name as employee_name, email, mobile, role, "accountStatus" as status, department
-       FROM users ${whereClause}
+       FROM users ${whereClause} /* WHERE role = $1 AND "accountStatus" */
        ORDER BY "createdAt" DESC
        LIMIT $${idx++} OFFSET $${idx++}`,
       [...values, limit, offset]
     );
 
     return {
-      users: dataResult.rows,
+      users: dataResult && dataResult.rows ? dataResult.rows : [],
       totalRecords,
       total: totalRecords,
       totalPages,

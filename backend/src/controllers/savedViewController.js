@@ -1,4 +1,4 @@
-﻿const SavedView = require('../models/SavedView');
+const SavedView = require('../models/SavedView');
 const AuditLog = require('../models/AuditLog');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
@@ -10,6 +10,12 @@ const getIpAndAgent = (req) => ({
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const validateUuid = (id) => UUID_REGEX.test(id);
+
+const formatErr = (msg, field = null) => {
+  const obj = { success: false, error: msg, message: msg };
+  if (field) obj[field] = msg;
+  return obj;
+};
 
 exports.getSavedViews = async (req, res, next) => {
   try {
@@ -26,18 +32,18 @@ exports.createSavedView = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (name === undefined || name === null) {
-      return res.status(400).json(wrapError('Name is required'));
+      return res.status(400).json(formatErr('Name is required', 'name'));
     }
     if (typeof name !== 'string' || name.trim().length === 0) {
-      return res.status(400).json(wrapError('Name cannot be empty'));
+      return res.status(400).json(formatErr('Name cannot be empty', 'name'));
     }
     if (name.length > 100) {
-      return res.status(400).json(wrapError('Name must be 100 characters or less'));
+      return res.status(400).json(formatErr('Name must be 100 characters or less', 'name'));
     }
 
     const existing = await SavedView.findByNameAndUser(name.trim(), req.user.id);
     if (existing) {
-      return res.status(409).json(wrapError('A saved view with this name already exists'));
+      return res.status(409).json(formatErr('A saved view with this name already exists'));
     }
 
     const savedView = await SavedView.create({
@@ -82,33 +88,33 @@ exports.updateSavedView = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!validateUuid(viewId)) {
-      return res.status(400).json(wrapError('Invalid view ID format'));
+      return res.status(400).json(formatErr('Invalid view ID format'));
     }
 
     if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
-      return res.status(400).json(wrapError('Name cannot be empty'));
+      return res.status(400).json(formatErr('Name cannot be empty', 'name'));
     }
     if (name !== undefined && name.length > 100) {
-      return res.status(400).json(wrapError('Name must be 100 characters or less'));
+      return res.status(400).json(formatErr('Name must be 100 characters or less', 'name'));
     }
 
     if (name === undefined && filters === undefined) {
-      return res.status(400).json(wrapError('At least one field (name or filters) must be provided'));
+      return res.status(400).json(formatErr('At least one field (name or filters) must be provided'));
     }
 
     const existing = await SavedView.findById(viewId);
     if (!existing) {
-      return res.status(404).json(wrapError('Saved view not found'));
+      return res.status(404).json(formatErr('Saved view not found'));
     }
 
     if (existing.created_by !== req.user.id) {
-      return res.status(403).json(wrapError('You do not have permission to modify this saved view'));
+      return res.status(403).json(formatErr('You do not have permission to modify this saved view'));
     }
 
     if (name !== undefined && name.trim() !== existing.name) {
       const duplicate = await SavedView.findByNameAndUser(name.trim(), req.user.id, viewId);
       if (duplicate) {
-        return res.status(409).json(wrapError('A saved view with this name already exists'));
+        return res.status(409).json(formatErr('A saved view with this name already exists'));
       }
     }
 
@@ -157,16 +163,16 @@ exports.deleteSavedView = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!validateUuid(viewId)) {
-      return res.status(400).json(wrapError('Invalid view ID format'));
+      return res.status(400).json(formatErr('Invalid view ID format'));
     }
 
     const existing = await SavedView.findById(viewId);
     if (!existing) {
-      return res.status(404).json(wrapError('Saved view not found'));
+      return res.status(404).json(formatErr('Saved view not found'));
     }
 
     if (existing.created_by !== req.user.id) {
-      return res.status(403).json(wrapError('You do not have permission to delete this saved view'));
+      return res.status(403).json(formatErr('You do not have permission to delete this saved view'));
     }
 
     await SavedView.delete(viewId);
