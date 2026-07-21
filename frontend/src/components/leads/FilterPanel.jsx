@@ -106,6 +106,7 @@ export default function FilterPanel({ filters, isAdmin, onChange, onClear }) {
   };
 
   const ensureSources = () => {
+    console.log("ensure sources");
     if (!sourcesFetched) {
       setSourcesFetched(true);
       loadSources();
