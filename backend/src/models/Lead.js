@@ -108,12 +108,12 @@ const Lead = {
         services = null;
       }
     }
-
+    const jsonServices = services ? JSON.stringify(services) : null;
     const result = await query(
       `INSERT INTO leads ("company_name", "contact_person", "mobile_number", email, website, city, "lead_source", category, "sub_category", "service_interested", priority, "estimated_value", "assigned_to", "lead_id", stage, "lead_status")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'New', NULL)
        RETURNING *`,
-      [company_name, contact_person, mobile_number, email || null, website || null, city || null, cleanLeadSource, cleanCategory, cleanSubCategory, services, priority, estimated_value || null, cleanCreatorId, leadId]
+      [company_name, contact_person, mobile_number, email || null, website || null, city || null, cleanLeadSource, cleanCategory, cleanSubCategory, jsonServices, priority, estimated_value || null, cleanCreatorId, leadId]
     );
     if (!result.rows[0]) return null;
     const resolved = await this._resolveServiceNames([result.rows[0]]);
