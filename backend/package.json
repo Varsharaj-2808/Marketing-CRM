@@ -11,7 +11,8 @@
     "test": "jest --forceExit --detectOpenHandles",
     "lint": "eslint src/",
     "reset-db": "node database/run_reset.js",
-    "reset-algolia": "node scripts/resetAlgoliaIndexes.js"
+    "reset-algolia": "node scripts/resetAlgoliaIndexes.js",
+    "rebuild-algolia": "node scripts/rebuildAlgoliaIndexes.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
