@@ -10,7 +10,8 @@
     "dev": "node --watch src/server.js",
     "test": "jest --forceExit --detectOpenHandles",
     "lint": "eslint src/",
-    "reset-db": "node database/run_reset.js"
+    "reset-db": "node database/run_reset.js",
+    "reset-algolia": "node scripts/resetAlgoliaIndexes.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
