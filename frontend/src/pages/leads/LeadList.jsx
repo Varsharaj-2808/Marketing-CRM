@@ -176,6 +176,16 @@ export default function LeadList() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [toastShow, setToastShow] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.toastMessage) {
+      setToastMessage(location.state.toastMessage);
+      setToastType(location.state.toastType || 'success');
+      setToastShow(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
