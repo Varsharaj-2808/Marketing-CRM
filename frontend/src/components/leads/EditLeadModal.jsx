@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Modal from '../common/Modal';
 import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
@@ -18,6 +18,18 @@ const DEFAULT_SERVICE_OPTIONS = [
   { id: 'Consulting', name: 'Consulting' },
   { id: 'Social Media Management', name: 'Social Media Management' },
 ];
+
+const formatToLocalDatetime = (dateInput) => {
+  if (!dateInput) return '';
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
+};
 
 const MOCK_SUB_CATEGORIES = {
   'cat-001': [
@@ -80,7 +92,20 @@ export default function EditLeadModal({
   onSavePartial,
   saving,
 }) {
-  const [updateType, setUpdateType] = useState('full'); // 'full' (PUT) or 'partial' (PATCH)
+  const formRef = useRef(null);
+
+  const getMinDate = () => {
+    const now = new Date();
+    const nowStr = formatToLocalDatetime(now);
+    if (lead && (lead.nextFollowupDate || lead.next_followup_date)) {
+      const originalDateStr = lead.nextFollowupDate || lead.next_followup_date;
+      const originalLocalStr = formatToLocalDatetime(originalDateStr);
+      if (new Date(originalDateStr) < now) {
+        return originalLocalStr;
+      }
+    }
+    return nowStr;
+  };
 
   const resolveCategoryName = (name) => {
     if (!name) return '';
@@ -313,18 +338,16 @@ export default function EditLeadModal({
 
   const validate = () => {
     const errs = {};
-    if (updateType === 'full' || formData.company_name !== '') {
-      if (!formData.company_name.trim()) errs.company_name = 'Company Name is required';
+    if (!formData.company_name.trim()) {
+      errs.company_name = 'Company Name is required';
     }
-    if (updateType === 'full' || formData.contact_person !== '') {
-      if (!formData.contact_person.trim()) errs.contact_person = 'Contact Person is required';
+    if (!formData.contact_person.trim()) {
+      errs.contact_person = 'Contact Person is required';
     }
-    if (updateType === 'full' || formData.mobile_number !== '') {
-      if (!formData.mobile_number.trim()) {
-        errs.mobile_number = 'Mobile Number is required';
-      } else if (!/^\d{10}$/.test(formData.mobile_number.trim())) {
-        errs.mobile_number = 'Mobile Number must be exactly 10 numeric digits';
-      }
+    if (!formData.mobile_number.trim()) {
+      errs.mobile_number = 'Mobile Number is required';
+    } else if (!/^\d{10}$/.test(formData.mobile_number.trim())) {
+      errs.mobile_number = 'Mobile Number must be exactly 10 numeric digits';
     }
     if (formData.email && formData.email.trim() && !EMAIL_REGEX.test(formData.email.trim())) {
       errs.email = 'Invalid email format';
@@ -339,7 +362,14 @@ export default function EditLeadModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
-    if (!validate()) return;
+    if (!validate()) {
+      setTimeout(() => {
+        if (formRef.current) {
+          formRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
+      return;
+    }
 
     try {
       const payload = { ...formData };
@@ -352,11 +382,7 @@ export default function EditLeadModal({
         payload.estimated_value = null;
       }
 
-      if (updateType === 'full') {
-        await onSaveFull(payload);
-      } else {
-        await onSavePartial(payload);
-      }
+      await onSaveFull(payload);
     } catch (err) {
       const fieldErrors = err?.payload?.errors || err?.response?.data?.errors;
       const msg = err?.payload?.message || err?.message || 'Failed to update lead';
@@ -366,6 +392,11 @@ export default function EditLeadModal({
       } else {
         setServerError(msg);
       }
+      setTimeout(() => {
+        if (formRef.current) {
+          formRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
     }
   };
 
@@ -389,32 +420,11 @@ export default function EditLeadModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Lead Details">
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-        {/* Segmented Control / Update Mode Switcher */}
-        <div className="flex items-center p-1 bg-surface-container-low rounded-xl border border-outline-variant/20 mb-4">
-          <button
-            type="button"
-            onClick={() => setUpdateType('full')}
-            className={`flex-1 py-1.5 px-3 text-label-md font-label-md rounded-lg transition-all ${
-              updateType === 'full'
-                ? 'bg-primary text-white shadow-sm font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            Full Update
-          </button>
-          <button
-            type="button"
-            onClick={() => setUpdateType('partial')}
-            className={`flex-1 py-1.5 px-3 text-label-md font-label-md rounded-lg transition-all ${
-              updateType === 'partial'
-                ? 'bg-primary text-white shadow-sm font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            Quick Edit
-          </button>
-        </div>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="space-y-4 max-h-[75vh] overflow-y-auto pr-1"
+      >
 
         {serverError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-error">
@@ -430,7 +440,7 @@ export default function EditLeadModal({
             value={formData.company_name}
             onChange={handleChange}
             error={errors.company_name}
-            required={updateType === 'full'}
+            required={true}
           />
           <InputField
             label="Contact Person"
@@ -438,7 +448,7 @@ export default function EditLeadModal({
             value={formData.contact_person}
             onChange={handleChange}
             error={errors.contact_person}
-            required={updateType === 'full'}
+            required={true}
           />
           <InputField
             label="Mobile Number"
@@ -446,7 +456,7 @@ export default function EditLeadModal({
             value={formData.mobile_number}
             onChange={handleChange}
             error={errors.mobile_number}
-            required={updateType === 'full'}
+            required={true}
           />
           <InputField
             label="Email"
@@ -520,7 +530,8 @@ export default function EditLeadModal({
             label="Next Follow-up Date"
             name="next_followup_date"
             type="datetime-local"
-            value={formData.next_followup_date ? new Date(formData.next_followup_date).toISOString().slice(0, 16) : ''}
+            value={formatToLocalDatetime(formData.next_followup_date)}
+            min={getMinDate()}
             onChange={handleChange}
             error={errors.next_followup_date}
           />
