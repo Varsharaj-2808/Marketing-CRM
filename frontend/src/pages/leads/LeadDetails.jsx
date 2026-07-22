@@ -394,8 +394,9 @@ export default function LeadDetails() {
     try {
       const res = await deleteAdminLead(leadId);
       setDeleteModalOpen(false);
-      showToast(res?.message || 'Lead deleted successfully');
-      navigate(isAdminRoute ? '/admin/leads' : '/marketing/leads');
+      navigate(isAdminRoute ? '/admin/leads' : '/marketing/leads', {
+        state: { toastMessage: res?.message || 'Lead deleted successfully', toastType: 'success' }
+      });
     } catch (err) {
       throw err;
     } finally {
