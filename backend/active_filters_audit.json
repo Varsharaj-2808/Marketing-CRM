@@ -1,6 +1,6 @@
 {
   "actor": "",
-  "action_type": "",
+  "action_type": "lead.status_changed'; DROP TABLE audit_logs; --",
   "entity": "",
   "from": "",
   "to": ""
