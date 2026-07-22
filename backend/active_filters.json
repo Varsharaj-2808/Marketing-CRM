@@ -98,8 +98,10 @@
     "timestamp": 1784619408094
   },
   "741106e9-f51a-4912-9d8f-73022e638b7b:20c02232-c47c-4c78-8b67-36cafb9d437f": {
-    "filters": {},
-    "timestamp": 1784627744565
+    "filters": {
+      "fieldName": "lead_created"
+    },
+    "timestamp": 1784634731675
   },
   "741106e9-f51a-4912-9d8f-73022e638b7b:0420a43f-ba02-43c1-8c9a-d213d5f27a44": {
     "filters": {},
