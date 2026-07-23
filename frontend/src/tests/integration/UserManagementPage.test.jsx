@@ -229,6 +229,19 @@ describe('UserManagementPage — STORY-1.2.1 Create User (Negative)', () => {
     expect(options).toContain('Marketing Executive');
   });
 
+  it('TEST-EP1-USER-018: shows validation error for mobile number not being exactly 10 digits', async () => {
+    await renderUserManagement();
+    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
+    await waitFor(() => screen.getByLabelText(/employee name/i));
+    fireEvent.change(screen.getByLabelText(/employee name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/mobile number/i), { target: { value: '9854624' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@company.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/mobile number must be exactly 10 digits/i)).toBeInTheDocument();
+    });
+  });
 
 });
 

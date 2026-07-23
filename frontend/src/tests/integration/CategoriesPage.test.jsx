@@ -476,6 +476,53 @@ describe('CategoriesPage — TASK-3.1.1-05 (Delete/Deactivate)', () => {
     const options = Array.from(select.options).map(o => o.value);
     expect(options).not.toContain('cat-004');
   });
+
+  it('FE-TC-3.1.1-16: Reject purely numeric Category name', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('IT Services')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Add Category'));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Enter category name')).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByPlaceholderText('Enter category name');
+    fireEvent.change(nameInput, { target: { value: '1234567' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Category name cannot be purely numeric')).toBeInTheDocument();
+    });
+  });
+
+  it('FE-TC-3.1.1-17: Reject purely numeric Sub-Category name', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Digital Marketing')).toBeInTheDocument();
+    });
+
+    const addSubButtons = screen.getAllByText('Add Sub');
+    const dmBtn = addSubButtons.find(b => b.closest('tr')?.textContent?.includes('Digital Marketing'));
+    expect(dmBtn).toBeTruthy();
+    fireEvent.click(dmBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Sub-Category')).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByPlaceholderText('Enter sub-category name');
+    fireEvent.change(nameInput, { target: { value: '98765' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Sub-category name cannot be purely numeric')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('CategoriesPage — TASK-3.1.1-06 (Audit Log)', () => {
