@@ -70,14 +70,14 @@ async function recoverAndReindex() {
 
     // 1. Users
     try {
-      const userRes = await query(`SELECT id, "employee_id", name, email, mobile, role, "accountStatus" as status, department, designation, "createdAt", "updatedAt" FROM users`);
+      const userRes = await query(`SELECT id, "employee_id", name, email, mobile, role, "accountStatus" as status, department, "createdAt", "updatedAt" FROM users`);
       const users = userRes.rows;
       if (users.length > 0) {
         const cli = getWriteClient();
         const objects = users.map(u => ({
           objectID: u.id, id: u.id, employee_id: u.employee_id,
           name: u.name, employee_name: u.name, email: u.email, mobile: u.mobile,
-          role: u.role, status: u.status, department: u.department, designation: u.designation,
+          role: u.role, status: u.status, department: u.department, designation: u.designation || null,
           createdAt: u.createdAt, updatedAt: u.updatedAt,
         }));
         await cli.saveObjects({ indexName: USERS_INDEX, objects });
@@ -264,7 +264,7 @@ async function recoverAndReindex() {
       const auditRes = await query(
         `SELECT a.*, u.name as actor_name, u.role as actor_role
          FROM audit_logs a
-         LEFT JOIN users u ON a."userId" = u.id`
+         LEFT JOIN users u ON a.user_id = u.id`
       );
       const logs = auditRes.rows;
       if (logs.length > 0) {
@@ -273,7 +273,7 @@ async function recoverAndReindex() {
           const createdAtVal = log.created_at || log.createdAt;
           return {
             objectID: log.id, id: log.id,
-            userId: log.userId, email: log.email, action: log.action,
+            userId: log.user_id || log.userId, email: log.email, action: log.action,
             resource: log.resource, resourceId: log.resourceId,
             entity_name: log.entity_name || log.resourceId || '',
             details: log.details, ipAddress: log.ipAddress,
