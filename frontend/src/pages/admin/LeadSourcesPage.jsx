@@ -85,6 +85,10 @@ export default function LeadSourcesPage() {
       setFormError('Name is required');
       return;
     }
+    if (/^\d+$/.test(formName.trim())) {
+      setFormError('Lead source name cannot be purely numeric');
+      return;
+    }
     setSaving(true);
     try {
       if (editingSource) {

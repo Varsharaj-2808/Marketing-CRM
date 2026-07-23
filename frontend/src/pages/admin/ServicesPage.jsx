@@ -85,6 +85,10 @@ export default function ServicesPage() {
       setFormError('Name is required');
       return;
     }
+    if (/^\d+$/.test(formName.trim())) {
+      setFormError('Service name cannot be purely numeric');
+      return;
+    }
     setSaving(true);
     try {
       if (editingService) {
