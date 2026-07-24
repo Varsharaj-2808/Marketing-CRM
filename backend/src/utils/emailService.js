@@ -255,4 +255,45 @@ const sendBulkLeadAssignedEmail = async (to, recipientName, leads, assignedByNam
   return sendEmail({ to, subject, text, html });
 };
 
-module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail, sendAdminLeadCreatedEmail, isValidEmail, cleanEmail };
+const sendLeadReassignedEmail = async (to, oldAssigneeName, leadName, leadId, newAssigneeName) => {
+  const subject = `Lead Reassigned`;
+  const text = [
+    `Hello ${oldAssigneeName},`,
+    ``,
+    `The following lead has been reassigned from your account.`,
+    ``,
+    `Lead Name: ${leadName}`,
+    `Lead ID: ${leadId}`,
+    ``,
+    `New Assignee:`,
+    `${newAssigneeName}`,
+    ``,
+    `This lead will no longer appear in your assigned leads.`,
+    ``,
+    `Regards,`,
+    `CRM Team`,
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
+      <h2 style="color:#1e3a5f;margin-bottom:8px;">Lead Reassigned</h2>
+      <p style="color:#374151;">Hello <strong>${oldAssigneeName}</strong>,</p>
+      <p style="color:#374151;">The following lead has been reassigned from your account.</p>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:16px 0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:6px 0;color:#6b7280;width:120px;">Lead Name</td><td style="padding:6px 0;color:#111827;font-weight:600;">${leadName}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">Lead ID</td><td style="padding:6px 0;color:#111827;">${leadId}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;">New Assignee</td><td style="padding:6px 0;color:#111827;">${newAssigneeName}</td></tr>
+        </table>
+      </div>
+      <p style="color:#374151;">This lead will no longer appear in your assigned leads.</p>
+      <br>
+      <p style="color:#374151;">Regards,<br>CRM Team</p>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">CRM System - This is an automated notification.</p>
+    </div>
+  `;
+
+  return sendEmail({ to, subject, text, html });
+};
+
+module.exports = { sendEmail, sendPasswordResetEmail, sendWelcomeEmail, sendDailyReminderEmail, sendLeadAssignedEmail, sendBulkLeadAssignedEmail, sendAdminLeadCreatedEmail, sendLeadReassignedEmail, isValidEmail, cleanEmail };
