@@ -3,12 +3,12 @@ const { sendAdminLeadCreatedEmail } = require('../utils/emailService');
 
 const Notification = {
   async create(data) {
-    const { userId, notificationType, leadId, message } = data;
+    const { userId, notificationType, leadId, message, metadata } = data;
     const result = await query(
-      `INSERT INTO notifications ("user_id", "notification_type", "lead_id", message)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO notifications ("user_id", "notification_type", "lead_id", message, metadata)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [userId, notificationType || 'lead_assigned', leadId || null, message]
+      [userId, notificationType || 'lead_assigned', leadId || null, message, metadata ? JSON.stringify(metadata) : null]
     );
     const createdNotification = result.rows[0];
     if (createdNotification) {
@@ -26,11 +26,22 @@ const Notification = {
 
   async findByUser(userId) {
     const result = await query(
-      `SELECT n.*, l.lead_id as lead_business_id, l.company_name
-       FROM notifications n
-       LEFT JOIN leads l ON n.lead_id = l.id
-       WHERE n.user_id = $1
-       ORDER BY n.created_at DESC`,
+      `SELECT * FROM (
+         SELECT n.*, l.lead_id as lead_business_id, l.company_name
+         FROM notifications n
+         LEFT JOIN leads l ON n.lead_id = l.id
+         WHERE n.user_id = $1 AND n.is_read = false
+         
+         UNION
+         
+         (SELECT n.*, l.lead_id as lead_business_id, l.company_name
+         FROM notifications n
+         LEFT JOIN leads l ON n.lead_id = l.id
+         WHERE n.user_id = $1 AND n.is_read = true
+         ORDER BY n.created_at DESC
+         LIMIT 30)
+       ) as combined
+       ORDER BY created_at DESC`,
       [userId]
     );
     return result.rows;

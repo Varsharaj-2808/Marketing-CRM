@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   "lead_id"          UUID REFERENCES leads(id) ON DELETE SET NULL,
   message            TEXT NOT NULL,
   is_read            BOOLEAN DEFAULT FALSE,
+  metadata           JSONB,
   created_at         TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

@@ -5,7 +5,7 @@ const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
 const { query, getClient } = require('../config/db');
 const algolia = require('../utils/algoliaService');
-const { sendLeadAssignedEmail } = require('../utils/emailService');
+const { sendLeadAssignedEmail, sendLeadReassignedEmail } = require('../utils/emailService');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 
 const getIpAndAgent = (req) => ({
@@ -94,10 +94,14 @@ exports.assignLead = async (req, res, next) => {
       return res.status(400).json(reasonError);
     }
 
+    let previousOwner = null;
     let previousOwnerEmployeeId = null;
     if (lead.assigned_to) {
-      const prevResult = await query('SELECT employee_id FROM users WHERE id = $1', [lead.assigned_to]);
-      previousOwnerEmployeeId = prevResult.rows[0]?.employee_id || null;
+      const prevResult = await query('SELECT id, employee_id, name, email FROM users WHERE id = $1', [lead.assigned_to]);
+      if (prevResult.rows.length > 0) {
+        previousOwner = prevResult.rows[0];
+        previousOwnerEmployeeId = previousOwner.employee_id;
+      }
     }
 
     client = await getClient();
@@ -167,6 +171,42 @@ exports.assignLead = async (req, res, next) => {
 
     if (algolia && typeof algolia.saveLead === 'function') {
       await algolia.saveLead(finalLead).catch(err => console.error('[assignLead] Algolia indexing skipped:', err.message));
+    }
+
+    // Send reassignment notification and email to previous owner
+    if (previousOwner && previousOwner.id !== targetUser.id) {
+      try {
+        const metadata = {
+          lead_id: updatedLead.lead_id,
+          lead_name: updatedLead.company_name,
+          old_assignee_id: previousOwner.id,
+          old_assignee_name: previousOwner.name || previousOwner.email || '',
+          new_assignee_id: targetUser.id,
+          new_assignee_name: targetUser.name || targetUser.email || ''
+        };
+
+        const reassignedMessage = `The lead "${updatedLead.company_name}" (Lead ID: ${updatedLead.lead_id}) has been reassigned from you to ${targetUser.name || targetUser.email || targetUser.employee_id}.`;
+
+        await Notification.create({
+          userId: previousOwner.id,
+          notificationType: 'LEAD_REASSIGNED',
+          leadId: id,
+          message: reassignedMessage,
+          metadata
+        });
+      } catch (notifError) {
+        console.error('Reassignment notification creation failed (non-blocking):', notifError.message);
+      }
+
+      if (previousOwner.email && typeof sendLeadReassignedEmail === 'function') {
+        sendLeadReassignedEmail(
+          previousOwner.email,
+          previousOwner.name || previousOwner.email,
+          updatedLead.company_name,
+          updatedLead.lead_id,
+          targetUser.name || targetUser.email || targetUser.employee_id
+        ).catch(err => console.error('[assignLead] Reassignment email skipped:', err.message));
+      }
     }
 
     res.json({
