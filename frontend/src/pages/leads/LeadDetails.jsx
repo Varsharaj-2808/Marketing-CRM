@@ -4,6 +4,9 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   fetchLeadById,
   fetchAdminLeadById,
+  updateAdminLeadFull,
+  updateAdminLeadPartial,
+  deleteAdminLead,
   fetchLeadHistory,
   assignLead,
   updateLeadStage,
@@ -20,6 +23,8 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Toast from '../../components/common/Toast';
 import AssignLeadModal from '../../components/leads/AssignLeadModal';
+import EditLeadModal from '../../components/leads/EditLeadModal';
+import DeleteLeadModal from '../../components/leads/DeleteLeadModal';
 import StageControl from '../../components/leads/StageControl';
 import LostClosureModal from '../../components/leads/LostClosureModal';
 import WonClosureModal from '../../components/leads/WonClosureModal';
@@ -38,6 +43,23 @@ const TIMELINE_INITIAL_COUNT = 20;
 const TIMELINE_LOAD_MORE_COUNT = 20;
 const SUBMIT_TIMEOUT_MS = 10000;
 
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(dateStr);
+  }
+}
+
 function normalizeLeadDetail(leadData) {
   if (!leadData) return null;
   const progressStages = ['New', 'Contacted', 'Qualified', 'Meeting', 'Proposal', 'Negotiation', 'Closed', 'New Lead'];
@@ -53,15 +75,36 @@ function normalizeLeadDetail(leadData) {
   if (stage === 'New Lead') {
     stage = 'New';
   }
+
+  const rawServices = leadData.servicesInterested ?? leadData.services_interested ?? leadData.service_interested ?? [];
+  let servicesInterested = [];
+  if (Array.isArray(rawServices)) {
+    servicesInterested = rawServices;
+  } else if (typeof rawServices === 'string') {
+    try {
+      const parsed = JSON.parse(rawServices);
+      if (Array.isArray(parsed)) servicesInterested = parsed;
+      else servicesInterested = [rawServices];
+    } catch {
+      servicesInterested = rawServices.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
   
   return {
     ...leadData,
     status,
     stage: stage || 'New',
-    servicesInterested: leadData.servicesInterested || leadData.services_interested || [],
+    servicesInterested,
     assignedTo: leadData.assignedTo ?? leadData.assigned_to ?? null,
-    categoryName: leadData.category_name || leadData.category || null,
-    subCategoryName: leadData.sub_category_name || leadData.subCategory || leadData.sub_category || null,
+    categoryName: leadData.category_name || leadData.categoryName || leadData.category || null,
+    subCategoryName: leadData.sub_category_name || leadData.subCategoryName || leadData.subCategory || leadData.sub_category || null,
+    nextFollowupDate: leadData.next_followup_date || leadData.nextFollowupDate || null,
+    createdAt: leadData.created_at || leadData.createdAt || null,
+    updatedAt: leadData.updated_at || leadData.updatedAt || null,
+    finalDealValue: leadData.final_deal_value ?? leadData.finalDealValue ?? null,
+    outcome: leadData.outcome || leadData.closure_reason || leadData.outcome_reason || null,
+    closureDate: leadData.closure_date || leadData.closureDate || null,
+    remarks: leadData.remarks || leadData.notes || null,
   };
 }
 
@@ -89,6 +132,10 @@ export default function LeadDetails() {
 
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [updatingLead, setUpdatingLead] = useState(false);
+  const [deletingLead, setDeletingLead] = useState(false);
   const [stageLoading, setStageLoading] = useState(false);
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [wonModalOpen, setWonModalOpen] = useState(false);
@@ -256,13 +303,40 @@ export default function LeadDetails() {
   }, []);
 
   const isLeadOwner = useCallback(() => {
-    if (!lead) return false;
-    const assignedTo = lead.assignedTo || lead.assigned_to || lead.assignedToId || '';
-    if (typeof assignedTo === 'object') {
-      return assignedTo.id === currentUserId || assignedTo.employee_id === currentUserId;
+    if (!lead || !user) return false;
+    const assigned = lead.assignedTo || lead.assigned_to || lead.assignedToId || '';
+    if (!assigned) return false;
+
+    const userId = user.id || user._id || '';
+    const empId = user.employee_id || user.employeeId || '';
+    const userName = user.name || user.employee_name || '';
+    const userEmail = user.email || '';
+
+    if (typeof assigned === 'object') {
+      const aId = assigned.id || assigned._id || '';
+      const aEmpId = assigned.employee_id || assigned.employeeId || '';
+      const aName = assigned.name || assigned.employee_name || '';
+      const aEmail = assigned.email || '';
+
+      if (userId && (aId === userId || aEmpId === userId)) return true;
+      if (empId && (aId === empId || aEmpId === empId)) return true;
+      if (userName && aName && aName.toLowerCase() === userName.toLowerCase()) return true;
+      if (userEmail && aEmail && aEmail.toLowerCase() === userEmail.toLowerCase()) return true;
+      return false;
     }
-    return assignedTo === currentUserId;
-  }, [lead, currentUserId]);
+
+    const strAssigned = String(assigned).trim();
+    if (!strAssigned) return false;
+
+    if (userId && strAssigned === String(userId)) return true;
+    if (empId && strAssigned === String(empId)) return true;
+    if (empId && strAssigned.includes(String(empId))) return true;
+    if (userId && strAssigned.includes(String(userId))) return true;
+    if (userName && strAssigned.toLowerCase().includes(userName.toLowerCase())) return true;
+    if (userEmail && strAssigned.toLowerCase() === userEmail.toLowerCase()) return true;
+
+    return false;
+  }, [lead, user]);
 
   const canLogFollowUp = !isReadOnly && (isLeadOwner() || isAdmin) && !(lead?.status === 'Won' || lead?.status === 'Lost' || lead?.stage === 'Closed' || lead?.stage === 'Won' || lead?.stage === 'Lost');
 
@@ -284,6 +358,49 @@ export default function LeadDetails() {
       }
     } finally {
       setAssigning(false);
+    }
+  }
+
+  async function handleSaveFullLead(data) {
+    setUpdatingLead(true);
+    try {
+      const res = await updateAdminLeadFull(leadId, data);
+      setEditModalOpen(false);
+      showToast(res?.message || 'Lead updated successfully');
+      loadLeadData(true);
+    } catch (err) {
+      throw err;
+    } finally {
+      setUpdatingLead(false);
+    }
+  }
+
+  async function handleSavePartialLead(data) {
+    setUpdatingLead(true);
+    try {
+      const res = await updateAdminLeadPartial(leadId, data);
+      setEditModalOpen(false);
+      showToast(res?.message || 'Lead updated successfully');
+      loadLeadData(true);
+    } catch (err) {
+      throw err;
+    } finally {
+      setUpdatingLead(false);
+    }
+  }
+
+  async function handleDeleteLead() {
+    setDeletingLead(true);
+    try {
+      const res = await deleteAdminLead(leadId);
+      setDeleteModalOpen(false);
+      navigate(isAdminRoute ? '/admin/leads' : '/marketing/leads', {
+        state: { toastMessage: res?.message || 'Lead deleted successfully', toastType: 'success' }
+      });
+    } catch (err) {
+      throw err;
+    } finally {
+      setDeletingLead(false);
     }
   }
 
@@ -470,11 +587,17 @@ export default function LeadDetails() {
   const leadStatus = getLeadField(lead, ['lead_status', 'status'], 'New');
   const leadPriority = getLeadField(lead, ['priority'], '-');
   const leadStage = getLeadField(lead, ['stage'], 'New');
-  const servicesInterested = Array.isArray(lead?.servicesInterested)
+  const servicesInterested = Array.isArray(lead?.servicesInterested) && lead.servicesInterested.length > 0
     ? lead.servicesInterested
-    : Array.isArray(lead?.services_interested)
+    : Array.isArray(lead?.services_interested) && lead.services_interested.length > 0
       ? lead.services_interested
-      : [];
+      : Array.isArray(lead?.service_interested) && lead.service_interested.length > 0
+        ? lead.service_interested
+        : typeof lead?.service_interested === 'string'
+          ? [lead.service_interested]
+          : typeof lead?.services_interested === 'string'
+            ? [lead.services_interested]
+            : [];
 
   const assignedToName = getLeadField(lead, ['assigned_to_name', 'assignedToName'], '');
   const assignedEmployeeId = getLeadField(lead, ['assigned_employee_id', 'assignedEmployeeId'], '');
@@ -550,14 +673,32 @@ export default function LeadDetails() {
                 {leadStatus}
               </Badge>
               {isAdmin && (
-                <button
-                  onClick={() => setAssignModalOpen(true)}
-                  aria-label={assignedToDisplay === 'Unassigned' ? 'Assign lead' : 'Reassign lead'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white font-label-sm text-label-sm hover:bg-primary/90 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">swap_horiz</span>
-                  {assignedToDisplay === 'Unassigned' ? 'Assign' : 'Reassign'}
-                </button>
+                <>
+                  <button
+                    onClick={() => setAssignModalOpen(true)}
+                    aria-label={assignedToDisplay === 'Unassigned' ? 'Assign lead' : 'Reassign lead'}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white font-label-sm text-label-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]" aria-hidden="true">swap_horiz</span>
+                    {assignedToDisplay === 'Unassigned' ? 'Assign' : 'Reassign'}
+                  </button>
+                  <button
+                    onClick={() => setEditModalOpen(true)}
+                    aria-label="Edit lead"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-outline-variant/30 text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]" aria-hidden="true">edit</span>
+                    Edit Lead
+                  </button>
+                  <button
+                    onClick={() => setDeleteModalOpen(true)}
+                    aria-label="Delete lead"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 text-error font-label-sm text-label-sm hover:bg-red-50 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
+                    Delete Lead
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -648,10 +789,46 @@ export default function LeadDetails() {
               <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Assigned To</p>
               <p className="font-body-md text-body-md text-on-surface">{assignedToDisplay}</p>
             </div>
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+              <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Next Follow-up</p>
+              <p className="font-body-md text-body-md text-on-surface">
+                {lead?.next_followup_date || lead?.nextFollowupDate ? formatDate(lead.next_followup_date || lead.nextFollowupDate) : '-'}
+              </p>
+            </div>
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+              <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Created Date</p>
+              <p className="font-body-md text-body-md text-on-surface">
+                {lead?.created_at || lead?.createdAt ? formatDate(lead.created_at || lead.createdAt) : '-'}
+              </p>
+            </div>
             {assignedAtVal && (
               <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Assigned At</p>
-                <p className="font-body-md text-body-md text-on-surface">{/* format assignedAtVal inline */}{assignedAtVal}</p>
+                <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Assigned At / Updated At</p>
+                <p className="font-body-md text-body-md text-on-surface">{formatDate(assignedAtVal)}</p>
+              </div>
+            )}
+            {((lead?.final_deal_value !== undefined && lead?.final_deal_value !== null) || (lead?.finalDealValue !== undefined && lead?.finalDealValue !== null)) && (
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Final Deal Value</p>
+                <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['final_deal_value', 'finalDealValue'], '-')}</p>
+              </div>
+            )}
+            {(lead?.outcome || lead?.closure_reason) && (
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Outcome / Reason</p>
+                <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['outcome', 'closure_reason'], '-')}</p>
+              </div>
+            )}
+            {(lead?.closure_date || lead?.closureDate) && (
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Closure Date</p>
+                <p className="font-body-md text-body-md text-on-surface">{formatDate(lead.closure_date || lead.closureDate)}</p>
+              </div>
+            )}
+            {(lead?.remarks || lead?.notes) && (
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 md:col-span-2">
+                <p className="text-label-sm font-label-sm text-on-surface-variant mb-1">Remarks</p>
+                <p className="font-body-md text-body-md text-on-surface">{getLeadField(lead, ['remarks', 'notes'], '-')}</p>
               </div>
             )}
           </div>
@@ -809,6 +986,24 @@ export default function LeadDetails() {
         lead={lead}
         onAssign={handleAssign}
         assigning={assigning}
+      />
+
+      <EditLeadModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        lead={lead}
+        onSaveFull={handleSaveFullLead}
+        onSavePartial={handleSavePartialLead}
+        saving={updatingLead}
+      />
+
+      <DeleteLeadModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        leadId={leadId}
+        leadDisplayId={getLeadField(lead, ['leadId', 'lead_id', 'id'], `LD-${leadId}`)}
+        onConfirm={handleDeleteLead}
+        deleting={deletingLead}
       />
 
       <LostClosureModal

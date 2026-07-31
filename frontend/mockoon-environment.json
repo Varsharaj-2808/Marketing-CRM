@@ -6,13 +6,7 @@
   "latency": 0,
   "port": 3001,
   "hostname": "",
-  "folders": [
-    {
-      "uuid": "efaca4dd-480f-4518-8b79-192ff3840804",
-      "name": "New folder",
-      "children": []
-    }
-  ],
+  "folders": [],
   "routes": [
     {
       "uuid": "f0000001-0000-0000-0000-000000000001",
@@ -84,7 +78,7 @@
           "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "default": false,
+          "default": true,
           "crudKey": "id",
           "callbacks": []
         },
@@ -137,7 +131,7 @@
           "rulesOperator": "AND",
           "disableTemplating": false,
           "fallbackTo404": false,
-          "default": true,
+          "default": false,
           "crudKey": "id",
           "callbacks": []
         }
@@ -12389,6 +12383,665 @@
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
+    },
+    {
+      "uuid": "065f7d78-5191-4596-b455-ddd99687fd32",
+      "documentation": "Fetch lead by ID (Excel)",
+      "method": "get",
+      "endpoint": "/admin/leads/:id",
+      "responses": [
+        {
+          "uuid": "3e4fd796-8947-4fa7-9730-05a3e86665e0",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Validate UUID -> Fetch lead -> Check not soft-deleted -> Check ownership -> Resolve service names -> Return lead data",
+          "default": true,
+          "body": "{\"success\":true,\"message\":\"Lead fetched successfully\",\"data\":{\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"lead_id\":\"LD-2026-00001\",\"company_name\":\"Acme Corp\",\"contact_person\":\"John Doe\",\"mobile_number\":\"9876543210\",\"email\":\"john@acme.com\",\"website\":\"https://acme.com\",\"city\":\"Mumbai\",\"lead_source\":\"Website\",\"category\":null,\"sub_category\":null,\"category_name\":\"Technology\",\"sub_category_name\":\"Software\",\"service_interested\":[\"Web Development\",\"SEO\"],\"priority\":\"Hot\",\"estimated_value\":500000,\"assigned_to\":\"EMP001\",\"stage\":\"Contacted\",\"next_followup_date\":\"2026-07-25T10:00:00.000Z\",\"final_deal_value\":null,\"outcome\":null,\"remarks\":null,\"closure_date\":null,\"status\":\"Active\",\"created_at\":\"2026-07-01T08:30:00.000Z\",\"updated_at\":\"2026-07-15T12:00:00.000Z\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "868b0cb8-291e-492a-a7b3-5c4f7634a83a",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid UUID format -> Reject before DB call",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Invalid lead ID format\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "not-a-uuid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "78b75e71-21c3-4945-9261-fb73fcae87a5",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Lead not found or soft-deleted -> Return 404",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Lead not found\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "550e8400-e29b-41d4-a716-446655440099",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        }
+      ],
+      "type": "http",
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "1e254d91-4022-4c40-bc74-9b15800f6cd2",
+      "documentation": "Full update lead by ID (Excel)",
+      "method": "put",
+      "endpoint": "/admin/leads/:id",
+      "responses": [
+        {
+          "uuid": "3290d162-84f9-424c-85ee-f24458741a02",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Validate UUID -> Fetch lead -> Check not closed -> Validate all fields -> Check mobile dup -> Check email dup -> Begin tx -> Update lead -> Log history -> Log audit -> Commit -> Reindex Algolia -> Return updated lead",
+          "default": true,
+          "body": "{\"success\":true,\"message\":\"Lead updated successfully\",\"data\":{\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"lead_id\":\"LD-2026-00001\",\"company_name\":\"Acme Corp Updated\",\"contact_person\":\"John Doe\",\"mobile_number\":\"9876543210\",\"email\":\"admin@acme.com\",\"website\":\"https://acme.com\",\"city\":\"Mumbai\",\"lead_source\":\"Website\",\"category\":\"uuid-here\",\"sub_category\":\"uuid-here\",\"category_name\":\"Technology\",\"sub_category_name\":\"Software\",\"service_interested\":[\"Web Development\",\"SEO\"],\"priority\":\"Hot\",\"estimated_value\":750000,\"assigned_to\":\"EMP001\",\"stage\":\"Contacted\",\"next_followup_date\":\"2026-08-01T10:00:00.000Z\",\"final_deal_value\":null,\"outcome\":null,\"remarks\":\"Follow up next week\",\"closure_date\":null,\"status\":\"Active\",\"created_at\":\"2026-07-01T08:30:00.000Z\",\"updated_at\":\"2026-07-20T06:26:28.724Z\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "f826d940-2292-4f0a-8f7c-619c1f70cba4",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid UUID format -> Reject before DB call",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Invalid lead ID format\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "not-a-uuid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "f52ad26a-87ac-4fd7-ad13-a42696ff4486",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Validation fails -> Return field-level errors",
+          "default": false,
+          "body": "{\"success\":false,\"errors\":{\"company_name\":\"Company Name is required\",\"mobile_number\":\"Mobile Number must be exactly 10 numeric digits\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "company_name",
+              "value": "",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "eca9484f-2817-4991-b094-bbc62f76b70c",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid priority value -> Reject",
+          "default": false,
+          "body": "{\"success\":false,\"errors\":{\"priority\":\"Priority must be one of: Hot, Warm, Cold\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "priority",
+              "value": "Urgent",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "f36f5059-0ccf-43a1-b81c-26e5b2c68003",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Lead is closed (Won/Lost/Closed) -> Reject edit",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Cannot edit a closed lead. Contact Admin to reopen.\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "4fd11713-e83b-4ce5-9459-d8a0514e8b97",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Lead not found or soft-deleted -> Return 404",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Lead not found\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "550e8400-e29b-41d4-a716-446655440099",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "cece8e61-c2d3-46a3-a2eb-a047db463061",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Mobile belongs to another active lead -> Reject with conflict",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"A lead with this mobile number already exists (LD-2025-00042)\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "f1bd452f-9e71-43d9-9ae2-7535b5815858",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Email belongs to another active lead -> Reject with conflict",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"A lead with this email already exists (LD-2025-00099)\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "email",
+              "value": "dup@test.com",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        }
+      ],
+      "type": "http",
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "54005e90-710a-4fce-92dc-7fe61b041d69",
+      "documentation": "Partial update lead by ID (Excel)",
+      "method": "patch",
+      "endpoint": "/admin/leads/:id",
+      "responses": [
+        {
+          "uuid": "a5bde865-479e-4e4f-b0a4-3d247c3dbc13",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Partial update success (priority + city) -> Validate -> Diff -> Update changed fields -> Log history -> Log audit -> Reindex Algolia -> Return updated lead",
+          "default": true,
+          "body": "{\"success\":true,\"message\":\"Lead updated successfully\",\"data\":{\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"lead_id\":\"LD-2026-00001\",\"company_name\":\"Acme Corp\",\"contact_person\":\"John Doe\",\"mobile_number\":\"9876543210\",\"email\":\"john@acme.com\",\"website\":\"https://acme.com\",\"city\":\"Bangalore\",\"lead_source\":\"Website\",\"category\":null,\"sub_category\":null,\"category_name\":\"Technology\",\"sub_category_name\":\"Software\",\"service_interested\":[\"Web Development\",\"SEO\"],\"priority\":\"Cold\",\"estimated_value\":500000,\"assigned_to\":\"EMP001\",\"stage\":\"Contacted\",\"next_followup_date\":\"2026-07-25T10:00:00.000Z\",\"final_deal_value\":null,\"outcome\":null,\"remarks\":null,\"closure_date\":null,\"status\":\"Active\",\"created_at\":\"2026-07-01T08:30:00.000Z\",\"updated_at\":\"2026-07-20T06:30:05.150Z\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "9cdc45f2-7cb2-495f-b9d4-32f69a028024",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Clear multiple fields to null -> Set service_interested to [] -> Return updated lead",
+          "default": false,
+          "body": "{\"success\":true,\"message\":\"Lead updated successfully\",\"data\":{\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"lead_id\":\"LD-2026-00001\",\"company_name\":\"Acme Corp\",\"contact_person\":\"John Doe\",\"mobile_number\":\"9876543210\",\"email\":null,\"website\":null,\"city\":null,\"lead_source\":\"Website\",\"category\":null,\"sub_category\":null,\"category_name\":null,\"sub_category_name\":null,\"service_interested\":[],\"priority\":\"Hot\",\"estimated_value\":null,\"assigned_to\":\"EMP001\",\"stage\":\"Contacted\",\"next_followup_date\":\"2026-07-25T10:00:00.000Z\",\"final_deal_value\":null,\"outcome\":null,\"remarks\":null,\"closure_date\":null,\"status\":\"Active\",\"created_at\":\"2026-07-01T08:30:00.000Z\",\"updated_at\":\"2026-07-20T06:31:00.180Z\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "service_interested",
+              "value": "null",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "d8bdfdd5-d024-477a-8868-eb85de1a7ce3",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "No editable fields in body -> Reject",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"No fields to update. Send at least one editable field.\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "random_field",
+              "value": "test",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "b48ad8a6-7f67-4a41-938e-a49248136782",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid UUID format -> Reject before DB call",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Invalid lead ID format\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "not-a-uuid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "495a0a70-5ba0-4b5c-81af-84b6acde47df",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Validation fails on provided field -> Return field-level errors",
+          "default": false,
+          "body": "{\"success\":false,\"errors\":{\"mobile_number\":\"Mobile Number must be exactly 10 numeric digits\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "mobile_number",
+              "value": "123",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "956bf6b7-3e6b-4bec-a6f6-57e798e888db",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid priority value -> Reject",
+          "default": false,
+          "body": "{\"success\":false,\"errors\":{\"priority\":\"Priority must be one of: Hot, Warm, Cold\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "priority",
+              "value": "Urgent",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "345848f1-1572-4e2b-bf01-bf34e1316307",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Lead is closed -> Reject edit",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Cannot edit a closed lead. Contact Admin to reopen.\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "149453a7-57ab-480b-aba7-72eecdb14cea",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Lead not found or soft-deleted -> Return 404",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Lead not found\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "550e8400-e29b-41d4-a716-446655440099",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "f71a36ba-2113-4d46-bb77-1cd71f356635",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Mobile belongs to another active lead -> Reject with conflict",
+          "default": false,
+          "body": "{\"success\":false,\"errors\":{\"mobile_number\":\"A lead with this mobile number already exists (LD-2025-00042)\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "b8a8cf89-b931-4533-bdcf-4474dfe8b104",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "Email belongs to another active lead -> Reject with conflict",
+          "default": false,
+          "body": "{\"success\":false,\"errors\":{\"email\":\"A lead with this email already exists (LD-2025-00099)\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "email",
+              "value": "dup@test.com",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "9f64c405-3de0-46b5-aae6-14663e687d62",
+          "latency": 0,
+          "statusCode": 422,
+          "label": "All provided values identical to current -> No-op reject",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"No changes detected. All values are the same as current.\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "city",
+              "value": "Mumbai",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        }
+      ],
+      "type": "http",
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "dbfe1b92-e543-47b6-840e-55d30c278588",
+      "documentation": "Soft delete lead by ID (Excel)",
+      "method": "delete",
+      "endpoint": "/admin/leads/:id",
+      "responses": [
+        {
+          "uuid": "73206e66-d1b6-40b2-857e-f86e6a80e833",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Validate UUID -> Fetch lead (must exist + not soft-deleted) -> Begin tx -> Set deleted_at + is_deleted -> Log history -> Log audit -> Commit -> Remove from Algolia -> Return minimal confirmation",
+          "default": true,
+          "body": "{\"success\":true,\"message\":\"Lead deleted successfully\",\"data\":{\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"lead_id\":\"LD-2026-00001\"}}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "e3f7b8e9-0195-413b-8ed0-c49b0a841116",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Invalid UUID format -> Reject before DB call",
+          "default": false,
+          "body": "{\"success\":false,\"message\":\"Invalid lead ID format\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "not-a-uuid",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "cea9cdbb-0df1-448c-9fdd-0ce3060aa820",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "Lead not found or already soft-deleted -> Return 404",
+          "default": false,
+          "body": "{\"success\":false,\"endpoint\":\"DELETE\",\"message\":\"Lead not found\"}",
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "550e8400-e29b-41d4-a716-446655440099",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "headers": [],
+          "callbacks": [],
+          "crudKey": "id"
+        }
+      ],
+      "type": "http",
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
   "rootChildren": [
@@ -12829,8 +13482,20 @@
       "uuid": "660298d9-dd1a-4a57-bc5c-ba83789ce076"
     },
     {
-      "type": "folder",
-      "uuid": "efaca4dd-480f-4518-8b79-192ff3840804"
+      "type": "route",
+      "uuid": "065f7d78-5191-4596-b455-ddd99687fd32"
+    },
+    {
+      "type": "route",
+      "uuid": "1e254d91-4022-4c40-bc74-9b15800f6cd2"
+    },
+    {
+      "type": "route",
+      "uuid": "54005e90-710a-4fce-92dc-7fe61b041d69"
+    },
+    {
+      "type": "route",
+      "uuid": "dbfe1b92-e543-47b6-840e-55d30c278588"
     }
   ],
   "proxyMode": false,

@@ -15,7 +15,8 @@ const PDFDocument = require('pdfkit');
 const { success: wrapSuccess, error: wrapError } = require('../utils/response');
 const fs = require('fs');
 
-const LEADS_CACHE_FILE = 'd:/CRM market/backend/active_filters_leads.json';
+const path = require('path');
+const LEADS_CACHE_FILE = path.join(__dirname, '..', '..', 'active_filters_leads.json');
 
 function readLeadsCache() {
   try {
@@ -507,7 +508,7 @@ exports.reopenLead = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
-    if (lead.stage !== 'Closed') {
+    if (lead.stage !== 'Closed' && lead.stage !== 'Won' && lead.stage !== 'Lost') {
       const errMsg = isPut ? 'Only Won or Lost leads can be reopened' : `Lead is not closed. Current stage: ${lead.stage}`;
       return res.status(400).json(wrapError(errMsg));
     }
@@ -681,6 +682,7 @@ exports.getDashboardKpis = async (req, res, next) => {
       hot_leads:       Number(row.hot_leads       || 0),
       warm_leads:      Number(row.warm_leads      || 0),
       cold_leads:      Number(row.cold_leads      || 0),
+      today_followups: Number(row.today_followups || 0),
       category_id: category_id || null,
       sub_category_id: null,
     };
@@ -807,7 +809,7 @@ exports.getWonRateBySource = async (req, res, next) => {
       total: row.total,
       won: row.won,
       lost: row.lost,
-      win_rate: row.rate,
+      win_rate: row.rate || row.win_rate,
     }));
 
     return res.status(200).json({
@@ -846,7 +848,7 @@ exports.getWonRateByCategory = async (req, res, next) => {
       total_closed: row.total,
       won: row.won,
       lost: row.lost,
-      win_rate: row.rate,
+      win_rate: row.rate || row.win_rate,
     }));
     res.json({ success: true, message: 'Won rate by category fetched successfully', data });
   } catch (error) {
@@ -1091,9 +1093,11 @@ exports.exportAdminLeads = async (req, res, next) => {
           true,
           null
         );
-        if (algoliaResult) {
+        if (algoliaResult && algoliaResult.nbHits > 0) {
           leads = algoliaResult.hits || [];
           algoliaUsed = true;
+        } else {
+          console.log('[Fallback] Algolia returned 0 leads for export, using database.');
         }
       } catch (algoliaErr) {
         console.error('[exportAdminLeads] Algolia search failed, falling back to DB:', algoliaErr.message);

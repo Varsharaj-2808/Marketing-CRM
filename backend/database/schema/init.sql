@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS leads (
   "closure_date"       DATE,
   "next_followup_date" TIMESTAMP,
   "proposal_value"     NUMERIC,
+  "remarks"            TEXT,
   "deleted_at"         TIMESTAMP,
   is_deleted           BOOLEAN DEFAULT FALSE,
   created_at           TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -157,6 +158,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   "lead_id"          UUID REFERENCES leads(id) ON DELETE SET NULL,
   message            TEXT NOT NULL,
   is_read            BOOLEAN DEFAULT FALSE,
+  metadata           JSONB,
   created_at         TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

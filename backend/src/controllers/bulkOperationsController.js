@@ -20,12 +20,12 @@ exports.bulkSelect = async (req, res, next) => {
     const { lead_ids } = req.body;
 
     if (!Array.isArray(lead_ids)) {
-      return res.status(400).json(wrapError('Must be an array of lead ID strings'));
+      return res.status(400).json({ success: false, error: 'Must be an array of lead ID strings', message: 'Must be an array of lead ID strings', lead_ids: 'Must be an array of lead ID strings' });
     }
 
     for (const id of lead_ids) {
       if (typeof id !== 'string') {
-        return res.status(400).json(wrapError('Each lead ID must be a string'));
+        return res.status(400).json({ success: false, error: 'Each lead ID must be a string', message: 'Each lead ID must be a string', lead_ids: 'Each lead ID must be a string' });
       }
     }
 
@@ -33,7 +33,10 @@ exports.bulkSelect = async (req, res, next) => {
 
     res.json({
       success: true,
+      selected: true,
       message: 'Leads selected successfully',
+      count: uniqueIds.length,
+      lead_ids: uniqueIds,
       data: {
         selected: true,
         count: uniqueIds.length,
@@ -61,16 +64,16 @@ exports.bulkAssign = async (req, res, next) => {
 
   try {
     if (!Array.isArray(lead_ids) || lead_ids.length === 0) {
-      return res.status(400).json(wrapError('At least one lead ID is required'));
+      return res.status(400).json({ success: false, error: 'At least one lead ID is required', message: 'At least one lead ID is required', lead_ids: 'At least one lead ID is required' });
     }
 
     if (!assigned_to || !assigned_to.trim()) {
-      return res.status(400).json(wrapError('Target user ID is required'));
+      return res.status(400).json({ success: false, error: 'Target user ID is required', message: 'Target user ID is required', assigned_to: 'Target user ID is required' });
     }
 
     for (const id of lead_ids) {
       if (typeof id !== 'string') {
-        return res.status(400).json(wrapError('Each lead ID must be a string'));
+        return res.status(400).json({ success: false, error: 'Each lead ID must be a string', message: 'Each lead ID must be a string', lead_ids: 'Each lead ID must be a string' });
       }
     }
 
@@ -78,12 +81,12 @@ exports.bulkAssign = async (req, res, next) => {
 
     const targetUser = await resolveUser(assigned_to.trim());
     if (!targetUser) {
-      return res.status(404).json(wrapError('Assigned user not found'));
+      return res.status(404).json({ success: false, error: 'Assigned user not found', message: 'Assigned user not found', reason: 'Assigned user not found' });
     }
 
     const userStatus = targetUser.accountStatus || targetUser.status;
     if (userStatus !== 'active') {
-      return res.status(400).json(wrapError('Cannot assign leads to a deactivated user'));
+      return res.status(400).json({ success: false, error: 'Cannot assign leads to a deactivated user', message: 'Cannot assign leads to a deactivated user', reason: 'Cannot assign leads to a deactivated user' });
     }
 
     const leadPlaceholders = uniqueIds.map((_, i) => `$${i + 1}`).join(', ');
@@ -96,16 +99,17 @@ exports.bulkAssign = async (req, res, next) => {
     const missingIds = uniqueIds.filter(id => !foundIds.has(id));
 
     if (missingIds.length > 0) {
-      return res.status(404).json(wrapError(`Lead(s) not found: ${missingIds.join(', ')}`));
+      const msg = `Lead(s) not found: ${missingIds.join(', ')}`;
+      return res.status(404).json({ success: false, error: msg, message: msg });
     }
 
     const hasAnyOwner = leadResult.rows.some(l => l.assigned_to !== null);
     if (hasAnyOwner && (reason === undefined || reason === null || reason === '')) {
-      return res.status(400).json(wrapError('Reassignment reason is required when one or more leads already have an owner'));
+      return res.status(400).json({ success: false, error: 'Reassignment reason is required when one or more leads already have an owner', message: 'Reassignment reason is required when one or more leads already have an owner', reason: 'Reassignment reason is required when one or more leads already have an owner' });
     }
 
     if (reason !== undefined && reason !== null && reason !== '' && reason.trim && reason.trim().length === 0) {
-      return res.status(400).json(wrapError('Reassignment reason cannot be empty'));
+      return res.status(400).json({ success: false, error: 'Reassignment reason cannot be empty', message: 'Reassignment reason cannot be empty', reason: 'Reassignment reason cannot be empty' });
     }
 
     const leadsToProcess = leadResult.rows.filter(l => l.assigned_to !== targetUser.id);
@@ -162,7 +166,7 @@ exports.bulkAssign = async (req, res, next) => {
       }
     }
 
-    if (targetUser.email && changedCount > 0) {
+    if (targetUser.email && changedCount > 0 && typeof sendBulkLeadAssignedEmail === 'function') {
       const assignedLeads = leadsToProcess.map(l => ({
         lead_id: l.lead_id,
         company_name: l.company_name || 'Unknown',
@@ -207,6 +211,8 @@ exports.bulkAssign = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Leads assigned successfully',
+      assigned: true,
+      count: changedCount,
       data: {
         assigned: true,
         count: changedCount,
@@ -223,18 +229,18 @@ exports.exportLeads = async (req, res, next) => {
     const { ipAddress, userAgent } = getIpAndAgent(req);
 
     if (!format || !format.trim()) {
-      return res.status(400).json(wrapError('Export format is required'));
+      return res.status(400).json({ success: false, error: 'Export format is required', message: 'Export format is required', format: 'Export format is required' });
     }
 
     const validFormats = ['xlsx', 'csv'];
     if (!validFormats.includes(format)) {
-      return res.status(400).json(wrapError("Format must be 'xlsx' or 'csv'"));
+      return res.status(400).json({ success: false, error: "Format must be 'xlsx' or 'csv'", message: "Format must be 'xlsx' or 'csv'", format: "Format must be 'xlsx' or 'csv'" });
     }
 
     let leads;
     if (lead_ids && lead_ids.length > 0) {
       if (lead_ids.some(id => typeof id !== 'string')) {
-        return res.status(400).json(wrapError('Each lead ID must be a string'));
+        return res.status(400).json({ success: false, error: 'Each lead ID must be a string', message: 'Each lead ID must be a string' });
       }
 
       const uniqueIds = [...new Set(lead_ids)];
@@ -248,7 +254,8 @@ exports.exportLeads = async (req, res, next) => {
       const missingIds = uniqueIds.filter(id => !foundIds.has(id));
 
       if (missingIds.length > 0) {
-        return res.status(404).json(wrapError(`Lead(s) not found: ${missingIds.join(', ')}`));
+        const msg = `Lead(s) not found: ${missingIds.join(', ')}`;
+        return res.status(404).json({ success: false, error: msg, message: msg });
       }
 
       leads = leadResult.rows;
@@ -337,7 +344,14 @@ exports.exportLeads = async (req, res, next) => {
       result: 'Success',
     });
 
-    res.json(wrapSuccess('Export completed', { download_url: `/exports/${fileName}` }));
+    res.json({
+      success: true,
+      message: 'Export completed',
+      download_url: `/exports/${fileName}`,
+      data: {
+        download_url: `/exports/${fileName}`
+      }
+    });
   } catch (error) {
     next(error);
   }

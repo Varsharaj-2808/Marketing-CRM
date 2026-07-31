@@ -176,6 +176,16 @@ export default function LeadList() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [toastShow, setToastShow] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.toastMessage) {
+      setToastMessage(location.state.toastMessage);
+      setToastType(location.state.toastType || 'success');
+      setToastShow(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -285,21 +295,9 @@ export default function LeadList() {
     try {
       const response = isAdmin ? await fetchAdminLeads(query) : await fetchMarketingLeads(query);
       const normalized = normalizeListResponse(response);
-      let filteredLeads = normalized.leads;
-      let totalRecords = normalized.totalRecords;
-      if (!isAdmin && user) {
-        const userId = user.id || user.employee_id || user.employeeId;
-        filteredLeads = normalized.leads.filter((l) => {
-          const assignedId = typeof l.assignedTo === 'object' && l.assignedTo
-            ? (l.assignedTo.employee_id || l.assignedTo.id)
-            : l.assignedTo || null;
-          return assignedId === userId;
-        });
-        totalRecords = filteredLeads.length;
-      }
-      setLeads(filteredLeads);
-      setTotalPages(Math.max(1, Math.ceil(totalRecords / PAGE_SIZE)));
-      setTotalRecords(totalRecords);
+      setLeads(normalized.leads);
+      setTotalPages(normalized.totalPages);
+      setTotalRecords(normalized.totalRecords);
     } catch (err) {
       const status = err?.status || err?.response?.status;
       const message = err?.message || err?.payload?.message || '';

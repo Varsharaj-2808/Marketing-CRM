@@ -7,7 +7,7 @@ async function checkDb() {
     const columnsRes = await pool.query(`
       SELECT column_name, data_type 
       FROM information_schema.columns 
-      WHERE table_name = 'notifications'
+      WHERE table_name = 'leads'
     `);
     console.log('--- notifications Table Columns ---');
     console.log(JSON.stringify(columnsRes.rows, null, 2));

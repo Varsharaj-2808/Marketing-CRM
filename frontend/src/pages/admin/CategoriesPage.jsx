@@ -207,6 +207,10 @@ export default function CategoriesPage() {
       setCatFormError('Name is required');
       return;
     }
+    if (/^\d+$/.test(catFormName.trim())) {
+      setCatFormError('Category name cannot be purely numeric');
+      return;
+    }
     setSaving(true);
     try {
       let res;
@@ -334,6 +338,10 @@ export default function CategoriesPage() {
   const handleSaveSub = async () => {
     if (!subFormName.trim()) {
       setSubFormError('Name is required');
+      return;
+    }
+    if (/^\d+$/.test(subFormName.trim())) {
+      setSubFormError('Sub-category name cannot be purely numeric');
       return;
     }
     setSaving(true);

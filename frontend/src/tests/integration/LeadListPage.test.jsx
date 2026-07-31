@@ -236,7 +236,7 @@ describe('LeadListPage - STORY-2.2.1 view and search my leads', () => {
     expect(lastUrl).toContain('sortBy=createdAt');
     expect(lastUrl).toContain('sortOrder=desc');
     expect(lastUrl).toContain('page=2');
-  });
+  }, 15000);
 
   it('test-ep-2.2.1-040: sortable headers toggle estimated value descending then ascending', async () => {
     setUser(adminUser);

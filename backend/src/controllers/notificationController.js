@@ -5,10 +5,27 @@ exports.getNotifications = async (req, res, next) => {
   try {
     const algolia = require('../utils/algoliaService');
     if (algolia && typeof algolia.searchNotifications === 'function') {
-      const algoliaResult = await algolia.searchNotifications('', { user_id: req.user.id });
-      if (algoliaResult) {
-        const hits = algoliaResult.hits;
-        const unreadCount = hits.filter(n => !n.is_read).length;
+      const [unreadResult, recentResult] = await Promise.all([
+        algolia.searchNotifications('', { user_id: req.user.id, is_read: false }, 1, 50),
+        algolia.searchNotifications('', { user_id: req.user.id }, 1, 20)
+      ]);
+      
+      let hits = [];
+      if (unreadResult && unreadResult.nbHits > 0) {
+        hits = [...unreadResult.hits];
+      }
+      if (recentResult && recentResult.nbHits > 0) {
+        const existingIds = new Set(hits.map(h => h.objectID || h.id));
+        for (const hit of recentResult.hits) {
+          if (!existingIds.has(hit.objectID || hit.id)) {
+            hits.push(hit);
+          }
+        }
+      }
+      
+      if (hits.length > 0) {
+        hits.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+        const unreadCount = await Notification.getUnreadCount(req.user.id);
         return res.json({ success: true, message: 'Notifications fetched successfully', data: hits, unread_count: unreadCount });
       }
     }
@@ -24,7 +41,7 @@ exports.getNotifications = async (req, res, next) => {
 exports.getNotificationCount = async (req, res, next) => {
   try {
     const count = await Notification.getUnreadCount(req.user.id);
-    res.json(wrapSuccess('Unread count fetched', { unread_count: count }));
+    res.json({ success: true, message: 'Unread count fetched', unread_count: count, data: { unread_count: count } });
   } catch (error) {
     next(error);
   }

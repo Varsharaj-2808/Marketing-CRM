@@ -6,7 +6,8 @@ const fs = require('fs');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const CACHE_FILE = 'd:/CRM market/backend/active_filters.json';
+const path = require('path');
+const CACHE_FILE = path.join(__dirname, '..', '..', 'active_filters.json');
 
 function readCache() {
   try {
@@ -141,12 +142,12 @@ exports.getFieldHistory = async (req, res, next) => {
       data: {
         lead_id: id,
         total_changes: result.total_changes,
-        history,
-        pagination: {
-          page: filters.page,
-          limit: filters.limit,
-          total_pages: Math.ceil(result.total_changes / filters.limit)
-        }
+        history
+      },
+      pagination: {
+        page: filters.page,
+        limit: filters.limit,
+        total_pages: Math.ceil(result.total_changes / filters.limit)
       }
     });
   } catch (error) {
@@ -160,7 +161,7 @@ exports.exportFieldHistory = async (req, res, next) => {
     const { format, field_name, change_type, is_system_generated } = req.query;
 
     if (format !== 'csv' && format !== 'excel') {
-      return res.status(400).json({ success: false, message: 'Format must be csv or excel' });
+      return res.status(400).json({ success: false, message: 'Format must be csv' });
     }
 
     if (!UUID_REGEX.test(id)) {
