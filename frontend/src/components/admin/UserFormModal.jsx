@@ -50,6 +50,8 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
       errs.mobile = 'Mobile Number is required';
     } else if (!/^\d+$/.test(formData.mobile)) {
       errs.mobile = 'Mobile Number must contain digits only';
+    } else if (formData.mobile.trim().length !== 10) {
+      errs.mobile = 'Mobile Number must be exactly 10 digits';
     }
 
     if (!formData.email.trim()) errs.email = 'Email is required';
@@ -128,6 +130,7 @@ export default function UserFormModal({ isOpen, onClose, onSave, user, existingE
               value={formData.mobile}
               onChange={(e) => handleChange('mobile', e.target.value)}
               disabled={submitting}
+              maxLength={10}
               className={`w-full bg-surface-container-low/50 border ${errors.mobile ? 'border-error' : 'border-outline-variant/30'} rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:opacity-50`}
               placeholder="Enter mobile number"
             />

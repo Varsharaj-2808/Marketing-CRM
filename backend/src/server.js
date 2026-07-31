@@ -23,4 +23,9 @@ app.listen(PORT, (err) => {
     process.exit(1);
   }
   console.log(`Server running on http://localhost:${PORT}`);
+
+  try {
+    const algolia = require('./utils/algoliaService');
+    algolia.startupAutoIndex().catch(() => {});
+  } catch (e) {}
 });

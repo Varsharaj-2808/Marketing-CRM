@@ -6,13 +6,7 @@
   "latency": 0,
   "port": 3001,
   "hostname": "",
-  "folders": [
-    {
-      "uuid": "efaca4dd-480f-4518-8b79-192ff3840804",
-      "name": "New folder",
-      "children": []
-    }
-  ],
+  "folders": [],
   "routes": [
     {
       "uuid": "f0000001-0000-0000-0000-000000000001",
@@ -13356,10 +13350,6 @@
     {
       "type": "route",
       "uuid": "660298d9-dd1a-4a57-bc5c-ba83789ce076"
-    },
-    {
-      "type": "folder",
-      "uuid": "efaca4dd-480f-4518-8b79-192ff3840804"
     },
     {
       "type": "route",
